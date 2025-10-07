@@ -18,8 +18,10 @@
 
 ## 🚀 Live Demo
 
-- **Frontend**: [https://omegoo-chat.vercel.app](https://omegoo-chat.vercel.app)
-- **Backend API**: [https://omegoo-backend.onrender.com](https://omegoo-backend.onrender.com)
+- **Frontend**: [https://saurabhji123.github.io/omegoo](https://saurabhji123.github.io/omegoo) (GitHub Pages)
+- **Backend API**: Coming Soon (Railway Deployment in Progress)
+
+> **Note**: Currently the frontend is live on GitHub Pages. Backend deployment is in progress on Railway for complete functionality.
 
 ## 🛠️ Tech Stack
 
@@ -93,38 +95,40 @@
 
 ## 🌐 Deployment
 
-### Backend Deployment (Render)
+### Frontend Deployment (GitHub Pages)
 
-1. **Create Render Account**: Sign up at [render.com](https://render.com)
+1. **Enable GitHub Pages**: 
+   - Go to Repository Settings → Pages
+   - Source: Deploy from branch `gh-pages`
+   - Folder: `/ (root)`
+
+2. **Automatic Deployment**: 
+   - Push to `gh-pages` branch triggers automatic deployment
+   - Live at: `https://saurabhji123.github.io/omegoo`
+
+### Backend Deployment (Railway)
+
+1. **Create Railway Account**: Sign up at [railway.app](https://railway.app)
 2. **Connect GitHub**: Link your GitHub repository
-3. **Create Web Service**:
-   - Root Directory: `backend`
-   - Build Command: `npm install && npm run build`
-   - Start Command: `npm start`
-   - Environment: `production`
-
-### Frontend Deployment (Vercel)
-
-1. **Create Vercel Account**: Sign up at [vercel.com](https://vercel.com)
-2. **Import Project**: Connect your GitHub repository
-3. **Configure Build**:
-   - Root Directory: `frontend`
-   - Build Command: `npm run build`
-   - Output Directory: `build`
+3. **Deploy Backend**:
+   - Select `backend` folder
+   - Automatic build and deployment
+   - Free tier: 500 hours/month
 
 ### Environment Variables
 
-#### Backend (Render)
+#### Backend (Railway)
 ```
 NODE_ENV=production
-PORT=3001
+PORT=$PORT
 JWT_SECRET=your-super-secure-jwt-secret
-FRONTEND_URL=https://your-frontend-domain.vercel.app
+FRONTEND_URL=https://saurabhji123.github.io
+ALLOWED_ORIGINS=https://saurabhji123.github.io
 ```
 
-#### Frontend (Vercel)
+#### Frontend (GitHub Pages)
 ```
-REACT_APP_BACKEND_URL=https://your-backend-domain.onrender.com
+REACT_APP_BACKEND_URL=https://omegoo-backend-production.up.railway.app
 REACT_APP_ENVIRONMENT=production
 ```
 
@@ -242,12 +246,6 @@ Please read CONTRIBUTING.md for contribution guidelines.
 ## 📄 License
 
 Proprietary - All rights reserved
-
-## 📞 Support
-
-- Email: support@omegoo.app
-- Grievance Officer: grievance@omegoo.app
-- Legal: legal@omegoo.app
 
 ---
 
