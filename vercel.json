@@ -1,0 +1,19 @@
+{
+  "name": "omegoo-frontend",
+  "version": 2,
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/build",
+  "installCommand": "cd frontend && npm install",
+  "framework": "create-react-app",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "env": {
+    "REACT_APP_BACKEND_URL": "https://omegoo-backend.onrender.com",
+    "REACT_APP_ENVIRONMENT": "production",
+    "REACT_APP_FRONTEND_URL": "https://omegoo.vercel.app"
+  }
+}

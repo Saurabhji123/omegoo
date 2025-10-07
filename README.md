@@ -18,10 +18,10 @@
 
 ## 🚀 Live Demo
 
-- **Frontend**: [https://saurabhji123.github.io/omegoo](https://saurabhji123.github.io/omegoo) (GitHub Pages)
+- **Frontend**: [https://omegoo.vercel.app](https://omegoo.vercel.app) (Vercel)
 - **Backend API**: Coming Soon (Render Deployment in Progress)
 
-> **Note**: Currently the frontend is live on GitHub Pages. Backend deployment is in progress on Render for complete functionality.
+> **Note**: Currently the frontend is live on Vercel. Backend deployment is in progress on Render for complete functionality.
 
 ## 🛠️ Tech Stack
 
@@ -95,16 +95,16 @@
 
 ## 🌐 Deployment
 
-### Frontend Deployment (GitHub Pages)
+### Frontend Deployment (Vercel)
 
-1. **Enable GitHub Pages**: 
-   - Go to Repository Settings → Pages
-   - Source: Deploy from branch `gh-pages`
-   - Folder: `/ (root)`
+1. **Connect GitHub**: 
+   - Go to [vercel.com](https://vercel.com) and sign up
+   - Import your GitHub repository
+   - Set root directory to `frontend`
 
 2. **Automatic Deployment**: 
-   - Push to `gh-pages` branch triggers automatic deployment
-   - Live at: `https://saurabhji123.github.io/omegoo`
+   - Push to any branch triggers automatic deployment
+   - Live at: `https://omegoo.vercel.app`
 
 ### Backend Deployment (Render)
 
@@ -123,11 +123,11 @@
 NODE_ENV=production
 PORT=$PORT
 JWT_SECRET=your-super-secure-jwt-secret
-FRONTEND_URL=https://saurabhji123.github.io
-ALLOWED_ORIGINS=https://saurabhji123.github.io
+FRONTEND_URL=https://omegoo.vercel.app
+ALLOWED_ORIGINS=https://omegoo.vercel.app
 ```
 
-#### Frontend (GitHub Pages)
+#### Frontend (Vercel)
 ```
 REACT_APP_BACKEND_URL=https://omegoo-backend.onrender.com
 REACT_APP_ENVIRONMENT=production

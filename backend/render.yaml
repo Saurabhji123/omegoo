@@ -10,7 +10,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CORS_ORIGIN
-        value: https://saurabhji123.github.io
+        value: https://omegoo.vercel.app
       - key: JWT_SECRET
         value: ac0f5590558d76eeed21eda4611446b1b914c85dd4545c5a91d2b83b7ca6bb66
       - key: JWT_EXPIRE
@@ -22,9 +22,9 @@ services:
       - key: BCRYPT_ROUNDS
         value: 12
       - key: FRONTEND_URL
-        value: https://saurabhji123.github.io
+        value: https://omegoo.vercel.app
       - key: ALLOWED_ORIGINS
-        value: https://saurabhji123.github.io
+        value: https://omegoo.vercel.app
       - key: RATE_LIMIT_WINDOW_MS
         value: 900000
       - key: RATE_LIMIT_MAX_REQUESTS
