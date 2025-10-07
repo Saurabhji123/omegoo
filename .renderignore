@@ -1,0 +1,9 @@
+frontend/
+docs/
+shared/
+test/
+*.md
+*.txt
+.git/
+.github/
+.vscode/
