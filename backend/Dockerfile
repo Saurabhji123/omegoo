@@ -12,17 +12,16 @@ RUN npm ci --only=production
 
 # Copy source code
 COPY src/ src/
-COPY public/ public/
 
 # Build application
 RUN npm run build
 
-# Expose port
-EXPOSE 3001
+# Expose port (Render will set PORT env variable)
+EXPOSE $PORT
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3001/health || exit 1
+# Health check (commented out - curl not available in alpine)
+# HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+#   CMD curl -f http://localhost:3001/health || exit 1
 
 # Start application
 CMD ["npm", "start"]
