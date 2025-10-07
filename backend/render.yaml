@@ -1,0 +1,9 @@
+# For Render deployment
+build: npm run build
+start: npm start
+
+# Install dependencies
+install: npm install
+
+# Environment
+NODE_ENV: production

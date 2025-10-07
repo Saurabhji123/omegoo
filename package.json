@@ -1,0 +1,72 @@
+{
+  "name": "omegoo-workspace",
+  "version": "1.0.0",
+  "description": "Omegoo PWA - Anonymous Chat Platform Workspace",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:frontend && npm run install:backend && npm run install:shared",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:shared": "cd shared && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "build:all": "npm run build:shared && npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:shared": "cd shared && npm run build",
+    "test:all": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && npm test",
+    "lint:all": "npm run lint:frontend && npm run lint:backend && npm run lint:shared",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:shared": "cd shared && npm run lint",
+    "format:all": "npm run format:frontend && npm run format:backend && npm run format:shared",
+    "format:frontend": "cd frontend && npm run format",
+    "format:backend": "cd backend && npm run format",
+    "format:shared": "cd shared && npm run format",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:seed": "cd backend && npm run db:seed",
+    "db:reset": "cd backend && npm run db:reset",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build",
+    "setup": "npm run install:all && npm run db:migrate",
+    "start:prod": "docker-compose --profile production up -d",
+    "deploy:prepare": "npm run build:all && echo 'Build completed successfully!'",
+    "deploy:backend": "cd backend && npm run build",
+    "deploy:frontend": "cd frontend && npm run build",
+    "clean": "rm -rf backend/dist frontend/build backend/node_modules frontend/node_modules shared/dist shared/node_modules node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/omegoo"
+  },
+  "keywords": [
+    "chat",
+    "anonymous",
+    "pwa",
+    "webrtc",
+    "privacy",
+    "social"
+  ],
+  "author": "Omegoo Team",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "socket.io-client": "^4.8.1"
+  }
+}

@@ -1,0 +1,76 @@
+// Database types for Omegoo
+
+export interface User {
+  id: string;
+  deviceId: string;
+  phoneHash?: string;
+  tier: 'guest' | 'verified' | 'premium';
+  status: 'active' | 'banned' | 'suspended';
+  coins: number;
+  isVerified: boolean;
+  preferences: {
+    language: string;
+    interests: string[];
+    ageRange?: [number, number];
+    genderPreference: 'any' | 'male' | 'female';
+  };
+  subscription: {
+    type: 'none' | 'starter' | 'standard' | 'premium';
+    expiresAt?: Date;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+  lastActiveAt: Date;
+}
+
+export interface Message {
+  id: string;
+  roomId: string;
+  senderId: string;
+  content: string;
+  type: 'text' | 'image' | 'video' | 'audio' | 'system';
+  metadata?: any;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ChatRoom {
+  id: string;
+  participants: string[];
+  type: 'video' | 'text';
+  status: 'waiting' | 'active' | 'ended';
+  settings: {
+    allowText: boolean;
+    allowVideo: boolean;
+    allowAudio: boolean;
+  };
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  endedAt?: Date;
+  endReason?: 'user_left' | 'reported' | 'timeout' | 'technical';
+}
+
+export interface WebRTCOffer {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  roomId: string;
+  offer: any; // RTCSessionDescription data
+  createdAt: Date;
+}
+
+export interface WebRTCAnswer {
+  id: string;
+  offerId: string;
+  answer: any; // RTCSessionDescription data
+  createdAt: Date;
+}
+
+export interface ICECandidate {
+  id: string;
+  roomId: string;
+  userId: string;
+  candidate: any; // RTCIceCandidate data
+  createdAt: Date;
+}
