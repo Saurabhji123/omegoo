@@ -19,9 +19,9 @@
 ## 🚀 Live Demo
 
 - **Frontend**: [https://saurabhji123.github.io/omegoo](https://saurabhji123.github.io/omegoo) (GitHub Pages)
-- **Backend API**: Coming Soon (Railway Deployment in Progress)
+- **Backend API**: Coming Soon (Render Deployment in Progress)
 
-> **Note**: Currently the frontend is live on GitHub Pages. Backend deployment is in progress on Railway for complete functionality.
+> **Note**: Currently the frontend is live on GitHub Pages. Backend deployment is in progress on Render for complete functionality.
 
 ## 🛠️ Tech Stack
 
@@ -106,18 +106,19 @@
    - Push to `gh-pages` branch triggers automatic deployment
    - Live at: `https://saurabhji123.github.io/omegoo`
 
-### Backend Deployment (Railway)
+### Backend Deployment (Render)
 
-1. **Create Railway Account**: Sign up at [railway.app](https://railway.app)
+1. **Create Render Account**: Sign up at [render.com](https://render.com)
 2. **Connect GitHub**: Link your GitHub repository
 3. **Deploy Backend**:
+   - Create Web Service from GitHub
    - Select `backend` folder
    - Automatic build and deployment
-   - Free tier: 500 hours/month
+   - Free tier: 750 hours/month
 
 ### Environment Variables
 
-#### Backend (Railway)
+#### Backend (Render)
 ```
 NODE_ENV=production
 PORT=$PORT
@@ -128,7 +129,7 @@ ALLOWED_ORIGINS=https://saurabhji123.github.io
 
 #### Frontend (GitHub Pages)
 ```
-REACT_APP_BACKEND_URL=https://omegoo-backend-production.up.railway.app
+REACT_APP_BACKEND_URL=https://omegoo-backend.onrender.com
 REACT_APP_ENVIRONMENT=production
 ```
 
