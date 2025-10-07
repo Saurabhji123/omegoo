@@ -1,23 +1,21 @@
-# Simple Node.js Backend Dockerfile
+# Ultra-Simple Backend Dockerfile - NO PUBLIC FOLDER REFERENCES
 FROM node:18-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy only necessary files
+COPY package.json ./
+COPY package-lock.json ./
+COPY tsconfig.json ./
 
-# Install ALL dependencies (including dev for build)
+# Install dependencies
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy only source code
+COPY src ./src
 
-# Build the application
+# Build
 RUN npm run build
 
-# Expose port
-EXPOSE $PORT
-
-# Start the application
+# Start
 CMD ["npm", "start"]
