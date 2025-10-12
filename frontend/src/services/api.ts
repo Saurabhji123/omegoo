@@ -1,6 +1,9 @@
 // API Service for Omegoo Frontend
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+// Use production URL in production, localhost in development
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? (process.env.REACT_APP_BACKEND_URL_PROD || 'https://omegoo-api-clean.onrender.com')
+  : (process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001');
 
 export interface ApiResponse<T = any> {
   success: boolean;

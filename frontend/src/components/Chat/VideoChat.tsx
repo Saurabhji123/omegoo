@@ -20,7 +20,7 @@ interface Message {
 
 const VideoChat: React.FC = () => {
   const navigate = useNavigate();
-  const { socket, connected: socketConnected } = useSocket();
+  const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -262,7 +262,9 @@ const VideoChat: React.FC = () => {
         connected: socket.connected,
         id: socket.id,
         transport: socket.io.engine?.transport?.name || 'unknown',
-        backendUrl: process.env.REACT_APP_BACKEND_URL
+        backendUrl: process.env.NODE_ENV === 'production' 
+          ? (process.env.REACT_APP_BACKEND_URL_PROD || 'https://omegoo-api-clean.onrender.com')
+          : (process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001')
       });
       
       // Add more socket event debugging
@@ -502,11 +504,13 @@ const VideoChat: React.FC = () => {
             <div className={`w-2 h-2 lg:w-3 lg:h-3 rounded-full ${
               socketConnected && isMatchConnected ? 'bg-green-400' : 
               socketConnected && isSearching ? 'bg-yellow-400' : 
+              socketConnecting ? 'bg-orange-400' :
               socketConnected ? 'bg-blue-400' : 'bg-red-400'
             }`}></div>
             <span className="text-white text-xs lg:text-sm font-medium">
               {socketConnected && isMatchConnected ? 'Connected' : 
-               socketConnected && isSearching ? 'Connecting...' : 
+               socketConnected && isSearching ? 'Finding Partner...' : 
+               socketConnecting ? 'Connecting to Server...' :
                socketConnected ? 'Ready' : 'Disconnected'}
             </span>
           </div>

@@ -20,6 +20,7 @@ interface ChatSession {
 interface SocketState {
   socket: Socket | null;
   connected: boolean;
+  connecting: boolean;
   currentSession: ChatSession | null;
   matchingStatus: 'idle' | 'searching' | 'matched';
   moderationWarnings: string[];
@@ -34,17 +35,17 @@ interface SocketContextType extends SocketState {
   reportUser: (reason: string, description: string) => void;
 }
 
-type SocketAction =
+type SocketAction = 
   | { type: 'SET_SOCKET'; payload: Socket | null }
   | { type: 'SET_CONNECTED'; payload: boolean }
+  | { type: 'SET_CONNECTING'; payload: boolean }
   | { type: 'SET_SESSION'; payload: ChatSession | null }
   | { type: 'SET_MATCHING_STATUS'; payload: 'idle' | 'searching' | 'matched' }
   | { type: 'ADD_MODERATION_WARNING'; payload: string }
-  | { type: 'CLEAR_MODERATION_WARNINGS' };
-
-const initialState: SocketState = {
+  | { type: 'CLEAR_MODERATION_WARNINGS' };const initialState: SocketState = {
   socket: null,
   connected: false,
+  connecting: false,
   currentSession: null,
   matchingStatus: 'idle',
   moderationWarnings: []
@@ -56,6 +57,8 @@ const socketReducer = (state: SocketState, action: SocketAction): SocketState =>
       return { ...state, socket: action.payload };
     case 'SET_CONNECTED':
       return { ...state, connected: action.payload };
+    case 'SET_CONNECTING':
+      return { ...state, connecting: action.payload };
     case 'SET_SESSION':
       return { ...state, currentSession: action.payload };
     case 'SET_MATCHING_STATUS':
@@ -95,7 +98,13 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
 
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+    // Set connecting state
+    dispatch({ type: 'SET_CONNECTING', payload: true });
+
+    // Use production URL in production, localhost in development
+    const backendUrl = process.env.NODE_ENV === 'production' 
+      ? (process.env.REACT_APP_BACKEND_URL_PROD || 'https://omegoo-api-clean.onrender.com')
+      : (process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001');
     console.log('🔗 Connecting to backend:', backendUrl);
     console.log('🌍 Environment:', process.env.NODE_ENV);
     console.log('📦 All env vars:', {
@@ -124,6 +133,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         transport: socket.io.engine.transport.name
       });
       dispatch({ type: 'SET_CONNECTED', payload: true });
+      dispatch({ type: 'SET_CONNECTING', payload: false });
     });
 
     socket.on('disconnect', (reason) => {
@@ -137,6 +147,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       console.error('Backend URL:', backendUrl);
       console.error('Error details:', error);
       dispatch({ type: 'SET_CONNECTED', payload: false });
+      dispatch({ type: 'SET_CONNECTING', payload: false });
     });
 
     socket.on('reconnect_attempt', (attemptNumber) => {
