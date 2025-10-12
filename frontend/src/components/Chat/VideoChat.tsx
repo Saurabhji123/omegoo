@@ -39,7 +39,7 @@ const VideoChat: React.FC = () => {
   const [cameraBlocked, setCameraBlocked] = useState(false);
 
   useEffect(() => {
-    // Initialize WebRTC service
+    // Initialize WebRTC service without socket (we'll use the context socket)
     webRTCRef.current = new WebRTCService();
     
     // Set up event listeners
@@ -60,13 +60,45 @@ const VideoChat: React.FC = () => {
 
     // Socket event listeners
     if (socket) {
-      socket.on('match-found', (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
+      socket.on('match-found', async (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
         console.log('📱 Video chat match found:', data);
         setSessionId(data.sessionId);
-        setIsConnected(true);
         setIsSearching(false);
         setMessages([]);
-        addMessage('Connected! You can now start video chatting.', false);
+        addMessage('Connected! Setting up video chat...', false);
+        
+        // Configure WebRTC service with match details
+        if (webRTCRef.current) {
+          webRTCRef.current.setSocket(socket, data.sessionId, data.matchUserId);
+          
+          // Set up ICE candidate handling through main socket
+          webRTCRef.current.setIceCandidateCallback((candidate: RTCIceCandidate) => {
+            socket.emit('ice-candidate', {
+              candidate: candidate,
+              targetUserId: data.matchUserId,
+              sessionId: data.sessionId
+            });
+          });
+          
+          // If we're the initiator, create and send offer
+          if (data.isInitiator) {
+            try {
+              const offer = await webRTCRef.current.createWebRTCOffer();
+              socket.emit('webrtc-offer', { 
+                offer, 
+                targetUserId: data.matchUserId,
+                sessionId: data.sessionId 
+              });
+              console.log('📞 Sent WebRTC offer as initiator');
+            } catch (error) {
+              console.error('❌ Failed to create offer:', error);
+              addMessage('Failed to establish video connection', false);
+            }
+          }
+          
+          addMessage('Video chat ready!', false);
+          setIsConnected(true);
+        }
       });
 
       socket.on('searching', (data: { position: number; totalWaiting: number }) => {
@@ -87,6 +119,45 @@ const VideoChat: React.FC = () => {
         setSessionId(null);
         setMessages([]);
         addMessage(`Chat ended. ${data.reason || 'Your partner left the chat.'}`, false);
+      });
+
+      // WebRTC signaling events
+      socket.on('webrtc-offer', async (data: any) => {
+        console.log('📞 Received WebRTC offer from:', data.fromUserId);
+        if (webRTCRef.current) {
+          try {
+            const answer = await webRTCRef.current.handleOffer(data.offer);
+            socket.emit('webrtc-answer', { 
+              answer, 
+              targetUserId: data.fromUserId,
+              sessionId: sessionId 
+            });
+          } catch (error) {
+            console.error('Error handling WebRTC offer:', error);
+          }
+        }
+      });
+
+      socket.on('webrtc-answer', async (data: any) => {
+        console.log('📞 Received WebRTC answer from:', data.fromUserId);
+        if (webRTCRef.current) {
+          try {
+            await webRTCRef.current.handleAnswer(data.answer);
+          } catch (error) {
+            console.error('Error handling WebRTC answer:', error);
+          }
+        }
+      });
+
+      socket.on('ice-candidate', async (data: any) => {
+        console.log('🧊 Received ICE candidate from:', data.fromUserId);
+        if (webRTCRef.current && data.candidate) {
+          try {
+            await webRTCRef.current.handleIceCandidate(data.candidate);
+          } catch (error) {
+            console.error('Error handling ICE candidate:', error);
+          }
+        }
       });
 
       socket.on('error', (data: { message: string }) => {
@@ -151,14 +222,12 @@ const VideoChat: React.FC = () => {
         console.log('🚨 ERROR EVENT RECEIVED:', data);
       });
       
-      if (socket.connected && !isConnected && !isSearching) {
-        console.log('🚀 Auto-starting chat matching...');
-        setTimeout(() => {
-          startNewChat();
-        }, 2000); // Increased delay
-      } else if (!socket.connected) {
+      // Only show connection status, don't auto-start
+      if (!socket.connected) {
         console.log('⏳ Socket not connected yet, waiting...');
         addMessage('Connecting to server...', false);
+      } else {
+        addMessage('Ready to chat! Click "New" to find someone.', false);
       }
     } else {
       console.error('❌ No socket available!');
@@ -231,10 +300,7 @@ const VideoChat: React.FC = () => {
     // Confirm emit was sent
     console.log('✅ find_match event emitted');
     
-    // Initialize WebRTC if needed
-    if (webRTCRef.current) {
-      webRTCRef.current.findMatch();
-    }
+    // WebRTC is ready, matching handled by socket
     
     console.log('🔍 Started searching for video chat partner');
     addMessage('Searching for someone to chat with...', false);

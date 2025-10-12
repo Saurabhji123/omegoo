@@ -53,10 +53,7 @@ const AudioChat: React.FC = () => {
       }
     });
 
-    webRTCRef.current.onSearchingForMatch((data: { position: number, totalWaiting: number }) => {
-      setQueueInfo(data);
-      setIsSearching(true);
-    });
+    // Removed - matching handled by socket context
 
     // Socket event listeners
     if (socket) {
@@ -158,7 +155,7 @@ const AudioChat: React.FC = () => {
     
     // Initialize WebRTC for audio
     if (webRTCRef.current) {
-      webRTCRef.current.findMatch();
+      // Removed - findMatch handled by socket
     }
     
     console.log('🔍 Started searching for audio chat partner');

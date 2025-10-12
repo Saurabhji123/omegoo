@@ -1,7 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 
 class WebRTCService {
-  private socket: Socket | null = null;
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream | null = null;
@@ -9,10 +8,7 @@ class WebRTCService {
   private onMessage: ((message: string) => void) | null = null;
   private onRemoteStream: ((stream: MediaStream) => void) | null = null;
   private onConnectionStateChange: ((state: RTCPeerConnectionState) => void) | null = null;
-  private onMatchFound: ((userId: string) => void) | null = null;
-  private onError: ((error: string) => void) | null = null;
-  private onSearching: ((data: { position: number, totalWaiting: number }) => void) | null = null;
-  private isConnected = false;
+  private onIceCandidateGenerated: ((candidate: RTCIceCandidate) => void) | null = null;
   private currentMatchUserId: string | null = null;
   private currentSessionId: string | null = null;
 
@@ -25,7 +21,6 @@ class WebRTCService {
 
   constructor() {
     this.initializePeerConnection();
-    this.initializeSocket();
   }
 
   private initializePeerConnection() {
@@ -61,13 +56,9 @@ class WebRTCService {
 
     // Handle ICE candidates
     this.peerConnection.onicecandidate = (event) => {
-      if (event.candidate && this.socket && this.currentMatchUserId) {
-        this.socket.emit('ice-candidate', {
-          candidate: event.candidate,
-          targetUserId: this.currentMatchUserId,
-          sessionId: this.currentSessionId
-        });
-        console.log('🧊 Sent ICE candidate to peer');
+      if (event.candidate && this.onIceCandidateGenerated) {
+        this.onIceCandidateGenerated(event.candidate);
+        console.log('🧊 Generated ICE candidate for external signaling');
       }
     };
 
@@ -85,91 +76,11 @@ class WebRTCService {
     };
   }
 
-  // Initialize Socket.IO for signaling
-  private initializeSocket() {
-    this.socket = io('http://localhost:3001', {
-      transports: ['websocket', 'polling']
-    });
-
-    this.socket.on('connect', () => {
-      console.log('🔌 Connected to signaling server');
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('🔌 Disconnected from signaling server');
-      this.cleanup();
-    });
-
-    // WebRTC signaling events
-    this.socket.on('match-found', async (data: { sessionId: string, matchUserId: string, isInitiator: boolean }) => {
-      console.log('👥 Match found:', data);
-      this.currentMatchUserId = data.matchUserId;
-      this.currentSessionId = data.sessionId;
-      this.onMatchFound?.(data.matchUserId);
-      this.isConnected = true;
-      
-      // If we're the initiator, create and send offer
-      if (data.isInitiator && this.peerConnection) {
-        try {
-          const offer = await this.peerConnection.createOffer({
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: true
-          });
-          await this.peerConnection.setLocalDescription(offer);
-          this.socket?.emit('webrtc-offer', { 
-            offer, 
-            targetUserId: this.currentMatchUserId,
-            sessionId: this.currentSessionId 
-          });
-          console.log('📞 Sent offer to peer');
-        } catch (error) {
-          console.error('❌ Failed to create offer:', error);
-        }
-      }
-    });
-
-    this.socket.on('webrtc-offer', async (data: any) => {
-      console.log('📞 Received offer from:', data.fromUserId);
-      if (this.peerConnection) {
-        await this.peerConnection.setRemoteDescription(data.offer);
-        const answer = await this.peerConnection.createAnswer();
-        await this.peerConnection.setLocalDescription(answer);
-        this.socket?.emit('webrtc-answer', { 
-          answer, 
-          targetUserId: data.fromUserId,
-          sessionId: this.currentSessionId 
-        });
-      }
-    });
-
-    this.socket.on('webrtc-answer', async (data: any) => {
-      console.log('📞 Received answer from:', data.fromUserId);
-      if (this.peerConnection) {
-        await this.peerConnection.setRemoteDescription(data.answer);
-      }
-    });
-
-    this.socket.on('ice-candidate', async (data: any) => {
-      console.log('🧊 Received ICE candidate from:', data.fromUserId);
-      if (this.peerConnection && data.candidate) {
-        await this.peerConnection.addIceCandidate(data.candidate);
-      }
-    });
-
-    this.socket.on('searching', (data: { position: number, totalWaiting: number }) => {
-      console.log('🔍 Searching for match:', data);
-      this.onSearching?.(data);
-    });
-
-    this.socket.on('match-ended', (data: any) => {
-      console.log('❌ Match ended:', data.reason);
-      this.cleanup();
-    });
-
-    this.socket.on('error', (error: string) => {
-      console.error('Socket error:', error);
-      this.onError?.(error);
-    });
+  // Set external socket for signaling (no longer creates its own)
+  setSocket(socket: any, sessionId: string, matchUserId: string) {
+    this.currentSessionId = sessionId;
+    this.currentMatchUserId = matchUserId;
+    console.log('� WebRTC service linked to external socket');
   }
 
   // Initialize local media stream
@@ -227,6 +138,37 @@ class WebRTCService {
     }
 
     await this.peerConnection.setRemoteDescription(answer);
+  }
+
+  // Handle incoming WebRTC offer
+  async handleOffer(offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
+    if (!this.peerConnection) {
+      throw new Error('Peer connection not initialized');
+    }
+
+    await this.peerConnection.setRemoteDescription(offer);
+    const answer = await this.peerConnection.createAnswer();
+    await this.peerConnection.setLocalDescription(answer);
+    
+    return answer;
+  }
+
+  // Handle incoming WebRTC answer
+  async handleAnswer(answer: RTCSessionDescriptionInit): Promise<void> {
+    if (!this.peerConnection) {
+      throw new Error('Peer connection not initialized');
+    }
+
+    await this.peerConnection.setRemoteDescription(answer);
+  }
+
+  // Handle incoming ICE candidate
+  async handleIceCandidate(candidate: RTCIceCandidate): Promise<void> {
+    if (!this.peerConnection) {
+      throw new Error('Peer connection not initialized');
+    }
+
+    await this.peerConnection.addIceCandidate(candidate);
   }
 
   // Add ICE candidate
@@ -357,8 +299,9 @@ class WebRTCService {
     this.onConnectionStateChange = callback;
   }
 
-  onSearchingForMatch(callback: (data: { position: number, totalWaiting: number }) => void): void {
-    this.onSearching = callback;
+  // Set callback for ICE candidate generation (for external signaling)
+  setIceCandidateCallback(callback: (candidate: RTCIceCandidate) => void): void {
+    this.onIceCandidateGenerated = callback;
   }
 
   onIceCandidate(callback: (candidate: RTCIceCandidate) => void): void {
@@ -369,6 +312,20 @@ class WebRTCService {
         }
       };
     }
+  }
+
+  // Create offer for initiator
+  async createWebRTCOffer(): Promise<RTCSessionDescriptionInit> {
+    if (!this.peerConnection) {
+      throw new Error('Peer connection not initialized');
+    }
+
+    const offer = await this.peerConnection.createOffer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: true
+    });
+    await this.peerConnection.setLocalDescription(offer);
+    return offer;
   }
 
   // Cleanup
@@ -408,29 +365,16 @@ class WebRTCService {
     return this.dataChannel?.readyState === 'open';
   }
 
-  // Omegle-style methods
-  findMatch(): void {
-    if (this.socket) {
-      this.socket.emit('find-match');
-    }
-  }
-
+  // Session management
   nextMatch(): void {
     this.close();
     this.currentMatchUserId = null;
     this.currentSessionId = null;
-    this.isConnected = false;
-    this.findMatch();
   }
 
   cleanup(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
     this.currentMatchUserId = null;
     this.currentSessionId = null;
-    this.isConnected = false;
     this.close();
   }
 }

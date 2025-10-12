@@ -46,10 +46,7 @@ const Chat: React.FC = () => {
       }
     });
 
-    webRTCRef.current.onSearchingForMatch((data: { position: number, totalWaiting: number }) => {
-      setQueueInfo(data);
-      setIsSearching(true);
-    });
+    // Removed - matching handled by socket context
 
     // Start local video
     startLocalVideo();
@@ -82,7 +79,7 @@ const Chat: React.FC = () => {
 
   const findMatch = () => {
     setIsSearching(true);
-    webRTCRef.current?.findMatch();
+    // Removed - findMatch handled by socket
   };
 
   const nextMatch = () => {
