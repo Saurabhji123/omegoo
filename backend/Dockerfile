@@ -12,8 +12,9 @@ COPY tsconfig.json ./
 # Install dependencies
 RUN npm install
 
-# Copy only source code
+# Copy source code and public folder
 COPY src ./src
+COPY public ./public
 
 # Build
 RUN npm run build
