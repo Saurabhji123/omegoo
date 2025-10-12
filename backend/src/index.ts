@@ -251,9 +251,16 @@ process.on('unhandledRejection', (reason, promise) => {
 // Keep server alive with periodic self-ping (Render free tier workaround)
 function keepServerAlive() {
   if (process.env.NODE_ENV === 'production' && process.env.RENDER_SERVICE_NAME) {
+    const https = require('https');
+    
     const selfPing = () => {
       const url = `https://${process.env.RENDER_SERVICE_NAME}.onrender.com/keepalive`;
-      fetch(url).catch(() => {}); // Silent ping
+      https.get(url, (res: any) => {
+        // Silent ping - just consume response
+        res.on('data', () => {});
+      }).on('error', () => {
+        // Silent error - keep-alive should not crash server
+      });
     };
     
     // Ping every 10 minutes to prevent sleep
