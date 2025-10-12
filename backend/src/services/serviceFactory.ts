@@ -5,10 +5,8 @@ import { DatabaseService as DevDatabaseService } from './database-dev';
 import { RedisService as DevRedisService } from './redis-dev';
 
 export class ServiceFactory {
-  // Use more explicit environment detection
-  private static _isDevelopment = process.env.NODE_ENV === 'development' || 
-                                   !process.env.NODE_ENV || 
-                                   process.env.NODE_ENV === 'dev';
+  // Force development mode for now (no external database needed)
+  private static _isDevelopment = true;
 
   static get DatabaseService() {
     console.log(`🔧 ServiceFactory: NODE_ENV=${process.env.NODE_ENV}, isDevelopment=${this._isDevelopment}`);
