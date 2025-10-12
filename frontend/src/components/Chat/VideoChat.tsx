@@ -142,9 +142,15 @@ const VideoChat: React.FC = () => {
 
       socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string }) => {
         console.log('💬 Received text message in video chat:', data);
+        console.log('🔍 Session comparison:', { 
+          received: data.sessionId, 
+          current: sessionId, 
+          match: data.sessionId === sessionId 
+        });
+        
         if (data.sessionId === sessionId) {
           addMessage(data.content, false);
-          console.log(`✅ Message displayed from ${data.fromUserId}`);
+          console.log(`✅ Message displayed from ${data.fromUserId}: "${data.content}"`);
         } else {
           console.log(`⚠️ Message ignored - wrong session (got: ${data.sessionId}, expected: ${sessionId})`);
         }
@@ -441,32 +447,29 @@ const VideoChat: React.FC = () => {
   };
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !isMatchConnected || !sessionId || !socket) return;
+    if (!messageInput.trim() || !isMatchConnected || !sessionId || !socket) {
+      console.warn('❌ Cannot send message:', {
+        hasInput: !!messageInput.trim(),
+        isMatchConnected,
+        hasSessionId: !!sessionId,
+        hasSocket: !!socket
+      });
+      return;
+    }
     
     const content = messageInput.trim();
     addMessage(content, true);
     
-    // Try to send via data channel first (direct P2P)
-    let sentViaDataChannel = false;
-    if (webRTCRef.current) {
-      try {
-        webRTCRef.current.sendMessage(content);
-        sentViaDataChannel = true;
-        console.log('📤 Sent message via data channel (P2P):', content);
-      } catch (error) {
-        console.warn('⚠️ Data channel not available, falling back to socket');
-      }
-    }
+    console.log('📨 Sending message:', content);
+    console.log('🔄 Data channel status:', webRTCRef.current?.isDataChannelOpen);
     
-    // Fallback to socket if data channel failed
-    if (!sentViaDataChannel) {
-      socket.emit('chat_message', {
-        sessionId,
-        content,
-        type: 'text'
-      });
-      console.log('📤 Sent message via socket:', content);
-    }
+    // For now, always use socket for reliability (data channel can be flaky)
+    socket.emit('chat_message', {
+      sessionId,
+      content,
+      type: 'text'
+    });
+    console.log('✅ Sent message via socket:', content);
     
     setMessageInput('');
   };
