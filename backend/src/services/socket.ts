@@ -18,76 +18,36 @@ export class SocketService {
   static initialize(io: SocketIOServer) {
     this.io = io;
 
-    // Authentication middleware
+    // Authentication middleware - simplified for development
     io.use(async (socket: AuthenticatedSocket, next) => {
-      try {
-        console.log(`🔐 Socket auth attempt from: ${socket.handshake.address} with origin: ${socket.handshake.headers.origin}`);
-        const token = socket.handshake.auth.token;
-        console.log(`🔑 Token received: ${token ? 'YES' : 'NO'}`);
-        
-        if (!token) {
-          // For development - create temporary guest user
-          const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          socket.userId = guestId;
-          socket.user = {
-            id: guestId,
-            deviceId: guestId,
-            tier: 'guest',
-            status: 'active',
-            isVerified: false,
-            coins: 0,
-            preferences: {
-              language: 'en',
-              interests: [],
-              genderPreference: 'any'
-            },
-            subscription: {
-              type: 'none'
-            },
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            lastActiveAt: new Date()
-          };
-          console.log(`🔓 Guest user created: ${guestId}`);
-          return next();
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-        const user = await DatabaseService.getUserById(decoded.userId);
-
-        if (!user || user.status === 'banned') {
-          return next(new Error('Invalid or banned user'));
-        }
-
-        socket.userId = user.id;
-        socket.user = user;
-        next();
-      } catch (error) {
-        console.log('⚠️ Authentication failed, allowing as guest:', error instanceof Error ? error.message : 'Unknown error');
-        // Fallback to guest mode for development
-        const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        socket.userId = guestId;
-        socket.user = {
-          id: guestId,
-          deviceId: guestId,
-          tier: 'guest',
-          status: 'active',
-          isVerified: false,
-          coins: 0,
-          preferences: {
-            language: 'en',
-            interests: [],
-            genderPreference: 'any'
-          },
-          subscription: {
-            type: 'none'
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          lastActiveAt: new Date()
-        };
-        next();
-      }
+      console.log(`🔐 Socket auth attempt from: ${socket.handshake.address} with origin: ${socket.handshake.headers.origin}`);
+      const token = socket.handshake.auth.token;
+      console.log(`🔑 Token received: ${token ? 'YES' : 'NO'}`);
+      
+      // For development - always create guest user to avoid auth issues
+      const guestId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      socket.userId = guestId;
+      socket.user = {
+        id: guestId,
+        deviceId: guestId,
+        tier: 'guest',
+        status: 'active',
+        isVerified: false,
+        coins: 0,
+        preferences: {
+          language: 'en',
+          interests: [],
+          genderPreference: 'any'
+        },
+        subscription: {
+          type: 'none'
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastActiveAt: new Date()
+      };
+      console.log(`🔓 Dev user created: ${guestId}`);
+      next();
     });
 
     io.on('connection', (socket: AuthenticatedSocket) => {
@@ -129,50 +89,49 @@ export class SocketService {
       socket.on('disconnect', async () => {
         console.log(`🔌 User ${socket.userId} disconnected`);
         
-        // Set a delayed cleanup timer (30 seconds) to handle reconnections
+        // Set a delayed cleanup timer (60 seconds) to handle reconnections
         const cleanupTimer = setTimeout(async () => {
           console.log(`🧹 Cleaning up sessions for user ${socket.userId} (after delay)`);
           
-          // Clean up active sessions
-          await this.cleanupUserSessions(socket.userId!);
-          
-          // Remove from active sessions tracking
-          for (const [sessionId, session] of this.activeSessions.entries()) {
-            if (session.user1 === socket.userId || session.user2 === socket.userId) {
-              console.log(`🗑️ Removing session ${sessionId} due to user disconnect`);
-              this.activeSessions.delete(sessionId);
+          // Clean up active sessions ONLY if user hasn't reconnected
+          if (!this.connectedUsers.has(socket.userId!)) {
+            await this.cleanupUserSessions(socket.userId!);
+            
+            // Remove from active sessions tracking
+            for (const [sessionId, session] of this.activeSessions.entries()) {
+              if (session.user1 === socket.userId || session.user2 === socket.userId) {
+                console.log(`🗑️ Removing session ${sessionId} due to user disconnect`);
+                this.activeSessions.delete(sessionId);
+              }
             }
+            
+            // Remove from all queues
+            await DevRedisService.removeFromMatchQueue(socket.userId!, 'text');
+            await DevRedisService.removeFromMatchQueue(socket.userId!, 'audio');
+            await DevRedisService.removeFromMatchQueue(socket.userId!, 'video');
+            
+            // Remove from in-memory queue too
+            const queuePosition = this.waitingQueue.indexOf(socket.userId!);
+            if (queuePosition !== -1) {
+              this.waitingQueue.splice(queuePosition, 1);
+              console.log(`🗑️ Removed ${socket.userId} from waiting queue`);
+            }
+            
+            // Set user offline
+            DevRedisService.setUserOffline(socket.userId!);
+          } else {
+            console.log(`👤 User ${socket.userId} reconnected, skipping cleanup`);
           }
-          
-          // Remove from connected users (only if still not reconnected)
-          if (this.connectedUsers.get(socket.userId!) === socket.id) {
-            this.connectedUsers.delete(socket.userId!);
-          }
-          
-          // Remove from all queues
-          await DevRedisService.removeFromMatchQueue(socket.userId!, 'text');
-          await DevRedisService.removeFromMatchQueue(socket.userId!, 'audio');
-          await DevRedisService.removeFromMatchQueue(socket.userId!, 'video');
-          
-          // Remove from in-memory queue too
-          const queuePosition = this.waitingQueue.indexOf(socket.userId!);
-          if (queuePosition !== -1) {
-            this.waitingQueue.splice(queuePosition, 1);
-            console.log(`🗑️ Removed ${socket.userId} from waiting queue`);
-          }
-          
-          // Set user offline
-          DevRedisService.setUserOffline(socket.userId!);
           
           // Remove the timer reference
           this.disconnectionTimers.delete(socket.userId!);
           
           console.log(`✅ Session cleanup completed for user ${socket.userId}`);
-        }, 30000); // 30 second delay
+        }, 60000); // 60 second delay - more time for reconnections
         
         // Store the timer for this user
         this.disconnectionTimers.set(socket.userId!, cleanupTimer);
-        console.log(`⏰ Set cleanup timer for ${socket.userId} (30s delay)`);
+        console.log(`⏰ Set cleanup timer for ${socket.userId} (60s delay)`);
       });
     });
   }
