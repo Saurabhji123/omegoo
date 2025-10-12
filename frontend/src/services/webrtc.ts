@@ -31,7 +31,22 @@ class WebRTCService {
 
     // Handle remote stream
     this.peerConnection.ontrack = (event) => {
+      console.log('🎥 Received remote track:', {
+        kind: event.track.kind,
+        streams: event.streams.length,
+        enabled: event.track.enabled
+      });
+      
       this.remoteStream = event.streams[0];
+      
+      if (this.remoteStream) {
+        console.log('📺 Remote stream details:', {
+          video: this.remoteStream.getVideoTracks().length > 0,
+          audio: this.remoteStream.getAudioTracks().length > 0,
+          tracks: this.remoteStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled }))
+        });
+      }
+      
       if (this.onRemoteStream) {
         this.onRemoteStream(this.remoteStream);
       }
@@ -40,10 +55,21 @@ class WebRTCService {
     // Handle data channel messages
     this.peerConnection.ondatachannel = (event) => {
       const channel = event.channel;
+      console.log('📨 Data channel received:', channel.label);
+      
+      channel.onopen = () => {
+        console.log('📨 Incoming data channel opened');
+      };
+      
       channel.onmessage = (event) => {
+        console.log('📩 Received message via data channel:', event.data);
         if (this.onMessage) {
           this.onMessage(event.data);
         }
+      };
+      
+      channel.onclose = () => {
+        console.log('📨 Incoming data channel closed');
       };
     };
 
@@ -87,14 +113,15 @@ class WebRTCService {
   async initializeMedia(constraints: MediaStreamConstraints): Promise<MediaStream> {
     try {
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('🎥 Local media stream initialized:', {
+        video: this.localStream.getVideoTracks().length > 0,
+        audio: this.localStream.getAudioTracks().length > 0,
+        tracks: this.localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled }))
+      });
       
-      if (this.peerConnection) {
-        // Add local stream tracks to peer connection
-        this.localStream.getTracks().forEach(track => {
-          this.peerConnection!.addTrack(track, this.localStream!);
-        });
-      }
-
+      // NOTE: Don't add tracks here, add them when creating offer/answer
+      // This prevents duplicate tracks
+      
       return this.localStream;
     } catch (error) {
       console.error('Error accessing media devices:', error);
@@ -146,9 +173,34 @@ class WebRTCService {
       throw new Error('Peer connection not initialized');
     }
 
+    // Ensure local stream is added before handling offer
+    if (this.localStream) {
+      console.log('🎥 Adding local stream tracks to peer connection (receiver)');
+      
+      // Check if tracks are already added to avoid duplicates
+      const existingSenders = this.peerConnection.getSenders();
+      
+      this.localStream.getTracks().forEach(track => {
+        if (this.peerConnection) {
+          // Check if this track is already added
+          const trackAlreadyAdded = existingSenders.some(sender => sender.track === track);
+          
+          if (!trackAlreadyAdded) {
+            this.peerConnection.addTrack(track, this.localStream!);
+            console.log(`📡 Added ${track.kind} track to peer connection (receiver)`);
+          } else {
+            console.log(`⚠️ ${track.kind} track already added, skipping`);
+          }
+        }
+      });
+    }
+
     await this.peerConnection.setRemoteDescription(offer);
+    console.log('📞 Set remote description (offer)');
+    
     const answer = await this.peerConnection.createAnswer();
     await this.peerConnection.setLocalDescription(answer);
+    console.log('📞 Created and set local description (answer)');
     
     return answer;
   }
@@ -184,8 +236,10 @@ class WebRTCService {
   sendMessage(message: string): void {
     if (this.dataChannel && this.dataChannel.readyState === 'open') {
       this.dataChannel.send(message);
+      console.log('📤 Message sent via data channel:', message);
     } else {
-      console.error('Data channel not open');
+      console.error('❌ Data channel not open, state:', this.dataChannel?.readyState);
+      throw new Error('Data channel not available');
     }
   }
 
@@ -320,11 +374,36 @@ class WebRTCService {
       throw new Error('Peer connection not initialized');
     }
 
+    // Ensure local stream is added before creating offer
+    if (this.localStream) {
+      console.log('🎥 Adding local stream tracks to peer connection');
+      
+      // Check if tracks are already added to avoid duplicates
+      const existingSenders = this.peerConnection.getSenders();
+      
+      this.localStream.getTracks().forEach(track => {
+        if (this.peerConnection) {
+          // Check if this track is already added
+          const trackAlreadyAdded = existingSenders.some(sender => sender.track === track);
+          
+          if (!trackAlreadyAdded) {
+            this.peerConnection.addTrack(track, this.localStream!);
+            console.log(`📡 Added ${track.kind} track to peer connection`);
+          } else {
+            console.log(`⚠️ ${track.kind} track already added, skipping`);
+          }
+        }
+      });
+    } else {
+      console.warn('⚠️ No local stream available when creating offer');
+    }
+
     const offer = await this.peerConnection.createOffer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: true
     });
     await this.peerConnection.setLocalDescription(offer);
+    console.log('📞 Created and set local description (offer)');
     return offer;
   }
 

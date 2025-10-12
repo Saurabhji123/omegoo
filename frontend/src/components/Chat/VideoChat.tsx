@@ -44,9 +44,23 @@ const VideoChat: React.FC = () => {
     
     // Set up event listeners
     webRTCRef.current.onRemoteStreamReceived((stream: MediaStream) => {
+      console.log('📺 Remote stream received in component:', {
+        video: stream.getVideoTracks().length > 0,
+        audio: stream.getAudioTracks().length > 0
+      });
+      
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = stream;
+        console.log('✅ Remote stream assigned to video element');
+        
+        // Ensure remote video plays
+        remoteVideoRef.current.play().catch(error => {
+          console.warn('Remote video autoplay prevented:', error);
+        });
+        
+        addMessage('Partner\'s video connected!', false);
       }
+      
       setIsConnected(true);
       setIsSearching(false);
     });
@@ -71,8 +85,19 @@ const VideoChat: React.FC = () => {
         if (webRTCRef.current) {
           webRTCRef.current.setSocket(socket, data.sessionId, data.matchUserId);
           
+          // IMPORTANT: Start local video first before setting up peer connection
+          try {
+            await startLocalVideo();
+            console.log('📹 Local video started for peer connection');
+          } catch (error) {
+            console.error('❌ Failed to start local video:', error);
+            addMessage('Camera access required for video chat', false);
+            return;
+          }
+          
           // Set up ICE candidate handling through main socket
           webRTCRef.current.setIceCandidateCallback((candidate: RTCIceCandidate) => {
+            console.log('🧊 Sending ICE candidate to peer');
             socket.emit('ice-candidate', {
               candidate: candidate,
               targetUserId: data.matchUserId,
@@ -80,16 +105,25 @@ const VideoChat: React.FC = () => {
             });
           });
           
+          // Set up data channel message handling
+          webRTCRef.current.onMessageReceived((message: string) => {
+            console.log('📩 Received data channel message:', message);
+            addMessage(message, false);
+          });
+          
           // If we're the initiator, create and send offer
           if (data.isInitiator) {
             try {
-              const offer = await webRTCRef.current.createWebRTCOffer();
-              socket.emit('webrtc-offer', { 
-                offer, 
-                targetUserId: data.matchUserId,
-                sessionId: data.sessionId 
-              });
-              console.log('📞 Sent WebRTC offer as initiator');
+              // Small delay to ensure local stream is properly added
+              setTimeout(async () => {
+                const offer = await webRTCRef.current!.createWebRTCOffer();
+                socket.emit('webrtc-offer', { 
+                  offer, 
+                  targetUserId: data.matchUserId,
+                  sessionId: data.sessionId 
+                });
+                console.log('📞 Sent WebRTC offer as initiator');
+              }, 1000);
             } catch (error) {
               console.error('❌ Failed to create offer:', error);
               addMessage('Failed to establish video connection', false);
@@ -239,20 +273,37 @@ const VideoChat: React.FC = () => {
     try {
       const constraints = {
         video: {
-          width: { ideal: 320 },
-          height: { ideal: 240 },
-          facingMode: 'user'
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          facingMode: 'user',
+          frameRate: { ideal: 15, max: 30 }
         },
-        audio: true
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
       };
+      
+      console.log('🎥 Requesting user media with constraints:', constraints);
       const stream = await webRTCRef.current?.initializeMedia(constraints);
+      
       if (stream && localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
         setCameraBlocked(false);
+        console.log('✅ Local video stream set to video element');
+        
+        // Ensure video plays
+        try {
+          await localVideoRef.current.play();
+        } catch (playError) {
+          console.warn('Auto-play prevented, user interaction needed');
+        }
       }
     } catch (error) {
-      console.error('Failed to start local video:', error);
+      console.error('❌ Failed to start local video:', error);
       setCameraBlocked(true);
+      addMessage('Camera/microphone access denied. Please allow access and refresh.', false);
     }
   };
 
@@ -338,14 +389,29 @@ const VideoChat: React.FC = () => {
     const content = messageInput.trim();
     addMessage(content, true);
     
-    socket.emit('chat_message', {
-      sessionId,
-      content,
-      type: 'text'
-    });
+    // Try to send via data channel first (direct P2P)
+    let sentViaDataChannel = false;
+    if (webRTCRef.current) {
+      try {
+        webRTCRef.current.sendMessage(content);
+        sentViaDataChannel = true;
+        console.log('📤 Sent message via data channel (P2P):', content);
+      } catch (error) {
+        console.warn('⚠️ Data channel not available, falling back to socket');
+      }
+    }
+    
+    // Fallback to socket if data channel failed
+    if (!sentViaDataChannel) {
+      socket.emit('chat_message', {
+        sessionId,
+        content,
+        type: 'text'
+      });
+      console.log('📤 Sent message via socket:', content);
+    }
     
     setMessageInput('');
-    console.log('📤 Sent message:', content);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
