@@ -110,8 +110,15 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
     });
 
-    socket.on('match_found', (session: ChatSession) => {
+    // Updated event names to match backend
+    socket.on('match-found', (session: ChatSession) => {
       console.log('Match found:', session);
+      dispatch({ type: 'SET_SESSION', payload: session });
+      dispatch({ type: 'SET_MATCHING_STATUS', payload: 'matched' });
+    });
+
+    socket.on('match_found', (session: ChatSession) => {
+      console.log('Match found (legacy):', session);
       dispatch({ type: 'SET_SESSION', payload: session });
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'matched' });
     });
@@ -164,7 +171,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const startMatching = (preferences?: any) => {
     if (state.socket && state.connected) {
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'searching' });
-      state.socket.emit('start_matching', preferences);
+      state.socket.emit('find_match', preferences || { mode: 'video' });
     }
   };
 

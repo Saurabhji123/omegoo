@@ -114,10 +114,21 @@ const VideoChat: React.FC = () => {
 
   // Auto-start matching when component mounts and socket is ready
   useEffect(() => {
-    if (socket && !isConnected && !isSearching) {
-      setTimeout(() => {
-        startNewChat();
-      }, 1000); // Small delay to ensure WebRTC is initialized
+    if (socket) {
+      console.log('🔌 Socket status:', {
+        connected: socket.connected,
+        id: socket.id,
+        transport: socket.io.engine.transport.name
+      });
+      
+      if (socket.connected && !isConnected && !isSearching) {
+        console.log('🚀 Auto-starting chat matching...');
+        setTimeout(() => {
+          startNewChat();
+        }, 1000); // Small delay to ensure WebRTC is initialized
+      } else if (!socket.connected) {
+        addMessage('Connecting to server...', false);
+      }
     }
   }, [socket]);
 
@@ -158,7 +169,14 @@ const VideoChat: React.FC = () => {
 
   const startNewChat = () => {
     if (!socket) {
-      console.error('Socket not available');
+      console.error('❌ Socket not available');
+      addMessage('Connection error. Please refresh the page.', false);
+      return;
+    }
+    
+    if (!socket.connected) {
+      console.error('❌ Socket not connected');
+      addMessage('Not connected to server. Please check your internet.', false);
       return;
     }
     
@@ -167,7 +185,8 @@ const VideoChat: React.FC = () => {
     setMessages([]);
     setSessionId(null);
     
-    // Emit to socket for matching
+    // Emit to socket for matching with detailed logging
+    console.log('🔍 Emitting find_match event with mode: video');
     socket.emit('find_match', { mode: 'video' });
     
     // Initialize WebRTC if needed
@@ -176,6 +195,7 @@ const VideoChat: React.FC = () => {
     }
     
     console.log('🔍 Started searching for video chat partner');
+    addMessage('Searching for someone to chat with...', false);
   };
 
   const nextMatch = () => {
@@ -238,31 +258,31 @@ const VideoChat: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-900 flex">
-      {/* Left Panel - Video Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-primary-600 dark:bg-primary-700 px-4 py-3 flex items-center justify-between shadow-lg">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-white text-2xl font-bold">Omegoo</h1>
-            <span className="text-primary-100 text-sm">Talk to strangers!</span>
+    <div className="fixed inset-0 bg-gray-900 flex flex-col lg:flex-row">
+      {/* Main Video Area */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Header - More compact on mobile */}
+        <div className="bg-primary-600 dark:bg-primary-700 px-3 py-2 lg:px-4 lg:py-3 flex items-center justify-between shadow-lg safe-area-top">
+          <div className="flex items-center space-x-2 lg:space-x-4">
+            <h1 className="text-white text-lg lg:text-2xl font-bold">Omegoo</h1>
+            <span className="text-primary-100 text-xs lg:text-sm hidden sm:inline">Talk to strangers!</span>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${
+          <div className="flex items-center space-x-2 lg:space-x-3">
+            <div className={`w-2 h-2 lg:w-3 lg:h-3 rounded-full ${
               isConnected ? 'bg-green-400' : 
               isSearching ? 'bg-yellow-400' : 'bg-red-400'
             }`}></div>
-            <span className="text-white text-sm font-medium">
+            <span className="text-white text-xs lg:text-sm font-medium">
               {isConnected ? 'Connected' : isSearching ? 'Connecting...' : 'Disconnected'}
             </span>
           </div>
         </div>
 
-        {/* Video Container */}
-        <div className="flex-1 bg-black relative">
+        {/* Video Container - Responsive */}
+        <div className="flex-1 bg-black relative min-h-0">
           {/* Camera Blocked Warning */}
           {cameraBlocked && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded z-10">
+            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-3 py-2 rounded text-sm z-10">
               Camera blocked. Please enable it and try again.
             </div>
           )}
@@ -277,25 +297,25 @@ const VideoChat: React.FC = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-500">
+              <div className="w-full h-full flex items-center justify-center text-gray-500 p-4">
                 {isSearching ? (
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p>Looking for someone you can chat with...</p>
+                    <div className="animate-spin rounded-full h-8 w-8 lg:h-12 lg:w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-sm lg:text-base">Looking for someone you can chat with...</p>
                   </div>
                 ) : (
                   <div className="text-center">
-                    <VideoCameraSlashIcon className="w-24 h-24 mx-auto mb-4 text-gray-600" />
-                    <p>Your partner's video will appear here</p>
+                    <VideoCameraSlashIcon className="w-16 h-16 lg:w-24 lg:h-24 mx-auto mb-4 text-gray-600" />
+                    <p className="text-sm lg:text-base">Your partner's video will appear here</p>
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* Local Video - Bottom Left */}
-          <div className="absolute bottom-4 left-4">
-            <div className="w-40 h-28 bg-gray-800 rounded border-2 border-gray-600 overflow-hidden">
+          {/* Local Video - Responsive positioning */}
+          <div className="absolute bottom-20 right-2 lg:bottom-4 lg:left-4">
+            <div className="w-24 h-18 lg:w-40 lg:h-28 bg-gray-800 rounded border-2 border-gray-600 overflow-hidden">
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -306,69 +326,70 @@ const VideoChat: React.FC = () => {
               />
               {!isCameraOn && (
                 <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                  <VideoCameraSlashIcon className="w-8 h-8 text-gray-400" />
+                  <VideoCameraSlashIcon className="w-4 h-4 lg:w-8 lg:h-8 text-gray-400" />
                 </div>
               )}
             </div>
           </div>
 
-          {/* Controls - Bottom Center */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-            <div className="flex space-x-3">
+          {/* Controls - Mobile friendly */}
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 lg:bottom-4">
+            <div className="flex space-x-2 lg:space-x-3">
               {/* Camera Toggle */}
               <button
                 onClick={toggleCamera}
-                className={`p-2 rounded-full ${
+                className={`p-2 lg:p-3 rounded-full ${
                   isCameraOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'
-                } text-white transition-colors`}
+                } text-white transition-colors touch-manipulation`}
               >
                 {isCameraOn ? (
-                  <VideoCameraIcon className="w-5 h-5" />
+                  <VideoCameraIcon className="w-4 h-4 lg:w-5 lg:h-5" />
                 ) : (
-                  <VideoCameraSlashIcon className="w-5 h-5" />
+                  <VideoCameraSlashIcon className="w-4 h-4 lg:w-5 lg:h-5" />
                 )}
               </button>
 
               {/* Mic Toggle */}
               <button
                 onClick={toggleMic}
-                className={`p-2 rounded-full ${
+                className={`p-2 lg:p-3 rounded-full ${
                   isMicOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'
-                } text-white transition-colors`}
+                } text-white transition-colors touch-manipulation`}
               >
                 {isMicOn ? (
-                  <MicrophoneIcon className="w-5 h-5" />
+                  <MicrophoneIcon className="w-4 h-4 lg:w-5 lg:h-5" />
                 ) : (
-                  <MicrophoneSlashIcon className="w-5 h-5" />
+                  <MicrophoneSlashIcon className="w-4 h-4 lg:w-5 lg:h-5" />
                 )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Bottom Actions */}
-        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-4">
-          <div className="flex justify-center space-x-4">
+        {/* Bottom Actions - Mobile Responsive */}
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-3 py-3 lg:px-4 lg:py-4 safe-area-bottom">
+          {/* Main Action Buttons */}
+          <div className="flex justify-center space-x-2 lg:space-x-4 mb-3">
             <button
               onClick={startNewChat}
-              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm"
+              className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 lg:px-6 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
               disabled={isSearching}
             >
-              {isSearching ? 'Connecting...' : 'New chat'}
+              {isSearching ? 'Connecting...' : 'New'}
             </button>
             
             {isConnected && (
               <>
                 <button
                   onClick={nextMatch}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
                 >
                   Next
                 </button>
                 
                 <button
                   onClick={handleReport}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
                 >
                   Report
                 </button>
@@ -377,51 +398,50 @@ const VideoChat: React.FC = () => {
 
             <button
               onClick={stopChat}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
             >
               Stop
             </button>
 
             <button
               onClick={() => navigate('/')}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
             >
               Home
             </button>
           </div>
 
-          <div className="flex justify-center mt-4 space-x-4 text-sm">
+          {/* Quick Options - Stack on mobile */}
+          <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-4 space-y-2 sm:space-y-0 text-xs lg:text-sm">
             <button 
               onClick={() => setShowTextChat(!showTextChat)}
-              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium"
+              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation"
             >
-              {showTextChat ? 'Hide text chat' : 'Show text chat'}
+              {showTextChat ? 'Hide text' : 'Show text'}
             </button>
-            <span className="text-gray-400">or</span>
             <button 
               onClick={() => navigate('/chat/text')}
-              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium"
+              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation"
             >
-              switch to text
+              Text only
             </button>
-            <span className="text-gray-400">or</span>
-            <button className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium">
-              unmoderated section
+            <button className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation">
+              Unmoderated
             </button>
           </div>
         </div>
       </div>
 
-      {/* Right Panel - Text Chat (if shown) */}
+      {/* Text Chat Panel - Responsive */}
       {showTextChat && (
-        <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
+        <div className="absolute lg:relative inset-x-0 bottom-0 lg:inset-auto lg:w-80 bg-gray-800 border-t lg:border-l lg:border-t-0 border-gray-700 flex flex-col max-h-80 lg:max-h-full">
           {/* Chat Header */}
-          <div className="bg-gray-700 px-4 py-3 border-b border-gray-600">
+          <div className="bg-gray-700 px-3 py-2 lg:px-4 lg:py-3 border-b border-gray-600">
             <div className="flex items-center justify-between">
-              <h3 className="text-white font-medium">Text Chat</h3>
+              <h3 className="text-white font-medium text-sm lg:text-base">Text Chat</h3>
               <button
                 onClick={() => setShowTextChat(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white text-lg lg:text-xl touch-manipulation"
               >
                 ×
               </button>
@@ -429,11 +449,11 @@ const VideoChat: React.FC = () => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-3 lg:p-4 space-y-2 lg:space-y-3 min-h-0">
             {messages.length === 0 ? (
-              <div className="text-center text-gray-500 mt-8">
-                <ChatBubbleLeftRightIcon className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-                <p className="text-sm">Start typing to chat with your partner</p>
+              <div className="text-center text-gray-500 mt-4 lg:mt-8">
+                <ChatBubbleLeftRightIcon className="w-8 h-8 lg:w-12 lg:h-12 mx-auto mb-2 lg:mb-3 text-gray-600" />
+                <p className="text-xs lg:text-sm">Start typing to chat with your partner</p>
               </div>
             ) : (
               <>
@@ -443,11 +463,11 @@ const VideoChat: React.FC = () => {
                     className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                      className={`max-w-xs px-2 py-1 lg:px-3 lg:py-2 rounded-lg text-xs lg:text-sm ${
                         message.isOwnMessage
                           ? 'bg-primary-600 text-white'
                           : message.content.includes('Connected!') || message.content.includes('ended') || message.content.includes('Error:')
-                          ? 'bg-gray-600 text-gray-200 text-center text-xs'
+                          ? 'bg-gray-600 text-gray-200 text-center'
                           : 'bg-gray-700 text-gray-200'
                       }`}
                     >
@@ -469,7 +489,7 @@ const VideoChat: React.FC = () => {
 
           {/* Message Input */}
           {(isConnected || isSearching) && (
-            <div className="p-4 border-t border-gray-700">
+            <div className="p-3 lg:p-4 border-t border-gray-700">
               <div className="flex space-x-2">
                 <input
                   type="text"
@@ -477,12 +497,12 @@ const VideoChat: React.FC = () => {
                   onChange={(e) => setMessageInput(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Type a message..."
-                  className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                  className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm touch-manipulation"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!messageInput.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors"
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors touch-manipulation"
                 >
                   <PaperAirplaneIcon className="w-4 h-4" />
                 </button>
