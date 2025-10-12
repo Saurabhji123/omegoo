@@ -61,14 +61,21 @@ class WebRTCService {
     // Handle data channel messages
     this.peerConnection.ondatachannel = (event) => {
       const channel = event.channel;
-      console.log('📨 Data channel received:', channel.label);
+      console.log('📨 Data channel received (receiver):', channel.label);
+      
+      // Set this as our data channel for the receiver
+      this.dataChannel = channel;
       
       channel.onopen = () => {
-        console.log('📨 Incoming data channel opened');
+        console.log('✅ Incoming data channel opened (receiver)');
+      };
+      
+      channel.onclose = () => {
+        console.log('❌ Incoming data channel closed (receiver)');
       };
       
       channel.onmessage = (event) => {
-        console.log('📩 Received message via data channel:', event.data);
+        console.log('📩 Received message via data channel (receiver):', event.data);
         if (this.onMessage) {
           this.onMessage(event.data);
         }
@@ -94,18 +101,7 @@ class WebRTCService {
       }
     };
 
-    // Create data channel for text messages
-    this.dataChannel = this.peerConnection.createDataChannel('messages', {
-      ordered: true,
-    });
-
-    this.dataChannel.onopen = () => {
-      console.log('Data channel opened');
-    };
-
-    this.dataChannel.onclose = () => {
-      console.log('Data channel closed');
-    };
+    // Data channel will be created when needed (caller creates, receiver gets via ondatachannel)
   }
 
   // Set external socket for signaling (no longer creates its own)
@@ -141,25 +137,90 @@ class WebRTCService {
       throw new Error('Peer connection not initialized');
     }
 
+    // Create data channel for text messages (caller creates it)
+    if (!this.dataChannel) {
+      this.dataChannel = this.peerConnection.createDataChannel('messages', {
+        ordered: true,
+      });
+
+      this.dataChannel.onopen = () => {
+        console.log('✅ Data channel opened (caller)');
+      };
+
+      this.dataChannel.onclose = () => {
+        console.log('❌ Data channel closed (caller)');
+      };
+
+      this.dataChannel.onmessage = (event) => {
+        console.log('📩 Received message via data channel (caller):', event.data);
+        if (this.onMessage) {
+          this.onMessage(event.data);
+        }
+      };
+    }
+
+    // Add local stream tracks BEFORE creating offer
+    if (this.localStream) {
+      console.log('📡 Adding local tracks to peer connection (caller)');
+      const existingSenders = this.peerConnection.getSenders();
+      
+      this.localStream.getTracks().forEach(track => {
+        if (this.peerConnection) {
+          // Check if this track is already added
+          const trackAlreadyAdded = existingSenders.some(sender => sender.track === track);
+          
+          if (!trackAlreadyAdded) {
+            this.peerConnection.addTrack(track, this.localStream!);
+            console.log(`📡 Added ${track.kind} track to peer connection (caller)`);
+          } else {
+            console.log(`⚠️ ${track.kind} track already added, skipping`);
+          }
+        }
+      });
+    }
+
     const offer = await this.peerConnection.createOffer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: true,
     });
 
     await this.peerConnection.setLocalDescription(offer);
+    console.log('📞 Created and set local description (offer)');
     return offer;
   }
 
-  // Create answer (callee)
+  // Create answer (callee) 
   async createAnswer(offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
     if (!this.peerConnection) {
       throw new Error('Peer connection not initialized');
     }
 
     await this.peerConnection.setRemoteDescription(offer);
+    console.log('📞 Set remote description (offer)');
+    
+    // Add local stream tracks BEFORE creating answer
+    if (this.localStream) {
+      console.log('📡 Adding local tracks to peer connection (answerer)');
+      const existingSenders = this.peerConnection.getSenders();
+      
+      this.localStream.getTracks().forEach(track => {
+        if (this.peerConnection) {
+          // Check if this track is already added
+          const trackAlreadyAdded = existingSenders.some(sender => sender.track === track);
+          
+          if (!trackAlreadyAdded) {
+            this.peerConnection.addTrack(track, this.localStream!);
+            console.log(`📡 Added ${track.kind} track to peer connection (answerer)`);
+          } else {
+            console.log(`⚠️ ${track.kind} track already added, skipping`);
+          }
+        }
+      });
+    }
     
     const answer = await this.peerConnection.createAnswer();
     await this.peerConnection.setLocalDescription(answer);
+    console.log('📞 Created and set local description (answer)');
     
     return answer;
   }
@@ -179,36 +240,8 @@ class WebRTCService {
       throw new Error('Peer connection not initialized');
     }
 
-    // Ensure local stream is added before handling offer
-    if (this.localStream) {
-      console.log('🎥 Adding local stream tracks to peer connection (receiver)');
-      
-      // Check if tracks are already added to avoid duplicates
-      const existingSenders = this.peerConnection.getSenders();
-      
-      this.localStream.getTracks().forEach(track => {
-        if (this.peerConnection) {
-          // Check if this track is already added
-          const trackAlreadyAdded = existingSenders.some(sender => sender.track === track);
-          
-          if (!trackAlreadyAdded) {
-            this.peerConnection.addTrack(track, this.localStream!);
-            console.log(`📡 Added ${track.kind} track to peer connection (receiver)`);
-          } else {
-            console.log(`⚠️ ${track.kind} track already added, skipping`);
-          }
-        }
-      });
-    }
-
-    await this.peerConnection.setRemoteDescription(offer);
-    console.log('📞 Set remote description (offer)');
-    
-    const answer = await this.peerConnection.createAnswer();
-    await this.peerConnection.setLocalDescription(answer);
-    console.log('📞 Created and set local description (answer)');
-    
-    return answer;
+    // Use the createAnswer method which handles track addition
+    return await this.createAnswer(offer);
   }
 
   // Handle incoming WebRTC answer
