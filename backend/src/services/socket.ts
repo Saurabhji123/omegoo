@@ -11,6 +11,7 @@ interface AuthenticatedSocket extends Socket {
 export class SocketService {
   private static io: SocketIOServer;
   private static connectedUsers = new Map<string, string>(); // userId -> socketId
+  private static waitingQueue: string[] = []; // For in-memory queue management
 
   static initialize(io: SocketIOServer) {
     this.io = io;
@@ -88,7 +89,18 @@ export class SocketService {
     io.on('connection', (socket: AuthenticatedSocket) => {
       console.log(`User ${socket.userId} connected`);
       
-      // Store connection
+      // Check if user already has an active connection
+      const existingSocketId = this.connectedUsers.get(socket.userId!);
+      if (existingSocketId) {
+        console.log(`⚠️ User ${socket.userId} already connected, disconnecting old connection`);
+        const existingSocket = this.io.sockets.sockets.get(existingSocketId);
+        if (existingSocket) {
+          existingSocket.emit('connection_replaced', { reason: 'New device connected' });
+          existingSocket.disconnect(true);
+        }
+      }
+      
+      // Store new connection
       this.connectedUsers.set(socket.userId!, socket.id);
       
       // Set user online status
@@ -114,6 +126,13 @@ export class SocketService {
         await DevRedisService.removeFromMatchQueue(socket.userId!, 'text');
         await DevRedisService.removeFromMatchQueue(socket.userId!, 'audio');
         await DevRedisService.removeFromMatchQueue(socket.userId!, 'video');
+        
+        // Remove from in-memory queue too
+        const queuePosition = this.waitingQueue.indexOf(socket.userId!);
+        if (queuePosition !== -1) {
+          this.waitingQueue.splice(queuePosition, 1);
+          console.log(`🗑️ Removed ${socket.userId} from waiting queue`);
+        }
         
         // Set user offline
         DevRedisService.setUserOffline(socket.userId!);
