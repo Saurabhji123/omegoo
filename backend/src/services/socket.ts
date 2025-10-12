@@ -369,11 +369,14 @@ export class SocketService {
     const { sessionId, content, type } = data;
 
     console.log(`💬 Chat message from ${socket.userId}:`, { sessionId, content, type });
+    console.log(`🔍 Active sessions:`, Array.from(this.activeSessions.keys()));
+    console.log(`🔍 Looking for session: ${sessionId}`);
 
     // Find the active session and get the partner
     const session = this.activeSessions.get(sessionId);
     if (!session) {
       console.log(`❌ No active session found for ${sessionId}`);
+      console.log(`🔍 Available sessions:`, this.activeSessions);
       return;
     }
 
