@@ -46,19 +46,35 @@ const VideoChat: React.FC = () => {
     webRTCRef.current.onRemoteStreamReceived((stream: MediaStream) => {
       console.log('📺 Remote stream received in component:', {
         video: stream.getVideoTracks().length > 0,
-        audio: stream.getAudioTracks().length > 0
+        audio: stream.getAudioTracks().length > 0,
+        sessionId: sessionId
       });
       
-      if (remoteVideoRef.current) {
+      if (remoteVideoRef.current && stream) {
+        // Clear any existing stream first
+        if (remoteVideoRef.current.srcObject) {
+          const oldStream = remoteVideoRef.current.srcObject as MediaStream;
+          oldStream.getTracks().forEach(track => track.stop());
+        }
+        
         remoteVideoRef.current.srcObject = stream;
         console.log('✅ Remote stream assigned to video element');
         
-        // Ensure remote video plays
+        // Force video element to load and play
+        remoteVideoRef.current.load();
         remoteVideoRef.current.play().catch(error => {
           console.warn('Remote video autoplay prevented:', error);
+          // Fallback: try to play after user interaction
+          setTimeout(() => {
+            remoteVideoRef.current?.play().catch(() => {
+              console.warn('Still could not autoplay remote video');
+            });
+          }, 1000);
         });
         
         addMessage('Partner\'s video connected!', false);
+      } else {
+        console.error('❌ Remote video ref not available or stream is null');
       }
       
       setIsMatchConnected(true);
@@ -220,8 +236,24 @@ const VideoChat: React.FC = () => {
     startLocalVideo();
 
     return () => {
+      console.log('🧹 VideoChat component cleanup');
+      
+      // Clean up WebRTC
       if (webRTCRef.current) {
-        webRTCRef.current.cleanup();
+        webRTCRef.current.forceDisconnect();
+      }
+      
+      // Clean up video elements
+      if (localVideoRef.current?.srcObject) {
+        const localStream = localVideoRef.current.srcObject as MediaStream;
+        localStream.getTracks().forEach(track => track.stop());
+        localVideoRef.current.srcObject = null;
+      }
+      
+      if (remoteVideoRef.current?.srcObject) {
+        const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
+        remoteStream.getTracks().forEach(track => track.stop());
+        remoteVideoRef.current.srcObject = null;
       }
       
       // Remove all socket listeners
@@ -229,7 +261,13 @@ const VideoChat: React.FC = () => {
       socket?.off('searching');
       socket?.off('chat_message');
       socket?.off('session_ended');
+      socket?.off('user_disconnected');
+      socket?.off('webrtc-offer');
+      socket?.off('webrtc-answer');
+      socket?.off('ice-candidate');
       socket?.off('error');
+      
+      console.log('✅ VideoChat cleanup completed');
     };
   }, [socket]);
 
@@ -380,13 +418,19 @@ const VideoChat: React.FC = () => {
     startNewChat();
   };
 
-  const stopChat = () => {
+  const exitChat = () => {
+    // Clean up current session
     if (sessionId) {
       socket?.emit('end_session', { sessionId });
     }
-    setIsMatchConnected(false);
-    setIsSearching(false);
-    setMessages([]);
+    
+    // Clean up WebRTC
+    if (webRTCRef.current) {
+      webRTCRef.current.forceDisconnect();
+    }
+    
+    // Navigate to home
+    navigate('/');
   };
 
   const toggleCamera = () => {
@@ -561,28 +605,28 @@ const VideoChat: React.FC = () => {
 
         {/* Bottom Actions - Mobile Responsive */}
         <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-3 py-3 lg:px-4 lg:py-4 safe-area-bottom">
-          {/* Main Action Buttons */}
-          <div className="flex justify-center space-x-2 lg:space-x-4 mb-3">
-            <button
-              onClick={startNewChat}
-              className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 lg:px-6 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
-              disabled={isSearching}
-            >
-              {isSearching ? 'Connecting...' : 'New'}
-            </button>
-            
-            {isMatchConnected && (
+          {/* Main Action Buttons - Simplified */}
+          <div className="flex justify-center space-x-3 lg:space-x-4 mb-3">
+            {!isMatchConnected ? (
+              <button
+                onClick={startNewChat}
+                className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 lg:px-8 lg:py-3 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
+                disabled={isSearching}
+              >
+                {isSearching ? 'Connecting...' : 'Find Someone'}
+              </button>
+            ) : (
               <>
                 <button
                   onClick={nextMatch}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
+                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 lg:px-6 lg:py-3 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
                 >
-                  Next
+                  Next Person
                 </button>
                 
                 <button
                   onClick={handleReport}
-                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 lg:px-6 lg:py-3 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
                 >
                   Report
                 </button>
@@ -590,17 +634,10 @@ const VideoChat: React.FC = () => {
             )}
 
             <button
-              onClick={stopChat}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
+              onClick={exitChat}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 lg:px-6 lg:py-3 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
             >
-              Stop
-            </button>
-
-            <button
-              onClick={() => navigate('/')}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
-            >
-              Home
+              Exit
             </button>
           </div>
 
@@ -610,16 +647,13 @@ const VideoChat: React.FC = () => {
               onClick={() => setShowTextChat(!showTextChat)}
               className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation"
             >
-              {showTextChat ? 'Hide text' : 'Show text'}
+              {showTextChat ? 'Hide Chat' : 'Show Chat'}
             </button>
             <button 
               onClick={() => navigate('/chat/text')}
               className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation"
             >
-              Text only
-            </button>
-            <button className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation">
-              Unmoderated
+              Text Only Mode
             </button>
           </div>
         </div>
