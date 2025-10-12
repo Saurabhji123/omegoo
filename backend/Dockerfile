@@ -1,4 +1,5 @@
 # Ultra-Simple Backend Dockerfile - NO PUBLIC FOLDER REFERENCES
+# Timestamp: 2025-10-12-FORCE-REBUILD
 FROM node:18-alpine
 
 WORKDIR /app
