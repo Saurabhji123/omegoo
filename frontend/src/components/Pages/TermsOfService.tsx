@@ -5,229 +5,329 @@ const TermsOfService: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <DocumentTextIcon className="w-16 h-16 mx-auto mb-4 text-primary-100" />
-          <h1 className="text-4xl lg:text-6xl font-bold mb-4">Terms of Service</h1>
-          <p className="text-xl lg:text-2xl text-primary-100 max-w-3xl mx-auto">
-            Guidelines for using Omegoo responsibly and safely
-          </p>
-          <p className="text-sm text-primary-200 mt-4">Last updated: October 12, 2025</p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-blue-600 to-purple-700 text-white py-12 sm:py-16 lg:py-20">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+        
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-4 -right-4 w-72 h-72 bg-gradient-to-br from-primary-400/30 to-blue-400/30 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-8 -left-8 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-primary-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+        
+        <div className="relative container mx-auto px-4 text-center">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
+            <DocumentTextIcon className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
+            Terms of Service
+          </h1>
+          <div className="max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-blue-100 mb-6 leading-relaxed">
+              Building safe connections through clear guidelines and mutual respect
+            </p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+              <p className="text-sm text-blue-100">
+                <strong className="text-white">Effective Date:</strong> {' '}
+                Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto">
-          {/* Quick Guidelines */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            <div className="text-center p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <ShieldCheckIcon className="w-10 h-10 text-green-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-green-800 dark:text-green-400 mb-2">Be Respectful</h3>
-              <p className="text-sm text-green-700 dark:text-green-300">Treat others with kindness and respect</p>
-            </div>
-            <div className="text-center p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <UserGroupIcon className="w-10 h-10 text-blue-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2">Stay Safe</h3>
-              <p className="text-sm text-blue-700 dark:text-blue-300">Don't share personal information</p>
-            </div>
-            <div className="text-center p-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <DocumentTextIcon className="w-10 h-10 text-purple-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-purple-800 dark:text-purple-400 mb-2">Follow Rules</h3>
-              <p className="text-sm text-purple-700 dark:text-purple-300">Abide by community guidelines</p>
-            </div>
-            <div className="text-center p-6 bg-red-50 dark:bg-red-900/20 rounded-lg">
-              <ExclamationTriangleIcon className="w-10 h-10 text-red-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-red-800 dark:text-red-400 mb-2">Report Issues</h3>
-              <p className="text-sm text-red-700 dark:text-red-300">Report inappropriate behavior</p>
+      {/* Main Content */}
+      <div className="relative bg-white dark:bg-gray-900">
+        {/* Core Principles */}
+        <div className="py-12 sm:py-16 lg:py-20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div className="bg-gradient-to-br from-blue-50 to-primary-50 dark:from-blue-900/30 dark:to-primary-900/30 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-primary-500 rounded-lg flex items-center justify-center mb-4">
+                    <ShieldCheckIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-2">Safety First</h3>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm">Zero tolerance for harassment, abuse, or harmful content</p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 p-6 rounded-xl border border-purple-200 dark:border-purple-800">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
+                    <UserGroupIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-purple-900 dark:text-purple-100 mb-2">Respectful Community</h3>
+                  <p className="text-purple-700 dark:text-purple-300 text-sm">Treating all users with dignity and kindness</p>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 p-6 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center mb-4">
+                    <DocumentTextIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-emerald-900 dark:text-emerald-100 mb-2">Clear Guidelines</h3>
+                  <p className="text-emerald-700 dark:text-emerald-300 text-sm">Transparent rules that protect everyone's experience</p>
+                </div>
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 p-6 rounded-xl border border-orange-200 dark:border-orange-800">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center mb-4">
+                    <ExclamationTriangleIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-orange-900 dark:text-orange-100 mb-2">Fair Enforcement</h3>
+                  <p className="text-orange-700 dark:text-orange-300 text-sm">Consistent application of rules with appeals process</p>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Terms Content */}
-          <div className="prose prose-lg max-w-none">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">1. Acceptance of Terms</h2>
-              
-              <div className="text-gray-600 dark:text-gray-400 space-y-4">
-                <p>
-                  By accessing and using Omegoo, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using this service.
-                </p>
-                <p>
-                  These terms apply to all visitors, users, and others who access or use the service.
-                </p>
-              </div>
-            </div>
+        {/* Terms Content */}
+        <div className="py-12 bg-gray-50 dark:bg-gray-800">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="p-8 sm:p-12">
+                  <div className="flex items-center mb-8">
+                    <div className="w-2 h-8 bg-gradient-to-b from-primary-500 to-blue-500 rounded-full mr-4"></div>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Comprehensive Terms of Service</h2>
+                  </div>
+                  
+                  <div className="prose prose-lg max-w-none dark:prose-invert">
+                    {/* 1. Acceptance of Terms */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">1</span>
+                        Acceptance of Terms
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          By accessing or using Omegoo ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, you may not access the Service.
+                        </p>
+                      </div>
+                    </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">2. Service Description</h2>
-              
-              <div className="text-gray-600 dark:text-gray-400 space-y-4">
-                <p>
-                  Omegoo is a platform that connects users for anonymous conversations through text, audio, and video chat. Our service is designed to facilitate random, spontaneous interactions between strangers worldwide.
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Key Features:</strong>
-                </p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Anonymous text, audio, and video chat</li>
-                  <li>Random user matching</li>
-                  <li>No registration required</li>
-                  <li>Real-time moderation and safety features</li>
-                  <li>Cross-platform compatibility</li>
-                </ul>
-              </div>
-            </div>
+                    {/* 2. Description of Service */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">2</span>
+                        Description of Service
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          Omegoo is a random video chat platform that connects users with strangers for conversations through video, audio, and text. The Service is designed to facilitate connections between people worldwide in a safe and respectful environment.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Key Features:</strong>
+                        </p>
+                        <ul className="list-disc list-inside space-y-2 ml-4">
+                          <li>Random video and audio chat matching</li>
+                          <li>Text-based messaging capabilities</li>
+                          <li>User reporting and moderation tools</li>
+                          <li>Interest-based matching options</li>
+                          <li>Privacy controls and safety features</li>
+                        </ul>
+                      </div>
+                    </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">3. User Eligibility & Requirements</h2>
-              
-              <div className="text-gray-600 dark:text-gray-400 space-y-4">
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Age Requirement:</strong> You must be at least 18 years old to use Omegoo. By using our service, you represent and warrant that you are 18 or older.
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Technical Requirements:</strong>
-                </p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>A compatible device (computer, smartphone, or tablet)</li>
-                  <li>Stable internet connection</li>
-                  <li>Modern web browser with camera/microphone permissions (for video/audio chat)</li>
-                  <li>Compliance with local laws and regulations</li>
-                </ul>
-              </div>
-            </div>
+                    {/* 3. Eligibility */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">3</span>
+                        Eligibility
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Age Requirements:</strong> You must be at least 18 years old to use Omegoo. Users between 13-17 years old may only use the Service with explicit parental consent and supervision.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Legal Capacity:</strong> You must have the legal capacity to enter into this agreement in your jurisdiction.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Geographic Restrictions:</strong> The Service may not be available in all countries or regions due to local laws and regulations.
+                        </p>
+                      </div>
+                    </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">4. Prohibited Conduct</h2>
-              
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-                <p className="text-red-800 dark:text-red-200 font-medium mb-2">
-                  The following behaviors are strictly prohibited and will result in immediate termination:
-                </p>
-              </div>
+                    {/* 4. User Conduct and Community Guidelines */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">4</span>
+                        User Conduct and Community Guidelines
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Acceptable Use:</strong> Users are expected to maintain respectful, appropriate behavior during all interactions.
+                        </p>
+                        
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                          <h4 className="font-bold text-red-800 dark:text-red-200 mb-2">🚫 Prohibited Conduct</h4>
+                          <p className="text-red-700 dark:text-red-300 text-sm mb-3">The following behaviors are strictly prohibited and will result in immediate account suspension or termination:</p>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <h5 className="font-semibold text-red-800 dark:text-red-200 text-sm mb-2">Content Violations</h5>
+                              <ul className="text-red-700 dark:text-red-300 text-xs space-y-1">
+                                <li>• Nudity or sexually explicit content</li>
+                                <li>• Harassment, bullying, or intimidation</li>
+                                <li>• Hate speech or discriminatory language</li>
+                                <li>• Violence or threats of violence</li>
+                                <li>• Sharing of illegal content</li>
+                              </ul>
+                            </div>
+                            <div>
+                              <h5 className="font-semibold text-red-800 dark:text-red-200 text-sm mb-2">Platform Abuse</h5>
+                              <ul className="text-red-700 dark:text-red-300 text-xs space-y-1">
+                                <li>• Spamming or excessive messaging</li>
+                                <li>• Impersonation of others</li>
+                                <li>• Commercial solicitation without permission</li>
+                                <li>• Sharing personal information of others</li>
+                                <li>• Circumventing safety measures</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-              <div className="text-gray-600 dark:text-gray-400 space-y-4">
-                <p><strong className="text-gray-900 dark:text-white">Sexual Content & Nudity:</strong></p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Nudity or sexually explicit content</li>
-                  <li>Sexual solicitation or prostitution</li>
-                  <li>Sharing intimate images without consent</li>
-                </ul>
+                    {/* 5. Privacy and Data Protection */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">5</span>
+                        Privacy and Data Protection  
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and protect your information.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Data Collection:</strong> We collect only the minimum data necessary to provide the Service, including basic usage analytics and safety-related information.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Data Retention:</strong> Personal data is retained only as long as necessary for service provision and legal compliance.
+                        </p>
+                      </div>
+                    </div>
 
-                <p><strong className="text-gray-900 dark:text-white">Harassment & Abuse:</strong></p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Harassment, bullying, or intimidation</li>
-                  <li>Hate speech or discriminatory language</li>
-                  <li>Threats of violence or harm</li>
-                </ul>
+                    {/* 6. Safety and Moderation */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">6</span>
+                        Safety and Moderation
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Automated Moderation:</strong> We employ AI-powered content moderation to detect and prevent inappropriate content in real-time.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Human Review:</strong> Reported content is reviewed by trained moderators within 24 hours.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">User Reporting:</strong> Users can report inappropriate behavior through in-app reporting tools available during and after conversations.
+                        </p>
+                        
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                          <h4 className="font-bold text-blue-800 dark:text-blue-200 mb-2">🛡️ Safety Features</h4>
+                          <ul className="text-blue-700 dark:text-blue-300 text-sm space-y-1">
+                            <li>• One-click disconnect and report functionality</li>
+                            <li>• Automatic inappropriate content detection</li>
+                            <li>• Interest-based matching to improve compatibility</li>
+                            <li>• Community guidelines prominently displayed</li>
+                            <li>• 24/7 safety team availability</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
 
-                <p><strong className="text-gray-900 dark:text-white">Illegal Activities:</strong></p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Sharing illegal content or promoting illegal activities</li>
-                  <li>Drug sales or distribution</li>
-                  <li>Fraud, scams, or financial crimes</li>
-                </ul>
+                    {/* 7. Account Termination */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">7</span>
+                        Account Termination
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Voluntary Termination:</strong> You may discontinue using the Service at any time.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Involuntary Termination:</strong> We reserve the right to suspend or terminate accounts that violate these Terms or pose a risk to user safety.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Appeals Process:</strong> Users may appeal termination decisions through our support system within 30 days.
+                        </p>
+                      </div>
+                    </div>
 
-                <p><strong className="text-gray-900 dark:text-white">Privacy Violations:</strong></p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Recording conversations without consent</li>
-                  <li>Sharing personal information of others</li>
-                  <li>Attempting to identify or track other users</li>
-                </ul>
+                    {/* 8. Limitation of Liability */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">8</span>
+                        Limitation of Liability
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          The Service is provided "as is" without warranties of any kind. We are not liable for user-generated content or interactions between users.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Disclaimer:</strong> While we implement safety measures, users interact at their own risk and should exercise caution when sharing personal information.
+                        </p>
+                      </div>
+                    </div>
 
-                <p><strong className="text-gray-900 dark:text-white">Platform Abuse:</strong></p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Attempting to hack or disrupt the service</li>
-                  <li>Creating automated bots or spam</li>
-                  <li>Circumventing safety measures or bans</li>
-                </ul>
-              </div>
-            </div>
+                    {/* 9. Changes to Terms */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">9</span>
+                        Changes to Terms
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          We may update these Terms periodically. Users will be notified of significant changes through the platform or email.
+                        </p>
+                        <p>
+                          <strong className="text-gray-900 dark:text-white">Effective Date:</strong> Changes become effective 30 days after notification unless otherwise specified.
+                        </p>
+                      </div>
+                    </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">5. Safety & Moderation</h2>
-              
-              <div className="text-gray-600 dark:text-gray-400 space-y-4">
-                <p>
-                  <strong className="text-gray-900 dark:text-white">AI Moderation:</strong> Our platform uses advanced AI to monitor conversations in real-time and detect inappropriate content. This system works automatically to maintain a safe environment.
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">User Reporting:</strong> All users can report inappropriate behavior instantly. Reports are reviewed promptly by our moderation team.
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Enforcement Actions:</strong> Violations may result in warnings, temporary suspensions, or permanent bans depending on severity.
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Emergency Situations:</strong> If you encounter illegal content or immediate safety threats, contact local authorities and report to us immediately.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">6. Privacy & Data</h2>
-              
-              <div className="text-gray-600 dark:text-gray-400 space-y-4">
-                <p>
-                  <strong className="text-gray-900 dark:text-white">No Data Storage:</strong> We do not store your conversations, personal information, or chat history. All interactions are temporary and deleted immediately after sessions end.
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Anonymous Service:</strong> No registration, email, or personal information is required to use Omegoo.
-                </p>
-                <p>
-                  For detailed information about our privacy practices, please review our <a href="/privacy" className="text-primary-600 hover:underline">Privacy Policy</a>.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">7. Disclaimers & Limitations</h2>
-              
-              <div className="text-gray-600 dark:text-gray-400 space-y-4">
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Service Availability:</strong> We strive to maintain 24/7 availability but cannot guarantee uninterrupted service. Maintenance, updates, or technical issues may cause temporary disruptions.
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">"As Is" Service:</strong> Omegoo is provided "as is" without warranties of any kind. We make no guarantees about the quality, safety, or appropriateness of user interactions.
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">User Responsibility:</strong> You are responsible for your own safety and the content of your communications. We encourage users to exercise caution and good judgment.
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Third-Party Content:</strong> We are not responsible for content, actions, or behavior of other users on the platform.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">8. Intellectual Property</h2>
-              
-              <div className="text-gray-600 dark:text-gray-400 space-y-4">
-                <p>
-                  The Omegoo platform, including its design, code, logos, and content, is protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works without permission.
-                </p>
-                <p>
-                  Users retain ownership of their own content but grant Omegoo the right to use, moderate, and remove content as necessary for service operation and safety.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">9. Contact & Changes</h2>
-              
-              <div className="text-gray-600 dark:text-gray-400 space-y-4">
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Questions about Terms:</strong> Contact us at legal@omegoo.com
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Safety Concerns:</strong> Contact us at safety@omegoo.com
-                </p>
-                <p>
-                  <strong className="text-gray-900 dark:text-white">Terms Updates:</strong> We may update these terms from time to time. Continued use of the service constitutes acceptance of updated terms.
-                </p>
+                    {/* 10. Contact Information */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">10</span>
+                        Contact Information
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          For questions about these Terms or to report violations, please contact us:
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <p>
+                              <strong className="text-gray-900 dark:text-white">General Inquiries:</strong> support@omegoo.com
+                            </p>
+                          </div>
+                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <p>
+                              <strong className="text-gray-900 dark:text-white">Safety Reports:</strong> safety@omegoo.com
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                  </div>
+                </div>
                 
-                <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4 mt-6">
-                  <p className="text-primary-800 dark:text-primary-200 text-sm">
-                    <strong>Remember:</strong> By using Omegoo, you agree to these terms and commit to maintaining a safe, respectful environment for all users. Thank you for being part of our community!
+                <div className="bg-gradient-to-r from-primary-50 via-blue-50 to-purple-50 dark:from-primary-900/20 dark:via-blue-900/20 dark:to-purple-900/20 p-6 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-gray-700 dark:text-gray-300">
+                    <strong className="text-gray-900 dark:text-white">Legal Disclaimer:</strong> These terms are governed by applicable law and jurisdiction requirements.
                   </p>
+                  <p>
+                    <strong className="text-gray-900 dark:text-white">Safety Concerns:</strong> Contact us at safety@omegoo.com
+                  </p>
+                  <p>
+                    <strong className="text-gray-900 dark:text-white">Terms Updates:</strong> We may update these terms from time to time. Continued use of the service constitutes acceptance of updated terms.
+                  </p>
+                  
+                  <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4 mt-6">
+                    <p className="text-primary-800 dark:text-primary-200 text-sm">
+                      <strong>Remember:</strong> By using Omegoo, you agree to these terms and commit to maintaining a safe, respectful environment for all users. Thank you for being part of our community!
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
