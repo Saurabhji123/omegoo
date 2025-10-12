@@ -82,7 +82,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const { user, token } = useAuth();
 
   useEffect(() => {
-    // For development, always connect (guest mode enabled on backend)
+    // For development, always connect once (guest mode enabled on backend)
     connect();
 
     return () => {
@@ -90,12 +90,17 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         state.socket.disconnect();
       }
     };
-  }, [user, token]);
+  }, []); // No dependencies - connect only once
 
   const connect = () => {
-    if (state.socket?.connected) {
-      console.log('🔌 Socket already connected, skipping');
+    if (state.socket && state.socket.connected) {
+      console.log('🔌 Socket already connected/connecting, skipping');
       return;
+    }
+
+    // Disconnect old socket if exists
+    if (state.socket) {
+      state.socket.disconnect();
     }
 
     // Set connecting state
@@ -141,15 +146,15 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const socket = io(backendUrl, {
       auth: {
-        token: token || 'guest'
+        token: 'dev-token'  // Simple token for development
       },
-      transports: ['polling', 'websocket'], // Try polling first (more reliable)
-      timeout: 15000, // Reasonable timeout for cold starts
-      forceNew: true,
+      transports: ['polling', 'websocket'],
+      timeout: 15000,
+      forceNew: false,  // Allow connection reuse
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 3000,
-      reconnectionDelayMax: 10000
+      reconnectionAttempts: 3,  // Reduced attempts
+      reconnectionDelay: 1000,  // Faster reconnection
+      reconnectionDelayMax: 5000
     });
 
     console.log('🚀 Socket instance created, waiting for connection...');
