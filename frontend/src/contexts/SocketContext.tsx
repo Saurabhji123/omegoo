@@ -116,26 +116,40 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       token: token || 'guest'
     });
 
-    // Test backend connectivity first
-    fetch(`${backendUrl}/test-connection`)
-      .then(res => res.json())
-      .then(data => {
-        console.log('✅ Backend API reachable:', data);
-      })
-      .catch(err => {
-        console.error('❌ Backend API unreachable:', err);
-      });
+    // Test backend connectivity and wake up if needed
+    const wakeBackend = async () => {
+      try {
+        console.log('🔄 Waking up backend...');
+        const response = await fetch(`${backendUrl}/keepalive`);
+        const data = await response.json();
+        console.log('✅ Backend awake:', data);
+        return true;
+      } catch (err) {
+        console.error('❌ Backend wake-up failed:', err);
+        return false;
+      }
+    };
+
+    // Try to wake backend first, then test connection
+    wakeBackend().then((awake) => {
+      if (awake) {
+        console.log('🚀 Backend is ready, proceeding with socket connection');
+      } else {
+        console.log('⏳ Backend might be cold starting, socket will retry...');
+      }
+    });
 
     const socket = io(backendUrl, {
       auth: {
         token: token || 'guest'
       },
-      transports: ['websocket', 'polling'],
-      timeout: 10000, // Shorter timeout for faster feedback
+      transports: ['polling', 'websocket'], // Try polling first (more reliable)
+      timeout: 15000, // Reasonable timeout for cold starts
       forceNew: true,
       reconnection: true,
-      reconnectionAttempts: 3,
-      reconnectionDelay: 2000
+      reconnectionAttempts: 5,
+      reconnectionDelay: 3000,
+      reconnectionDelayMax: 10000
     });
 
     console.log('🚀 Socket instance created, waiting for connection...');

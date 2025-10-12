@@ -93,12 +93,24 @@ app.use(express.urlencoded({ extended: true }));
 // Logging
 app.use(morgan('combined'));
 
-// Health check endpoint
+// Health check endpoint with enhanced monitoring
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: Math.floor(process.uptime()),
+    memory: process.memoryUsage(),
+    connections: SocketService.getConnectedUserCount(),
+    version: '1.0.0'
+  });
+});
+
+// Keepalive endpoint to prevent cold starts
+app.get('/keepalive', (req, res) => {
+  res.json({
+    alive: true,
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime())
   });
 });
 
@@ -236,7 +248,24 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
+// Keep server alive with periodic self-ping (Render free tier workaround)
+function keepServerAlive() {
+  if (process.env.NODE_ENV === 'production' && process.env.RENDER_SERVICE_NAME) {
+    const selfPing = () => {
+      const url = `https://${process.env.RENDER_SERVICE_NAME}.onrender.com/keepalive`;
+      fetch(url).catch(() => {}); // Silent ping
+    };
+    
+    // Ping every 10 minutes to prevent sleep
+    setInterval(selfPing, 10 * 60 * 1000);
+    console.log('🔄 Keep-alive mechanism enabled for Render deployment');
+  }
+}
+
 // Start the server
 startServer();
+
+// Initialize keep-alive after server starts
+setTimeout(keepServerAlive, 5000);
 
 export default app;
