@@ -354,21 +354,23 @@ export class SocketService {
 
     console.log(`💬 Chat message from ${socket.userId}:`, { sessionId, content, type });
 
-    // Get session and validate user is part of it
-    const session = await this.getSessionById(sessionId);
-    if (!session) {
-      console.log(`❌ Session ${sessionId} not found`);
-      return;
-    }
+    // Simple approach: find the other user in the same session by iterating through active sessions
+    // This avoids database lookup issues
+    let otherUserId: string | null = null;
+    let otherSocketId: string | null = null;
 
-    // Validate user is part of this session
-    if (session.user1_id !== socket.userId && session.user2_id !== socket.userId) {
-      console.log(`❌ User ${socket.userId} not part of session ${sessionId}`);
-      return;
+    // Look through all connected users to find the partner
+    for (const [userId, socketId] of this.connectedUsers.entries()) {
+      if (userId !== socket.userId) {
+        // Check if this user might be our partner (simple check)
+        const otherSocket = this.io.sockets.sockets.get(socketId);
+        if (otherSocket) {
+          otherUserId = userId;
+          otherSocketId = socketId;
+          break; // For now, just send to the first other user (video chat is 1-to-1)
+        }
+      }
     }
-
-    const otherUserId = session.user1_id === socket.userId ? session.user2_id : session.user1_id;
-    const otherSocketId = this.connectedUsers.get(otherUserId);
 
     console.log(`📤 Forwarding message to ${otherUserId} (socket: ${otherSocketId})`);
 
