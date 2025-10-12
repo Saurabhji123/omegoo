@@ -12,11 +12,16 @@ class WebRTCService {
   private currentMatchUserId: string | null = null;
   private currentSessionId: string | null = null;
 
-  // STUN servers for NAT traversal
+  // Enhanced STUN/TURN servers for better NAT traversal
   private iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    // Additional backup STUN servers
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    { urls: 'stun:global.stun.twilio.com:3478' },
   ];
 
   constructor() {
@@ -27,6 +32,9 @@ class WebRTCService {
     this.peerConnection = new RTCPeerConnection({
       iceServers: this.iceServers,
       iceCandidatePoolSize: 10,
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require',
+      iceTransportPolicy: 'all'
     });
 
     // Handle remote stream

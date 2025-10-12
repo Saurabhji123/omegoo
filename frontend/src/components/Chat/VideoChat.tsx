@@ -661,28 +661,31 @@ const VideoChat: React.FC = () => {
             )}
           </div>
 
-          {/* Message Input */}
-          {(isConnected || isSearching) && (
-            <div className="p-3 lg:p-4 border-t border-gray-700">
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type a message..."
-                  className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm touch-manipulation"
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={!messageInput.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors touch-manipulation"
-                >
-                  <PaperAirplaneIcon className="w-4 h-4" />
-                </button>
-              </div>
+          {/* Message Input - Always Available */}
+          <div className="p-3 lg:p-4 border-t border-gray-700">
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={isConnected ? "Type a message..." : "Connect first to send messages"}
+                disabled={!isConnected}
+                className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm touch-manipulation disabled:bg-gray-800 disabled:text-gray-500"
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!messageInput.trim() || !isConnected}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors touch-manipulation"
+              >
+                <PaperAirplaneIcon className="w-4 h-4" />
+              </button>
             </div>
-          )}
+            <div className="text-xs text-gray-400 mt-1">
+              {isConnected ? "Chat while video is on for silent communication" : 
+               isSearching ? "Connecting to someone..." : "Find someone to start chatting"}
+            </div>
+          </div>
         </div>
       )}
     </div>
