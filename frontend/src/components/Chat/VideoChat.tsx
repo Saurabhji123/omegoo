@@ -154,21 +154,8 @@ const VideoChat: React.FC = () => {
           currentLength: sessionId?.length
         });
         
-        // FORCE ADD MESSAGE FOR DEBUGGING
-        console.log('🔥 FORCE ADDING MESSAGE FOR DEBUG:', data.content);
-        addMessage(`[${data.fromUserId}]: ${data.content}`, false);
-        
-        if (data.sessionId === sessionId) {
-          console.log(`✅✅✅ Session match! Adding message: "${data.content}"`);
-        } else {
-          console.log(`❌❌❌ Session mismatch! Got: ${data.sessionId}, Expected: ${sessionId}`);
-          console.log(`🔍 Character-by-character comparison:`);
-          if (data.sessionId && sessionId) {
-            for (let i = 0; i < Math.max(data.sessionId.length, sessionId.length); i++) {
-              console.log(`  [${i}]: '${data.sessionId[i] || 'undefined'}' vs '${sessionId[i] || 'undefined'}'`);
-            }
-          }
-        }
+        // Display clean message without username
+        addMessage(data.content, false);
       });
 
       socket.on('session_ended', (data: { reason?: string }) => {
@@ -475,17 +462,12 @@ const VideoChat: React.FC = () => {
     const content = messageInput.trim();
     addMessage(content, true);
     
-    console.log('📨 Sending message:', content);
-    console.log('🔄 Using sessionId:', sessionId);
-    console.log('🔄 Data channel status:', webRTCRef.current?.isDataChannelOpen);
-    
-    // For now, always use socket for reliability (data channel can be flaky)
+    // Send message via socket
     socket.emit('chat_message', {
       sessionId,
       content,
       type: 'text'
     });
-    console.log('✅ Sent message via socket:', content, 'with sessionId:', sessionId);
     
     setMessageInput('');
   };
