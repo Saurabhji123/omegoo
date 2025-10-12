@@ -145,7 +145,9 @@ const VideoChat: React.FC = () => {
         console.log('🔍 Session comparison:', { 
           received: data.sessionId, 
           current: sessionId, 
-          match: data.sessionId === sessionId 
+          match: data.sessionId === sessionId,
+          receivedType: typeof data.sessionId,
+          currentType: typeof sessionId
         });
         
         if (data.sessionId === sessionId) {
@@ -153,6 +155,7 @@ const VideoChat: React.FC = () => {
           console.log(`✅ Message displayed from ${data.fromUserId}: "${data.content}"`);
         } else {
           console.log(`⚠️ Message ignored - wrong session (got: ${data.sessionId}, expected: ${sessionId})`);
+          console.log(`🔍 Raw comparison: "${data.sessionId}" === "${sessionId}" = ${data.sessionId === sessionId}`);
         }
       });
 
@@ -461,6 +464,7 @@ const VideoChat: React.FC = () => {
     addMessage(content, true);
     
     console.log('📨 Sending message:', content);
+    console.log('🔄 Using sessionId:', sessionId);
     console.log('🔄 Data channel status:', webRTCRef.current?.isDataChannelOpen);
     
     // For now, always use socket for reliability (data channel can be flaky)
@@ -469,7 +473,7 @@ const VideoChat: React.FC = () => {
       content,
       type: 'text'
     });
-    console.log('✅ Sent message via socket:', content);
+    console.log('✅ Sent message via socket:', content, 'with sessionId:', sessionId);
     
     setMessageInput('');
   };
