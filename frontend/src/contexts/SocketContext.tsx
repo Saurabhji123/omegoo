@@ -97,14 +97,23 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
     console.log('🔗 Connecting to backend:', backendUrl);
+    console.log('🌍 Environment:', process.env.NODE_ENV);
+    console.log('📦 All env vars:', {
+      REACT_APP_BACKEND_URL: process.env.REACT_APP_BACKEND_URL,
+      NODE_ENV: process.env.NODE_ENV,
+      REACT_APP_ENVIRONMENT: process.env.REACT_APP_ENVIRONMENT
+    });
 
     const socket = io(backendUrl, {
       auth: {
         token: token || 'guest'
       },
       transports: ['websocket', 'polling'],
-      timeout: 20000,
-      forceNew: true
+      timeout: 30000, // Increased timeout for production
+      forceNew: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
 
     console.log('🚀 Socket instance created, waiting for connection...');
@@ -126,6 +135,17 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     socket.on('connect_error', (error) => {
       console.error('🚨 Socket connection error:', error.message);
       console.error('Backend URL:', backendUrl);
+      console.error('Error details:', error);
+      dispatch({ type: 'SET_CONNECTED', payload: false });
+    });
+
+    socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`🔄 Reconnection attempt ${attemptNumber}`);
+    });
+
+    socket.on('reconnect_failed', () => {
+      console.error('❌ Reconnection failed after all attempts');
+      dispatch({ type: 'SET_CONNECTED', payload: false });
     });
 
     // Updated event names to match backend

@@ -21,14 +21,14 @@ interface Message {
 
 const VideoChat: React.FC = () => {
   const navigate = useNavigate();
-  const { socket } = useSocket();
+  const { socket, connected: socketConnected } = useSocket();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   
   const [isSearching, setIsSearching] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isMatchConnected, setIsMatchConnected] = useState(false); // Renamed for clarity - this is for match connection
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
   // const [connectionState, setConnectionState] = useState<string>('disconnected');
@@ -61,14 +61,14 @@ const VideoChat: React.FC = () => {
         addMessage('Partner\'s video connected!', false);
       }
       
-      setIsConnected(true);
+      setIsMatchConnected(true);
       setIsSearching(false);
     });
 
     webRTCRef.current.onConnectionStateChanged((state: RTCPeerConnectionState) => {
       // setConnectionState(state);
       if (state === 'disconnected') {
-        setIsConnected(false);
+        setIsMatchConnected(false);
       }
     });
 
@@ -131,7 +131,7 @@ const VideoChat: React.FC = () => {
           }
           
           addMessage('Video chat ready!', false);
-          setIsConnected(true);
+          setIsMatchConnected(true);
         }
       });
 
@@ -149,7 +149,7 @@ const VideoChat: React.FC = () => {
 
       socket.on('session_ended', (data: { reason?: string }) => {
         console.log('❌ Video chat session ended:', data);
-        setIsConnected(false);
+        setIsMatchConnected(false);
         setSessionId(null);
         setMessages([]);
         addMessage(`Chat ended. ${data.reason || 'Your partner left the chat.'}`, false);
@@ -328,14 +328,14 @@ const VideoChat: React.FC = () => {
       return;
     }
     
-    if (!socket.connected) {
+    if (!socketConnected) {
       console.error('❌ Socket not connected');
       addMessage('Not connected to server. Please check your internet.', false);
       return;
     }
     
     setIsSearching(true);
-    setIsConnected(false);
+    setIsMatchConnected(false);
     setMessages([]);
     setSessionId(null);
     
@@ -368,7 +368,7 @@ const VideoChat: React.FC = () => {
     if (sessionId) {
       socket?.emit('end_session', { sessionId });
     }
-    setIsConnected(false);
+    setIsMatchConnected(false);
     setIsSearching(false);
     setMessages([]);
   };
@@ -384,7 +384,7 @@ const VideoChat: React.FC = () => {
   };
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !isConnected || !sessionId || !socket) return;
+    if (!messageInput.trim() || !isMatchConnected || !sessionId || !socket) return;
     
     const content = messageInput.trim();
     addMessage(content, true);
@@ -443,11 +443,14 @@ const VideoChat: React.FC = () => {
           </div>
           <div className="flex items-center space-x-2 lg:space-x-3">
             <div className={`w-2 h-2 lg:w-3 lg:h-3 rounded-full ${
-              isConnected ? 'bg-green-400' : 
-              isSearching ? 'bg-yellow-400' : 'bg-red-400'
+              socketConnected && isMatchConnected ? 'bg-green-400' : 
+              socketConnected && isSearching ? 'bg-yellow-400' : 
+              socketConnected ? 'bg-blue-400' : 'bg-red-400'
             }`}></div>
             <span className="text-white text-xs lg:text-sm font-medium">
-              {isConnected ? 'Connected' : isSearching ? 'Connecting...' : 'Disconnected'}
+              {socketConnected && isMatchConnected ? 'Connected' : 
+               socketConnected && isSearching ? 'Connecting...' : 
+               socketConnected ? 'Ready' : 'Disconnected'}
             </span>
           </div>
         </div>
@@ -463,7 +466,7 @@ const VideoChat: React.FC = () => {
 
           {/* Remote Video */}
           <div className="w-full h-full">
-            {isConnected ? (
+            {isMatchConnected ? (
               <video
                 ref={remoteVideoRef}
                 autoPlay
@@ -552,7 +555,7 @@ const VideoChat: React.FC = () => {
               {isSearching ? 'Connecting...' : 'New'}
             </button>
             
-            {isConnected && (
+            {isMatchConnected && (
               <>
                 <button
                   onClick={nextMatch}
@@ -669,21 +672,22 @@ const VideoChat: React.FC = () => {
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={isConnected ? "Type a message..." : "Connect first to send messages"}
-                disabled={!isConnected}
+                placeholder={socketConnected ? (isMatchConnected ? "Type a message..." : "Find someone to chat") : "Connecting to server..."}
+                disabled={!socketConnected || !isMatchConnected}
                 className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm touch-manipulation disabled:bg-gray-800 disabled:text-gray-500"
               />
               <button
                 onClick={sendMessage}
-                disabled={!messageInput.trim() || !isConnected}
+                disabled={!messageInput.trim() || !socketConnected || !isMatchConnected}
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors touch-manipulation"
               >
                 <PaperAirplaneIcon className="w-4 h-4" />
               </button>
             </div>
             <div className="text-xs text-gray-400 mt-1">
-              {isConnected ? "Chat while video is on for silent communication" : 
-               isSearching ? "Connecting to someone..." : "Find someone to start chatting"}
+              {socketConnected && isMatchConnected ? "Chat while video is on for silent communication" : 
+               socketConnected && isSearching ? "Connecting to someone..." : 
+               socketConnected ? "Find someone to start chatting" : "Connecting to server..."}
             </div>
           </div>
         </div>
