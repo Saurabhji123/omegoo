@@ -110,8 +110,20 @@ export class SocketService {
 
   private static setupSocketHandlers(socket: AuthenticatedSocket) {
     // Omegle-style matching handlers
+    socket.on('find_match', async (data) => {
+      try {
+        console.log(`🔍 Received find_match from ${socket.userId} with data:`, data);
+        await this.handleFindMatch(socket, data);
+      } catch (error) {
+        console.error('❌ Find match error:', error);
+        socket.emit('error', { message: 'Failed to find match' });
+      }
+    });
+
+    // Also listen for hyphenated version for compatibility
     socket.on('find-match', async (data) => {
       try {
+        console.log(`🔍 Received find-match from ${socket.userId} with data:`, data);
         await this.handleFindMatch(socket, data);
       } catch (error) {
         console.error('❌ Find match error:', error);
@@ -209,7 +221,7 @@ export class SocketService {
     const match = await DevRedisService.findMatch(matchRequest);
 
     if (match) {
-      console.log(`✅ Match found: ${socket.userId} <-> ${match.userId} (${mode})`);
+      console.log(`✅ CREATING SESSION: ${socket.userId} <-> ${match.userId} (${mode})`);
       
       // Create chat session
       const session = await DatabaseService.createChatSession({
@@ -218,7 +230,10 @@ export class SocketService {
         mode: mode
       });
 
+      console.log(`📋 Session created: ${session.id}`);
+
       // Notify both users - current user is the initiator
+      console.log(`📤 Sending match-found to ${socket.userId} (initiator)`);
       socket.emit('match-found', { 
         sessionId: session.id,
         matchUserId: match.userId,
@@ -228,19 +243,25 @@ export class SocketService {
       
       const matchSocketId = this.connectedUsers.get(match.userId);
       if (matchSocketId) {
+        console.log(`📤 Sending match-found to ${match.userId} (receiver)`);
         this.io.to(matchSocketId).emit('match-found', { 
           sessionId: session.id,
           matchUserId: socket.userId,
           isInitiator: false,
           mode: mode
         });
+      } else {
+        console.error(`❌ Match user ${match.userId} not connected!`);
       }
     } else {
-      console.log(`⏳ No match found, adding ${socket.userId} to ${mode} queue`);
+      console.log(`⏳ No immediate match, adding ${socket.userId} to ${mode} queue`);
       
-      // Add to queue
+      // Add to queue manually since findMatch didn't do it
       await DevRedisService.addToMatchQueue(matchRequest);
       const queueStats = DevRedisService.getQueueStats();
+      
+      console.log(`📊 Queue stats:`, queueStats);
+      
       socket.emit('searching', { 
         position: queueStats.queues[mode] || 0,
         totalWaiting: queueStats.totalWaiting,

@@ -69,13 +69,17 @@ export class RedisService {
     const key = `match_queue:${request.mode}`;
     const queue = this.queues.get(key) || [];
     
-    // Find a suitable match (exclude self and recent matches)
+    console.log(`🔍 Looking for match: user ${request.userId}, mode: ${request.mode}, queue size: ${queue.length}`);
+    
+    // Find a suitable match (exclude self only)
     const now = Date.now();
     const eligibleQueue = queue.filter(req => 
       req.userId !== request.userId && 
       req.mode === request.mode &&
-      (now - req.timestamp) < 30000 // Only match with users waiting less than 30 seconds
+      (now - req.timestamp) < 120000 // Match with users waiting less than 2 minutes (more generous)
     );
+
+    console.log(`👥 Eligible matches found: ${eligibleQueue.length}`);
 
     if (eligibleQueue.length > 0) {
       // Get the user who has been waiting the longest
@@ -85,20 +89,21 @@ export class RedisService {
 
       // Remove the matched user from queue
       await this.removeFromMatchQueue(match.userId, match.mode);
-      console.log(`💫 Found match: ${request.userId} <-> ${match.userId} (waited ${(now - match.timestamp)/1000}s)`);
+      console.log(`💫 MATCH SUCCESSFUL: ${request.userId} <-> ${match.userId} (waited ${(now - match.timestamp)/1000}s)`);
       return match;
     }
 
-    // Clean up old requests (older than 60 seconds)
-    const activeQueue = queue.filter(req => (now - req.timestamp) < 60000);
+    // Clean up very old requests (older than 5 minutes)
+    const activeQueue = queue.filter(req => (now - req.timestamp) < 300000);
     this.queues.set(key, activeQueue);
     
     if (activeQueue.length !== queue.length) {
       console.log(`🧹 Cleaned up ${queue.length - activeQueue.length} expired requests from ${request.mode} queue`);
     }
 
-    console.log(`🔍 No match found for user ${request.userId}, adding to queue (${activeQueue.length + 1} waiting)`);
-    await this.addToMatchQueue(request);
+    console.log(`⏳ No match found for user ${request.userId}, adding to queue (${activeQueue.length + 1} total waiting)`);
+    
+    // Don't add immediately, let the calling function handle it
     return null;
   }
 
