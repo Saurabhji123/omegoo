@@ -135,7 +135,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                       <button
                         onClick={() => {
-                          navigate('/legal/privacy');
+                          navigate('/privacy');
                           setIsMenuOpen(false);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
@@ -148,7 +148,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                       <button
                         onClick={() => {
-                          navigate('/legal/terms');
+                          navigate('/terms');
                           setIsMenuOpen(false);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
@@ -161,7 +161,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                       <button
                         onClick={() => {
-                          navigate('/legal/safety');
+                          navigate('/safety');
                           setIsMenuOpen(false);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
@@ -297,7 +297,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <ul className="space-y-2">
                 <li>
                   <button
-                    onClick={() => navigate('/legal/privacy')}
+                    onClick={() => navigate('/privacy')}
                     className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Privacy Policy
@@ -305,7 +305,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </li>
                 <li>
                   <button
-                    onClick={() => navigate('/legal/terms')}
+                    onClick={() => navigate('/terms')}
                     className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Terms of Service
@@ -313,7 +313,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </li>
                 <li>
                   <button
-                    onClick={() => navigate('/legal/safety')}
+                    onClick={() => navigate('/safety')}
                     className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Safety Guidelines

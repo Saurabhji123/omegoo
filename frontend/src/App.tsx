@@ -25,6 +25,7 @@ import About from './components/Pages/About';
 import Contact from './components/Pages/Contact';
 import PrivacyPolicy from './components/Pages/PrivacyPolicy';
 import TermsOfService from './components/Pages/TermsOfService';
+import SafetyGuidelines from './components/Pages/SafetyGuidelines';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; requiresVerification?: boolean }> = ({ 
@@ -74,7 +75,6 @@ const AppRoutes: React.FC = () => {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-        <Route path="/legal/:page" element={<Legal />} />
         
         {/* Static Pages */}
         <Route path="/about" element={
@@ -95,6 +95,11 @@ const AppRoutes: React.FC = () => {
         <Route path="/terms" element={
           <Layout>
             <TermsOfService />
+          </Layout>
+        } />
+        <Route path="/safety" element={
+          <Layout>
+            <SafetyGuidelines />
           </Layout>
         } />
         
