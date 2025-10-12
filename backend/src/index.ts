@@ -30,8 +30,15 @@ const app: express.Application = express();
 const server = createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
+    origin: process.env.NODE_ENV === 'production' 
+      ? [
+          'https://omegoo.vercel.app',
+          'https://saurabhji123.github.io', 
+          'https://saurabhji123.github.io/omegoo'
+        ]
+      : process.env.FRONTEND_URL || "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
@@ -101,7 +108,19 @@ app.get('/', (req, res) => {
     message: 'Omegoo Backend API',
     status: 'running',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    origin: req.get('Origin'),
+    userAgent: req.get('User-Agent')
+  });
+});
+
+// Test endpoint for socket connection debugging
+app.get('/test-connection', (req, res) => {
+  res.json({
+    message: 'Backend reachable',
+    socketConnections: SocketService.getConnectedUserCount(),
+    timestamp: new Date().toISOString(),
+    origin: req.get('Origin')
   });
 });
 

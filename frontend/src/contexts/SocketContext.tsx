@@ -116,16 +116,26 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       token: token || 'guest'
     });
 
+    // Test backend connectivity first
+    fetch(`${backendUrl}/test-connection`)
+      .then(res => res.json())
+      .then(data => {
+        console.log('✅ Backend API reachable:', data);
+      })
+      .catch(err => {
+        console.error('❌ Backend API unreachable:', err);
+      });
+
     const socket = io(backendUrl, {
       auth: {
         token: token || 'guest'
       },
       transports: ['websocket', 'polling'],
-      timeout: 30000, // Increased timeout for production
+      timeout: 10000, // Shorter timeout for faster feedback
       forceNew: true,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionAttempts: 3,
+      reconnectionDelay: 2000
     });
 
     console.log('🚀 Socket instance created, waiting for connection...');

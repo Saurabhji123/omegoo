@@ -19,7 +19,9 @@ export class SocketService {
     // Authentication middleware
     io.use(async (socket: AuthenticatedSocket, next) => {
       try {
+        console.log(`🔐 Socket auth attempt from: ${socket.handshake.address} with origin: ${socket.handshake.headers.origin}`);
         const token = socket.handshake.auth.token;
+        console.log(`🔑 Token received: ${token ? 'YES' : 'NO'}`);
         
         if (!token) {
           // For development - create temporary guest user
@@ -87,7 +89,8 @@ export class SocketService {
     });
 
     io.on('connection', (socket: AuthenticatedSocket) => {
-      console.log(`User ${socket.userId} connected`);
+      console.log(`🔌 NEW CONNECTION: User ${socket.userId} connected from ${socket.handshake.address}`);
+      console.log(`📊 Total connected users: ${this.connectedUsers.size + 1}`);
       
       // Check if user already has an active connection
       const existingSocketId = this.connectedUsers.get(socket.userId!);
