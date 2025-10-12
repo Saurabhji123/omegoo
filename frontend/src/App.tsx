@@ -20,6 +20,12 @@ import Legal from './components/Legal/Legal';
 import Admin from './components/Admin/Admin';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 
+// New Pages
+import About from './components/Pages/About';
+import Contact from './components/Pages/Contact';
+import PrivacyPolicy from './components/Pages/PrivacyPolicy';
+import TermsOfService from './components/Pages/TermsOfService';
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; requiresVerification?: boolean }> = ({ 
   children, 
@@ -69,6 +75,28 @@ const AppRoutes: React.FC = () => {
         {/* Public routes */}
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/legal/:page" element={<Legal />} />
+        
+        {/* Static Pages */}
+        <Route path="/about" element={
+          <Layout>
+            <About />
+          </Layout>
+        } />
+        <Route path="/contact" element={
+          <Layout>
+            <Contact />
+          </Layout>
+        } />
+        <Route path="/privacy" element={
+          <Layout>
+            <PrivacyPolicy />
+          </Layout>
+        } />
+        <Route path="/terms" element={
+          <Layout>
+            <TermsOfService />
+          </Layout>
+        } />
         
         {/* Protected routes */}
         <Route path="/" element={
