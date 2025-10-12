@@ -1,5 +1,3 @@
-import { io, Socket } from 'socket.io-client';
-
 class WebRTCService {
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
