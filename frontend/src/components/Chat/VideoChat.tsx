@@ -7,8 +7,7 @@ import {
   VideoCameraSlashIcon,
   MicrophoneIcon,
   ChatBubbleLeftRightIcon,
-  PaperAirplaneIcon,
-  ArrowPathIcon
+  PaperAirplaneIcon
 } from '@heroicons/react/24/outline';
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
 
@@ -33,7 +32,7 @@ const VideoChat: React.FC = () => {
   const [isMicOn, setIsMicOn] = useState(true);
   // const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [showTextChat, setShowTextChat] = useState(false);
+  const [showTextChat, setShowTextChat] = useState(true); // Default show for better UX
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [cameraBlocked, setCameraBlocked] = useState(false);
@@ -50,31 +49,16 @@ const VideoChat: React.FC = () => {
         sessionId: sessionId
       });
       
-      if (remoteVideoRef.current && stream) {
-        // Clear any existing stream first
-        if (remoteVideoRef.current.srcObject) {
-          const oldStream = remoteVideoRef.current.srcObject as MediaStream;
-          oldStream.getTracks().forEach(track => track.stop());
-        }
-        
+      if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = stream;
         console.log('✅ Remote stream assigned to video element');
         
-        // Force video element to load and play
-        remoteVideoRef.current.load();
+        // Ensure remote video plays
         remoteVideoRef.current.play().catch(error => {
           console.warn('Remote video autoplay prevented:', error);
-          // Fallback: try to play after user interaction
-          setTimeout(() => {
-            remoteVideoRef.current?.play().catch(() => {
-              console.warn('Still could not autoplay remote video');
-            });
-          }, 1000);
         });
         
         addMessage('Partner\'s video connected!', false);
-      } else {
-        console.error('❌ Remote video ref not available or stream is null');
       }
       
       setIsMatchConnected(true);
@@ -645,9 +629,10 @@ const VideoChat: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-4 space-y-2 sm:space-y-0 text-xs lg:text-sm">
             <button 
               onClick={() => setShowTextChat(!showTextChat)}
-              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation"
+              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation flex items-center space-x-1"
             >
-              {showTextChat ? 'Hide Chat' : 'Show Chat'}
+              <ChatBubbleLeftRightIcon className="w-4 h-4" />
+              <span>{showTextChat ? 'Hide Chat' : 'Show Chat'}</span>
             </button>
             <button 
               onClick={() => navigate('/chat/text')}
@@ -659,9 +644,9 @@ const VideoChat: React.FC = () => {
         </div>
       </div>
 
-      {/* Text Chat Panel - Responsive */}
+      {/* Text Chat Panel - Enhanced for Video + Chat */}
       {showTextChat && (
-        <div className="absolute lg:relative inset-x-0 bottom-0 lg:inset-auto lg:w-80 bg-gray-800 border-t lg:border-l lg:border-t-0 border-gray-700 flex flex-col max-h-80 lg:max-h-full">
+        <div className="absolute lg:relative inset-x-0 bottom-0 lg:inset-auto lg:w-80 bg-gray-800 bg-opacity-95 backdrop-blur-sm border-t lg:border-l lg:border-t-0 border-gray-700 flex flex-col max-h-72 lg:max-h-full shadow-lg">
           {/* Chat Header */}
           <div className="bg-gray-700 px-3 py-2 lg:px-4 lg:py-3 border-b border-gray-600">
             <div className="flex items-center justify-between">
