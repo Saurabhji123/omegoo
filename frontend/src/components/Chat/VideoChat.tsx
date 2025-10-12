@@ -141,21 +141,33 @@ const VideoChat: React.FC = () => {
       });
 
       socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string }) => {
-        console.log('💬 Received text message in video chat:', data);
+        console.log('� RECEIVED MESSAGE IN FRONTEND:', data);
+        console.log('🔍 Current sessionId state:', sessionId);
+        console.log('🔍 isMatchConnected state:', isMatchConnected);
         console.log('🔍 Session comparison:', { 
           received: data.sessionId, 
           current: sessionId, 
           match: data.sessionId === sessionId,
           receivedType: typeof data.sessionId,
-          currentType: typeof sessionId
+          currentType: typeof sessionId,
+          receivedLength: data.sessionId?.length,
+          currentLength: sessionId?.length
         });
         
+        // FORCE ADD MESSAGE FOR DEBUGGING
+        console.log('🔥 FORCE ADDING MESSAGE FOR DEBUG:', data.content);
+        addMessage(`[${data.fromUserId}]: ${data.content}`, false);
+        
         if (data.sessionId === sessionId) {
-          addMessage(data.content, false);
-          console.log(`✅ Message displayed from ${data.fromUserId}: "${data.content}"`);
+          console.log(`✅✅✅ Session match! Adding message: "${data.content}"`);
         } else {
-          console.log(`⚠️ Message ignored - wrong session (got: ${data.sessionId}, expected: ${sessionId})`);
-          console.log(`🔍 Raw comparison: "${data.sessionId}" === "${sessionId}" = ${data.sessionId === sessionId}`);
+          console.log(`❌❌❌ Session mismatch! Got: ${data.sessionId}, Expected: ${sessionId}`);
+          console.log(`🔍 Character-by-character comparison:`);
+          if (data.sessionId && sessionId) {
+            for (let i = 0; i < Math.max(data.sessionId.length, sessionId.length); i++) {
+              console.log(`  [${i}]: '${data.sessionId[i] || 'undefined'}' vs '${sessionId[i] || 'undefined'}'`);
+            }
+          }
         }
       });
 
