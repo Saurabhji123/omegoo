@@ -101,16 +101,19 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     // Set connecting state
     dispatch({ type: 'SET_CONNECTING', payload: true });
 
-    // Use production URL in production, localhost in development
-    const backendUrl = process.env.NODE_ENV === 'production' 
-      ? (process.env.REACT_APP_BACKEND_URL_PROD || 'https://omegoo-api-clean.onrender.com')
-      : (process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001');
+    // Always use production URL for deployed app, localhost only for dev
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const backendUrl = isLocalhost ? 'http://localhost:3001' : 'https://omegoo-api-clean.onrender.com';
     console.log('🔗 Connecting to backend:', backendUrl);
-    console.log('🌍 Environment:', process.env.NODE_ENV);
-    console.log('📦 All env vars:', {
-      REACT_APP_BACKEND_URL: process.env.REACT_APP_BACKEND_URL,
-      NODE_ENV: process.env.NODE_ENV,
-      REACT_APP_ENVIRONMENT: process.env.REACT_APP_ENVIRONMENT
+    console.log('🌍 Current location:', {
+      hostname: window.location.hostname,
+      isLocalhost: isLocalhost,
+      nodeEnv: process.env.NODE_ENV
+    });
+
+    console.log('🚀 Creating socket connection with config:', {
+      url: backendUrl,
+      token: token || 'guest'
     });
 
     const socket = io(backendUrl, {
@@ -145,7 +148,10 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     socket.on('connect_error', (error) => {
       console.error('🚨 Socket connection error:', error.message);
       console.error('Backend URL:', backendUrl);
-      console.error('Error details:', error);
+      console.error('Error type:', (error as any).type);
+      console.error('Error description:', (error as any).description);
+      console.error('Error context:', (error as any).context);
+      console.error('Full error object:', error);
       dispatch({ type: 'SET_CONNECTED', payload: false });
       dispatch({ type: 'SET_CONNECTING', payload: false });
     });

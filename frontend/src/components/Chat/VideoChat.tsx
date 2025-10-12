@@ -262,9 +262,7 @@ const VideoChat: React.FC = () => {
         connected: socket.connected,
         id: socket.id,
         transport: socket.io.engine?.transport?.name || 'unknown',
-        backendUrl: process.env.NODE_ENV === 'production' 
-          ? (process.env.REACT_APP_BACKEND_URL_PROD || 'https://omegoo-api-clean.onrender.com')
-          : (process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001')
+        backendUrl: window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://omegoo-api-clean.onrender.com'
       });
       
       // Add more socket event debugging
