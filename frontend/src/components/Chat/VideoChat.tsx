@@ -58,7 +58,7 @@ const VideoChat: React.FC = () => {
           console.warn('Remote video autoplay prevented:', error);
         });
         
-        addMessage('Partner\'s video connected!', false);
+        // Video connected - no system message needed
       }
       
       setIsMatchConnected(true);
@@ -79,7 +79,7 @@ const VideoChat: React.FC = () => {
         setSessionId(data.sessionId);
         setIsSearching(false);
         setMessages([]);
-        addMessage('Connected! Setting up video chat...', false);
+        // Match found - no system message needed
         
         // Configure WebRTC service with match details
         if (webRTCRef.current) {
@@ -91,7 +91,7 @@ const VideoChat: React.FC = () => {
             console.log('📹 Local video started for peer connection');
           } catch (error) {
             console.error('❌ Failed to start local video:', error);
-            addMessage('Camera access required for video chat', false);
+            console.error('Camera access required for video chat');
             return;
           }
           
@@ -126,11 +126,11 @@ const VideoChat: React.FC = () => {
               }, 1000);
             } catch (error) {
               console.error('❌ Failed to create offer:', error);
-              addMessage('Failed to establish video connection', false);
+              console.error('Failed to establish video connection');
             }
           }
           
-          addMessage('Video chat ready!', false);
+          console.log('Video chat ready!');
           setIsMatchConnected(true);
         }
       });
@@ -155,7 +155,7 @@ const VideoChat: React.FC = () => {
         setIsMatchConnected(false);
         setSessionId(null);
         setMessages([]);
-        addMessage(`Chat ended. ${data.reason || 'Your partner left the chat.'}`, false);
+        console.log(`Chat ended. ${data.reason || 'Your partner left the chat.'}`);
         
         // Clean up WebRTC connection
         if (webRTCRef.current) {
@@ -212,7 +212,7 @@ const VideoChat: React.FC = () => {
 
       socket.on('error', (data: { message: string }) => {
         console.error('🚨 Video chat error:', data.message);
-        addMessage(`Error: ${data.message}`, false);
+        console.error(`Error: ${data.message}`);
       });
     }
 
@@ -268,17 +268,17 @@ const VideoChat: React.FC = () => {
       // Add more socket event debugging
       socket.on('connect', () => {
         console.log('✅ Socket connected!', socket.id);
-        addMessage('Connected to server!', false);
+        console.log('Connected to server!');
       });
 
       socket.on('disconnect', () => {
         console.log('❌ Socket disconnected!');
-        addMessage('Disconnected from server', false);
+        console.log('Disconnected from server');
       });
 
       socket.on('connect_error', (error) => {
         console.error('🚨 Socket connection error:', error);
-        addMessage('Connection error: ' + error.message, false);
+        console.error('Connection error: ' + error.message);
       });
 
       // Debug specific events
@@ -293,17 +293,30 @@ const VideoChat: React.FC = () => {
       socket.on('error', (data) => {
         console.log('🚨 ERROR EVENT RECEIVED:', data);
       });
+
+      // Handle multi-device connection replacement
+      socket.on('connection_replaced', (data) => {
+        console.log('🔄 Connection replaced by new device:', data);
+        alert('This session was replaced by a new device connection. Please refresh to reconnect.');
+        // Clean up current session
+        if (webRTCRef.current) {
+          webRTCRef.current.cleanup();
+        }
+        setIsMatchConnected(false);
+        setIsSearching(false);
+        setMessages([]);
+        navigate('/');
+      });
       
       // Only show connection status, don't auto-start
       if (!socket.connected) {
         console.log('⏳ Socket not connected yet, waiting...');
-        addMessage('Connecting to server...', false);
+        console.log('Connecting to server...');
       } else {
-        addMessage('Ready to chat! Click "New" to find someone.', false);
+        console.log('Ready to chat! Click "New" to find someone.');
       }
     } else {
-      console.error('❌ No socket available!');
-      addMessage('Socket not available - please refresh', false);
+      console.error('❌ No socket available! Please refresh the page.');
     }
   }, [socket]);
 
