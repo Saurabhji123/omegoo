@@ -458,9 +458,37 @@ class WebRTCService {
   }
 
   cleanup(): void {
+    console.log('🧹 WebRTC cleanup started');
+    
+    // Clear session info first
     this.currentMatchUserId = null;
     this.currentSessionId = null;
+    
+    // Close peer connection and clean up streams
     this.close();
+    
+    // Clear callbacks
+    this.onMessage = null;
+    this.onRemoteStream = null;
+    this.onConnectionStateChange = null;
+    this.onIceCandidateGenerated = null;
+    
+    console.log('✅ WebRTC cleanup completed');
+  }
+
+  // Enhanced session management for multi-device scenarios
+  forceDisconnect(): void {
+    console.log('🔄 Force disconnecting WebRTC session');
+    
+    if (this.peerConnection && this.isDataChannelOpen) {
+      try {
+        this.dataChannel?.send(JSON.stringify({ type: 'session_end' }));
+      } catch (error) {
+        console.warn('Could not send session end message:', error);
+      }
+    }
+    
+    this.cleanup();
   }
 }
 

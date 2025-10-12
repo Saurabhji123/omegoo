@@ -140,10 +140,13 @@ const VideoChat: React.FC = () => {
         setIsSearching(true);
       });
 
-      socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string }) => {
+      socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string }) => {
         console.log('💬 Received text message in video chat:', data);
         if (data.sessionId === sessionId) {
           addMessage(data.content, false);
+          console.log(`✅ Message displayed from ${data.fromUserId}`);
+        } else {
+          console.log(`⚠️ Message ignored - wrong session (got: ${data.sessionId}, expected: ${sessionId})`);
         }
       });
 
@@ -153,6 +156,19 @@ const VideoChat: React.FC = () => {
         setSessionId(null);
         setMessages([]);
         addMessage(`Chat ended. ${data.reason || 'Your partner left the chat.'}`, false);
+        
+        // Clean up WebRTC connection
+        if (webRTCRef.current) {
+          webRTCRef.current.cleanup();
+        }
+      });
+
+      socket.on('user_disconnected', (data: { userId: string }) => {
+        console.log('👋 User disconnected:', data.userId);
+        // This will help clean up any stale connections
+        if (webRTCRef.current) {
+          // Could add specific cleanup for this user if needed
+        }
       });
 
       // WebRTC signaling events

@@ -101,9 +101,24 @@ export class SocketService {
         this.startQueueCleanup();
       }
 
-      socket.on('disconnect', () => {
-        console.log(`User ${socket.userId} disconnected`);
+      socket.on('disconnect', async () => {
+        console.log(`🔌 User ${socket.userId} disconnected`);
+        
+        // Clean up active sessions
+        await this.cleanupUserSessions(socket.userId!);
+        
+        // Remove from connected users
         this.connectedUsers.delete(socket.userId!);
+        
+        // Remove from all queues
+        await DevRedisService.removeFromMatchQueue(socket.userId!, 'text');
+        await DevRedisService.removeFromMatchQueue(socket.userId!, 'audio');
+        await DevRedisService.removeFromMatchQueue(socket.userId!, 'video');
+        
+        // Set user offline
+        DevRedisService.setUserOffline(socket.userId!);
+        
+        console.log(`🧹 Cleanup completed for user ${socket.userId}`);
       });
     });
   }
@@ -315,20 +330,37 @@ export class SocketService {
   private static async handleChatMessage(socket: AuthenticatedSocket, data: any) {
     const { sessionId, content, type } = data;
 
-    // Get session and find other user
+    console.log(`💬 Chat message from ${socket.userId}:`, { sessionId, content, type });
+
+    // Get session and validate user is part of it
     const session = await this.getSessionById(sessionId);
-    if (!session) return;
+    if (!session) {
+      console.log(`❌ Session ${sessionId} not found`);
+      return;
+    }
+
+    // Validate user is part of this session
+    if (session.user1_id !== socket.userId && session.user2_id !== socket.userId) {
+      console.log(`❌ User ${socket.userId} not part of session ${sessionId}`);
+      return;
+    }
 
     const otherUserId = session.user1_id === socket.userId ? session.user2_id : session.user1_id;
     const otherSocketId = this.connectedUsers.get(otherUserId);
+
+    console.log(`📤 Forwarding message to ${otherUserId} (socket: ${otherSocketId})`);
 
     if (otherSocketId) {
       this.io.to(otherSocketId).emit('chat_message', {
         sessionId,
         content,
         type,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        fromUserId: socket.userId
       });
+      console.log(`✅ Message forwarded successfully`);
+    } else {
+      console.log(`❌ Other user ${otherUserId} not connected`);
     }
 
     // Store message (if needed for evidence)
@@ -452,6 +484,23 @@ export class SocketService {
       clearInterval(this.queueCleanupInterval);
       this.queueCleanupInterval = null;
       console.log('🛑 Stopped queue cleanup service');
+    }
+  }
+
+  private static async cleanupUserSessions(userId: string) {
+    try {
+      console.log(`🧹 Cleaning up sessions for user ${userId}`);
+      
+      // Delete user session from Redis
+      await DevRedisService.deleteUserSession(userId);
+      
+      // Broadcast to all connected users that this user disconnected
+      // This will trigger session_ended events on the frontend
+      this.io.emit('user_disconnected', { userId });
+      
+      console.log(`✅ Session cleanup completed for user ${userId}`);
+    } catch (error) {
+      console.error(`❌ Error during session cleanup for ${userId}:`, error);
     }
   }
 }

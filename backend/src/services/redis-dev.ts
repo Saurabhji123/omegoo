@@ -110,6 +110,11 @@ export class RedisService {
   // Session management
   static async setUserSession(userId: string, sessionData: any) {
     await this.set(`session:${userId}`, sessionData, 3600);
+    
+    // Also track active sessions globally
+    const activeSessions = this.storage.get('active_sessions') || new Set();
+    activeSessions.add(userId);
+    this.storage.set('active_sessions', activeSessions);
   }
 
   static async getUserSession(userId: string): Promise<any | null> {
@@ -118,6 +123,36 @@ export class RedisService {
 
   static async deleteUserSession(userId: string) {
     await this.del(`session:${userId}`);
+    
+    // Remove from active sessions
+    const activeSessions = this.storage.get('active_sessions') || new Set();
+    activeSessions.delete(userId);
+    this.storage.set('active_sessions', activeSessions);
+  }
+
+  // User online status
+  static setUserOnline(userId: string) {
+    const onlineUsers = this.storage.get('online_users') || new Set();
+    onlineUsers.add(userId);
+    this.storage.set('online_users', onlineUsers);
+    console.log(`👤 User ${userId} is now online. Total online: ${onlineUsers.size}`);
+  }
+
+  static setUserOffline(userId: string) {
+    const onlineUsers = this.storage.get('online_users') || new Set();
+    onlineUsers.delete(userId);
+    this.storage.set('online_users', onlineUsers);
+    console.log(`👤 User ${userId} is now offline. Total online: ${onlineUsers.size}`);
+  }
+
+  static isUserOnline(userId: string): boolean {
+    const onlineUsers = this.storage.get('online_users') || new Set();
+    return onlineUsers.has(userId);
+  }
+
+  static getOnlineUserCount(): number {
+    const onlineUsers = this.storage.get('online_users') || new Set();
+    return onlineUsers.size;
   }
 
   // Rate limiting
@@ -135,14 +170,7 @@ export class RedisService {
     return true;
   }
 
-  // User presence
-  static async setUserOnline(userId: string) {
-    await this.set(`presence:${userId}`, '1', 30);
-  }
-
-  static async isUserOnline(userId: string): Promise<boolean> {
-    return await this.exists(`presence:${userId}`);
-  }
+  // Removed duplicate methods - using the ones defined above
 
   // Evidence storage
   static async storeEvidence(sessionId: string, evidenceData: any) {
