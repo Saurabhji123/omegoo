@@ -118,17 +118,51 @@ const VideoChat: React.FC = () => {
       console.log('🔌 Socket status:', {
         connected: socket.connected,
         id: socket.id,
-        transport: socket.io.engine.transport.name
+        transport: socket.io.engine?.transport?.name || 'unknown',
+        backendUrl: process.env.REACT_APP_BACKEND_URL
+      });
+      
+      // Add more socket event debugging
+      socket.on('connect', () => {
+        console.log('✅ Socket connected!', socket.id);
+        addMessage('Connected to server!', false);
+      });
+
+      socket.on('disconnect', () => {
+        console.log('❌ Socket disconnected!');
+        addMessage('Disconnected from server', false);
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('🚨 Socket connection error:', error);
+        addMessage('Connection error: ' + error.message, false);
+      });
+
+      // Debug specific events
+      socket.on('match-found', (data) => {
+        console.log('🎯 MATCH-FOUND EVENT RECEIVED:', data);
+      });
+
+      socket.on('searching', (data) => {
+        console.log('� SEARCHING EVENT RECEIVED:', data);
+      });
+
+      socket.on('error', (data) => {
+        console.log('🚨 ERROR EVENT RECEIVED:', data);
       });
       
       if (socket.connected && !isConnected && !isSearching) {
         console.log('🚀 Auto-starting chat matching...');
         setTimeout(() => {
           startNewChat();
-        }, 1000); // Small delay to ensure WebRTC is initialized
+        }, 2000); // Increased delay
       } else if (!socket.connected) {
+        console.log('⏳ Socket not connected yet, waiting...');
         addMessage('Connecting to server...', false);
       }
+    } else {
+      console.error('❌ No socket available!');
+      addMessage('Socket not available - please refresh', false);
     }
   }, [socket]);
 
@@ -186,8 +220,16 @@ const VideoChat: React.FC = () => {
     setSessionId(null);
     
     // Emit to socket for matching with detailed logging
-    console.log('🔍 Emitting find_match event with mode: video');
+    console.log('🔍 Emitting find_match event with data:', { mode: 'video' });
+    console.log('🔍 Socket status before emit:', {
+      connected: socket.connected,
+      id: socket.id
+    });
+    
     socket.emit('find_match', { mode: 'video' });
+    
+    // Confirm emit was sent
+    console.log('✅ find_match event emitted');
     
     // Initialize WebRTC if needed
     if (webRTCRef.current) {

@@ -90,24 +90,42 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, [user, token]);
 
   const connect = () => {
-    if (state.socket?.connected) return;
+    if (state.socket?.connected) {
+      console.log('🔌 Socket already connected, skipping');
+      return;
+    }
 
-    const socket = io(process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001', {
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+    console.log('🔗 Connecting to backend:', backendUrl);
+
+    const socket = io(backendUrl, {
       auth: {
         token: token || 'guest'
       },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      timeout: 20000,
+      forceNew: true
     });
 
+    console.log('🚀 Socket instance created, waiting for connection...');
+
     socket.on('connect', () => {
-      console.log('Socket connected');
+      console.log('✅ Socket connected successfully!', {
+        id: socket.id,
+        transport: socket.io.engine.transport.name
+      });
       dispatch({ type: 'SET_CONNECTED', payload: true });
     });
 
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('❌ Socket disconnected:', reason);
       dispatch({ type: 'SET_CONNECTED', payload: false });
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('🚨 Socket connection error:', error.message);
+      console.error('Backend URL:', backendUrl);
     });
 
     // Updated event names to match backend
