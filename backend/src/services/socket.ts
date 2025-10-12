@@ -13,6 +13,7 @@ export class SocketService {
   private static connectedUsers = new Map<string, string>(); // userId -> socketId
   private static waitingQueue: string[] = []; // For in-memory queue management
   private static activeSessions = new Map<string, { user1: string, user2: string }>(); // sessionId -> users
+  private static disconnectionTimers = new Map<string, NodeJS.Timeout>(); // userId -> timer for delayed cleanup
 
   static initialize(io: SocketIOServer) {
     this.io = io;
@@ -104,6 +105,14 @@ export class SocketService {
         }
       }
       
+      // Clear any pending disconnection timer for this user
+      const existingTimer = this.disconnectionTimers.get(socket.userId!);
+      if (existingTimer) {
+        console.log(`⏰ Clearing disconnection timer for ${socket.userId} (reconnected)`);
+        clearTimeout(existingTimer);
+        this.disconnectionTimers.delete(socket.userId!);
+      }
+
       // Store new connection
       this.connectedUsers.set(socket.userId!, socket.id);
       
@@ -120,36 +129,50 @@ export class SocketService {
       socket.on('disconnect', async () => {
         console.log(`🔌 User ${socket.userId} disconnected`);
         
-        // Clean up active sessions
-        await this.cleanupUserSessions(socket.userId!);
-        
-        // Remove from active sessions tracking
-        for (const [sessionId, session] of this.activeSessions.entries()) {
-          if (session.user1 === socket.userId || session.user2 === socket.userId) {
-            console.log(`🗑️ Removing session ${sessionId} due to user disconnect`);
-            this.activeSessions.delete(sessionId);
+        // Set a delayed cleanup timer (30 seconds) to handle reconnections
+        const cleanupTimer = setTimeout(async () => {
+          console.log(`🧹 Cleaning up sessions for user ${socket.userId} (after delay)`);
+          
+          // Clean up active sessions
+          await this.cleanupUserSessions(socket.userId!);
+          
+          // Remove from active sessions tracking
+          for (const [sessionId, session] of this.activeSessions.entries()) {
+            if (session.user1 === socket.userId || session.user2 === socket.userId) {
+              console.log(`🗑️ Removing session ${sessionId} due to user disconnect`);
+              this.activeSessions.delete(sessionId);
+            }
           }
-        }
+          
+          // Remove from connected users (only if still not reconnected)
+          if (this.connectedUsers.get(socket.userId!) === socket.id) {
+            this.connectedUsers.delete(socket.userId!);
+          }
+          
+          // Remove from all queues
+          await DevRedisService.removeFromMatchQueue(socket.userId!, 'text');
+          await DevRedisService.removeFromMatchQueue(socket.userId!, 'audio');
+          await DevRedisService.removeFromMatchQueue(socket.userId!, 'video');
+          
+          // Remove from in-memory queue too
+          const queuePosition = this.waitingQueue.indexOf(socket.userId!);
+          if (queuePosition !== -1) {
+            this.waitingQueue.splice(queuePosition, 1);
+            console.log(`🗑️ Removed ${socket.userId} from waiting queue`);
+          }
+          
+          // Set user offline
+          DevRedisService.setUserOffline(socket.userId!);
+          
+          // Remove the timer reference
+          this.disconnectionTimers.delete(socket.userId!);
+          
+          console.log(`✅ Session cleanup completed for user ${socket.userId}`);
+        }, 30000); // 30 second delay
         
-        // Remove from connected users
-        this.connectedUsers.delete(socket.userId!);
-        
-        // Remove from all queues
-        await DevRedisService.removeFromMatchQueue(socket.userId!, 'text');
-        await DevRedisService.removeFromMatchQueue(socket.userId!, 'audio');
-        await DevRedisService.removeFromMatchQueue(socket.userId!, 'video');
-        
-        // Remove from in-memory queue too
-        const queuePosition = this.waitingQueue.indexOf(socket.userId!);
-        if (queuePosition !== -1) {
-          this.waitingQueue.splice(queuePosition, 1);
-          console.log(`🗑️ Removed ${socket.userId} from waiting queue`);
-        }
-        
-        // Set user offline
-        DevRedisService.setUserOffline(socket.userId!);
-        
-        console.log(`🧹 Cleanup completed for user ${socket.userId}`);
+        // Store the timer for this user
+        this.disconnectionTimers.set(socket.userId!, cleanupTimer);
+        console.log(`⏰ Set cleanup timer for ${socket.userId} (30s delay)`);
       });
     });
   }
