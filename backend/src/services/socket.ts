@@ -12,6 +12,7 @@ export class SocketService {
   private static io: SocketIOServer;
   private static connectedUsers = new Map<string, string>(); // userId -> socketId
   private static waitingQueue: string[] = []; // For in-memory queue management
+  private static activeSessions = new Map<string, { user1: string, user2: string }>(); // sessionId -> users
 
   static initialize(io: SocketIOServer) {
     this.io = io;
@@ -121,6 +122,14 @@ export class SocketService {
         
         // Clean up active sessions
         await this.cleanupUserSessions(socket.userId!);
+        
+        // Remove from active sessions tracking
+        for (const [sessionId, session] of this.activeSessions.entries()) {
+          if (session.user1 === socket.userId || session.user2 === socket.userId) {
+            console.log(`🗑️ Removing session ${sessionId} due to user disconnect`);
+            this.activeSessions.delete(sessionId);
+          }
+        }
         
         // Remove from connected users
         this.connectedUsers.delete(socket.userId!);
@@ -269,6 +278,13 @@ export class SocketService {
 
       console.log(`📋 Session created: ${session.id}`);
 
+      // Track active session for chat message routing
+      this.activeSessions.set(session.id, {
+        user1: socket.userId!,
+        user2: match.userId
+      });
+      console.log(`🔗 Tracked session ${session.id} between ${socket.userId} and ${match.userId}`);
+
       // Notify both users - current user is the initiator
       console.log(`📤 Sending match-found to ${socket.userId} (initiator)`);
       socket.emit('match-found', { 
@@ -354,25 +370,18 @@ export class SocketService {
 
     console.log(`💬 Chat message from ${socket.userId}:`, { sessionId, content, type });
 
-    // Simple approach: find the other user in the same session by iterating through active sessions
-    // This avoids database lookup issues
-    let otherUserId: string | null = null;
-    let otherSocketId: string | null = null;
-
-    // Look through all connected users to find the partner
-    for (const [userId, socketId] of this.connectedUsers.entries()) {
-      if (userId !== socket.userId) {
-        // Check if this user might be our partner (simple check)
-        const otherSocket = this.io.sockets.sockets.get(socketId);
-        if (otherSocket) {
-          otherUserId = userId;
-          otherSocketId = socketId;
-          break; // For now, just send to the first other user (video chat is 1-to-1)
-        }
-      }
+    // Find the active session and get the partner
+    const session = this.activeSessions.get(sessionId);
+    if (!session) {
+      console.log(`❌ No active session found for ${sessionId}`);
+      return;
     }
 
-    console.log(`📤 Forwarding message to ${otherUserId} (socket: ${otherSocketId})`);
+    // Determine the partner (other user in the session)
+    const otherUserId = session.user1 === socket.userId ? session.user2 : session.user1;
+    const otherSocketId = this.connectedUsers.get(otherUserId);
+
+    console.log(`📤 Forwarding message to partner ${otherUserId} (socket: ${otherSocketId})`);
 
     if (otherSocketId) {
       this.io.to(otherSocketId).emit('chat_message', {
