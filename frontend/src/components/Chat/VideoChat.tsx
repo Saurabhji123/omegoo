@@ -160,28 +160,24 @@ const VideoChat: React.FC = () => {
 
       socket.on('session_ended', (data: { reason?: string }) => {
         console.log('❌ Video chat session ended:', data);
-        
-        // INSTANT CLEANUP
         setIsMatchConnected(false);
         setSessionId(null);
         setMessages([]);
+        console.log(`Chat ended. ${data.reason || 'Your partner left the chat.'}`);
         
-        // Clean up WebRTC connection immediately
+        // Clean up WebRTC connection
         if (webRTCRef.current) {
           webRTCRef.current.cleanup();
         }
         
-        // AUTO-START NEW SEARCH if partner left
+        // Auto-search if partner left (optional - for better UX)
         if (data.reason === 'partner_left' && socket) {
-          console.log('🔄 Partner left, automatically searching for new partner...');
+          console.log('🔄 Partner left, starting auto-search...');
           setIsSearching(true);
           setTimeout(() => {
             socket.emit('find_match', { mode: 'video' });
-            console.log('✅ Auto-search started after partner left');
-          }, 1000); // Small delay for smoother UX
+          }, 2000); // Longer delay for stability
         }
-        
-        console.log(`Chat ended. ${data.reason || 'Your partner left the chat.'}`);
       });
 
       socket.on('user_disconnected', (data: { userId: string }) => {
@@ -421,11 +417,7 @@ const VideoChat: React.FC = () => {
       });
     }
     
-    // INSTANT CLEANUP: Clear WebRTC connection immediately
-    if (webRTCRef.current) {
-      webRTCRef.current.cleanup();
-      console.log('🧹 WebRTC cleaned up instantly');
-    }
+    // Don't cleanup WebRTC here - let session_ended handler manage it
     
     // INSTANT STATE RESET
     setIsMatchConnected(false);
