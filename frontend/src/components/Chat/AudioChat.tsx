@@ -77,7 +77,8 @@ const AudioChat: React.FC = () => {
       addMessage(message, false);
     });
 
-    // Removed - matching handled by socket context
+    // Start local audio immediately for readiness
+    startLocalAudio();
 
     // Socket event listeners
     if (socket) {
@@ -141,14 +142,27 @@ const AudioChat: React.FC = () => {
         console.log('🔍 Searching for audio chat partner:', data);
         setQueueInfo(data);
         setIsSearching(true);
+        setIsConnected(false); // Ensure we're not showing connected during search
+        
+        // Add search message if first time
+        if (messages.length === 0 || messages[messages.length - 1].content.indexOf('Searching') === -1) {
+          addMessage('Searching for someone to chat with...', false);
+        }
       });
 
       socket.on('session_ended', (data: { reason?: string }) => {
         console.log('❌ Audio chat session ended:', data);
+        
+        // Reset connection states
         setIsConnected(false);
         setSessionId(null);
         setCallStartTime(null);
-        setMessages([]); // Clear messages
+        setCallDuration(0);
+        setMessages([]);
+        setIsSearching(false);
+        
+        // Don't cleanup WebRTC here - it might be needed for immediate reconnect
+        console.log('🔄 Session ended, ready for new match');
       });
 
       socket.on('chat_message', (data: { message: string, userId?: string }) => {
@@ -180,11 +194,27 @@ const AudioChat: React.FC = () => {
 
       socket.on('user_disconnected', (data: { reason?: string }) => {
         console.log('👋 Audio chat partner disconnected:', data);
+        
+        // Clean up current connection
+        if (webRTCRef.current) {
+          webRTCRef.current.cleanup();
+        }
+        
+        // Reset states
         setIsConnected(false);
         setSessionId(null);
         setCallStartTime(null);
         setCallDuration(0);
         setMessages([]);
+        setIsSearching(false);
+        
+        // Show disconnect message and auto-restart search
+        addMessage('Partner disconnected. Searching for someone new...', false);
+        
+        setTimeout(() => {
+          console.log('🔄 Auto-restarting search after partner disconnect');
+          startNewChat();
+        }, 1000);
       });
 
       socket.on('error', (data: { message: string }) => {
@@ -211,14 +241,15 @@ const AudioChat: React.FC = () => {
     };
   }, [socket]);
 
-  // Auto-start matching when component mounts and socket is ready
+  // Auto-start matching when component mounts and socket is ready (like VideoChat)
   useEffect(() => {
-    if (socket && !isConnected && !isSearching) {
+    if (socket && socketConnected && !isConnected && !isSearching) {
+      console.log('🎤 Auto-starting audio chat matching...');
       setTimeout(() => {
-        findMatch();
+        startNewChat();
       }, 1000); // Small delay to ensure WebRTC is initialized
     }
-  }, [socket]);
+  }, [socket, socketConnected]);
 
   // Call duration timer
   useEffect(() => {
@@ -511,9 +542,10 @@ const AudioChat: React.FC = () => {
             <p className="text-xl text-gray-300 mb-8">Connect with someone and have a real conversation!</p>
             <button
               onClick={() => startNewChat()}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors shadow-lg"
+              disabled={!socketConnected || isSearching}
+              className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors shadow-lg"
             >
-              Find Someone
+              {!socketConnected ? 'Connecting...' : 'Find Someone'}
             </button>
           </div>
         )}
