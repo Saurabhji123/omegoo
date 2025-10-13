@@ -103,6 +103,7 @@ const AudioChat: React.FC = () => {
     if (socket) {
       socket.on('match-found', async (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
         console.log('🎤 Audio chat match found:', data);
+        console.log('🎯 Updating state - sessionId:', data.sessionId, 'isSearching: false');
         setSessionId(data.sessionId);
         setIsSearching(false);
         setMessages([]);
@@ -148,10 +149,11 @@ const AudioChat: React.FC = () => {
       });
 
       socket.on('searching', (data: { position: number; totalWaiting: number }) => {
-        console.log('🔍 Searching for audio partner:', data);
+        console.log('🔍 Received searching event for audio partner:', data);
         setQueueInfo(data);
         setIsSearching(true);
         setIsMatchConnected(false);
+        console.log('🎯 State updated - isSearching: true, isMatchConnected: false');
         
         if (messages.length === 0) {
           addMessage('Searching for someone to chat with...', false);
@@ -256,15 +258,15 @@ const AudioChat: React.FC = () => {
     };
   }, [socket, handleRemoteStream]);
 
-  // Auto-start matching when component mounts and socket is ready (VideoChat pattern)
-  useEffect(() => {
-    if (socket && socketConnected && !isMatchConnected && !isSearching) {
-      console.log('🎤 Auto-starting audio chat search');
-      setTimeout(() => {
-        startNewChat();
-      }, 1000);
-    }
-  }, [socket, socketConnected]);
+  // Remove auto-start - user must click "Find Someone" like VideoChat
+  // useEffect(() => {
+  //   if (socket && socketConnected && !isMatchConnected && !isSearching) {
+  //     console.log('🎤 Auto-starting audio chat search');
+  //     setTimeout(() => {
+  //       startNewChat();
+  //     }, 1000);
+  //   }
+  // }, [socket, socketConnected]);
 
   // Call duration timer
   useEffect(() => {
@@ -345,6 +347,8 @@ const AudioChat: React.FC = () => {
 
   // Session management functions (copy VideoChat pattern)
   const startNewChat = (forceCleanup = false) => {
+    console.log('🎤 startNewChat called with:', { forceCleanup, socket: !!socket, socketConnected, isSearching, isMatchConnected });
+    
     if (!socket) {
       console.error('❌ Socket not available');
       addMessage('Connection error. Please refresh the page.', false);
@@ -411,7 +415,9 @@ const AudioChat: React.FC = () => {
     const searchDelay = forceCleanup ? 200 : 0;
     setTimeout(() => {
       console.log('🔍 Starting search for audio partner');
+      console.log('📡 Emitting find_match with mode: audio');
       socket.emit('find_match', { mode: 'audio' });
+      console.log('✅ find_match event emitted successfully');
       addMessage('Searching for someone to chat with...', false);
     }, searchDelay);
   };
