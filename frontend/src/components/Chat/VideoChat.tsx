@@ -160,15 +160,28 @@ const VideoChat: React.FC = () => {
 
       socket.on('session_ended', (data: { reason?: string }) => {
         console.log('❌ Video chat session ended:', data);
+        
+        // INSTANT CLEANUP
         setIsMatchConnected(false);
         setSessionId(null);
         setMessages([]);
-        console.log(`Chat ended. ${data.reason || 'Your partner left the chat.'}`);
         
-        // Clean up WebRTC connection
+        // Clean up WebRTC connection immediately
         if (webRTCRef.current) {
           webRTCRef.current.cleanup();
         }
+        
+        // AUTO-START NEW SEARCH if partner left
+        if (data.reason === 'partner_left' && socket) {
+          console.log('🔄 Partner left, automatically searching for new partner...');
+          setIsSearching(true);
+          setTimeout(() => {
+            socket.emit('find_match', { mode: 'video' });
+            console.log('✅ Auto-search started after partner left');
+          }, 1000); // Small delay for smoother UX
+        }
+        
+        console.log(`Chat ended. ${data.reason || 'Your partner left the chat.'}`);
       });
 
       socket.on('user_disconnected', (data: { userId: string }) => {
@@ -393,26 +406,37 @@ const VideoChat: React.FC = () => {
       return;
     }
     
-    setIsSearching(true);
+    // INSTANT DISCONNECT: End current session first if exists
+    if (sessionId && isMatchConnected) {
+      console.log('� Ending current session immediately:', sessionId);
+      socket.emit('end_session', { 
+        sessionId: sessionId,
+        duration: Date.now() 
+      });
+      
+      // Notify partner immediately
+      socket.emit('session_ended', { 
+        sessionId: sessionId,
+        reason: 'user_clicked_next' 
+      });
+    }
+    
+    // INSTANT CLEANUP: Clear WebRTC connection immediately
+    if (webRTCRef.current) {
+      webRTCRef.current.cleanup();
+      console.log('🧹 WebRTC cleaned up instantly');
+    }
+    
+    // INSTANT STATE RESET
     setIsMatchConnected(false);
-    setMessages([]);
     setSessionId(null);
+    setMessages([]);
+    setIsSearching(true);
     
-    // Emit to socket for matching with detailed logging
-    console.log('🔍 Emitting find_match event with data:', { mode: 'video' });
-    console.log('🔍 Socket status before emit:', {
-      connected: socket.connected,
-      id: socket.id
-    });
-    
+    // START NEW SEARCH IMMEDIATELY
+    console.log('🔍 Starting immediate search for new partner');
     socket.emit('find_match', { mode: 'video' });
-    
-    // Confirm emit was sent
-    console.log('✅ find_match event emitted');
-    
-    // WebRTC is ready, matching handled by socket
-    
-    console.log('🔍 Started searching for video chat partner');
+    console.log('✅ New partner search started');
     addMessage('Searching for someone to chat with...', false);
   };
 

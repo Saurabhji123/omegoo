@@ -447,10 +447,29 @@ export class SocketService {
   private static async handleEndSession(socket: AuthenticatedSocket, data: any) {
     const { sessionId, duration } = data;
 
+    console.log(`🔌 Ending session: ${sessionId} by user ${socket.userId}`);
+    
+    // End session in database
     await DatabaseService.endChatSession(sessionId, duration);
     
-    // Notify other user
-    socket.to(sessionId).emit('session_ended', { reason: 'user_left' });
+    // Find the partner in this session
+    const session = this.activeSessions.get(sessionId);
+    if (session) {
+      const partnerId = session.user1 === socket.userId ? session.user2 : session.user1;
+      const partnerSocketId = this.connectedUsers.get(partnerId);
+      
+      if (partnerSocketId) {
+        console.log(`📤 Notifying partner ${partnerId} of session end`);
+        this.io.to(partnerSocketId).emit('session_ended', { 
+          sessionId,
+          reason: 'partner_left' 
+        });
+      }
+      
+      // Remove from active sessions immediately
+      this.activeSessions.delete(sessionId);
+      console.log(`🗑️ Removed session ${sessionId} from active sessions`);
+    }
   }
 
   // Utility methods
