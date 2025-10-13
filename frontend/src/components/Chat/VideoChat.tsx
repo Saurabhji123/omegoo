@@ -413,7 +413,7 @@ const VideoChat: React.FC = () => {
     }, 100);
   };
 
-  const startNewChat = () => {
+  const startNewChat = (forceCleanup = false) => {
     if (!socket) {
       console.error('❌ Socket not available');
       addMessage('Connection error. Please refresh the page.', false);
@@ -441,7 +441,48 @@ const VideoChat: React.FC = () => {
       });
     }
     
-    // Don't cleanup WebRTC here - let session_ended handler manage it
+    // FORCE CLEANUP: For fresh reconnects (same users scenario)
+    if (forceCleanup) {
+      console.log('🧹 Force cleaning video streams for fresh reconnect');
+      
+      // Clean local video
+      if (localVideoRef.current?.srcObject) {
+        const localStream = localVideoRef.current.srcObject as MediaStream;
+        localStream.getTracks().forEach(track => {
+          console.log('🛑 Stopping local track:', track.kind);
+          track.stop();
+        });
+        localVideoRef.current.srcObject = null;
+      }
+      
+      // Clean remote video
+      if (remoteVideoRef.current?.srcObject) {
+        const remoteStream = remoteVideoRef.current.srcObject as MediaStream;  
+        remoteStream.getTracks().forEach(track => {
+          console.log('🛑 Stopping remote track:', track.kind);
+          track.stop();
+        });
+        remoteVideoRef.current.srcObject = null;
+      }
+      
+      // Force WebRTC cleanup
+      if (webRTCRef.current) {
+        console.log('🔌 Force disconnecting WebRTC for fresh connection');
+        webRTCRef.current.forceDisconnect();
+      }
+      
+      console.log('✅ Force cleanup completed for fresh reconnect');
+      
+      // REINITIALIZE WebRTC after cleanup for fresh connection
+      setTimeout(() => {
+        if (webRTCRef.current) {
+          console.log('🔄 Reinitializing WebRTC service after cleanup');
+          webRTCRef.current = new WebRTCService();
+          webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
+          console.log('✅ Fresh WebRTC instance created');
+        }
+      }, 100);
+    }
     
     // INSTANT STATE RESET
     setIsMatchConnected(false);
@@ -449,18 +490,21 @@ const VideoChat: React.FC = () => {
     setMessages([]);
     setIsSearching(true);
     
-    // START NEW SEARCH IMMEDIATELY
-    console.log('🔍 Starting immediate search for new partner');
-    socket.emit('find_match', { mode: 'video' });
-    console.log('✅ New partner search started');
-    addMessage('Searching for someone to chat with...', false);
+    // START NEW SEARCH (with delay if force cleanup)
+    const searchDelay = forceCleanup ? 200 : 0;
+    setTimeout(() => {
+      console.log('🔍 Starting search for new partner');
+      socket.emit('find_match', { mode: 'video' });
+      console.log('✅ New partner search started');
+      addMessage('Searching for someone to chat with...', false);
+    }, searchDelay);
   };
 
   const nextMatch = () => {
-    if (sessionId) {
-      socket?.emit('end_session', { sessionId });
-    }
-    startNewChat();
+    console.log('🔄 Next Person clicked - using force cleanup for fresh reconnect');
+    
+    // Use startNewChat with force cleanup for same users reconnection
+    startNewChat(true);
   };
 
   const exitChat = () => {
@@ -649,7 +693,7 @@ const VideoChat: React.FC = () => {
           <div className="flex justify-center space-x-3 lg:space-x-4 mb-3">
             {!isMatchConnected ? (
               <button
-                onClick={startNewChat}
+                onClick={() => startNewChat()}
                 className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 lg:px-8 lg:py-3 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
                 disabled={isSearching}
               >
