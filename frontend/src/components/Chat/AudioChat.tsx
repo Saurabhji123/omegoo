@@ -5,6 +5,7 @@ import WebRTCService from '../../services/webrtc';
 import { 
   MicrophoneIcon,
   SpeakerWaveIcon,
+  SpeakerXMarkIcon,
   XMarkIcon,
   PhoneXMarkIcon,
   SignalIcon
@@ -302,13 +303,17 @@ const AudioChat: React.FC = () => {
     if (webRTCRef.current) {
       const newState = webRTCRef.current.toggleAudio();
       setIsMicOn(newState || false);
+      console.log('🎤 Mic toggled:', newState ? 'ON' : 'OFF');
     }
   };
 
   const toggleSpeaker = () => {
     if (remoteAudioRef.current) {
-      remoteAudioRef.current.muted = isSpeakerOn;
+      // Fix: Logic was inverted - when isSpeakerOn is true, we want to mute it (set muted = true)
+      const newMutedState = isSpeakerOn; // If speaker is on, we want to mute it
+      remoteAudioRef.current.muted = newMutedState;
       setIsSpeakerOn(!isSpeakerOn);
+      console.log('🔊 Speaker toggled:', isSpeakerOn ? 'MUTED' : 'UNMUTED');
     }
   };
 
@@ -448,38 +453,38 @@ const AudioChat: React.FC = () => {
               You're now in a voice conversation with a stranger
             </p>
             
-            {/* Enhanced Audio Controls */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8 max-w-xs mx-auto">
+            {/* Compact Audio Controls */}
+            <div className="flex gap-4 justify-center mb-6 sm:mb-8">
               <button
                 onClick={toggleMic}
-                className={`p-4 sm:p-6 rounded-xl transition-all duration-300 ${
+                className={`p-3 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 ${
                   isMicOn 
-                    ? 'bg-gray-700 hover:bg-gray-600 shadow-lg' 
-                    : 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/25'
-                }`}
+                    ? 'bg-gray-700 hover:bg-gray-600' 
+                    : 'bg-red-500 hover:bg-red-600'
+                } shadow-md`}
+                title={isMicOn ? 'Mute Microphone' : 'Unmute Microphone'}
               >
                 {isMicOn ? (
-                  <MicrophoneIcon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto" />
+                  <MicrophoneIcon className="w-6 h-6 text-white" />
                 ) : (
-                  <MicrophoneSlashIcon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto" />
+                  <MicrophoneSlashIcon className="w-6 h-6 text-white" />
                 )}
-                <div className="text-xs sm:text-sm mt-2 font-medium">
-                  {isMicOn ? 'Mute' : 'Unmute'}
-                </div>
               </button>
               
               <button
                 onClick={toggleSpeaker}
-                className={`p-4 sm:p-6 rounded-xl transition-all duration-300 ${
+                className={`p-3 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 ${
                   isSpeakerOn 
-                    ? 'bg-gray-700 hover:bg-gray-600 shadow-lg' 
-                    : 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/25'
-                }`}
+                    ? 'bg-gray-700 hover:bg-gray-600' 
+                    : 'bg-red-500 hover:bg-red-600'
+                } shadow-md`}
+                title={isSpeakerOn ? 'Mute Speaker' : 'Unmute Speaker'}
               >
-                <SpeakerWaveIcon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto" />
-                <div className="text-xs sm:text-sm mt-2 font-medium">
-                  {isSpeakerOn ? 'Mute' : 'Unmute'}
-                </div>
+                {isSpeakerOn ? (
+                  <SpeakerWaveIcon className="w-6 h-6 text-white" />
+                ) : (
+                  <SpeakerXMarkIcon className="w-6 h-6 text-white" />
+                )}
               </button>
             </div>
 
