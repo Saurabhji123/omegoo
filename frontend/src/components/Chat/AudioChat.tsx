@@ -5,41 +5,35 @@ import WebRTCService from '../../services/webrtc';
 import { 
   MicrophoneIcon,
   SpeakerWaveIcon,
-  ChatBubbleLeftRightIcon,
-  PaperAirplaneIcon,
   XMarkIcon,
-  PhoneXMarkIcon
+  PhoneXMarkIcon,
+  SignalIcon
 } from '@heroicons/react/24/outline';
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
-
-// Use EXACT same Message interface as VideoChat for consistency
-interface Message {
-  id: string;
-  content: string;
-  isOwnMessage: boolean;
-  timestamp: Date;
-}
 
 const AudioChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
   const webRTCRef = useRef<WebRTCService | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationRef = useRef<number | null>(null);
   
-  // Use EXACT same state pattern as VideoChat for consistency
+  // Core states
   const [isSearching, setIsSearching] = useState(false);
-  const [isMatchConnected, setIsMatchConnected] = useState(false); // Renamed for clarity - this is for match connection
+  const [isMatchConnected, setIsMatchConnected] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  
+  // Enhanced audio states
   const [isMicOn, setIsMicOn] = useState(true);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [showTextChat, setShowTextChat] = useState(true); // Default show for better UX
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [messageInput, setMessageInput] = useState('');
   const [micBlocked, setMicBlocked] = useState(false);
+  const [micLevel, setMicLevel] = useState(0); // Audio level 0-100
+  const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('excellent');
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
 
-  // Define reusable remote stream handler (EXACT copy from VideoChat pattern)
+  // Remote stream handler with enhanced audio processing
   const handleRemoteStream = useCallback((stream: MediaStream) => {
     console.log('🎤 Remote audio stream received:', {
       audio: stream.getAudioTracks().length > 0,
@@ -48,80 +42,96 @@ const AudioChat: React.FC = () => {
     });
     
     if (remoteAudioRef.current) {
-      // Always set the remote stream
       remoteAudioRef.current.srcObject = stream;
       console.log('✅ Remote audio assigned to element');
       
-      // Force play the remote audio
+      // Enhanced audio playback
       remoteAudioRef.current.play().catch(error => {
         console.warn('Remote audio autoplay prevented, trying user gesture:', error);
-        // Try to play on next user interaction
         const playPromise = () => {
           remoteAudioRef.current?.play().catch(e => 
-            console.log('Manual audio play also failed:', e)
+            console.log('Manual audio play failed:', e)
           );
         };
         document.addEventListener('click', playPromise, { once: true });
       });
       
-      console.log('🎤 Remote audio setup completed for both users');
+      console.log('🎤 Remote audio setup completed');
     }
     
-    // Update connection state
     setIsMatchConnected(true);
     setIsSearching(false);
   }, []);
 
-  useEffect(() => {
-    // Initialize WebRTC service without socket (we'll use the context socket) - EXACT VideoChat pattern
-    webRTCRef.current = new WebRTCService();
+  // Initialize audio level monitoring
+  const startAudioLevelMonitoring = useCallback((stream: MediaStream) => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const analyser = audioContext.createAnalyser();
+    const microphone = audioContext.createMediaStreamSource(stream);
     
-    // Set up remote audio stream handler (works for both initial and reconnections)
+    analyser.fftSize = 256;
+    microphone.connect(analyser);
+    analyserRef.current = analyser;
+    
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    
+    const updateLevel = () => {
+      if (analyserRef.current && isMicOn) {
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        setMicLevel(Math.round((average / 255) * 100));
+      } else {
+        setMicLevel(0);
+      }
+      animationRef.current = requestAnimationFrame(updateLevel);
+    };
+    
+    updateLevel();
+  }, [isMicOn]);
+
+  useEffect(() => {
+    // Initialize WebRTC service
+    webRTCRef.current = new WebRTCService();
     webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
 
     webRTCRef.current.onConnectionStateChanged((state: RTCPeerConnectionState) => {
-      if (state === 'disconnected') {
+      console.log('Connection state:', state);
+      
+      // Update connection quality based on state
+      if (state === 'connected') {
+        setConnectionQuality('excellent');
+      } else if (state === 'connecting') {
+        setConnectionQuality('good');
+      } else if (state === 'disconnected') {
         setIsMatchConnected(false);
+        setConnectionQuality('poor');
       }
     });
 
-    // Socket event listeners - EXACT VideoChat pattern
+    // Socket event listeners - exact VideoChat pattern
     if (socket) {
       socket.on('match-found', async (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
-        console.log('🎤 Audio chat match found:', data);
+        console.log('🎤 Audio match found:', data);
         setSessionId(data.sessionId);
         setIsSearching(false);
-        setMessages([]);
-        // Match found - no system message needed
         
-        // Configure WebRTC service with match details - EXACT VideoChat pattern
         if (webRTCRef.current) {
-          // ENSURE FRESH SETUP: Cleanup any previous connection first
-          console.log('🔄 Ensuring fresh WebRTC setup for reconnection');
+          console.log('🔄 Setting up fresh WebRTC connection');
           webRTCRef.current.cleanup();
-          
-          // REINITIALIZE: Create fresh WebRTC instance for clean setup
           webRTCRef.current = new WebRTCService();
-          
-          // CRITICAL: Set remote audio callback on NEW instance
           webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
-          
-          // Set up new connection
           webRTCRef.current.setSocket(socket, data.sessionId, data.matchUserId);
           
-          // IMPORTANT: Start local audio first before setting up peer connection
           try {
             await startLocalAudio();
-            console.log('🎤 Local audio started for peer connection');
+            console.log('🎤 Local audio ready for connection');
           } catch (error) {
             console.error('❌ Failed to start local audio:', error);
-            console.error('Microphone access required for voice chat');
             return;
           }
           
-          // Set up ICE candidate handling through main socket
+          // Set up ICE candidate handling
           webRTCRef.current.setIceCandidateCallback((candidate: RTCIceCandidate) => {
-            console.log('🧊 Sending ICE candidate to peer');
             socket.emit('ice-candidate', {
               candidate: candidate,
               targetUserId: data.matchUserId,
@@ -129,242 +139,138 @@ const AudioChat: React.FC = () => {
             });
           });
           
-          // Set up data channel message handling
-          webRTCRef.current.onMessageReceived((message: string) => {
-            console.log('📩 Received data channel message:', message);
-            addMessage(message, false);
-          });
-          
-          // If we're the initiator, create and send offer
+          // If initiator, create offer
           if (data.isInitiator) {
-            try {
-              // Small delay to ensure local stream is properly added
-              setTimeout(async () => {
-                const offer = await webRTCRef.current!.createWebRTCOffer();
-                socket.emit('webrtc-offer', { 
-                  offer, 
-                  targetUserId: data.matchUserId,
-                  sessionId: data.sessionId 
-                });
-                console.log('📞 Sent WebRTC offer as initiator');
-              }, 1000);
-            } catch (error) {
-              console.error('❌ Failed to create offer:', error);
-              console.error('Failed to establish audio connection');
-            }
+            setTimeout(async () => {
+              const offer = await webRTCRef.current!.createWebRTCOffer();
+              socket.emit('webrtc-offer', { 
+                offer, 
+                targetUserId: data.matchUserId,
+                sessionId: data.sessionId 
+              });
+            }, 1000);
           }
           
-          console.log('Audio chat ready!');
           setIsMatchConnected(true);
         }
       });
 
       socket.on('searching', (data: { position: number; totalWaiting: number }) => {
-        console.log('🔍 Searching for audio chat partner:', data);
+        console.log('🔍 Searching for audio partner:', data);
         setIsSearching(true);
       });
 
-      socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string }) => {
-        console.log('💬 RECEIVED MESSAGE IN FRONTEND:', data);
-        console.log('🔍 Current sessionId state:', sessionId);
-        console.log('🔍 isMatchConnected state:', isMatchConnected);
-        console.log('🔍 Session comparison:', { 
-          received: data.sessionId, 
-          current: sessionId, 
-          match: data.sessionId === sessionId,
-          receivedType: typeof data.sessionId,
-          currentType: typeof sessionId,
-          receivedLength: data.sessionId?.length,
-          currentLength: sessionId?.length
-        });
-        
-        // Display clean message without username
-        addMessage(data.content, false);
-      });
-
       socket.on('session_ended', (data: { reason?: string }) => {
-        console.log('❌ Audio chat session ended:', data);
+        console.log('❌ Audio session ended:', data);
         setIsMatchConnected(false);
         setSessionId(null);
-        setMessages([]);
-        console.log(`Chat ended. ${data.reason || 'Your partner left the chat.'}`);
         
-        // Clean up WebRTC connection
         if (webRTCRef.current) {
           webRTCRef.current.cleanup();
         }
         
-        // Auto-search if partner left (optional - for better UX)
+        // Auto-search if partner left
         if (data.reason === 'partner_left' && socket) {
-          console.log('🔄 Partner left, starting auto-search...');
           setIsSearching(true);
           setTimeout(() => {
             socket.emit('find_match', { mode: 'audio' });
-          }, 2000); // Longer delay for stability
+          }, 2000);
         }
       });
 
-      socket.on('user_disconnected', (data: { userId: string }) => {
-        console.log('👋 User disconnected:', data.userId);
-        // This will help clean up any stale connections
-        if (webRTCRef.current) {
-          // Could add specific cleanup for this user if needed
-        }
-      });
-
-      // WebRTC signaling events - EXACT VideoChat pattern
+      // WebRTC signaling
       socket.on('webrtc-offer', async (data: any) => {
-        console.log('📞 Received WebRTC offer from:', data.fromUserId);
         if (webRTCRef.current) {
-          try {
-            const answer = await webRTCRef.current.handleOffer(data.offer);
-            socket.emit('webrtc-answer', { 
-              answer, 
-              targetUserId: data.fromUserId,
-              sessionId: sessionId 
-            });
-          } catch (error) {
-            console.error('Error handling WebRTC offer:', error);
-          }
+          const answer = await webRTCRef.current.handleOffer(data.offer);
+          socket.emit('webrtc-answer', { 
+            answer, 
+            targetUserId: data.fromUserId,
+            sessionId: sessionId 
+          });
         }
       });
 
       socket.on('webrtc-answer', async (data: any) => {
-        console.log('📞 Received WebRTC answer from:', data.fromUserId);
         if (webRTCRef.current) {
-          try {
-            await webRTCRef.current.handleAnswer(data.answer);
-          } catch (error) {
-            console.error('Error handling WebRTC answer:', error);
-          }
+          await webRTCRef.current.handleAnswer(data.answer);
         }
       });
 
       socket.on('ice-candidate', async (data: any) => {
-        console.log('🧊 Received ICE candidate from:', data.fromUserId);
         if (webRTCRef.current && data.candidate) {
-          try {
-            await webRTCRef.current.handleIceCandidate(data.candidate);
-          } catch (error) {
-            console.error('Error handling ICE candidate:', error);
-          }
+          await webRTCRef.current.handleIceCandidate(data.candidate);
         }
-      });
-
-      socket.on('error', (data: { message: string }) => {
-        console.error('Socket error:', data.message);
       });
     }
 
     // Cleanup on unmount
     return () => {
-      // Clean up socket listeners
       socket?.off('match-found');
       socket?.off('searching');
-      socket?.off('chat_message');
       socket?.off('session_ended');
-      socket?.off('user_disconnected');
       socket?.off('webrtc-offer');
       socket?.off('webrtc-answer');
       socket?.off('ice-candidate');
-      socket?.off('error');
       
-      // Clean up WebRTC
       if (webRTCRef.current) {
         webRTCRef.current.cleanup();
       }
+      
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
-  }, [socket, handleRemoteStream]);
-
-  // Scroll to bottom of messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [socket, handleRemoteStream, startAudioLevelMonitoring]);
 
   const startLocalAudio = async () => {
     try {
-      console.log('🎤 Starting local audio');
+      setIsProcessingAudio(true);
+      console.log('🎤 Initializing enhanced audio');
+      
       const constraints = {
-        video: false, // Audio only
+        video: false,
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          // Enhanced audio constraints
+          sampleRate: 44100,
+          channelCount: 1,
+          volume: 1.0
         }
       };
       
       const stream = await webRTCRef.current?.initializeMedia(constraints);
       if (stream && localAudioRef.current) {
         localAudioRef.current.srcObject = stream;
-        console.log('✅ Local audio initialized successfully');
+        
+        // Start audio level monitoring
+        startAudioLevelMonitoring(stream);
+        
+        console.log('✅ Enhanced local audio initialized');
+        setIsProcessingAudio(false);
         return stream;
       }
       
       throw new Error('Failed to initialize audio stream');
     } catch (error: any) {
-      console.error('❌ Failed to start local audio:', error);
+      setIsProcessingAudio(false);
+      console.error('❌ Enhanced audio setup failed:', error);
       
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      if (error.name === 'NotAllowedError') {
         setMicBlocked(true);
-        throw new Error('Microphone access denied. Please allow microphone access and try again.');
-      } else if (error.name === 'NotFoundError') {
-        throw new Error('No microphone found. Please connect a microphone and try again.');
-      } else {
-        throw new Error('Failed to access microphone. Please check your audio settings.');
+        throw new Error('Microphone access denied');
       }
-    }
-  };
-
-  const addMessage = (content: string, isOwnMessage: boolean) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      isOwnMessage,
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [...prev, newMessage]);
-  };
-
-  const sendMessage = () => {
-    if (!messageInput.trim() || !isMatchConnected || !sessionId) return;
-
-    const message = messageInput.trim();
-    
-    // Add to local messages immediately
-    addMessage(message, true);
-    
-    // Send via WebRTC data channel (preferred for P2P)
-    if (webRTCRef.current) {
-      webRTCRef.current.sendMessage(message);
-    }
-    
-    // Also send via socket as fallback
-    socket?.emit('chat_message', {
-      content: message,
-      sessionId: sessionId
-    });
-    
-    setMessageInput('');
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+      throw error;
     }
   };
 
   const startChat = () => {
-    if (!socket || !socketConnected) {
-      console.error('Socket not available');
-      return;
-    }
-
+    if (!socket || !socketConnected) return;
+    
     console.log('🔍 Starting audio chat search...');
     setIsSearching(true);
     setIsMatchConnected(false);
-    setMessages([]);
     socket.emit('find_match', { mode: 'audio' });
   };
 
@@ -377,10 +283,7 @@ const AudioChat: React.FC = () => {
       webRTCRef.current.cleanup();
     }
     
-    // Start new search immediately
-    setTimeout(() => {
-      startChat();
-    }, 500);
+    setTimeout(() => startChat(), 500);
   };
 
   const endChat = () => {
@@ -409,22 +312,34 @@ const AudioChat: React.FC = () => {
     }
   };
 
-  // Loading state
+  // Connection quality indicator
+  const getQualityColor = () => {
+    switch (connectionQuality) {
+      case 'excellent': return 'text-green-400';
+      case 'good': return 'text-yellow-400';
+      case 'poor': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  // Loading states
   if (socketConnecting) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-white text-xl">Connecting to server...</div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <div className="text-xl">Connecting to server...</div>
+        </div>
       </div>
     );
   }
 
-  // Connection error state
   if (!socketConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4">
         <div className="text-white text-center">
           <div className="text-xl mb-4">Connection Error</div>
-          <div className="text-gray-300">Please check your internet connection and refresh the page.</div>
+          <div className="text-gray-300">Please check your internet connection and refresh.</div>
         </div>
       </div>
     );
@@ -432,198 +347,191 @@ const AudioChat: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex flex-col">
-      {/* Header */}
+      {/* Enhanced Header with status moved to side */}
       <div className="bg-black bg-opacity-20 p-4 flex justify-between items-center border-b border-white border-opacity-20">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <MicrophoneIcon className="w-8 h-8" />
-          Voice Chat
-        </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <MicrophoneIcon className="w-6 h-6 sm:w-8 sm:h-8" />
+            <span className="hidden sm:inline">Voice Chat</span>
+            <span className="sm:hidden">Voice</span>
+          </h1>
+          
+          {/* Status indicator moved to side */}
           {isSearching && (
-            <span className="bg-yellow-500 px-3 py-1 rounded-full text-black font-medium flex items-center gap-1">
+            <span className="bg-yellow-500 px-2 py-1 rounded-full text-black text-sm font-medium flex items-center gap-1">
               <div className="w-2 h-2 bg-black rounded-full animate-pulse"></div>
-              Searching
+              <span className="hidden sm:inline">Searching</span>
+              <span className="sm:hidden">•••</span>
             </span>
           )}
           {isMatchConnected && (
-            <span className="bg-green-500 px-3 py-1 rounded-full text-black font-medium">
-              Connected
+            <span className="bg-green-500 px-2 py-1 rounded-full text-black text-sm font-medium flex items-center gap-1">
+              <SignalIcon className={`w-3 h-3 ${getQualityColor()}`} />
+              <span className="hidden sm:inline">Connected</span>
+              <span className="sm:hidden">ON</span>
             </span>
           )}
         </div>
+        
         <button
           onClick={endChat}
           className="p-2 hover:bg-white hover:bg-opacity-10 rounded-full transition-colors"
         >
-          <XMarkIcon className="w-6 h-6" />
+          <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
 
-      <div className="flex-1 flex">
-        {/* Main Audio Chat Area */}
-        <div className="flex-1 flex flex-col items-center justify-center p-8">
-          {!isSearching && !isMatchConnected && (
-            <div className="text-center">
-              <MicrophoneIcon className="w-24 h-24 mx-auto mb-6 opacity-50" />
-              <h2 className="text-3xl mb-4">Ready for Voice Chat</h2>
-              <p className="text-xl text-gray-300 mb-8">Click "Find Someone" to start talking with a random person</p>
+      {/* Main Audio Area - Enhanced for mobile */}
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8">
+        
+        {/* Idle State */}
+        {!isSearching && !isMatchConnected && (
+          <div className="text-center max-w-md mx-auto">
+            <div className="relative mb-6 sm:mb-8">
+              <MicrophoneIcon className="w-20 h-20 sm:w-32 sm:h-32 mx-auto opacity-50" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl mb-4 font-semibold">Ready for Voice Chat</h2>
+            <p className="text-lg sm:text-xl text-gray-300 mb-8 leading-relaxed">
+              Connect instantly with people worldwide through high-quality voice conversations
+            </p>
+            <button
+              onClick={startChat}
+              disabled={!socketConnected}
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 px-8 py-4 rounded-xl text-lg sm:text-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:cursor-not-allowed shadow-lg"
+            >
+              {!socketConnected ? 'Connecting...' : 'Find Someone'}
+            </button>
+          </div>
+        )}
+
+        {/* Searching State - Enhanced */}
+        {isSearching && (
+          <div className="text-center max-w-md mx-auto">
+            <div className="relative mb-6 sm:mb-8">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative">
+                {/* Animated rings */}
+                <div className="absolute inset-0 border-4 border-purple-300 border-opacity-20 rounded-full animate-ping"></div>
+                <div className="absolute inset-2 border-4 border-purple-400 border-opacity-40 rounded-full animate-ping animation-delay-200"></div>
+                <div className="absolute inset-4 border-4 border-purple-500 border-opacity-60 rounded-full animate-ping animation-delay-400"></div>
+                <MicrophoneIcon className="w-8 h-8 sm:w-12 sm:h-12 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+              </div>
+            </div>
+            <h2 className="text-xl sm:text-2xl mb-4">Finding someone to talk to...</h2>
+            <p className="text-gray-300 text-sm sm:text-base">Connecting you with another person for a voice conversation</p>
+          </div>
+        )}
+
+        {/* Connected State - Enhanced with audio visualizer */}
+        {isMatchConnected && (
+          <div className="text-center max-w-md mx-auto w-full">
+            <div className="relative mb-6 sm:mb-8">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center relative overflow-hidden">
+                <MicrophoneIcon className="w-10 h-10 sm:w-16 sm:h-16 text-white z-10" />
+                
+                {/* Audio level indicator */}
+                <div 
+                  className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-30 transition-all duration-150"
+                  style={{ height: `${micLevel}%` }}
+                />
+              </div>
+              
+              {/* Mic level text */}
+              {isMicOn && (
+                <div className="text-xs sm:text-sm text-gray-300 mt-2">
+                  Audio Level: {micLevel}%
+                </div>
+              )}
+            </div>
+            
+            <h2 className="text-xl sm:text-2xl mb-2 font-semibold">Connected!</h2>
+            <p className="text-gray-300 mb-6 sm:mb-8 text-sm sm:text-base">
+              You're now in a voice conversation with a stranger
+            </p>
+            
+            {/* Enhanced Audio Controls */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8 max-w-xs mx-auto">
               <button
-                onClick={startChat}
-                disabled={!socketConnected}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 px-8 py-3 rounded-full text-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:cursor-not-allowed"
+                onClick={toggleMic}
+                className={`p-4 sm:p-6 rounded-xl transition-all duration-300 ${
+                  isMicOn 
+                    ? 'bg-gray-700 hover:bg-gray-600 shadow-lg' 
+                    : 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/25'
+                }`}
               >
-                {!socketConnected ? 'Connecting...' : 'Find Someone'}
+                {isMicOn ? (
+                  <MicrophoneIcon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto" />
+                ) : (
+                  <MicrophoneSlashIcon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto" />
+                )}
+                <div className="text-xs sm:text-sm mt-2 font-medium">
+                  {isMicOn ? 'Mute' : 'Unmute'}
+                </div>
+              </button>
+              
+              <button
+                onClick={toggleSpeaker}
+                className={`p-4 sm:p-6 rounded-xl transition-all duration-300 ${
+                  isSpeakerOn 
+                    ? 'bg-gray-700 hover:bg-gray-600 shadow-lg' 
+                    : 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/25'
+                }`}
+              >
+                <SpeakerWaveIcon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto" />
+                <div className="text-xs sm:text-sm mt-2 font-medium">
+                  {isSpeakerOn ? 'Mute' : 'Unmute'}
+                </div>
               </button>
             </div>
-          )}
 
-          {isSearching && (
-            <div className="text-center">
-              <div className="w-32 h-32 mx-auto mb-6 relative">
-                <div className="absolute inset-0 border-4 border-purple-300 border-opacity-30 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                <MicrophoneIcon className="w-16 h-16 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-              </div>
-              <h2 className="text-2xl mb-4">Finding someone to talk to...</h2>
-              <p className="text-gray-300">Please wait while we connect you</p>
-            </div>
-          )}
-
-          {isMatchConnected && (
-            <div className="text-center">
-              <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                <MicrophoneIcon className="w-16 h-16" />
-              </div>
-              <h2 className="text-2xl mb-4">Connected!</h2>
-              <p className="text-gray-300 mb-8">You're now talking with a stranger</p>
-              
-              {/* Audio Controls */}
-              <div className="flex gap-4 justify-center mb-6">
-                <button
-                  onClick={toggleMic}
-                  className={`p-4 rounded-full transition-all duration-300 ${
-                    isMicOn 
-                      ? 'bg-gray-700 hover:bg-gray-600' 
-                      : 'bg-red-600 hover:bg-red-700'
-                  }`}
-                >
-                  {isMicOn ? (
-                    <MicrophoneIcon className="w-6 h-6" />
-                  ) : (
-                    <MicrophoneSlashIcon className="w-6 h-6" />
-                  )}
-                </button>
-                
-                <button
-                  onClick={toggleSpeaker}
-                  className={`p-4 rounded-full transition-all duration-300 ${
-                    isSpeakerOn 
-                      ? 'bg-gray-700 hover:bg-gray-600' 
-                      : 'bg-red-600 hover:bg-red-700'
-                  }`}
-                >
-                  <SpeakerWaveIcon className="w-6 h-6" />
-                </button>
-                
-                <button
-                  onClick={() => setShowTextChat(!showTextChat)}
-                  className="p-4 rounded-full bg-purple-600 hover:bg-purple-700 transition-all duration-300"
-                >
-                  <ChatBubbleLeftRightIcon className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={nextPerson}
-                  className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-full transition-colors"
-                >
-                  Next Person
-                </button>
-                <button
-                  onClick={endChat}
-                  className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-full transition-colors flex items-center gap-2"
-                >
-                  <PhoneXMarkIcon className="w-5 h-5" />
-                  End Chat
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Hidden audio elements */}
-          <audio ref={localAudioRef} muted autoPlay playsInline />
-          <audio ref={remoteAudioRef} autoPlay playsInline />
-        </div>
-
-        {/* Text Chat Sidebar */}
-        {showTextChat && isMatchConnected && (
-          <div className="w-80 bg-black bg-opacity-30 border-l border-white border-opacity-20 flex flex-col">
-            <div className="p-4 border-b border-white border-opacity-20">
-              <h3 className="font-semibold flex items-center gap-2">
-                <ChatBubbleLeftRightIcon className="w-5 h-5" />
-                Text Chat
-              </h3>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
-                      message.isOwnMessage
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-700 text-white'
-                    }`}
-                  >
-                    {message.content}
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-            
-            <div className="p-4 border-t border-white border-opacity-20">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type a message..."
-                  className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={!messageInput.trim()}
-                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 p-2 rounded-lg transition-colors"
-                >
-                  <PaperAirplaneIcon className="w-5 h-5" />
-                </button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <button
+                onClick={nextPerson}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl transition-colors font-medium"
+              >
+                Next Person
+              </button>
+              <button
+                onClick={endChat}
+                className="flex-1 bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium"
+              >
+                <PhoneXMarkIcon className="w-5 h-5" />
+                End Chat
+              </button>
             </div>
           </div>
         )}
+
+        {/* Hidden audio elements */}
+        <audio ref={localAudioRef} muted autoPlay playsInline />
+        <audio ref={remoteAudioRef} autoPlay playsInline />
       </div>
 
-      {/* Microphone blocked modal */}
+      {/* Enhanced Microphone blocked modal */}
       {micBlocked && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-md">
-            <h3 className="text-xl font-bold mb-4">Microphone Access Required</h3>
-            <p className="text-gray-300 mb-4">
-              Please allow microphone access to use voice chat. Click the microphone icon in your browser's address bar and allow access.
-            </p>
-            <button
-              onClick={() => setMicBlocked(false)}
-              className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded transition-colors"
-            >
-              I'll allow access
-            </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 p-6 rounded-xl max-w-md w-full">
+            <div className="text-center">
+              <MicrophoneSlashIcon className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-4">Microphone Access Required</h3>
+              <p className="text-gray-300 mb-6">
+                Voice chat needs access to your microphone. Please allow microphone access in your browser settings and try again.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setMicBlocked(false)}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={endChat}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
