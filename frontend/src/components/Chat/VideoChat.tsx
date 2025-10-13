@@ -41,26 +41,36 @@ const VideoChat: React.FC = () => {
     // Initialize WebRTC service without socket (we'll use the context socket)
     webRTCRef.current = new WebRTCService();
     
-    // Set up event listeners
+    // Set up remote video stream handler (works for both initial and reconnections)
     webRTCRef.current.onRemoteStreamReceived((stream: MediaStream) => {
-      console.log('📺 Remote stream received in component:', {
+      console.log('📺 Remote stream received:', {
         video: stream.getVideoTracks().length > 0,
         audio: stream.getAudioTracks().length > 0,
-        sessionId: sessionId
+        tracks: stream.getTracks().length,
+        id: stream.id
       });
       
       if (remoteVideoRef.current) {
+        // Always set the remote stream
         remoteVideoRef.current.srcObject = stream;
         console.log('✅ Remote stream assigned to video element');
         
-        // Ensure remote video plays
+        // Force play the remote video
         remoteVideoRef.current.play().catch(error => {
-          console.warn('Remote video autoplay prevented:', error);
+          console.warn('Remote video autoplay prevented, trying user gesture:', error);
+          // Try to play on next user interaction
+          const playPromise = () => {
+            remoteVideoRef.current?.play().catch(e => 
+              console.log('Manual play also failed:', e)
+            );
+          };
+          document.addEventListener('click', playPromise, { once: true });
         });
         
-        // Video connected - no system message needed
+        console.log('📺 Remote video setup completed for both users');
       }
       
+      // Update connection state
       setIsMatchConnected(true);
       setIsSearching(false);
     });
@@ -93,16 +103,7 @@ const VideoChat: React.FC = () => {
           // Set up new connection
           webRTCRef.current.setSocket(socket, data.sessionId, data.matchUserId);
           
-          // Set up remote video callback for reconnections
-          webRTCRef.current.onRemoteStreamReceived((stream: MediaStream) => {
-            console.log('📺 Setting up remote video for reconnection');
-            if (remoteVideoRef.current) {
-              remoteVideoRef.current.srcObject = stream;
-              remoteVideoRef.current.play().catch(e => 
-                console.log('Remote video autoplay prevented:', e)
-              );
-            }
-          });
+          // Remote video callback is already set in useEffect - no need to override
           
           // IMPORTANT: Start local video first before setting up peer connection
           try {
