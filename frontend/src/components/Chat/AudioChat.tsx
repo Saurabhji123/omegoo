@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
 import WebRTCService from '../../services/webrtc';
@@ -9,8 +9,17 @@ import {
   ExclamationTriangleIcon,
   XMarkIcon,
   PhoneXMarkIcon,
-  SpeakerXMarkIcon
+  SpeakerXMarkIcon,
+  ChatBubbleLeftRightIcon,
+  PaperAirplaneIcon
 } from '@heroicons/react/24/outline';
+
+interface ChatMessage {
+  id: string;
+  content: string;
+  isSent: boolean;
+  timestamp: Date;
+}
 
 const AudioChat: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +38,12 @@ const AudioChat: React.FC = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [callStartTime, setCallStartTime] = useState<Date | null>(null);
+  
+  // Chat functionality states
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messageInput, setMessageInput] = useState('');
+  const [showChat, setShowChat] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Initialize WebRTC service for audio only
@@ -53,15 +68,70 @@ const AudioChat: React.FC = () => {
       }
     });
 
+    // Set up WebRTC message handler
+    webRTCRef.current.onMessageReceived((message: string) => {
+      console.log('💬 Received message via WebRTC:', message);
+      addMessage(message, false);
+    });
+
     // Removed - matching handled by socket context
 
     // Socket event listeners
     if (socket) {
-      socket.on('match-found', (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
+      socket.on('match-found', async (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
         console.log('🎤 Audio chat match found:', data);
         setSessionId(data.sessionId);
         setIsSearching(false);
-        // WebRTC will handle the connection
+        setMessages([]);
+        
+        // Configure WebRTC service with match details
+        if (webRTCRef.current) {
+          // ENSURE FRESH SETUP: Cleanup any previous connection first
+          console.log('🔄 Ensuring fresh WebRTC setup for audio chat');
+          webRTCRef.current.cleanup();
+          
+          // REINITIALIZE: Create fresh WebRTC instance for clean setup
+          webRTCRef.current = new WebRTCService();
+          
+          // Set up new connection
+          webRTCRef.current.setSocket(socket, data.sessionId, data.matchUserId);
+          
+          // CRITICAL: Set audio stream and message callback on NEW instance
+          webRTCRef.current.onRemoteStreamReceived((stream: MediaStream) => {
+            console.log('🎤 Remote audio stream received:', stream);
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.srcObject = stream;
+              console.log('✅ Remote audio assigned to element');
+            }
+            setIsConnected(true);
+            setIsSearching(false);
+            setCallStartTime(new Date());
+          });
+          
+          webRTCRef.current.onMessageReceived((message: string) => {
+            console.log('💬 Received message via WebRTC:', message);
+            addMessage(message, false);
+          });
+          
+          webRTCRef.current.onConnectionStateChanged((state: RTCPeerConnectionState) => {
+            setConnectionState(state);
+            if (state === 'disconnected') {
+              setIsConnected(false);
+              setCallStartTime(null);
+              setCallDuration(0);
+            }
+          });
+          
+          // IMPORTANT: Start local audio first before setting up peer connection
+          try {
+            await startLocalAudio();
+            console.log('🎤 Local audio started for peer connection');
+          } catch (error) {
+            console.error('❌ Failed to start local audio:', error);
+            console.error('Microphone access required for audio chat');
+            return;
+          }
+        }
       });
 
       socket.on('searching', (data: { position: number; totalWaiting: number }) => {
@@ -75,6 +145,43 @@ const AudioChat: React.FC = () => {
         setIsConnected(false);
         setSessionId(null);
         setCallStartTime(null);
+        setMessages([]); // Clear messages
+      });
+
+      socket.on('chat_message', (data: { message: string, userId?: string }) => {
+        console.log('💬 Received audio chat message:', data);
+        addMessage(data.message, false);
+      });
+
+      // WebRTC signaling event listeners
+      socket.on('webrtc-offer', (data: { offer: RTCSessionDescriptionInit, sessionId: string }) => {
+        console.log('🤝 Received WebRTC offer for audio chat');
+        if (webRTCRef.current && sessionId === data.sessionId) {
+          webRTCRef.current.handleOffer(data.offer);
+        }
+      });
+
+      socket.on('webrtc-answer', (data: { answer: RTCSessionDescriptionInit, sessionId: string }) => {
+        console.log('✅ Received WebRTC answer for audio chat');
+        if (webRTCRef.current && sessionId === data.sessionId) {
+          webRTCRef.current.handleAnswer(data.answer);
+        }
+      });
+
+      socket.on('ice-candidate', (data: { candidate: RTCIceCandidateInit, sessionId: string }) => {
+        console.log('🧊 Received ICE candidate for audio chat');
+        if (webRTCRef.current && sessionId === data.sessionId) {
+          webRTCRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
+      });
+
+      socket.on('user_disconnected', (data: { reason?: string }) => {
+        console.log('👋 Audio chat partner disconnected:', data);
+        setIsConnected(false);
+        setSessionId(null);
+        setCallStartTime(null);
+        setCallDuration(0);
+        setMessages([]);
       });
 
       socket.on('error', (data: { message: string }) => {
@@ -90,8 +197,13 @@ const AudioChat: React.FC = () => {
         webRTCRef.current.cleanup();
       }
       socket?.off('match-found');
-      socket?.off('searching');
+      socket?.off('searching');  
       socket?.off('session_ended');
+      socket?.off('chat_message');
+      socket?.off('user_disconnected');
+      socket?.off('webrtc-offer');
+      socket?.off('webrtc-answer');
+      socket?.off('ice-candidate');
       socket?.off('error');
     };
   }, [socket]);
@@ -122,73 +234,170 @@ const AudioChat: React.FC = () => {
 
   const startLocalAudio = async () => {
     try {
+      console.log('🎤 Starting local audio with enhanced constraints');
       const constraints = {
         video: false,
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          channelCount: 1,
+          sampleRate: 48000,
+          sampleSize: 16
         }
       };
+      
       const stream = await webRTCRef.current?.initializeMedia(constraints);
       if (stream && localAudioRef.current) {
         localAudioRef.current.srcObject = stream;
+        console.log('✅ Local audio stream initialized');
+        
+        // Set initial mic state based on audio tracks
+        const audioTracks = stream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          setIsMicOn(audioTracks[0].enabled);
+          console.log('🎤 Mic initial state:', audioTracks[0].enabled);
+        }
       }
     } catch (error) {
-      console.error('Failed to start local audio:', error);
+      console.error('❌ Failed to start local audio:', error);
+      addMessage('Microphone access denied. Please allow microphone access and refresh.', false);
     }
   };
 
-  const findMatch = () => {
+  const startNewChat = (forceCleanup = false) => {
     if (!socket) {
-      console.error('Socket not available');
+      console.error('❌ Socket not available');
+      addMessage('Connection error. Please refresh the page.', false);
       return;
     }
     
-    setIsSearching(true);
+    // INSTANT DISCONNECT: End current session first if exists
+    if (sessionId && isConnected) {
+      console.log('🔄 Ending current audio session immediately:', sessionId);
+      socket.emit('end_session', { 
+        sessionId: sessionId,
+        duration: callDuration 
+      });
+      
+      // Notify partner immediately
+      socket.emit('session_ended', { 
+        sessionId: sessionId,
+        reason: 'user_clicked_next' 
+      });
+    }
+    
+    // FORCE CLEANUP: For fresh reconnects (same users scenario)
+    if (forceCleanup) {
+      console.log('🧹 Force cleaning audio streams for fresh reconnect');
+      
+      // Clean local audio
+      if (localAudioRef.current?.srcObject) {
+        const localStream = localAudioRef.current.srcObject as MediaStream;
+        localStream.getTracks().forEach(track => {
+          console.log('🛑 Stopping local audio track:', track.kind);
+          track.stop();
+        });
+        localAudioRef.current.srcObject = null;
+      }
+      
+      // Clean remote audio
+      if (remoteAudioRef.current?.srcObject) {
+        const remoteStream = remoteAudioRef.current.srcObject as MediaStream;  
+        remoteStream.getTracks().forEach(track => {
+          console.log('🛑 Stopping remote audio track:', track.kind);
+          track.stop();
+        });
+        remoteAudioRef.current.srcObject = null;
+      }
+      
+      // Force WebRTC cleanup
+      if (webRTCRef.current) {
+        console.log('🔌 Force disconnecting WebRTC for fresh audio connection');
+        webRTCRef.current.forceDisconnect();
+      }
+      
+      console.log('✅ Force cleanup completed for fresh reconnect');
+      
+      // REINITIALIZE WebRTC after cleanup for fresh connection
+      setTimeout(() => {
+        if (webRTCRef.current) {
+          console.log('🔄 Reinitializing WebRTC service after cleanup');
+          webRTCRef.current = new WebRTCService();
+          console.log('✅ Fresh WebRTC instance created');
+        }
+      }, 100);
+    }
+    
+    // INSTANT STATE RESET
     setIsConnected(false);
+    setSessionId(null);
+    setMessages([]);
+    setIsSearching(true);
     setCallStartTime(null);
     setCallDuration(0);
     
-    // Emit to socket for matching
-    socket.emit('find_match', { mode: 'audio' });
-    
-    // Initialize WebRTC for audio
-    if (webRTCRef.current) {
-      // Removed - findMatch handled by socket
-    }
-    
-    console.log('🔍 Started searching for audio chat partner');
+    // START NEW SEARCH (with delay if force cleanup)
+    const searchDelay = forceCleanup ? 200 : 0;
+    setTimeout(() => {
+      console.log('🔍 Starting search for audio chat partner');
+      socket.emit('find_match', { mode: 'audio' });
+      console.log('✅ Audio chat partner search started');
+      addMessage('Searching for someone to chat with...', false);
+    }, searchDelay);
+  };
+
+  // Legacy findMatch for backward compatibility
+  const findMatch = () => {
+    startNewChat();
   };
 
   const nextMatch = () => {
-    if (sessionId) {
-      socket?.emit('end_session', { sessionId, duration: callDuration });
-    }
-    setIsConnected(false);
-    setIsSearching(true);
-    setCallStartTime(null);
-    setCallDuration(0);
-    webRTCRef.current?.nextMatch();
+    console.log('🔄 Next Person clicked - using force cleanup for fresh audio reconnect');
+    
+    // Use startNewChat with force cleanup for same users reconnection
+    startNewChat(true);
   };
 
-  const endCall = () => {
+  const exitChat = () => {
+    // Clean up current session
     if (sessionId) {
       socket?.emit('end_session', { sessionId, duration: callDuration });
     }
-    webRTCRef.current?.cleanup();
+    
+    // Clean up WebRTC
+    if (webRTCRef.current) {
+      webRTCRef.current.forceDisconnect();
+    }
+    
+    // Navigate to home
     navigate('/');
   };
 
   const toggleMic = () => {
+    console.log('🎤 Toggling microphone:', isMicOn ? 'OFF' : 'ON');
     const newState = webRTCRef.current?.toggleAudio();
     setIsMicOn(newState || false);
+    
+    // Visual feedback for mic state
+    if (newState) {
+      console.log('✅ Microphone enabled');
+    } else {
+      console.log('🔇 Microphone disabled');
+    }
   };
 
   const toggleSpeaker = () => {
     if (remoteAudioRef.current) {
+      console.log('🔊 Toggling speaker:', isSpeakerOn ? 'OFF' : 'ON');
       remoteAudioRef.current.muted = isSpeakerOn;
       setIsSpeakerOn(!isSpeakerOn);
+      
+      if (!isSpeakerOn) {
+        console.log('✅ Speaker enabled');
+      } else {
+        console.log('🔇 Speaker disabled');
+      }
     }
   };
 
@@ -214,6 +423,41 @@ const AudioChat: React.FC = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Chat messaging functions
+  const addMessage = (content: string, isSent: boolean) => {
+    const message: ChatMessage = {
+      id: Date.now().toString(),
+      content,
+      isSent,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, message]);
+    
+    // Auto scroll to bottom
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const sendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (messageInput.trim() && sessionId) {
+      // Send via WebRTC data channel first
+      if (webRTCRef.current) {
+        webRTCRef.current.sendMessage(messageInput);
+      }
+      
+      // Also send via socket as backup
+      socket?.emit('chat_message', { 
+        sessionId, 
+        message: messageInput 
+      });
+      
+      addMessage(messageInput, true);
+      setMessageInput('');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex flex-col">
       {/* Header */}
@@ -230,7 +474,7 @@ const AudioChat: React.FC = () => {
         </div>
         
         <button
-          onClick={endCall}
+          onClick={exitChat}
           className="text-gray-400 hover:text-white transition-colors"
         >
           <XMarkIcon className="w-6 h-6" />
@@ -252,10 +496,10 @@ const AudioChat: React.FC = () => {
             <h2 className="text-3xl font-bold mb-4">Ready for a voice chat?</h2>
             <p className="text-xl text-gray-300 mb-8">Connect with someone and have a real conversation!</p>
             <button
-              onClick={findMatch}
+              onClick={() => startNewChat()}
               className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors shadow-lg"
             >
-              Start Voice Chat
+              Find Someone
             </button>
           </div>
         )}
@@ -327,9 +571,69 @@ const AudioChat: React.FC = () => {
         )}
       </div>
 
+      {/* Chat Panel */}
+      {showChat && isConnected && (
+        <div className="bg-black bg-opacity-40 backdrop-blur-sm border-t border-gray-600 max-h-96 flex flex-col">
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2 max-h-64">
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-400 py-8">
+                <ChatBubbleLeftRightIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Start chatting while talking!</p>
+              </div>
+            ) : (
+              messages.map((message) => (
+                <div key={message.id} className={`flex ${message.isSent ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                    message.isSent
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-700 text-gray-100'
+                  }`}>
+                    {message.content}
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+          
+          {/* Chat Input */}
+          <form onSubmit={sendMessage} className="flex p-4 border-t border-gray-600">
+            <input
+              type="text"
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-l-lg border border-gray-600 focus:outline-none focus:border-purple-500"
+            />
+            <button
+              type="submit"
+              disabled={!messageInput.trim()}
+              className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-r-lg transition-colors"
+            >
+              <PaperAirplaneIcon className="w-5 h-5" />
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* Controls */}
       <div className="bg-black bg-opacity-30 backdrop-blur-sm p-6">
-        <div className="flex justify-center space-x-8">
+        <div className="flex justify-center space-x-6">
+          {/* Chat Toggle */}
+          {isConnected && (
+            <button
+              onClick={() => setShowChat(!showChat)}
+              className={`p-4 rounded-full transition-colors shadow-lg ${
+                showChat
+                  ? 'bg-purple-600 hover:bg-purple-700'
+                  : 'bg-white bg-opacity-20 hover:bg-opacity-30'
+              }`}
+            >
+              <ChatBubbleLeftRightIcon className="w-8 h-8 text-white" />
+            </button>
+          )}
+
           {/* Mic Toggle */}
           <button
             onClick={toggleMic}
@@ -378,9 +682,9 @@ const AudioChat: React.FC = () => {
             </button>
           )}
 
-          {/* End Call */}
+          {/* Exit Chat */}
           <button
-            onClick={endCall}
+            onClick={exitChat}
             className="bg-red-600 hover:bg-red-700 text-white p-4 rounded-full transition-colors shadow-lg"
           >
             <PhoneXMarkIcon className="w-8 h-8" />
