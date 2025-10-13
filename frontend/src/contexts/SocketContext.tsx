@@ -107,8 +107,9 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     dispatch({ type: 'SET_CONNECTING', payload: true });
 
     // Always use production URL for deployed app, localhost only for dev
+    // FORCE USE RENDER BACKEND FOR DEVELOPMENT TOO (LOCAL BACKEND NOT RUNNING)
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const backendUrl = isLocalhost ? 'http://localhost:3001' : 'https://omegoo-api-clean.onrender.com';
+    const backendUrl = 'https://omegoo-api-clean.onrender.com'; // Always use Render backend
     console.log('🔗 Connecting to backend:', backendUrl);
     console.log('🌍 Current location:', {
       hostname: window.location.hostname,

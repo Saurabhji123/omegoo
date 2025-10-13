@@ -23,7 +23,7 @@ interface ChatMessage {
 
 const AudioChat: React.FC = () => {
   const navigate = useNavigate();
-  const { socket } = useSocket();
+  const { socket, connected: socketConnected } = useSocket();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
@@ -46,6 +46,9 @@ const AudioChat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    console.log('🎤 AudioChat component mounted');
+    console.log('📡 Socket status:', { socket: !!socket, connected: socketConnected });
+    
     // Initialize WebRTC service for audio only
     webRTCRef.current = new WebRTCService();
     
@@ -272,6 +275,12 @@ const AudioChat: React.FC = () => {
       return;
     }
     
+    if (!socketConnected) {
+      console.error('❌ Socket not connected to server');
+      addMessage('Not connected to server. Please check your internet.', false);
+      return;
+    }
+    
     // INSTANT DISCONNECT: End current session first if exists
     if (sessionId && isConnected) {
       console.log('🔄 Ending current audio session immediately:', sessionId);
@@ -466,10 +475,15 @@ const AudioChat: React.FC = () => {
           <h1 className="text-white text-xl font-bold">Voice Chat</h1>
           <div className="flex items-center space-x-2">
             <div className={`w-3 h-3 rounded-full ${
-              connectionState === 'connected' ? 'bg-green-500' : 
-              connectionState === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
+              !socketConnected ? 'bg-red-500' :
+              isConnected && connectionState === 'connected' ? 'bg-green-500' : 
+              connectionState === 'connecting' || isSearching ? 'bg-yellow-500' : 'bg-red-500'
             }`}></div>
-            <span className="text-gray-300 text-sm capitalize">{connectionState}</span>
+            <span className="text-gray-300 text-sm capitalize">
+              {!socketConnected ? 'disconnected' :
+               isConnected && connectionState === 'connected' ? 'connected' :
+               isSearching ? 'searching' : connectionState}
+            </span>
           </div>
         </div>
         
