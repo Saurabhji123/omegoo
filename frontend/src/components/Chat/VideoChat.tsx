@@ -83,7 +83,26 @@ const VideoChat: React.FC = () => {
         
         // Configure WebRTC service with match details
         if (webRTCRef.current) {
+          // ENSURE FRESH SETUP: Cleanup any previous connection first
+          console.log('🔄 Ensuring fresh WebRTC setup for reconnection');
+          webRTCRef.current.cleanup();
+          
+          // REINITIALIZE: Create fresh WebRTC instance for clean setup
+          webRTCRef.current = new WebRTCService();
+          
+          // Set up new connection
           webRTCRef.current.setSocket(socket, data.sessionId, data.matchUserId);
+          
+          // Set up remote video callback for reconnections
+          webRTCRef.current.onRemoteStreamReceived((stream: MediaStream) => {
+            console.log('📺 Setting up remote video for reconnection');
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = stream;
+              remoteVideoRef.current.play().catch(e => 
+                console.log('Remote video autoplay prevented:', e)
+              );
+            }
+          });
           
           // IMPORTANT: Start local video first before setting up peer connection
           try {
