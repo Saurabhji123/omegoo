@@ -168,7 +168,13 @@ const AudioChat: React.FC = () => {
           // If initiator, create offer
           if (data.isInitiator) {
             setTimeout(async () => {
+              console.log('🔍 BEFORE OFFER: WebRTC localStream?', !!webRTCRef.current?.getLocalStream());
+              console.log('🔍 BEFORE OFFER: Senders count:', webRTCRef.current?.getSendersCount());
+              
               const offer = await webRTCRef.current!.createWebRTCOffer();
+              
+              console.log('🔍 AFTER OFFER: Senders count:', webRTCRef.current?.getSendersCount());
+              
               socket.emit('webrtc-offer', { 
                 offer, 
                 targetUserId: data.matchUserId,
@@ -286,11 +292,14 @@ const AudioChat: React.FC = () => {
         }
       };
       
-      // FIXED: Use WebRTCService's initializeMedia to ensure local tracks are properly added to the peer connection for bidirectional audio transmission
+      // CRITICAL FIX: Use WebRTC service's initializeMedia AND ensure it stores the stream internally
       const stream = await webRTCRef.current!.initializeMedia(constraints);
       if (!stream) {
         throw new Error('Failed to initialize media via WebRTC service');
       }
+      
+      // IMPORTANT: Verify WebRTC service has the stream
+      console.log('🔍 CRITICAL CHECK: WebRTC service localStream exists?', !!webRTCRef.current?.getLocalStream());
       
       if (stream && localAudioRef.current) {
         localAudioRef.current.srcObject = stream;

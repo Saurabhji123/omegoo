@@ -458,6 +458,19 @@ class WebRTCService {
     }
   }
 
+  // Get local stream for debugging
+  getLocalStream(): MediaStream | null {
+    return this.localStream;
+  }
+
+  // Get senders count for debugging
+  getSendersCount(): number {
+    if (this.peerConnection) {
+      return this.peerConnection.getSenders().length;
+    }
+    return 0;
+  }
+
   // Switch camera (front/back)
   async switchCamera(): Promise<void> {
     if (this.localStream) {
