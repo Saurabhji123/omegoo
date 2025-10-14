@@ -17,10 +17,12 @@ const About: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
         <div className="flex items-start">
           <div className="flex-shrink-0">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-100 dark:bg-primary-900 rounded-lg">
-              <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
-              </svg>
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg">
+              <img 
+                src="/logo512.png" 
+                alt="Omegoo" 
+                className="w-8 h-8 rounded-lg shadow-md object-cover"
+              />
             </div>
           </div>
           <div className="ml-6">

@@ -24,11 +24,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => navigate('/')}
             >
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-primary-600 rounded-lg mr-3">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-              </div>
+              <img 
+                src="/logo512.png" 
+                alt="Omegoo Logo" 
+                className="w-8 h-8 rounded-xl mr-3 shadow-sm object-cover"
+              />
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 Omegoo
               </h1>
@@ -225,11 +225,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Brand Section */}
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-4">
-                <div className="inline-flex items-center justify-center w-8 h-8 bg-primary-600 rounded-lg mr-3">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                  </svg>
-                </div>
+                <img 
+                  src="/logo512.png" 
+                  alt="Omegoo" 
+                  className="w-8 h-8 rounded-lg shadow-sm mr-3 object-cover"
+                />
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Omegoo</h3>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">

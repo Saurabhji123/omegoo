@@ -179,3 +179,16 @@
     transform: translate(-50%, 0);
   }
 }
+
+/* Custom favicon styling for better appearance */
+link[rel="icon"],
+link[rel="shortcut icon"],
+link[rel="apple-touch-icon"] {
+  border-radius: 20%;
+}
+
+/* PWA icon styling when displayed in mobile browsers */
+.favicon-rounded {
+  border-radius: 20% !important;
+  overflow: hidden;
+}
