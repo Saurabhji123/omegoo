@@ -236,8 +236,7 @@ const AudioChat: React.FC = () => {
           autoGainControl: true,
           // Enhanced audio constraints
           sampleRate: 44100,
-          channelCount: 1,
-          volume: 1.0
+          channelCount: 1
         }
       };
       
@@ -261,11 +260,13 @@ const AudioChat: React.FC = () => {
           });
         });
         
-        // Ensure mic state is properly synchronized
+        // Reset and synchronize mic state properly
         if (audioTracks.length > 0) {
           const audioTrack = audioTracks[0];
-          setIsMicOn(audioTrack.enabled);
-          console.log('🎤 Initial mic state synchronized:', audioTrack.enabled);
+          // Always start with mic enabled
+          audioTrack.enabled = true;
+          setIsMicOn(true);
+          console.log('🎤 Mic state RESET and initialized: ON');
         }
         
         setIsProcessingAudio(false);
@@ -355,11 +356,13 @@ const AudioChat: React.FC = () => {
       }, 100);
     }
     
-    // INSTANT STATE RESET
+    // INSTANT STATE RESET including mic state
     setIsMatchConnected(false);
     setSessionId(null);
     setIsSearching(true);
     setMicLevel(0);
+    setIsMicOn(true); // Reset mic to ON state for new connection
+    console.log('🎤 Mic state reset to ON for new connection');
     
     // START NEW SEARCH (with delay if force cleanup)
     const searchDelay = forceCleanup ? 200 : 0;
@@ -391,66 +394,33 @@ const AudioChat: React.FC = () => {
     navigate('/');
   };
 
-  const toggleMic = async () => {
+  const toggleMic = () => {
+    console.log('🎤 MIC TOGGLE - RESET VERSION Starting...');
+    
     if (!webRTCRef.current) {
-      console.error('❌ WebRTC service not available for mic toggle');
+      console.error('❌ WebRTC service not available');
       return;
     }
     
-    if (!localAudioRef.current?.srcObject) {
-      console.error('❌ Local audio stream not available for mic toggle');
-      return;
-    }
-    
-    const localStream = localAudioRef.current.srcObject as MediaStream;
-    const audioTracks = localStream.getAudioTracks();
-    
-    if (audioTracks.length === 0) {
-      console.error('❌ No audio tracks found in local stream');
-      return;
-    }
-    
-    const audioTrack = audioTracks[0];
-    const previousState = audioTrack.enabled;
     const previousUiState = isMicOn;
-    
-    console.log('🎤 BEFORE Toggle:', {
-      trackEnabled: previousState,
-      uiState: previousUiState,
-      trackId: audioTrack.id,
-      readyState: audioTrack.readyState
-    });
+    console.log('🎤 Current UI state before toggle:', previousUiState);
     
     try {
-      // Use ENHANCED WebRTC service method for proper bidirectional sync
-      const newAudioState = await webRTCRef.current.toggleAudioAdvanced();
+      // Use simple WebRTC method
+      const newMicState = webRTCRef.current.toggleMicSimple();
       
-      // Update UI state to match WebRTC state
-      setIsMicOn(newAudioState);
+      // Update UI state
+      setIsMicOn(newMicState);
       
-      console.log('🎤 ENHANCED Toggle Result:', {
-        webRTCState: newAudioState,
-        trackEnabled: audioTrack.enabled,
-        uiStateUpdated: newAudioState,
-        stateChanged: previousState !== newAudioState
+      console.log('🎤 MIC TOGGLE RESULT:', {
+        previousUI: previousUiState,
+        newUI: newMicState,
+        toggleSuccess: previousUiState !== newMicState
       });
       
-      // Extended verification for debugging
-      setTimeout(() => {
-        const currentTrack = localStream.getAudioTracks()[0];
-        console.log('🔍 Post-enhanced-toggle verification:', {
-          trackExists: !!currentTrack,
-          trackEnabled: currentTrack?.enabled || false,
-          trackReadyState: currentTrack?.readyState || 'none',
-          uiState: newAudioState,
-          syncSuccess: (currentTrack?.enabled || false) === newAudioState
-        });
-      }, 200);
-      
     } catch (error) {
-      console.error('❌ Enhanced microphone toggle failed:', error);
-      // Revert UI state if enhanced toggle failed
-      setIsMicOn(previousUiState);
+      console.error('❌ Mic toggle failed:', error);
+      // Keep UI state unchanged if toggle failed
     }
   };
 
