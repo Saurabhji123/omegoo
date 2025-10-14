@@ -294,32 +294,81 @@ class WebRTCService {
     return false;
   }
 
-  // Toggle audio with proper WebRTC track replacement
+  // Get fresh audio track for unmuting scenarios
+  private async getFreshAudioTrack(): Promise<MediaStreamTrack | null> {
+    try {
+      const freshStream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 44100,
+          channelCount: 1
+        }
+      });
+      
+      const freshAudioTrack = freshStream.getAudioTracks()[0];
+      if (freshAudioTrack) {
+        console.log('🆕 Fresh audio track obtained:', {
+          id: freshAudioTrack.id,
+          enabled: freshAudioTrack.enabled,
+          readyState: freshAudioTrack.readyState
+        });
+        return freshAudioTrack;
+      }
+    } catch (error) {
+      console.error('❌ Failed to get fresh audio track:', error);
+    }
+    return null;
+  }
+
+  // Toggle audio with enhanced WebRTC track replacement for bidirectional sync
   toggleAudio(): boolean {
     if (this.localStream) {
       const audioTrack = this.localStream.getAudioTracks()[0];
       if (audioTrack) {
         const wasEnabled = audioTrack.enabled;
-        audioTrack.enabled = !wasEnabled;
+        const newState = !wasEnabled;
+        
+        // First update the local track state
+        audioTrack.enabled = newState;
         
         console.log('🎤 Local audio track toggled:', audioTrack.enabled ? 'ENABLED' : 'DISABLED');
         
-        // Force update WebRTC senders by replacing the track
+        // Critical: Update WebRTC senders for proper remote transmission
         if (this.peerConnection) {
           const senders = this.peerConnection.getSenders();
-          senders.forEach(async (sender) => {
-            if (sender.track && sender.track.kind === 'audio') {
-              try {
-                // Replace with the same track but updated enabled state
+          const audioSenders = senders.filter(sender => sender.track && sender.track.kind === 'audio');
+          
+          console.log('🔄 Found audio senders to update:', audioSenders.length);
+          
+          audioSenders.forEach(async (sender, index) => {
+            try {
+              if (newState) {
+                // UNMUTING: Replace with enabled track to resume transmission
                 await sender.replaceTrack(audioTrack);
-                console.log('🔄 Audio sender track replaced, enabled:', audioTrack.enabled);
-              } catch (error) {
-                console.error('❌ Failed to replace audio track:', error);
-                // Fallback: directly set enabled state
-                if (sender.track) {
-                  sender.track.enabled = audioTrack.enabled;
-                  console.log('🔄 Fallback: Audio sender enabled state updated:', audioTrack.enabled);
-                }
+                console.log(`🔊 Audio sender ${index} resumed with enabled track`);
+              } else {
+                // MUTING: Replace with null to stop transmission completely
+                await sender.replaceTrack(null);
+                console.log(`� Audio sender ${index} muted by replacing with null`);
+              }
+              
+              // Double-check sender track state
+              console.log(`🎤 Sender ${index} final state:`, {
+                hasTrack: sender.track !== null,
+                trackEnabled: sender.track?.enabled || false,
+                trackKind: sender.track?.kind || 'none'
+              });
+              
+            } catch (error) {
+              console.error(`❌ Failed to update audio sender ${index}:`, error);
+              
+              // Enhanced fallback: Force track state update
+              if (sender.track) {
+                sender.track.enabled = newState;
+                console.log(`🔄 Fallback: Sender ${index} track enabled set to:`, newState);
               }
             }
           });
@@ -329,6 +378,94 @@ class WebRTCService {
       }
     }
     return false;
+  }
+
+  // Enhanced audio toggle with proper bidirectional handling
+  async toggleAudioAdvanced(): Promise<boolean> {
+    if (!this.localStream) {
+      console.error('❌ No local stream for audio toggle');
+      return false;
+    }
+    
+    const audioTrack = this.localStream.getAudioTracks()[0];
+    if (!audioTrack) {
+      console.error('❌ No audio track found');
+      return false;
+    }
+    
+    const wasEnabled = audioTrack.enabled;
+    const targetState = !wasEnabled;
+    
+    console.log('🎤 ENHANCED Audio Toggle Start:', {
+      currentState: wasEnabled,
+      targetState: targetState,
+      trackId: audioTrack.id
+    });
+    
+    if (this.peerConnection) {
+      const senders = this.peerConnection.getSenders();
+      const audioSenders = senders.filter(s => s.track?.kind === 'audio');
+      
+      console.log('🔄 Found WebRTC audio senders:', audioSenders.length);
+      
+      // Process each sender for bidirectional audio control
+      for (let i = 0; i < audioSenders.length; i++) {
+        const sender = audioSenders[i];
+        
+        try {
+          if (targetState) {
+            // UNMUTING: Restore audio transmission
+            console.log(`🔊 Unmuting sender ${i}...`);
+            
+            // First enable the local track
+            audioTrack.enabled = true;
+            
+            // Then replace sender track to force WebRTC update
+            await sender.replaceTrack(audioTrack);
+            console.log(`✅ Sender ${i} unmuted and track replaced`);
+            
+          } else {
+            // MUTING: Stop audio transmission completely
+            console.log(`🔇 Muting sender ${i}...`);
+            
+            // First disable the local track
+            audioTrack.enabled = false;
+            
+            // Critical: Replace with null to stop remote audio
+            await sender.replaceTrack(null);
+            console.log(`✅ Sender ${i} muted with null track`);
+          }
+          
+          // Verification
+          console.log(`🔍 Sender ${i} final check:`, {
+            senderHasTrack: sender.track !== null,
+            localTrackEnabled: audioTrack.enabled,
+            senderTrackEnabled: sender.track?.enabled || false
+          });
+          
+        } catch (error) {
+          console.error(`❌ Sender ${i} processing failed:`, error);
+          
+          // Fallback: force track state
+          audioTrack.enabled = targetState;
+          if (sender.track) {
+            sender.track.enabled = targetState;
+          }
+        }
+      }
+    } else {
+      // No WebRTC connection, just update local track
+      audioTrack.enabled = targetState;
+      console.log('🎤 No WebRTC connection, updated local track only');
+    }
+    
+    const finalState = audioTrack.enabled;
+    console.log('🎤 ENHANCED Audio Toggle Complete:', {
+      achieved: finalState,
+      success: finalState === targetState
+    });
+    
+    return finalState;
   }
 
   // Switch camera (front/back)

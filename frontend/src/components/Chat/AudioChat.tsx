@@ -391,35 +391,66 @@ const AudioChat: React.FC = () => {
     navigate('/');
   };
 
-  const toggleMic = () => {
-    if (webRTCRef.current && localAudioRef.current?.srcObject) {
-      const localStream = localAudioRef.current.srcObject as MediaStream;
-      const audioTracks = localStream.getAudioTracks();
+  const toggleMic = async () => {
+    if (!webRTCRef.current) {
+      console.error('❌ WebRTC service not available for mic toggle');
+      return;
+    }
+    
+    if (!localAudioRef.current?.srcObject) {
+      console.error('❌ Local audio stream not available for mic toggle');
+      return;
+    }
+    
+    const localStream = localAudioRef.current.srcObject as MediaStream;
+    const audioTracks = localStream.getAudioTracks();
+    
+    if (audioTracks.length === 0) {
+      console.error('❌ No audio tracks found in local stream');
+      return;
+    }
+    
+    const audioTrack = audioTracks[0];
+    const previousState = audioTrack.enabled;
+    const previousUiState = isMicOn;
+    
+    console.log('🎤 BEFORE Toggle:', {
+      trackEnabled: previousState,
+      uiState: previousUiState,
+      trackId: audioTrack.id,
+      readyState: audioTrack.readyState
+    });
+    
+    try {
+      // Use ENHANCED WebRTC service method for proper bidirectional sync
+      const newAudioState = await webRTCRef.current.toggleAudioAdvanced();
       
-      if (audioTracks.length > 0) {
-        const audioTrack = audioTracks[0];
-        
-        // Get current state before toggling
-        const currentState = audioTrack.enabled;
-        
-        // Use WebRTC service to toggle (which handles both local and sender)
-        const webRTCNewState = webRTCRef.current.toggleAudio();
-        
-        // Update UI state
-        setIsMicOn(webRTCNewState);
-        
-        console.log('🎤 Mic toggled - Previous state:', currentState, 'New state:', webRTCNewState);
-        console.log('🎤 Audio track details:', {
-          id: audioTrack.id,
-          enabled: audioTrack.enabled,
-          readyState: audioTrack.readyState,
-          muted: audioTrack.muted
+      // Update UI state to match WebRTC state
+      setIsMicOn(newAudioState);
+      
+      console.log('🎤 ENHANCED Toggle Result:', {
+        webRTCState: newAudioState,
+        trackEnabled: audioTrack.enabled,
+        uiStateUpdated: newAudioState,
+        stateChanged: previousState !== newAudioState
+      });
+      
+      // Extended verification for debugging
+      setTimeout(() => {
+        const currentTrack = localStream.getAudioTracks()[0];
+        console.log('🔍 Post-enhanced-toggle verification:', {
+          trackExists: !!currentTrack,
+          trackEnabled: currentTrack?.enabled || false,
+          trackReadyState: currentTrack?.readyState || 'none',
+          uiState: newAudioState,
+          syncSuccess: (currentTrack?.enabled || false) === newAudioState
         });
-      } else {
-        console.error('❌ No audio tracks found in local stream');
-      }
-    } else {
-      console.error('❌ WebRTC or local stream not available for mic toggle');
+      }, 200);
+      
+    } catch (error) {
+      console.error('❌ Enhanced microphone toggle failed:', error);
+      // Revert UI state if enhanced toggle failed
+      setIsMicOn(previousUiState);
     }
   };
 
