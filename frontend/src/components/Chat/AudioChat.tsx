@@ -286,8 +286,11 @@ const AudioChat: React.FC = () => {
         }
       };
       
-      // Directly use getUserMedia for local stream management, then pass to WebRTC
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      // FIXED: Use WebRTCService's initializeMedia to ensure local tracks are properly added to the peer connection for bidirectional audio transmission
+      const stream = await webRTCRef.current!.initializeMedia(constraints);
+      if (!stream) {
+        throw new Error('Failed to initialize media via WebRTC service');
+      }
       
       if (stream && localAudioRef.current) {
         localAudioRef.current.srcObject = stream;
@@ -308,12 +311,6 @@ const AudioChat: React.FC = () => {
             readyState: track.readyState
           });
         });
-        
-        // Initialize WebRTC with local stream
-        if (webRTCRef.current) {
-          // Store stream reference in WebRTC service for track management
-          console.log('🎤 WebRTC service will handle stream via initializeMedia method');
-        }
         
         // Initialize UI mic to ON state (tracks are enabled by default)
         const firstTrack = audioTracks[0];
