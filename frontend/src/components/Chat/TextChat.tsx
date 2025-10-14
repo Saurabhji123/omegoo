@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
 import { 
   PaperAirplaneIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
-  XMarkIcon
+  XMarkIcon,
+  PhoneXMarkIcon,
+  ChatBubbleLeftRightIcon,
+  SignalIcon
 } from '@heroicons/react/24/outline';
 
 interface Message {
@@ -17,82 +20,25 @@ interface Message {
 
 const TextChat: React.FC = () => {
   const navigate = useNavigate();
-  const { socket } = useSocket();
+  const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Core states - following AudioChat pattern
   const [isSearching, setIsSearching] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isMatchConnected, setIsMatchConnected] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  
+  // Text chat specific states
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [partnerTyping, setPartnerTyping] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [queueInfo, setQueueInfo] = useState<{ position: number, totalWaiting: number } | null>(null);
-  const [showReportModal, setShowReportModal] = useState(false);
+  
+  // Connection quality state (like AudioChat)
+  const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('good');
 
-  useEffect(() => {
-    if (!socket) return;
-
-    // Socket event listeners
-    socket.on('match-found', (data: { sessionId: string; matchUserId: string }) => {
-      setSessionId(data.sessionId);
-      setIsConnected(true);
-      setIsSearching(false);
-      setMessages([]);
-      addSystemMessage('Connected! Say hello to your new friend.');
-    });
-
-    socket.on('searching', (data: { position: number; totalWaiting: number }) => {
-      setQueueInfo(data);
-      setIsSearching(true);
-    });
-
-    socket.on('chat_message', (data: { content: string; timestamp: number }) => {
-      addMessage(data.content, false);
-      setPartnerTyping(false);
-    });
-
-    socket.on('typing', (data: { isTyping: boolean }) => {
-      setPartnerTyping(data.isTyping);
-    });
-
-    socket.on('session_ended', () => {
-      setIsConnected(false);
-      setSessionId(null);
-      addSystemMessage('Your partner has left the chat.');
-    });
-
-    socket.on('error', (data: { message: string }) => {
-      console.error('Socket error:', data.message);
-      addSystemMessage('Connection error occurred.');
-    });
-
-    return () => {
-      socket.off('match-found');
-      socket.off('searching');
-      socket.off('chat_message');
-      socket.off('typing');
-      socket.off('session_ended');
-      socket.off('error');
-    };
-  }, [socket]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  // Auto-start matching when component mounts
-  useEffect(() => {
-    if (socket && !isConnected && !isSearching) {
-      findMatch();
-    }
-  }, [socket]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const addMessage = (content: string, isOwnMessage: boolean) => {
+  // Add message helper function
+  const addMessage = useCallback((content: string, isOwnMessage: boolean) => {
     const newMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -100,49 +46,224 @@ const TextChat: React.FC = () => {
       timestamp: new Date()
     };
     setMessages(prev => [...prev, newMessage]);
-  };
+  }, []);
 
-  const addSystemMessage = (content: string) => {
+  const addSystemMessage = useCallback((content: string) => {
     const systemMessage: Message = {
       id: Date.now().toString(),
       content,
       isOwnMessage: false,
       timestamp: new Date()
     };
-    setMessages(prev => [...prev, { ...systemMessage, isOwnMessage: false }]);
+    setMessages(prev => [...prev, systemMessage]);
+  }, []);
+
+  // Main socket event listeners - following AudioChat pattern
+  useEffect(() => {
+    if (!socket) return;
+
+    // Socket event listeners - exact AudioChat pattern
+    socket.on('match-found', async (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
+      console.log('💬 Text chat match found:', data);
+      setSessionId(data.sessionId);
+      setIsSearching(false);
+      setMessages([]);
+      
+      setIsMatchConnected(true);
+      addSystemMessage('Connected! Say hello to your new friend.');
+    });
+
+    socket.on('searching', (data: { position: number; totalWaiting: number }) => {
+      console.log('🔍 Searching for text chat partner:', data);
+      setIsSearching(true);
+    });
+
+    socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string }) => {
+      console.log('📝 RECEIVED MESSAGE IN TEXTCHAT:', data);
+      if (data.sessionId === sessionId) {
+        addMessage(data.content, false);
+        setPartnerTyping(false);
+      }
+    });
+
+    socket.on('typing', (data: { isTyping: boolean }) => {
+      setPartnerTyping(data.isTyping);
+    });
+
+    socket.on('session_ended', (data: { reason?: string }) => {
+      console.log('❌ Text chat session ended:', data);
+      setIsMatchConnected(false);
+      setSessionId(null);
+      
+      addSystemMessage('Your partner has left the chat.');
+      
+      // Auto-search if partner left
+      if (data.reason === 'partner_left' && socket) {
+        setIsSearching(true);
+        setTimeout(() => {
+          socket.emit('find_match', { mode: 'text' });
+        }, 2000);
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket?.off('match-found');
+      socket?.off('searching');
+      socket?.off('chat_message');
+      socket?.off('typing');
+      socket?.off('session_ended');
+    };
+  }, [socket, sessionId, addMessage, addSystemMessage]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Multi-device protection on component mount (like AudioChat)
+  useEffect(() => {
+    const activeSession = localStorage.getItem('omegoo_text_session');
+    if (activeSession) {
+      const sessionData = JSON.parse(activeSession);
+      const sessionAge = Date.now() - sessionData.timestamp;
+      
+      // Clear old sessions (older than 10 minutes)
+      if (sessionAge > 10 * 60 * 1000) {
+        localStorage.removeItem('omegoo_text_session');
+        console.log('🗑️ Cleared expired text session tracking');
+      } else {
+        console.log('⚠️ Detected recent text session from another tab/device');
+      }
+    }
+  }, []);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const findMatch = () => {
+
+
+  // Enhanced session management - following AudioChat pattern
+  const performCompleteCleanup = () => {
+    console.log('🧹 Performing complete text chat cleanup...');
+    
+    // Reset states
+    setIsMatchConnected(false);
+    setSessionId(null);
+    setMessages([]);
+    setPartnerTyping(false);
+    setIsTyping(false);
+    
+    // Clear multi-device session tracking
+    localStorage.removeItem('omegoo_text_session');
+    console.log('🗑️ Cleared text session tracking for multi-device protection');
+    
+    console.log('✅ Complete text chat cleanup finished');
+  };
+
+  // Start new chat - following AudioChat pattern
+  const startNewChat = (forceCleanup = false) => {
+    if (!socket) {
+      console.error('❌ Socket not available');
+      return;
+    }
+    
+    if (!socketConnected) {
+      console.error('❌ Socket not connected');
+      return;
+    }
+
+    // MULTI-DEVICE PROTECTION: Check if user has active session in another tab/device
+    const activeSession = localStorage.getItem('omegoo_text_session');
+    if (activeSession && !forceCleanup) {
+      const sessionData = JSON.parse(activeSession);
+      const sessionAge = Date.now() - sessionData.timestamp;
+      
+      // If session is less than 5 minutes old, warn user
+      if (sessionAge < 5 * 60 * 1000) {
+        console.log('⚠️ Active text session detected in another tab/device');
+        const shouldContinue = window.confirm(
+          'You seem to have an active text chat in another tab or device. Continue anyway? This will end your previous session.'
+        );
+        
+        if (!shouldContinue) {
+          return;
+        }
+      }
+    }
+    
+    // Store current session attempt
+    localStorage.setItem('omegoo_text_session', JSON.stringify({
+      timestamp: Date.now(),
+      userId: socket.id
+    }));
+
+    // INSTANT DISCONNECT: End current session first if exists
+    if (sessionId && isMatchConnected) {
+      console.log('🔚 Ending current text session immediately:', sessionId);
+      socket.emit('end_session', { 
+        sessionId: sessionId,
+        duration: Date.now() 
+      });
+      
+      // Notify partner immediately
+      socket.emit('session_ended', { 
+        sessionId: sessionId,
+        reason: 'user_clicked_next' 
+      });
+    }
+    
+    // INSTANT STATE RESET
+    setIsMatchConnected(false);
+    setSessionId(null);
     setIsSearching(true);
     setMessages([]);
-    addSystemMessage('Searching for someone to chat with...');
-    socket?.emit('find_match', { mode: 'text' });
+    setPartnerTyping(false);
+    console.log('🔄 State reset for new text chat connection');
+    
+    // START NEW SEARCH
+    setTimeout(() => {
+      console.log('🔍 Starting search for new text chat partner');
+      socket.emit('find_match', { mode: 'text' });
+      console.log('✅ New text chat partner search started');
+    }, 100);
   };
 
   const nextMatch = () => {
+    console.log('🔄 Next Person clicked - starting fresh text chat');
+    startNewChat(true);
+  };
+
+  const exitChat = () => {
+    // Clean up current session
     if (sessionId) {
       socket?.emit('end_session', { sessionId });
     }
-    setIsConnected(false);
-    setSessionId(null);
-    setMessages([]);
-    findMatch();
+    
+    // Clear multi-device session tracking on exit
+    localStorage.removeItem('omegoo_text_session');
+    
+    navigate('/');
   };
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !isConnected || !sessionId) return;
+    if (!messageInput.trim() || !isMatchConnected || !sessionId) return;
     
     const content = messageInput.trim();
     addMessage(content, true);
     
+    // Send message to backend - matching AudioChat pattern
     socket?.emit('chat_message', {
       sessionId,
       content,
-      type: 'text'
+      timestamp: Date.now()
     });
     
     setMessageInput('');
     setIsTyping(false);
+    
+    // Stop typing indicator
+    socket?.emit('typing', { sessionId, isTyping: false });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,204 +287,219 @@ const TextChat: React.FC = () => {
     }
   };
 
-  const reportUser = () => {
-    setShowReportModal(true);
+  // Connection quality helper (like AudioChat)
+  const getConnectionQualityColor = () => {
+    switch (connectionQuality) {
+      case 'excellent': return 'text-green-400';
+      case 'good': return 'text-yellow-400';
+      case 'poor': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
   };
 
-  const handleReport = (reason: string) => {
-    if (sessionId) {
-      socket?.emit('report_user', {
-        sessionId,
-        reason,
-        description: `Reported for: ${reason}`
-      });
-    }
-    setShowReportModal(false);
-    nextMatch();
-  };
+  // Loading states (like AudioChat)
+  if (socketConnecting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <div className="text-xl">Connecting to server...</div>
+        </div>
+      </div>
+    );
+  }
 
-  const endChat = () => {
-    if (sessionId) {
-      socket?.emit('end_session', { sessionId });
-    }
-    navigate('/');
-  };
+  if (!socketConnected) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4">
+        <div className="text-white text-center">
+          <div className="text-xl mb-4">Connection Error</div>
+          <div className="text-gray-300">Please check your internet connection and refresh.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 flex flex-col">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Text Chat</h1>
-          <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${
-              isConnected ? 'bg-green-500' : 
-              isSearching ? 'bg-yellow-500' : 'bg-red-500'
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex flex-col">
+      {/* Enhanced Header with AudioChat styling */}
+      <div className="bg-black bg-opacity-20 p-4 flex justify-between items-center border-b border-white border-opacity-20">
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <ChatBubbleLeftRightIcon className="w-6 h-6 sm:w-8 sm:h-8" />
+            <span className="hidden sm:inline">Text Chat</span>
+            <span className="sm:hidden">Chat</span>
+          </h1>
+          
+          {/* Status indicator */}
+          <div className="flex items-center gap-2">
+            <SignalIcon className={`w-4 h-4 ${getConnectionQualityColor()}`} />
+            <div className={`w-2 h-2 rounded-full ${
+              isMatchConnected ? 'bg-green-400' : 
+              isSearching ? 'bg-yellow-400' : 'bg-red-400'
             }`}></div>
-            <span className="text-gray-600 dark:text-gray-300 text-sm">
-              {isConnected ? 'Connected' : isSearching ? 'Searching...' : 'Disconnected'}
+            <span className="text-xs text-gray-300 hidden sm:block">
+              {isMatchConnected ? 'Connected' : isSearching ? 'Searching...' : 'Disconnected'}
             </span>
           </div>
         </div>
         
         <button
-          onClick={endChat}
-          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          onClick={exitChat}
+          className="text-gray-300 hover:text-white transition-colors"
         >
           <XMarkIcon className="w-6 h-6" />
         </button>
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.length === 0 && !isSearching && (
-            <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
-              <div className="text-6xl mb-4">💬</div>
-              <h2 className="text-xl font-semibold mb-2">Ready to start chatting?</h2>
-              <p className="mb-6">Connect with a random stranger and have a conversation!</p>
-              <button
-                onClick={findMatch}
-                className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                Start Text Chat
-              </button>
+      {/* Main Content - Following AudioChat Layout */}
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        
+        {/* Searching State */}
+        {isSearching && !isMatchConnected && (
+          <div className="text-center max-w-md">
+            <div className="mb-8">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-400 border-t-transparent mx-auto mb-6"></div>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">Finding someone for you...</h2>
+              <p className="text-gray-300 text-lg">
+                Please wait while we connect you with another person
+              </p>
             </div>
-          )}
-
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.isOwnMessage
-                    ? 'bg-primary-600 text-white'
-                    : message.content.includes('Connected!') || message.content.includes('Searching') || message.content.includes('left the chat')
-                    ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-center text-sm'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
-                }`}
-              >
-                <p className="text-sm">{message.content}</p>
-                <p className={`text-xs mt-1 ${
-                  message.isOwnMessage ? 'text-primary-200' : 'text-gray-500 dark:text-gray-400'
-                }`}>
-                  {message.timestamp.toLocaleTimeString()}
-                </p>
+            
+            <div className="bg-black bg-opacity-30 rounded-xl p-6 backdrop-blur-sm">
+              <div className="flex items-center justify-center gap-2 text-yellow-400 mb-2">
+                <div className="animate-pulse w-2 h-2 bg-yellow-400 rounded-full"></div>
+                <div className="animate-pulse w-2 h-2 bg-yellow-400 rounded-full" style={{ animationDelay: '0.2s' }}></div>
+                <div className="animate-pulse w-2 h-2 bg-yellow-400 rounded-full" style={{ animationDelay: '0.4s' }}></div>
               </div>
+              <div className="text-sm text-gray-300">Looking for text chat partner...</div>
             </div>
-          ))}
+          </div>
+        )}
 
-          {partnerTyping && (
-            <div className="flex justify-start">
-              <div className="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+        {/* Chat Interface - When Connected */}
+        {isMatchConnected && (
+          <div className="w-full max-w-4xl h-full flex flex-col bg-black bg-opacity-20 rounded-xl backdrop-blur-sm border border-white border-opacity-20">
+            
+            {/* Chat Header */}
+            <div className="p-4 border-b border-white border-opacity-20">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl sm:text-2xl mb-2 font-semibold">Connected!</h2>
+                <div className="flex gap-3">
+                  <button
+                    onClick={nextMatch}
+                    disabled={!isMatchConnected}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 px-4 py-2 rounded-xl transition-colors font-medium disabled:cursor-not-allowed text-sm"
+                  >
+                    Next Person
+                  </button>
+                  <button
+                    onClick={exitChat}
+                    className="flex-1 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium text-sm"
+                  >
+                    <PhoneXMarkIcon className="w-4 h-4" />
+                    End Chat
+                  </button>
                 </div>
               </div>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area */}
-        {(isConnected || isSearching) && (
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex space-x-4 mb-4">
-              <button
-                onClick={nextMatch}
-                className="flex items-center space-x-2 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                <ArrowPathIcon className="w-4 h-4" />
-                <span>Next</span>
-              </button>
-              
-              <button
-                onClick={reportUser}
-                className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                <ExclamationTriangleIcon className="w-4 h-4" />
-                <span>Report</span>
-              </button>
-            </div>
-
-            <div className="flex space-x-3">
-              <input
-                type="text"
-                value={messageInput}
-                onChange={handleInputChange}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              />
-              <button
-                onClick={sendMessage}
-                disabled={!messageInput.trim()}
-                className="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
-              >
-                <PaperAirplaneIcon className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Queue Info */}
-        {isSearching && queueInfo && (
-          <div className="bg-primary-50 dark:bg-primary-900/20 border-t border-primary-200 dark:border-primary-800 p-4">
-            <div className="text-center text-primary-700 dark:text-primary-300">
-              <div className="flex justify-center mb-2">
-                <ArrowPathIcon className="w-5 h-5 animate-spin" />
-              </div>
-              <p className="text-sm">
-                <span className="font-semibold">{queueInfo.totalWaiting}</span> people waiting
-              </p>
-              <p className="text-xs mt-1">
-                You're in position <span className="font-semibold">{queueInfo.position}</span>
+              <p className="text-gray-300 text-sm sm:text-base">
+                You're now chatting with a stranger
               </p>
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* Report Modal */}
-      {showReportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Report User</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">Why are you reporting this user?</p>
-            
-            <div className="space-y-2">
-              {[
-                'Inappropriate content',
-                'Harassment or bullying',
-                'Spam or scam',
-                'Offensive language',
-                'Other'
-              ].map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => handleReport(reason)}
-                  className="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-900 dark:text-white"
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+              {messages.length === 0 && (
+                <div className="text-center text-gray-400 mt-8">
+                  <ChatBubbleLeftRightIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p>Start the conversation by sending a message!</p>
+                </div>
+              )}
+
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'}`}
                 >
-                  {reason}
-                </button>
+                  <div
+                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-xl ${
+                      message.isOwnMessage
+                        ? 'bg-purple-600 text-white ml-auto'
+                        : message.content.includes('Connected!') || message.content.includes('left the chat')
+                        ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full'
+                        : 'bg-gray-700 text-white'
+                    }`}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                    <div className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
               ))}
+              
+              {/* Typing indicator */}
+              {partnerTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-700 px-4 py-2 rounded-xl max-w-xs">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 border-t border-white border-opacity-20">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={messageInput}
+                  onChange={handleInputChange}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type a message..."
+                  disabled={!isMatchConnected}
+                  className="flex-1 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!messageInput.trim() || !isMatchConnected}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 p-3 rounded-xl transition-colors disabled:cursor-not-allowed"
+                >
+                  <PaperAirplaneIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Initial State - Not searching, not connected */}
+        {!isSearching && !isMatchConnected && (
+          <div className="text-center max-w-md">
+            <div className="mb-8">
+              <ChatBubbleLeftRightIcon className="w-24 h-24 mx-auto mb-6 text-purple-400" />
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">Text Chat</h2>
+              <p className="text-gray-300 text-lg mb-8">
+                Connect with strangers from around the world and have interesting conversations!
+              </p>
             </div>
             
             <button
-              onClick={() => setShowReportModal(false)}
-              className="w-full mt-4 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-white py-2 rounded-lg transition-colors"
+              onClick={() => startNewChat(false)}
+              disabled={socketConnecting || !socketConnected}
+              className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
             >
-              Cancel
+              {socketConnecting ? 'Connecting...' : 'Start Text Chat'}
             </button>
           </div>
-        </div>
-      )}
+        )}
+        
+      </div>
     </div>
   );
 };
