@@ -357,43 +357,30 @@ const TextChat: React.FC = () => {
         
         {/* Searching State */}
         {isSearching && !isMatchConnected && (
-          <div className="w-full max-w-4xl flex flex-col bg-black bg-opacity-20 rounded-xl backdrop-blur-sm border border-white border-opacity-20" style={{ height: 'calc(100vh - 120px)' }}>
-            
-            {/* Header during search */}
-            <div className="p-4 border-b border-white border-opacity-20">
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-xl sm:text-2xl font-semibold">Chat</h2>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-yellow-400 font-medium">Searching...</span>
-                </div>
-              </div>
-              <p className="text-gray-300 text-xs sm:text-sm opacity-80">
-                Finding someone to chat with...
-              </p>
-            </div>
+          <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl flex flex-col bg-black bg-opacity-20 rounded-lg sm:rounded-xl backdrop-blur-sm border border-white border-opacity-20 mx-2 sm:mx-4" 
+               style={{ height: 'calc(100vh - 140px)', minHeight: '500px', maxHeight: '800px' }}>
 
             {/* Search Content */}
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="text-center max-w-md">
-                <div className="mb-8">
-                  <div className="relative mx-auto mb-6 w-20 h-20">
-                    <div className="animate-spin rounded-full h-20 w-20 border-4 border-purple-400 border-t-transparent"></div>
-                    <div className="absolute inset-0 animate-ping rounded-full h-20 w-20 border-2 border-purple-400 opacity-20"></div>
+            <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+              <div className="text-center max-w-xs sm:max-w-md">
+                <div className="mb-6 sm:mb-8">
+                  <div className="relative mx-auto mb-4 sm:mb-6 w-16 h-16 sm:w-20 sm:h-20">
+                    <div className="animate-spin rounded-full h-full w-full border-3 sm:border-4 border-purple-400 border-t-transparent"></div>
+                    <div className="absolute inset-0 animate-ping rounded-full h-full w-full border-2 border-purple-400 opacity-20"></div>
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold mb-4">Finding someone for you...</h3>
-                  <p className="text-gray-300 text-base mb-6">
+                  <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4">Finding someone for you...</h3>
+                  <p className="text-gray-300 text-sm sm:text-base mb-4 sm:mb-6 px-2">
                     Please wait while we connect you with another person
                   </p>
                 </div>
                 
-                <div className="bg-black bg-opacity-30 rounded-xl p-6 backdrop-blur-sm border border-white border-opacity-10">
-                  <div className="flex items-center justify-center gap-2 text-yellow-400 mb-3">
-                    <div className="animate-bounce w-2 h-2 bg-yellow-400 rounded-full"></div>
-                    <div className="animate-bounce w-2 h-2 bg-yellow-400 rounded-full" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="animate-bounce w-2 h-2 bg-yellow-400 rounded-full" style={{ animationDelay: '0.2s' }}></div>
+                <div className="bg-black bg-opacity-30 rounded-lg sm:rounded-xl p-4 sm:p-6 backdrop-blur-sm border border-white border-opacity-10">
+                  <div className="flex items-center justify-center gap-1 sm:gap-2 text-yellow-400 mb-2 sm:mb-3">
+                    <div className="animate-bounce w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full"></div>
+                    <div className="animate-bounce w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="animate-bounce w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <div className="text-sm text-gray-300">Looking for text chat partner...</div>
+                  <div className="text-xs sm:text-sm text-gray-300">Looking for text chat partner...</div>
                 </div>
               </div>
             </div>
@@ -402,56 +389,82 @@ const TextChat: React.FC = () => {
 
         {/* Chat Interface - When Connected */}
         {isMatchConnected && (
-          <div className="w-full max-w-4xl flex flex-col bg-black bg-opacity-20 rounded-xl backdrop-blur-sm border border-white border-opacity-20" style={{ height: 'calc(100vh - 120px)' }}>
+          <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl flex flex-col bg-black bg-opacity-20 rounded-lg sm:rounded-xl backdrop-blur-sm border border-white border-opacity-20 mx-2 sm:mx-4" 
+               style={{ height: 'calc(100vh - 140px)', minHeight: '500px', maxHeight: '800px' }}>
             
             {/* Chat Header */}
-            <div className="p-4 border-b border-white border-opacity-20">
+            <div className="p-3 sm:p-4 border-b border-white border-opacity-20">
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-xl sm:text-2xl font-semibold">Chat</h2>
-                  {isMatchConnected && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-green-400 font-medium">Connected</span>
-                    </div>
-                  )}
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold">Chat</h2>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-colors ${
+                      !socketConnected 
+                        ? 'bg-red-500 animate-pulse'
+                        : isSearching 
+                        ? 'bg-yellow-500 animate-pulse' 
+                        : isMatchConnected 
+                        ? 'bg-green-500 animate-pulse'
+                        : 'bg-gray-500'
+                    }`}></div>
+                    <span className={`text-xs sm:text-sm font-medium transition-colors ${
+                      !socketConnected 
+                        ? 'text-red-400'
+                        : isSearching 
+                        ? 'text-yellow-400' 
+                        : isMatchConnected 
+                        ? 'text-green-400'
+                        : 'text-gray-400'
+                    }`}>
+                      {!socketConnected 
+                        ? 'Disconnected'
+                        : isSearching 
+                        ? 'Searching...' 
+                        : isMatchConnected 
+                        ? 'Connected'
+                        : 'Ready'
+                      }
+                    </span>
+                  </div>
                 </div>
               </div>
               
               {/* Action Buttons */}
               {isMatchConnected && (
-                <div className="flex gap-3 mb-2">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-2">
                   <button
                     onClick={nextMatch}
                     disabled={!isMatchConnected}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-500 disabled:to-gray-600 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium disabled:cursor-not-allowed text-sm shadow-lg hover:shadow-blue-500/25"
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-500 disabled:to-gray-600 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 font-medium disabled:cursor-not-allowed text-xs sm:text-sm shadow-lg hover:shadow-blue-500/25"
                   >
-                    🔄 Next Person
+                    <span className="hidden sm:inline">🔄 Next Person</span>
+                    <span className="sm:hidden">🔄 Next</span>
                   </button>
                   <button
                     onClick={exitChat}
-                    className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-4 py-2.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm shadow-lg hover:shadow-red-500/25"
+                    className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2 font-medium text-xs sm:text-sm shadow-lg hover:shadow-red-500/25"
                   >
-                    <PhoneXMarkIcon className="w-4 h-4" />
-                    End Chat
+                    <PhoneXMarkIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">End Chat</span>
+                    <span className="sm:hidden">End</span>
                   </button>
                 </div>
               )}
               
-              <p className="text-gray-300 text-xs sm:text-sm opacity-80">
-                {isMatchConnected ? "You're chatting with a stranger" : "Connecting you with someone..."}
+              <p className="text-gray-300 text-xs sm:text-sm opacity-80 px-1">
+                {isMatchConnected ? "You're chatting with a stranger" : "Ready to start chatting"}
               </p>
             </div>
 
             {/* Messages Area - Full Height */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 min-h-0">
               {/* Empty State */}
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full">
-                  <div className="text-center text-gray-400">
-                    <ChatBubbleLeftRightIcon className="w-20 h-20 mx-auto mb-4 opacity-40" />
-                    <p className="text-lg font-medium mb-2">Start your conversation!</p>
-                    <p className="text-sm opacity-70">Send a message to begin chatting</p>
+                  <div className="text-center text-gray-400 px-4">
+                    <ChatBubbleLeftRightIcon className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto mb-3 sm:mb-4 opacity-40" />
+                    <p className="text-base sm:text-lg font-medium mb-2">Start your conversation!</p>
+                    <p className="text-xs sm:text-sm opacity-70">Send a message to begin chatting</p>
                   </div>
                 </div>
               )}
@@ -460,10 +473,10 @@ const TextChat: React.FC = () => {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'} mb-2`}
+                  className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2 px-1 sm:px-0`}
                 >
                   <div
-                    className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
+                    className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${
                       message.isOwnMessage
                         ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
                         : message.content.includes('Connected!') || message.content.includes('left the chat')
@@ -471,8 +484,8 @@ const TextChat: React.FC = () => {
                         : 'bg-white bg-opacity-10 text-white rounded-bl-md backdrop-blur-sm'
                     }`}
                   >
-                    <p className="text-sm leading-relaxed">{message.content}</p>
-                    <div className={`text-xs mt-2 ${
+                    <p className="text-xs sm:text-sm leading-relaxed break-words">{message.content}</p>
+                    <div className={`text-xs mt-1 sm:mt-2 ${
                       message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
                     }`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -499,8 +512,8 @@ const TextChat: React.FC = () => {
             </div>
 
             {/* Message Input - WhatsApp Style */}
-            <div className="p-4 border-t border-white border-opacity-20 bg-black bg-opacity-30">
-              <div className="flex items-end gap-3">
+            <div className="p-2 sm:p-3 lg:p-4 border-t border-white border-opacity-20 bg-black bg-opacity-30">
+              <div className="flex items-end gap-2 sm:gap-3">
                 <div className="flex-1 relative">
                   <input
                     type="text"
@@ -509,19 +522,19 @@ const TextChat: React.FC = () => {
                     onKeyPress={handleKeyPress}
                     placeholder="Type a message..."
                     disabled={!isMatchConnected}
-                    className="w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-full px-4 py-3 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200"
+                    className="w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200"
                   />
                 </div>
                 <button
                   onClick={sendMessage}
                   disabled={!messageInput.trim() || !isMatchConnected}
-                  className={`p-3 rounded-full transition-all duration-200 shadow-lg ${
+                  className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg ${
                     messageInput.trim() && isMatchConnected
                       ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:shadow-purple-500/25 transform hover:scale-105'
                       : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  <PaperAirplaneIcon className="w-5 h-5" />
+                  <PaperAirplaneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
@@ -530,18 +543,18 @@ const TextChat: React.FC = () => {
 
         {/* Initial State - Not searching, not connected */}
         {!isSearching && !isMatchConnected && (
-          <div className="text-center max-w-md">
-            <div className="mb-8">
-              <div className="relative mb-8">
-                <ChatBubbleLeftRightIcon className="w-24 h-24 mx-auto text-purple-400" />
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+          <div className="text-center max-w-xs sm:max-w-md lg:max-w-lg mx-4 sm:mx-0">
+            <div className="mb-6 sm:mb-8">
+              <div className="relative mb-6 sm:mb-8">
+                <ChatBubbleLeftRightIcon className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-purple-400" />
+                <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
                 </div>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                 Text Chat
               </h2>
-              <p className="text-gray-300 text-lg mb-8 leading-relaxed">
+              <p className="text-gray-300 text-base sm:text-lg mb-6 sm:mb-8 leading-relaxed px-2 sm:px-0">
                 Connect with strangers from around the world and have interesting conversations!
               </p>
             </div>
@@ -549,23 +562,23 @@ const TextChat: React.FC = () => {
             <button
               onClick={() => startNewChat(false)}
               disabled={socketConnecting || !socketConnected}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-600 disabled:to-gray-700 text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-purple-500/25 disabled:shadow-none"
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg font-semibold transition-all transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-purple-500/25 disabled:shadow-none"
             >
               {socketConnecting ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Connecting...
+                  <span className="text-sm sm:text-base">Connecting...</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <ChatBubbleLeftRightIcon className="w-5 h-5" />
-                  Start Text Chat
+                <div className="flex items-center justify-center gap-2">
+                  <ChatBubbleLeftRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">Start Text Chat</span>
                 </div>
               )}
             </button>
             
             {!socketConnected && (
-              <p className="text-red-400 text-sm mt-4">
+              <p className="text-red-400 text-xs sm:text-sm mt-3 sm:mt-4 px-2">
                 Connection lost. Please refresh the page.
               </p>
             )}
