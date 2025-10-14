@@ -40,6 +40,23 @@ const AudioChat: React.FC = () => {
     console.log('🎤 MIC STATE CHANGED: UI isMicOn =', isMicOn);
   }, [isMicOn]);
 
+  // Multi-device protection on component mount
+  useEffect(() => {
+    const activeSession = localStorage.getItem('omegoo_audio_session');
+    if (activeSession) {
+      const sessionData = JSON.parse(activeSession);
+      const sessionAge = Date.now() - sessionData.timestamp;
+      
+      // Clear old sessions (older than 10 minutes)
+      if (sessionAge > 10 * 60 * 1000) {
+        localStorage.removeItem('omegoo_audio_session');
+        console.log('🗑️ Cleared expired session tracking');
+      } else {
+        console.log('⚠️ Detected recent session from another tab/device');
+      }
+    }
+  }, []);
+
   // Remote stream handler - VideoChat pattern
   const handleRemoteStream = useCallback((stream: MediaStream) => {
     console.log('🎤 Remote audio stream received:', {
@@ -310,6 +327,10 @@ const AudioChat: React.FC = () => {
       webRTCRef.current.cleanup();
     }
     
+    // Clear multi-device session tracking
+    localStorage.removeItem('omegoo_audio_session');
+    console.log('🗑️ Cleared session tracking for multi-device protection');
+    
     console.log('✅ Complete audio cleanup finished');
   };
 
@@ -401,6 +422,31 @@ const AudioChat: React.FC = () => {
       console.error('❌ Socket not connected');
       return;
     }
+
+    // MULTI-DEVICE PROTECTION: Check if user has active session in another tab/device
+    const activeSession = localStorage.getItem('omegoo_audio_session');
+    if (activeSession && !forceCleanup) {
+      const sessionData = JSON.parse(activeSession);
+      const sessionAge = Date.now() - sessionData.timestamp;
+      
+      // If session is less than 5 minutes old, warn user
+      if (sessionAge < 5 * 60 * 1000) {
+        console.log('⚠️ Active audio session detected in another tab/device');
+        const shouldContinue = window.confirm(
+          'You seem to have an active voice chat in another tab or device. Continue anyway? This will end your previous session.'
+        );
+        
+        if (!shouldContinue) {
+          return;
+        }
+      }
+    }
+    
+    // Store current session attempt
+    localStorage.setItem('omegoo_audio_session', JSON.stringify({
+      timestamp: Date.now(),
+      userId: socket.id
+    }));
     
     // INSTANT DISCONNECT: End current session first if exists
     if (sessionId && isMatchConnected) {
@@ -509,6 +555,9 @@ const AudioChat: React.FC = () => {
     if (webRTCRef.current) {
       webRTCRef.current.forceDisconnect();
     }
+    
+    // Clear multi-device session tracking on exit
+    localStorage.removeItem('omegoo_audio_session');
     
     navigate('/');
   };
