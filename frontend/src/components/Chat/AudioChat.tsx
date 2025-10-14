@@ -260,14 +260,16 @@ const AudioChat: React.FC = () => {
           });
         });
         
-        // FORCE mic to ON state and sync UI
+        // Reset mic state completely for fresh start
         if (audioTracks.length > 0) {
           const audioTrack = audioTracks[0];
-          // Force enable the track
+          // Ensure track is enabled
           audioTrack.enabled = true;
-          // Force UI state to match
+          // Reset WebRTC mic state
+          webRTCRef.current?.resetMicState();
+          // Force UI to ON
           setIsMicOn(true);
-          console.log('MIC INIT: Forced mic ON - track enabled =', audioTrack.enabled, 'UI state =', true);
+          console.log('FRESH MIC INIT: Reset complete - track enabled, WebRTC reset, UI = ON');
         }
         
         setIsProcessingAudio(false);
@@ -362,8 +364,12 @@ const AudioChat: React.FC = () => {
     setSessionId(null);
     setIsSearching(true);
     setMicLevel(0);
-    setIsMicOn(true); // Reset mic to ON state for new connection
-    console.log('MIC RESET: Forced UI to ON for new connection');
+    // Reset mic completely for new connection
+    setIsMicOn(true);
+    if (webRTCRef.current) {
+      webRTCRef.current.resetMicState();
+    }
+    console.log('FRESH MIC RESET: Complete reset for new connection');
     
     // START NEW SEARCH (with delay if force cleanup)
     const searchDelay = forceCleanup ? 200 : 0;
@@ -396,39 +402,39 @@ const AudioChat: React.FC = () => {
   };
 
   const toggleMic = () => {
-    console.log('MIC TOGGLE: Starting completely new approach');
+    console.log('SIMPLE STATE MIC: Starting toggle');
     
     if (!webRTCRef.current) {
-      console.error('ERROR: WebRTC service not available');
+      console.error('SIMPLE STATE MIC: WebRTC not available');
       return;
     }
     
-    console.log('MIC TOGGLE: Current UI state =', isMicOn);
+    const currentUIState = isMicOn;
+    console.log('SIMPLE STATE MIC: Current UI =', currentUIState);
     
     try {
-      // Use NEW ultra simple method
-      const newMicState = webRTCRef.current.toggleMicUltraSimple();
+      // Use simple state-based method
+      const newMicState = webRTCRef.current.toggleMicSimpleState();
       
-      // Update UI state
+      // Update UI immediately
       setIsMicOn(newMicState);
       
-          console.log('MIC TOGGLE: SUCCESS - UI updated to', newMicState);
-          
-          // Verify the actual track state after toggle
-          setTimeout(() => {
-            if (localAudioRef.current?.srcObject) {
-              const stream = localAudioRef.current.srcObject as MediaStream;
-              const track = stream.getAudioTracks()[0];
-              console.log('MIC VERIFICATION: Track enabled =', track?.enabled, 'UI state =', newMicState);
-            }
-          }, 100);
+      console.log('SIMPLE STATE MIC: Toggle complete - UI changed from', currentUIState, 'to', newMicState);
+      
+      // Verify track state after a moment
+      setTimeout(() => {
+        if (localAudioRef.current?.srcObject) {
+          const stream = localAudioRef.current.srcObject as MediaStream;
+          const track = stream.getAudioTracks()[0];
+          const webRTCState = webRTCRef.current?.getMicState();
+          console.log('SIMPLE STATE MIC VERIFY: Track enabled =', track?.enabled, 'WebRTC state =', webRTCState, 'UI state =', newMicState);
+        }
+      }, 200);
       
     } catch (error) {
-      console.error('MIC TOGGLE: FAILED -', error);
+      console.error('SIMPLE STATE MIC: FAILED -', error);
     }
-  };
-
-  const toggleSpeaker = () => {
+  };  const toggleSpeaker = () => {
     if (remoteAudioRef.current) {
       // Current state: isSpeakerOn = true means speaker is ON (not muted)
       // We want to toggle: if ON, make it muted; if muted, make it ON

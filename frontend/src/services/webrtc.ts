@@ -422,35 +422,41 @@ class WebRTCService {
     return newState;
   }
 
-  // NEW ULTRA SIMPLE MIC CONTROL - No WebRTC Interference
-  toggleMicUltraSimple(): boolean {
-    console.log('MIC TOGGLE: Starting ultra simple approach');
+  // SIMPLE STATE-BASED MIC CONTROL
+  private isMicMuted: boolean = false;
+
+  toggleMicSimpleState(): boolean {
+    console.log('SIMPLE STATE MIC: Current muted =', this.isMicMuted);
     
     if (!this.localStream) {
-      console.error('ERROR: No local stream for mic toggle');
-      return false;
+      console.error('SIMPLE STATE MIC: No local stream');
+      return true; // Default to unmuted state
     }
-    
+
     const audioTrack = this.localStream.getAudioTracks()[0];
     if (!audioTrack) {
-      console.error('ERROR: No audio track found');
-      return false;
+      console.error('SIMPLE STATE MIC: No audio track');
+      return true;
     }
+
+    // Toggle the state
+    this.isMicMuted = !this.isMicMuted;
     
-    console.log('MIC TOGGLE: Current state =', audioTrack.enabled);
+    // Apply the state to track
+    audioTrack.enabled = !this.isMicMuted;
     
-    // Pure toggle - no WebRTC manipulation
-    audioTrack.enabled = !audioTrack.enabled;
+    console.log('SIMPLE STATE MIC: New muted =', this.isMicMuted, 'track enabled =', audioTrack.enabled);
     
-    console.log('MIC TOGGLE: New state =', audioTrack.enabled);
-    return audioTrack.enabled;
+    return !this.isMicMuted; // Return unmuted state (true = mic on)
   }
 
-  // Get mic state
-  getCurrentMicState(): boolean {
-    if (!this.localStream) return false;
-    const audioTrack = this.localStream.getAudioTracks()[0];
-    return audioTrack ? audioTrack.enabled : false;
+  getMicState(): boolean {
+    return !this.isMicMuted; // Return unmuted state
+  }
+
+  resetMicState(): void {
+    this.isMicMuted = false;
+    console.log('SIMPLE STATE MIC: Reset to unmuted');
   }
 
   // Switch camera (front/back)
