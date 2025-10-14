@@ -422,41 +422,27 @@ class WebRTCService {
     return newState;
   }
 
-  // SIMPLE STATE-BASED MIC CONTROL
-  private isMicMuted: boolean = false;
+  // PURE UI STATE MIC CONTROL - No Audio Manipulation
+  private uiMicState: boolean = true; // true = ON, false = OFF
 
-  toggleMicSimpleState(): boolean {
-    console.log('SIMPLE STATE MIC: Current muted =', this.isMicMuted);
+  toggleMicUI(): boolean {
+    console.log('UI MIC: Current state =', this.uiMicState);
     
-    if (!this.localStream) {
-      console.error('SIMPLE STATE MIC: No local stream');
-      return true; // Default to unmuted state
-    }
-
-    const audioTrack = this.localStream.getAudioTracks()[0];
-    if (!audioTrack) {
-      console.error('SIMPLE STATE MIC: No audio track');
-      return true;
-    }
-
-    // Toggle the state
-    this.isMicMuted = !this.isMicMuted;
+    // Pure UI toggle
+    this.uiMicState = !this.uiMicState;
     
-    // Apply the state to track
-    audioTrack.enabled = !this.isMicMuted;
+    console.log('UI MIC: New state =', this.uiMicState);
     
-    console.log('SIMPLE STATE MIC: New muted =', this.isMicMuted, 'track enabled =', audioTrack.enabled);
-    
-    return !this.isMicMuted; // Return unmuted state (true = mic on)
+    return this.uiMicState;
   }
 
-  getMicState(): boolean {
-    return !this.isMicMuted; // Return unmuted state
+  getMicUIState(): boolean {
+    return this.uiMicState;
   }
 
-  resetMicState(): void {
-    this.isMicMuted = false;
-    console.log('SIMPLE STATE MIC: Reset to unmuted');
+  resetMicUIToOn(): void {
+    this.uiMicState = true;
+    console.log('UI MIC: Reset to ON');
   }
 
   // Switch camera (front/back)

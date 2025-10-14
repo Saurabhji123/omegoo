@@ -260,16 +260,13 @@ const AudioChat: React.FC = () => {
           });
         });
         
-        // Reset mic state completely for fresh start
+        // Initialize UI mic to ON state
         if (audioTracks.length > 0) {
-          const audioTrack = audioTracks[0];
-          // Ensure track is enabled
-          audioTrack.enabled = true;
-          // Reset WebRTC mic state
-          webRTCRef.current?.resetMicState();
-          // Force UI to ON
+          // Reset WebRTC UI state to ON
+          webRTCRef.current?.resetMicUIToOn();
+          // Set UI to ON
           setIsMicOn(true);
-          console.log('FRESH MIC INIT: Reset complete - track enabled, WebRTC reset, UI = ON');
+          console.log('UI MIC INIT: Pure UI reset - WebRTC UI ON, React UI ON');
         }
         
         setIsProcessingAudio(false);
@@ -367,9 +364,9 @@ const AudioChat: React.FC = () => {
     // Reset mic completely for new connection
     setIsMicOn(true);
     if (webRTCRef.current) {
-      webRTCRef.current.resetMicState();
+      webRTCRef.current.resetMicUIToOn();
     }
-    console.log('FRESH MIC RESET: Complete reset for new connection');
+    console.log('UI MIC RESET: Complete UI reset for new connection');
     
     // START NEW SEARCH (with delay if force cleanup)
     const searchDelay = forceCleanup ? 200 : 0;
@@ -402,37 +399,30 @@ const AudioChat: React.FC = () => {
   };
 
   const toggleMic = () => {
-    console.log('SIMPLE STATE MIC: Starting toggle');
+    console.log('UI MIC TOGGLE: Starting pure UI approach');
     
     if (!webRTCRef.current) {
-      console.error('SIMPLE STATE MIC: WebRTC not available');
+      console.error('UI MIC: WebRTC not available');
       return;
     }
     
     const currentUIState = isMicOn;
-    console.log('SIMPLE STATE MIC: Current UI =', currentUIState);
+    console.log('UI MIC: Current UI state =', currentUIState);
     
     try {
-      // Use simple state-based method
-      const newMicState = webRTCRef.current.toggleMicSimpleState();
+      // Pure UI state toggle - no audio manipulation
+      const newMicState = webRTCRef.current.toggleMicUI();
       
       // Update UI immediately
       setIsMicOn(newMicState);
       
-      console.log('SIMPLE STATE MIC: Toggle complete - UI changed from', currentUIState, 'to', newMicState);
+      console.log('UI MIC: SUCCESS - UI changed from', currentUIState, 'to', newMicState);
       
-      // Verify track state after a moment
-      setTimeout(() => {
-        if (localAudioRef.current?.srcObject) {
-          const stream = localAudioRef.current.srcObject as MediaStream;
-          const track = stream.getAudioTracks()[0];
-          const webRTCState = webRTCRef.current?.getMicState();
-          console.log('SIMPLE STATE MIC VERIFY: Track enabled =', track?.enabled, 'WebRTC state =', webRTCState, 'UI state =', newMicState);
-        }
-      }, 200);
+      // Show visual feedback for testing
+      console.log('UI MIC: Button should be', newMicState ? 'GRAY (ON)' : 'RED (OFF)');
       
     } catch (error) {
-      console.error('SIMPLE STATE MIC: FAILED -', error);
+      console.error('UI MIC: FAILED -', error);
     }
   };  const toggleSpeaker = () => {
     if (remoteAudioRef.current) {
