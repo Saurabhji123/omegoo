@@ -248,7 +248,26 @@ const AudioChat: React.FC = () => {
         // Start audio level monitoring
         startAudioLevelMonitoring(stream);
         
-        console.log('✅ Enhanced local audio initialized');
+        // Log detailed audio track info for debugging
+        const audioTracks = stream.getAudioTracks();
+        console.log('✅ Enhanced local audio initialized with tracks:', audioTracks.length);
+        audioTracks.forEach((track, index) => {
+          console.log(`🎤 Local audio track ${index}:`, {
+            id: track.id,
+            label: track.label,
+            enabled: track.enabled,
+            muted: track.muted,
+            readyState: track.readyState
+          });
+        });
+        
+        // Ensure mic state is properly synchronized
+        if (audioTracks.length > 0) {
+          const audioTrack = audioTracks[0];
+          setIsMicOn(audioTrack.enabled);
+          console.log('🎤 Initial mic state synchronized:', audioTrack.enabled);
+        }
+        
         setIsProcessingAudio(false);
         return stream;
       }
@@ -373,20 +392,69 @@ const AudioChat: React.FC = () => {
   };
 
   const toggleMic = () => {
-    if (webRTCRef.current) {
-      const newState = webRTCRef.current.toggleAudio();
-      setIsMicOn(newState || false);
-      console.log('🎤 Mic toggled:', newState ? 'ON' : 'OFF');
+    if (webRTCRef.current && localAudioRef.current?.srcObject) {
+      const localStream = localAudioRef.current.srcObject as MediaStream;
+      const audioTracks = localStream.getAudioTracks();
+      
+      if (audioTracks.length > 0) {
+        const audioTrack = audioTracks[0];
+        
+        // Get current state before toggling
+        const currentState = audioTrack.enabled;
+        
+        // Use WebRTC service to toggle (which handles both local and sender)
+        const webRTCNewState = webRTCRef.current.toggleAudio();
+        
+        // Update UI state
+        setIsMicOn(webRTCNewState);
+        
+        console.log('🎤 Mic toggled - Previous state:', currentState, 'New state:', webRTCNewState);
+        console.log('🎤 Audio track details:', {
+          id: audioTrack.id,
+          enabled: audioTrack.enabled,
+          readyState: audioTrack.readyState,
+          muted: audioTrack.muted
+        });
+      } else {
+        console.error('❌ No audio tracks found in local stream');
+      }
+    } else {
+      console.error('❌ WebRTC or local stream not available for mic toggle');
     }
   };
 
   const toggleSpeaker = () => {
     if (remoteAudioRef.current) {
-      // Fix: Logic was inverted - when isSpeakerOn is true, we want to mute it (set muted = true)
-      const newMutedState = isSpeakerOn; // If speaker is on, we want to mute it
+      // Current state: isSpeakerOn = true means speaker is ON (not muted)
+      // We want to toggle: if ON, make it muted; if muted, make it ON
+      const newMutedState = isSpeakerOn; // If speaker is currently ON, we want to mute it
+      const newSpeakerState = !isSpeakerOn; // Toggle the state
+      
       remoteAudioRef.current.muted = newMutedState;
-      setIsSpeakerOn(!isSpeakerOn);
-      console.log('🔊 Speaker toggled:', isSpeakerOn ? 'MUTED' : 'UNMUTED');
+      setIsSpeakerOn(newSpeakerState);
+      
+      console.log('🔊 Speaker toggle details:', {
+        previousSpeakerOn: isSpeakerOn,
+        newSpeakerOn: newSpeakerState,
+        audioElementMuted: newMutedState,
+        audioVolume: remoteAudioRef.current.volume
+      });
+      
+      // Also check if remote audio has srcObject and tracks
+      if (remoteAudioRef.current.srcObject) {
+        const remoteStream = remoteAudioRef.current.srcObject as MediaStream;
+        const audioTracks = remoteStream.getAudioTracks();
+        console.log('🔊 Remote audio tracks:', audioTracks.length, 'tracks found');
+        audioTracks.forEach((track, index) => {
+          console.log(`🔊 Remote track ${index}:`, {
+            enabled: track.enabled,
+            muted: track.muted,
+            readyState: track.readyState
+          });
+        });
+      }
+    } else {
+      console.error('❌ Remote audio element not available for speaker toggle');
     }
   };
 
