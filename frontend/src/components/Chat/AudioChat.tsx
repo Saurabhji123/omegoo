@@ -18,6 +18,7 @@ const AudioChat: React.FC = () => {
   const webRTCRef = useRef<WebRTCService | null>(null);
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationRef = useRef<number | null>(null);
   
@@ -33,6 +34,11 @@ const AudioChat: React.FC = () => {
   const [micLevel, setMicLevel] = useState(0); // Audio level 0-100
   const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('excellent');
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+
+  // Debug mic state changes
+  useEffect(() => {
+    console.log('🎤 MIC STATE CHANGED: UI isMicOn =', isMicOn);
+  }, [isMicOn]);
 
   // Remote stream handler with enhanced audio processing
   const handleRemoteStream = useCallback((stream: MediaStream) => {
@@ -66,6 +72,8 @@ const AudioChat: React.FC = () => {
 
   // Initialize audio level monitoring
   const startAudioLevelMonitoring = useCallback((stream: MediaStream) => {
+    if (!stream) return;
+    
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const analyser = audioContext.createAnalyser();
     const microphone = audioContext.createMediaStreamSource(stream);
@@ -77,7 +85,7 @@ const AudioChat: React.FC = () => {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     
     const updateLevel = () => {
-      if (analyserRef.current && isMicOn) {
+      if (analyserRef.current) {
         analyserRef.current.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
         setMicLevel(Math.round((average / 255) * 100));
@@ -88,7 +96,20 @@ const AudioChat: React.FC = () => {
     };
     
     updateLevel();
-  }, [isMicOn]);
+  }, []);
+
+  // Stop audio level monitoring
+  const stopAudioLevelMonitoring = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    setMicLevel(0);
+    if (analyserRef.current) {
+      // Disconnect analyser if possible, but since context is local, it's fine to let GC handle
+      analyserRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     // Initialize WebRTC service
@@ -170,6 +191,12 @@ const AudioChat: React.FC = () => {
           webRTCRef.current.cleanup();
         }
         
+        stopAudioLevelMonitoring();
+        if (localStreamRef.current) {
+          localStreamRef.current.getTracks().forEach(track => track.stop());
+          localStreamRef.current = null;
+        }
+        
         // Auto-search if partner left
         if (data.reason === 'partner_left' && socket) {
           setIsSearching(true);
@@ -181,7 +208,7 @@ const AudioChat: React.FC = () => {
 
       // WebRTC signaling
       socket.on('webrtc-offer', async (data: any) => {
-        if (webRTCRef.current) {
+        if (webRTCRef.current && sessionId) {
           const answer = await webRTCRef.current.handleOffer(data.offer);
           socket.emit('webrtc-answer', { 
             answer, 
@@ -213,15 +240,30 @@ const AudioChat: React.FC = () => {
       socket?.off('webrtc-answer');
       socket?.off('ice-candidate');
       
+      stopAudioLevelMonitoring();
+      
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+        localStreamRef.current = null;
+      }
+      
+      if (remoteAudioRef.current?.srcObject) {
+        const remoteStream = remoteAudioRef.current.srcObject as MediaStream;
+        remoteStream.getTracks().forEach(track => track.stop());
+        remoteAudioRef.current.srcObject = null;
+      }
+      
+      if (localAudioRef.current?.srcObject) {
+        const localStream = localAudioRef.current.srcObject as MediaStream;
+        localStream.getTracks().forEach(track => track.stop());
+        localAudioRef.current.srcObject = null;
+      }
+      
       if (webRTCRef.current) {
         webRTCRef.current.cleanup();
       }
-      
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
     };
-  }, [socket, handleRemoteStream, startAudioLevelMonitoring]);
+  }, [socket, handleRemoteStream, startAudioLevelMonitoring, stopAudioLevelMonitoring]);
 
   const startLocalAudio = async () => {
     try {
@@ -240,9 +282,12 @@ const AudioChat: React.FC = () => {
         }
       };
       
-      const stream = await webRTCRef.current?.initializeMedia(constraints);
+      // Directly use getUserMedia for local stream management, then pass to WebRTC
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
       if (stream && localAudioRef.current) {
         localAudioRef.current.srcObject = stream;
+        localStreamRef.current = stream;
         
         // Start audio level monitoring
         startAudioLevelMonitoring(stream);
@@ -260,14 +305,16 @@ const AudioChat: React.FC = () => {
           });
         });
         
-        // Initialize UI mic to ON state
-        if (audioTracks.length > 0) {
-          // Reset WebRTC UI state to ON
-          webRTCRef.current?.resetMicUIToOn();
-          // Set UI to ON
-          setIsMicOn(true);
-          console.log('UI MIC INIT: Pure UI reset - WebRTC UI ON, React UI ON');
+        // Initialize WebRTC with local stream
+        if (webRTCRef.current) {
+          // Store stream reference in WebRTC service for track management
+          console.log('🎤 WebRTC service will handle stream via initializeMedia method');
         }
+        
+        // Initialize UI mic to ON state (tracks are enabled by default)
+        const firstTrack = audioTracks[0];
+        setIsMicOn(true);
+        console.log('🎤 INITIALIZATION: Stream ready, UI set to ON, first track enabled =', firstTrack?.enabled);
         
         setIsProcessingAudio(false);
         return stream;
@@ -300,7 +347,7 @@ const AudioChat: React.FC = () => {
     
     // INSTANT DISCONNECT: End current session first if exists
     if (sessionId && isMatchConnected) {
-      console.log('� Ending current audio session immediately:', sessionId);
+      console.log('🔚 Ending current audio session immediately:', sessionId);
       socket.emit('end_session', { 
         sessionId: sessionId,
         duration: Date.now() 
@@ -318,12 +365,15 @@ const AudioChat: React.FC = () => {
       console.log('🧹 Force cleaning audio streams for fresh reconnect');
       
       // Clean local audio
-      if (localAudioRef.current?.srcObject) {
-        const localStream = localAudioRef.current.srcObject as MediaStream;
-        localStream.getTracks().forEach(track => {
+      stopAudioLevelMonitoring();
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => {
           console.log('🛑 Stopping local audio track:', track.kind);
           track.stop();
         });
+        localStreamRef.current = null;
+      }
+      if (localAudioRef.current?.srcObject) {
         localAudioRef.current.srcObject = null;
       }
       
@@ -360,13 +410,8 @@ const AudioChat: React.FC = () => {
     setIsMatchConnected(false);
     setSessionId(null);
     setIsSearching(true);
-    setMicLevel(0);
-    // Reset mic completely for new connection
     setIsMicOn(true);
-    if (webRTCRef.current) {
-      webRTCRef.current.resetMicUIToOn();
-    }
-    console.log('UI MIC RESET: Complete UI reset for new connection');
+    console.log('🔄 State reset for new audio connection - Mic UI ON');
     
     // START NEW SEARCH (with delay if force cleanup)
     const searchDelay = forceCleanup ? 200 : 0;
@@ -390,7 +435,20 @@ const AudioChat: React.FC = () => {
       socket?.emit('end_session', { sessionId });
     }
     
-    // Clean up WebRTC
+    // Clean up streams and WebRTC
+    stopAudioLevelMonitoring();
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+    if (localAudioRef.current?.srcObject) {
+      localAudioRef.current.srcObject = null;
+    }
+    if (remoteAudioRef.current?.srcObject) {
+      const remoteStream = remoteAudioRef.current.srcObject as MediaStream;
+      remoteStream.getTracks().forEach(track => track.stop());
+      remoteAudioRef.current.srcObject = null;
+    }
     if (webRTCRef.current) {
       webRTCRef.current.forceDisconnect();
     }
@@ -399,43 +457,58 @@ const AudioChat: React.FC = () => {
   };
 
   const toggleMic = () => {
-    console.log('UI MIC TOGGLE: Starting pure UI approach');
+    console.log('🎤 TOGGLE MIC: Starting track toggle');
+    console.log('🎤 BEFORE: Current UI state =', isMicOn);
     
-    if (!webRTCRef.current) {
-      console.error('UI MIC: WebRTC not available');
-      return;
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        const oldState = audioTrack.enabled;
+        const newState = !audioTrack.enabled;
+        
+        // Update track
+        audioTrack.enabled = newState;
+        
+        // Update UI
+        setIsMicOn(newState);
+        
+        console.log('🎤 TOGGLE COMPLETE:', {
+          oldTrackState: oldState,
+          newTrackState: newState,
+          oldUIState: isMicOn,
+          newUIState: newState
+        });
+        
+        // Visual feedback for testing
+        console.log('🎤 VISUAL CHECK: Button color should be', newState ? 'GRAY (bg-gray-700)' : 'RED (bg-red-500)');
+        console.log('🎤 ICON CHECK: Should show', newState ? 'MicrophoneIcon' : 'MicrophoneSlashIcon');
+        
+        // Verify track state after update
+        setTimeout(() => {
+          const verifyTrack = localStreamRef.current?.getAudioTracks()[0];
+          console.log('🔍 VERIFY: Track enabled =', verifyTrack?.enabled, 'UI state should be =', newState);
+        }, 50);
+        
+      } else {
+        console.error('❌ No audio track found for toggle');
+      }
+    } else {
+      console.error('❌ No local stream available for mic toggle');
     }
-    
-    const currentUIState = isMicOn;
-    console.log('UI MIC: Current UI state =', currentUIState);
-    
-    try {
-      // Pure UI state toggle - no audio manipulation
-      const newMicState = webRTCRef.current.toggleMicUI();
-      
-      // Update UI immediately
-      setIsMicOn(newMicState);
-      
-      console.log('UI MIC: SUCCESS - UI changed from', currentUIState, 'to', newMicState);
-      
-      // Show visual feedback for testing
-      console.log('UI MIC: Button should be', newMicState ? 'GRAY (ON)' : 'RED (OFF)');
-      
-    } catch (error) {
-      console.error('UI MIC: FAILED -', error);
-    }
-  };  const toggleSpeaker = () => {
+  };
+
+  const toggleSpeaker = () => {
     if (remoteAudioRef.current) {
       // Current state: isSpeakerOn = true means speaker is ON (not muted)
       // We want to toggle: if ON, make it muted; if muted, make it ON
-      const newMutedState = isSpeakerOn; // If speaker is currently ON, we want to mute it
+      const newMutedState = !isSpeakerOn; // If currently ON (true), set muted=true to mute
       const newSpeakerState = !isSpeakerOn; // Toggle the state
       
       remoteAudioRef.current.muted = newMutedState;
       setIsSpeakerOn(newSpeakerState);
       
       console.log('🔊 Speaker toggle details:', {
-        previousSpeakerOn: isSpeakerOn,
+        previousSpeakerOn: !newSpeakerState,
         newSpeakerOn: newSpeakerState,
         audioElementMuted: newMutedState,
         audioVolume: remoteAudioRef.current.volume
@@ -543,10 +616,10 @@ const AudioChat: React.FC = () => {
             </p>
             <button
               onClick={() => startNewChat()}
-              disabled={!socketConnected}
+              disabled={!socketConnected || isProcessingAudio}
               className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 px-8 py-4 rounded-xl text-lg sm:text-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:cursor-not-allowed shadow-lg"
             >
-              {!socketConnected ? 'Connecting...' : 'Find Someone'}
+              {isProcessingAudio ? 'Initializing...' : (!socketConnected ? 'Connecting...' : 'Find Someone')}
             </button>
           </div>
         )}
@@ -558,8 +631,8 @@ const AudioChat: React.FC = () => {
               <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative">
                 {/* Animated rings */}
                 <div className="absolute inset-0 border-4 border-purple-300 border-opacity-20 rounded-full animate-ping"></div>
-                <div className="absolute inset-2 border-4 border-purple-400 border-opacity-40 rounded-full animate-ping animation-delay-200"></div>
-                <div className="absolute inset-4 border-4 border-purple-500 border-opacity-60 rounded-full animate-ping animation-delay-400"></div>
+                <div className="absolute inset-2 border-4 border-purple-400 border-opacity-40 rounded-full animate-ping [animation-delay:200ms]"></div>
+                <div className="absolute inset-4 border-4 border-purple-500 border-opacity-60 rounded-full animate-ping [animation-delay:400ms]"></div>
                 <MicrophoneIcon className="w-8 h-8 sm:w-12 sm:h-12 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
               </div>
             </div>
@@ -577,13 +650,13 @@ const AudioChat: React.FC = () => {
                 
                 {/* Audio level indicator */}
                 <div 
-                  className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-30 transition-all duration-150"
-                  style={{ height: `${micLevel}%` }}
+                  className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-30 transition-all duration-150 ease-in-out"
+                  style={{ height: `${Math.min(micLevel, 100)}%` }}
                 />
               </div>
               
               {/* Mic level text */}
-              {isMicOn && (
+              {isMicOn && micLevel > 0 && (
                 <div className="text-xs sm:text-sm text-gray-300 mt-2">
                   Audio Level: {micLevel}%
                 </div>
@@ -599,7 +672,8 @@ const AudioChat: React.FC = () => {
             <div className="flex gap-4 justify-center mb-6 sm:mb-8">
               <button
                 onClick={toggleMic}
-                className={`p-3 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                disabled={!isMatchConnected || isProcessingAudio}
+                className={`p-3 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                   isMicOn 
                     ? 'bg-gray-700 hover:bg-gray-600' 
                     : 'bg-red-500 hover:bg-red-600'
@@ -615,7 +689,8 @@ const AudioChat: React.FC = () => {
               
               <button
                 onClick={toggleSpeaker}
-                className={`p-3 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                disabled={!isMatchConnected}
+                className={`p-3 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                   isSpeakerOn 
                     ? 'bg-gray-700 hover:bg-gray-600' 
                     : 'bg-red-500 hover:bg-red-600'
@@ -634,7 +709,8 @@ const AudioChat: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={nextMatch}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl transition-colors font-medium"
+                disabled={isProcessingAudio}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 px-6 py-3 rounded-xl transition-colors font-medium disabled:cursor-not-allowed"
               >
                 Next Person
               </button>
@@ -666,7 +742,10 @@ const AudioChat: React.FC = () => {
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setMicBlocked(false)}
+                  onClick={() => {
+                    setMicBlocked(false);
+                    startNewChat();
+                  }}
                   className="flex-1 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors"
                 >
                   Try Again
