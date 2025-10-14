@@ -88,7 +88,11 @@ const AudioChat: React.FC = () => {
       if (analyserRef.current) {
         analyserRef.current.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        setMicLevel(Math.round((average / 255) * 100));
+        const level = Math.round((average / 255) * 100);
+        
+        // Stabilize voice percentage - show minimum 1% when mic is on to prevent disappearing
+        const stabilizedLevel = level === 0 && localStreamRef.current?.getAudioTracks()[0]?.enabled ? 1 : level;
+        setMicLevel(stabilizedLevel);
       } else {
         setMicLevel(0);
       }
@@ -469,6 +473,11 @@ const AudioChat: React.FC = () => {
         // Update track
         audioTrack.enabled = newState;
         
+        // CRITICAL: Update WebRTC senders for voice transmission
+        if (webRTCRef.current) {
+          webRTCRef.current.updateAudioSenders(newState);
+        }
+        
         // Update UI
         setIsMicOn(newState);
         
@@ -476,7 +485,8 @@ const AudioChat: React.FC = () => {
           oldTrackState: oldState,
           newTrackState: newState,
           oldUIState: isMicOn,
-          newUIState: newState
+          newUIState: newState,
+          voiceTransmission: newState ? 'ENABLED' : 'DISABLED'
         });
         
         // Visual feedback for testing
@@ -499,33 +509,31 @@ const AudioChat: React.FC = () => {
 
   const toggleSpeaker = () => {
     if (remoteAudioRef.current) {
-      // Current state: isSpeakerOn = true means speaker is ON (not muted)
-      // We want to toggle: if ON, make it muted; if muted, make it ON
-      const newMutedState = !isSpeakerOn; // If currently ON (true), set muted=true to mute
-      const newSpeakerState = !isSpeakerOn; // Toggle the state
+      console.log('🔊 SPEAKER TOGGLE: Current state =', isSpeakerOn);
       
-      remoteAudioRef.current.muted = newMutedState;
+      // Simple toggle logic
+      const newSpeakerState = !isSpeakerOn;
+      
+      // Apply mute state (speaker OFF = muted = true)
+      remoteAudioRef.current.muted = !newSpeakerState;
+      
+      // Update UI state
       setIsSpeakerOn(newSpeakerState);
       
-      console.log('🔊 Speaker toggle details:', {
-        previousSpeakerOn: !newSpeakerState,
-        newSpeakerOn: newSpeakerState,
-        audioElementMuted: newMutedState,
+      console.log('🔊 SPEAKER TOGGLE COMPLETE:', {
+        oldSpeakerState: isSpeakerOn,
+        newSpeakerState: newSpeakerState,
+        audioElementMuted: remoteAudioRef.current.muted,
         audioVolume: remoteAudioRef.current.volume
       });
       
-      // Also check if remote audio has srcObject and tracks
+      // Verify remote audio stream
       if (remoteAudioRef.current.srcObject) {
         const remoteStream = remoteAudioRef.current.srcObject as MediaStream;
         const audioTracks = remoteStream.getAudioTracks();
-        console.log('🔊 Remote audio tracks:', audioTracks.length, 'tracks found');
-        audioTracks.forEach((track, index) => {
-          console.log(`🔊 Remote track ${index}:`, {
-            enabled: track.enabled,
-            muted: track.muted,
-            readyState: track.readyState
-          });
-        });
+        console.log('🔊 Remote audio verification: tracks =', audioTracks.length, 'first track enabled =', audioTracks[0]?.enabled);
+      } else {
+        console.warn('🔊 No remote audio stream found for speaker verification');
       }
     } else {
       console.error('❌ Remote audio element not available for speaker toggle');

@@ -445,6 +445,19 @@ class WebRTCService {
     console.log('UI MIC: Reset to ON');
   }
 
+  // Update WebRTC senders for voice transmission
+  updateAudioSenders(enabled: boolean): void {
+    if (this.peerConnection) {
+      const senders = this.peerConnection.getSenders();
+      senders.forEach((sender, index) => {
+        if (sender.track && sender.track.kind === 'audio') {
+          sender.track.enabled = enabled;
+          console.log(`🔄 WebRTC sender ${index} updated for voice transmission:`, enabled);
+        }
+      });
+    }
+  }
+
   // Switch camera (front/back)
   async switchCamera(): Promise<void> {
     if (this.localStream) {
