@@ -381,7 +381,7 @@ class WebRTCService {
   }
 
   // Simple and reliable mic toggle - RESET VERSION
-  toggleMicSimple(): boolean {
+  toggleMic(): boolean {
     console.log('🎤 SIMPLE MIC TOGGLE - Starting...');
     
     if (!this.localStream) {
@@ -420,6 +420,37 @@ class WebRTCService {
     
     console.log('✅ SIMPLE MIC TOGGLE - Completed:', newState);
     return newState;
+  }
+
+  // NEW ULTRA SIMPLE MIC CONTROL - No WebRTC Interference
+  toggleMicUltraSimple(): boolean {
+    console.log('MIC TOGGLE: Starting ultra simple approach');
+    
+    if (!this.localStream) {
+      console.error('ERROR: No local stream for mic toggle');
+      return false;
+    }
+    
+    const audioTrack = this.localStream.getAudioTracks()[0];
+    if (!audioTrack) {
+      console.error('ERROR: No audio track found');
+      return false;
+    }
+    
+    console.log('MIC TOGGLE: Current state =', audioTrack.enabled);
+    
+    // Pure toggle - no WebRTC manipulation
+    audioTrack.enabled = !audioTrack.enabled;
+    
+    console.log('MIC TOGGLE: New state =', audioTrack.enabled);
+    return audioTrack.enabled;
+  }
+
+  // Get mic state
+  getCurrentMicState(): boolean {
+    if (!this.localStream) return false;
+    const audioTrack = this.localStream.getAudioTracks()[0];
+    return audioTrack ? audioTrack.enabled : false;
   }
 
   // Switch camera (front/back)
