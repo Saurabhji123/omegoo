@@ -357,7 +357,7 @@ const TextChat: React.FC = () => {
         
         {/* Searching State */}
         {isSearching && !isMatchConnected && (
-          <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl flex flex-col bg-black bg-opacity-20 rounded-lg sm:rounded-xl backdrop-blur-sm border border-white border-opacity-20 mx-2 sm:mx-4" 
+          <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl flex flex-col bg-black bg-opacity-20 rounded-t-lg sm:rounded-t-xl backdrop-blur-sm border border-white border-opacity-20 mx-2 sm:mx-4" 
                style={{ height: 'calc(100vh - 140px)', minHeight: '500px', maxHeight: '800px' }}>
 
             {/* Search Content */}
@@ -389,7 +389,7 @@ const TextChat: React.FC = () => {
 
         {/* Chat Interface - When Connected */}
         {isMatchConnected && (
-          <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl flex flex-col bg-black bg-opacity-20 rounded-lg sm:rounded-xl backdrop-blur-sm border border-white border-opacity-20 mx-2 sm:mx-4" 
+          <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl flex flex-col bg-black bg-opacity-20 rounded-t-lg sm:rounded-t-xl backdrop-blur-sm border border-white border-opacity-20 mx-2 sm:mx-4" 
                style={{ height: 'calc(100vh - 140px)', minHeight: '500px', maxHeight: '800px' }}>
             
             {/* Chat Header */}
@@ -431,7 +431,7 @@ const TextChat: React.FC = () => {
               
               {/* Action Buttons */}
               {isMatchConnected && (
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-2">
+                <div className="flex gap-2 sm:gap-3 mb-2">
                   <button
                     onClick={nextMatch}
                     disabled={!isMatchConnected}
