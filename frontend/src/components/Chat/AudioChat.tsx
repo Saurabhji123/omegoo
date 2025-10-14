@@ -266,34 +266,107 @@ const AudioChat: React.FC = () => {
     }
   };
 
-  const startChat = () => {
-    if (!socket || !socketConnected) return;
+  // VideoChat pattern: Complete session management with force cleanup
+  const startNewChat = (forceCleanup = false) => {
+    if (!socket) {
+      console.error('❌ Socket not available');
+      return;
+    }
     
-    console.log('🔍 Starting audio chat search...');
-    setIsSearching(true);
+    if (!socketConnected) {
+      console.error('❌ Socket not connected');
+      return;
+    }
+    
+    // INSTANT DISCONNECT: End current session first if exists
+    if (sessionId && isMatchConnected) {
+      console.log('� Ending current audio session immediately:', sessionId);
+      socket.emit('end_session', { 
+        sessionId: sessionId,
+        duration: Date.now() 
+      });
+      
+      // Notify partner immediately
+      socket.emit('session_ended', { 
+        sessionId: sessionId,
+        reason: 'user_clicked_next' 
+      });
+    }
+    
+    // FORCE CLEANUP: For fresh reconnects (same users scenario)
+    if (forceCleanup) {
+      console.log('🧹 Force cleaning audio streams for fresh reconnect');
+      
+      // Clean local audio
+      if (localAudioRef.current?.srcObject) {
+        const localStream = localAudioRef.current.srcObject as MediaStream;
+        localStream.getTracks().forEach(track => {
+          console.log('🛑 Stopping local audio track:', track.kind);
+          track.stop();
+        });
+        localAudioRef.current.srcObject = null;
+      }
+      
+      // Clean remote audio
+      if (remoteAudioRef.current?.srcObject) {
+        const remoteStream = remoteAudioRef.current.srcObject as MediaStream;  
+        remoteStream.getTracks().forEach(track => {
+          console.log('🛑 Stopping remote audio track:', track.kind);
+          track.stop();
+        });
+        remoteAudioRef.current.srcObject = null;
+      }
+      
+      // Force WebRTC cleanup
+      if (webRTCRef.current) {
+        console.log('🔌 Force disconnecting WebRTC for fresh audio connection');
+        webRTCRef.current.forceDisconnect();
+      }
+      
+      console.log('✅ Force cleanup completed for fresh audio reconnect');
+      
+      // REINITIALIZE WebRTC after cleanup for fresh connection
+      setTimeout(() => {
+        if (webRTCRef.current) {
+          console.log('🔄 Reinitializing WebRTC service after audio cleanup');
+          webRTCRef.current = new WebRTCService();
+          webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
+          console.log('✅ Fresh WebRTC instance created for audio');
+        }
+      }, 100);
+    }
+    
+    // INSTANT STATE RESET
     setIsMatchConnected(false);
-    socket.emit('find_match', { mode: 'audio' });
+    setSessionId(null);
+    setIsSearching(true);
+    setMicLevel(0);
+    
+    // START NEW SEARCH (with delay if force cleanup)
+    const searchDelay = forceCleanup ? 200 : 0;
+    setTimeout(() => {
+      console.log('🔍 Starting search for new audio partner');
+      socket.emit('find_match', { mode: 'audio' });
+      console.log('✅ New audio partner search started');
+    }, searchDelay);
   };
 
-  const nextPerson = () => {
+  const nextMatch = () => {
+    console.log('🔄 Next Person clicked - using force cleanup for fresh audio reconnect');
+    
+    // Use startNewChat with force cleanup for same users reconnection
+    startNewChat(true);
+  };
+
+  const exitChat = () => {
+    // Clean up current session
     if (sessionId) {
       socket?.emit('end_session', { sessionId });
     }
     
+    // Clean up WebRTC
     if (webRTCRef.current) {
-      webRTCRef.current.cleanup();
-    }
-    
-    setTimeout(() => startChat(), 500);
-  };
-
-  const endChat = () => {
-    if (sessionId) {
-      socket?.emit('end_session', { sessionId });
-    }
-    
-    if (webRTCRef.current) {
-      webRTCRef.current.cleanup();
+      webRTCRef.current.forceDisconnect();
     }
     
     navigate('/');
@@ -379,7 +452,7 @@ const AudioChat: React.FC = () => {
         </div>
         
         <button
-          onClick={endChat}
+          onClick={exitChat}
           className="p-2 hover:bg-white hover:bg-opacity-10 rounded-full transition-colors"
         >
           <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -400,7 +473,7 @@ const AudioChat: React.FC = () => {
               Connect instantly with people worldwide through high-quality voice conversations
             </p>
             <button
-              onClick={startChat}
+              onClick={() => startNewChat()}
               disabled={!socketConnected}
               className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 px-8 py-4 rounded-xl text-lg sm:text-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:cursor-not-allowed shadow-lg"
             >
@@ -491,13 +564,13 @@ const AudioChat: React.FC = () => {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
-                onClick={nextPerson}
+                onClick={nextMatch}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl transition-colors font-medium"
               >
                 Next Person
               </button>
               <button
-                onClick={endChat}
+                onClick={exitChat}
                 className="flex-1 bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium"
               >
                 <PhoneXMarkIcon className="w-5 h-5" />
@@ -530,7 +603,7 @@ const AudioChat: React.FC = () => {
                   Try Again
                 </button>
                 <button
-                  onClick={endChat}
+                  onClick={exitChat}
                   className="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
                 >
                   Cancel

@@ -294,12 +294,25 @@ class WebRTCService {
     return false;
   }
 
-  // Toggle audio
+  // Toggle audio with proper WebRTC sender update
   toggleAudio(): boolean {
     if (this.localStream) {
       const audioTrack = this.localStream.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
+        
+        // Also update WebRTC senders to ensure remote peer gets the change
+        if (this.peerConnection) {
+          const senders = this.peerConnection.getSenders();
+          senders.forEach(sender => {
+            if (sender.track && sender.track.kind === 'audio') {
+              sender.track.enabled = audioTrack.enabled;
+              console.log('🔄 Updated audio sender enabled state:', audioTrack.enabled);
+            }
+          });
+        }
+        
+        console.log('🎤 Audio track toggled:', audioTrack.enabled ? 'ENABLED' : 'DISABLED');
         return audioTrack.enabled;
       }
     }
