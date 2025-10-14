@@ -42,29 +42,60 @@ const AudioChat: React.FC = () => {
 
   // Remote stream handler with enhanced audio processing
   const handleRemoteStream = useCallback((stream: MediaStream) => {
+    console.log('🔍 === REMOTE STREAM ANALYSIS START ===');
     console.log('🎤 Remote audio stream received:', {
       audio: stream.getAudioTracks().length > 0,
       tracks: stream.getTracks().length,
-      id: stream.id
+      id: stream.id,
+      active: stream.active
+    });
+    
+    // Analyze each audio track
+    const audioTracks = stream.getAudioTracks();
+    audioTracks.forEach((track, index) => {
+      console.log(`🔍 Remote audio track ${index}:`, {
+        id: track.id,
+        label: track.label,
+        enabled: track.enabled,
+        muted: track.muted,
+        readyState: track.readyState,
+        kind: track.kind
+      });
     });
     
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = stream;
       console.log('✅ Remote audio assigned to element');
       
+      // Check audio element properties
+      console.log('🔍 Remote Audio Element State:', {
+        muted: remoteAudioRef.current.muted,
+        volume: remoteAudioRef.current.volume,
+        paused: remoteAudioRef.current.paused,
+        readyState: remoteAudioRef.current.readyState
+      });
+      
       // Enhanced audio playback
-      remoteAudioRef.current.play().catch(error => {
-        console.warn('Remote audio autoplay prevented, trying user gesture:', error);
+      remoteAudioRef.current.play().then(() => {
+        console.log('✅ Remote audio playback started successfully');
+      }).catch(error => {
+        console.warn('❌ Remote audio autoplay prevented:', error);
         const playPromise = () => {
-          remoteAudioRef.current?.play().catch(e => 
-            console.log('Manual audio play failed:', e)
-          );
+          remoteAudioRef.current?.play().then(() => {
+            console.log('✅ Remote audio started after user gesture');
+          }).catch(e => {
+            console.log('❌ Manual audio play failed:', e);
+          });
         };
         document.addEventListener('click', playPromise, { once: true });
       });
       
       console.log('🎤 Remote audio setup completed');
+    } else {
+      console.log('❌ remoteAudioRef.current is null!');
     }
+    
+    console.log('🔍 === REMOTE STREAM ANALYSIS END ===');
     
     setIsMatchConnected(true);
     setIsSearching(false);
@@ -168,12 +199,26 @@ const AudioChat: React.FC = () => {
           // If initiator, create offer
           if (data.isInitiator) {
             setTimeout(async () => {
+              console.log('🔍 === OFFER CREATION DIAGNOSTICS START ===');
               console.log('🔍 BEFORE OFFER: WebRTC localStream?', !!webRTCRef.current?.getLocalStream());
               console.log('🔍 BEFORE OFFER: Senders count:', webRTCRef.current?.getSendersCount());
+              console.log('🔍 BEFORE OFFER: Local stream ref?', !!localStreamRef.current);
+              
+              // Check if local tracks exist and are enabled
+              if (localStreamRef.current) {
+                const audioTracks = localStreamRef.current.getAudioTracks();
+                console.log('🔍 BEFORE OFFER: Local audio tracks:', audioTracks.map(t => ({
+                  id: t.id,
+                  enabled: t.enabled,
+                  readyState: t.readyState
+                })));
+              }
               
               const offer = await webRTCRef.current!.createWebRTCOffer();
               
               console.log('🔍 AFTER OFFER: Senders count:', webRTCRef.current?.getSendersCount());
+              console.log('🔍 AFTER OFFER: Offer created successfully');
+              console.log('🔍 === OFFER CREATION DIAGNOSTICS END ===');
               
               socket.emit('webrtc-offer', { 
                 offer, 
@@ -218,13 +263,32 @@ const AudioChat: React.FC = () => {
 
       // WebRTC signaling
       socket.on('webrtc-offer', async (data: any) => {
-        console.log('📞 Received webrtc-offer, data:', data);
+        console.log('� === ANSWER CREATION DIAGNOSTICS START ===');
+        console.log('�📞 Received webrtc-offer, data:', data);
         if (webRTCRef.current && sessionId) {
+          console.log('🔍 BEFORE ANSWER: WebRTC localStream?', !!webRTCRef.current?.getLocalStream());
+          console.log('🔍 BEFORE ANSWER: Senders count:', webRTCRef.current?.getSendersCount());
+          console.log('🔍 BEFORE ANSWER: Local stream ref?', !!localStreamRef.current);
+          
+          // Check if local tracks exist and are enabled
+          if (localStreamRef.current) {
+            const audioTracks = localStreamRef.current.getAudioTracks();
+            console.log('🔍 BEFORE ANSWER: Local audio tracks:', audioTracks.map(t => ({
+              id: t.id,
+              enabled: t.enabled,
+              readyState: t.readyState
+            })));
+          }
+          
           const answer = await webRTCRef.current.handleOffer(data.offer);
+          
+          console.log('🔍 AFTER ANSWER: Senders count:', webRTCRef.current?.getSendersCount());
+          console.log('🔍 AFTER ANSWER: Answer created successfully');
           
           // Fix: Get matchUserId from WebRTC service
           const targetUserId = webRTCRef.current.getMatchUserId();
           console.log('📤 Sending webrtc-answer to:', targetUserId, 'for session:', sessionId);
+          console.log('🔍 === ANSWER CREATION DIAGNOSTICS END ===');
           
           socket.emit('webrtc-answer', { 
             answer, 
@@ -281,10 +345,73 @@ const AudioChat: React.FC = () => {
     };
   }, [socket, handleRemoteStream, startAudioLevelMonitoring, stopAudioLevelMonitoring]);
 
+  // COMPREHENSIVE DIAGNOSTIC FUNCTION
+  const runAudioDiagnostics = async () => {
+    console.log('🔍 === COMPREHENSIVE AUDIO DIAGNOSTICS START ===');
+    
+    // 1. Check browser capabilities
+    console.log('🔍 1. Browser WebRTC Support:', {
+      getUserMedia: !!navigator.mediaDevices?.getUserMedia,
+      RTCPeerConnection: !!window.RTCPeerConnection,
+      mediaDevices: !!navigator.mediaDevices
+    });
+    
+    // 2. Check WebRTC service state
+    console.log('🔍 2. WebRTC Service State:', {
+      serviceExists: !!webRTCRef.current,
+      localStream: !!webRTCRef.current?.getLocalStream(),
+      sendersCount: webRTCRef.current?.getSendersCount(),
+      connectionState: webRTCRef.current?.connectionState
+    });
+    
+    // 3. Check local stream state
+    if (localStreamRef.current) {
+      const audioTracks = localStreamRef.current.getAudioTracks();
+      console.log('🔍 3. Local Stream:', {
+        streamExists: !!localStreamRef.current,
+        audioTracks: audioTracks.length,
+        tracksDetails: audioTracks.map(t => ({
+          id: t.id,
+          enabled: t.enabled,
+          muted: t.muted,
+          readyState: t.readyState
+        }))
+      });
+    }
+    
+    // 4. Check audio elements
+    console.log('🔍 4. Audio Elements:', {
+      localAudioRef: !!localAudioRef.current,
+      localAudioSrc: localAudioRef.current?.srcObject ? 'SET' : 'NULL',
+      remoteAudioRef: !!remoteAudioRef.current,
+      remoteAudioSrc: remoteAudioRef.current?.srcObject ? 'SET' : 'NULL',
+      remoteAudioMuted: remoteAudioRef.current?.muted
+    });
+    
+    // 5. Try fresh getUserMedia test
+    try {
+      const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const testTrack = testStream.getAudioTracks()[0];
+      console.log('🔍 5. Fresh getUserMedia Test: SUCCESS', {
+        trackId: testTrack.id,
+        enabled: testTrack.enabled,
+        label: testTrack.label
+      });
+      testStream.getTracks().forEach(t => t.stop()); // Cleanup test stream
+    } catch (error) {
+      console.log('🔍 5. Fresh getUserMedia Test: FAILED', error);
+    }
+    
+    console.log('🔍 === COMPREHENSIVE AUDIO DIAGNOSTICS END ===');
+  };
+
   const startLocalAudio = async () => {
     try {
       setIsProcessingAudio(true);
       console.log('🎤 Initializing enhanced audio');
+      
+      // Run diagnostics first
+      await runAudioDiagnostics();
       
       const constraints = {
         video: false,
@@ -722,6 +849,15 @@ const AudioChat: React.FC = () => {
                 ) : (
                   <SpeakerXMarkIcon className="w-6 h-6 text-white" />
                 )}
+              </button>
+              
+              {/* Debug button - TEMPORARY */}
+              <button
+                onClick={runAudioDiagnostics}
+                className="p-3 rounded-full bg-yellow-600 hover:bg-yellow-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md"
+                title="Run Audio Diagnostics (Check Console)"
+              >
+                🔍
               </button>
             </div>
 
