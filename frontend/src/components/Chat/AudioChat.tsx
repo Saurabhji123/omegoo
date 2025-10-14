@@ -218,11 +218,17 @@ const AudioChat: React.FC = () => {
 
       // WebRTC signaling
       socket.on('webrtc-offer', async (data: any) => {
+        console.log('📞 Received webrtc-offer, data:', data);
         if (webRTCRef.current && sessionId) {
           const answer = await webRTCRef.current.handleOffer(data.offer);
+          
+          // Fix: Get matchUserId from WebRTC service
+          const targetUserId = webRTCRef.current.getMatchUserId();
+          console.log('📤 Sending webrtc-answer to:', targetUserId, 'for session:', sessionId);
+          
           socket.emit('webrtc-answer', { 
             answer, 
-            targetUserId: data.fromUserId,
+            targetUserId: targetUserId,
             sessionId: sessionId 
           });
         }

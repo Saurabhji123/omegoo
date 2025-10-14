@@ -674,6 +674,11 @@ class WebRTCService {
     console.log('✅ WebRTC cleanup completed');
   }
 
+  // Get current match user ID
+  getMatchUserId(): string | null {
+    return this.currentMatchUserId;
+  }
+
   // Enhanced session management for multi-device scenarios
   forceDisconnect(): void {
     console.log('🔄 Force disconnecting WebRTC session');
