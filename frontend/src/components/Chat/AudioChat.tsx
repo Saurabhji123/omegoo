@@ -195,18 +195,9 @@ const AudioChat: React.FC = () => {
 
       socket.on('session_ended', (data: { reason?: string }) => {
         console.log('❌ Audio session ended:', data);
-        setIsMatchConnected(false);
-        setSessionId(null);
         
-        if (webRTCRef.current) {
-          webRTCRef.current.cleanup();
-        }
-        
-        stopAudioLevelMonitoring();
-        if (localStreamRef.current) {
-          localStreamRef.current.getTracks().forEach(track => track.stop());
-          localStreamRef.current = null;
-        }
+        // Enhanced cleanup for multiple device reliability
+        performCompleteAudioCleanup();
         
         // Auto-search if partner left
         if (data.reason === 'partner_left' && socket) {
@@ -281,10 +272,61 @@ const AudioChat: React.FC = () => {
     };
   }, [socket, handleRemoteStream, startAudioLevelMonitoring, stopAudioLevelMonitoring]);
 
+  // Enhanced cleanup for multiple device reliability
+  const performCompleteAudioCleanup = () => {
+    console.log('🧹 Performing complete audio cleanup...');
+    
+    // Reset states
+    setIsMatchConnected(false);
+    setSessionId(null);
+    setIsMicOn(true); // Reset to default ON state
+    
+    // Stop audio monitoring
+    stopAudioLevelMonitoring();
+    
+    // Clean up local stream
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log('🛑 Stopped local track:', track.id);
+      });
+      localStreamRef.current = null;
+    }
+    
+    // Clean up remote audio
+    if (remoteAudioRef.current) {
+      if (remoteAudioRef.current.srcObject) {
+        const remoteStream = remoteAudioRef.current.srcObject as MediaStream;
+        remoteStream.getTracks().forEach(track => {
+          track.stop();
+          console.log('🛑 Stopped remote track:', track.id);
+        });
+      }
+      remoteAudioRef.current.srcObject = null;
+    }
+    
+    // Clean up WebRTC
+    if (webRTCRef.current) {
+      webRTCRef.current.cleanup();
+    }
+    
+    console.log('✅ Complete audio cleanup finished');
+  };
+
   const startLocalAudio = async () => {
     try {
       setIsProcessingAudio(true);
-      console.log('🎤 Initializing audio');
+      console.log('🎤 Initializing fresh audio stream');
+      
+      // CRITICAL: Stop any existing streams first for multiple device cleanup
+      if (localStreamRef.current) {
+        console.log('🛑 Stopping existing local audio stream');
+        localStreamRef.current.getTracks().forEach(track => {
+          track.stop();
+          console.log('🛑 Stopped existing audio track:', track.id);
+        });
+        localStreamRef.current = null;
+      }
       
       const constraints = {
         video: false,
@@ -298,14 +340,13 @@ const AudioChat: React.FC = () => {
         }
       };
       
-      // CRITICAL FIX: Use WebRTC service's initializeMedia AND ensure it stores the stream internally
+      // Get fresh stream via WebRTC service
       const stream = await webRTCRef.current!.initializeMedia(constraints);
       if (!stream) {
         throw new Error('Failed to initialize media via WebRTC service');
       }
       
-      // IMPORTANT: Verify WebRTC service has the stream
-      console.log('🔍 CRITICAL CHECK: WebRTC service localStream exists?', !!webRTCRef.current?.getLocalStream());
+      console.log('✅ Fresh audio stream created with tracks:', stream.getAudioTracks().length);
       
       if (stream && localAudioRef.current) {
         localAudioRef.current.srcObject = stream;
@@ -473,46 +514,46 @@ const AudioChat: React.FC = () => {
   };
 
   const toggleMic = () => {
-    console.log('🎤 TOGGLE MIC: Starting track toggle');
-    console.log('🎤 BEFORE: Current UI state =', isMicOn);
+    console.log('🎤 MIC TOGGLE: Current state =', isMicOn);
+    
+    // Safety checks for multiple device scenarios
+    if (!isMatchConnected || isProcessingAudio) {
+      console.log('⚠️ Mic toggle ignored - not ready');
+      return;
+    }
     
     if (localStreamRef.current) {
       const audioTrack = localStreamRef.current.getAudioTracks()[0];
-      if (audioTrack) {
-        const oldState = audioTrack.enabled;
-        const newState = !audioTrack.enabled;
-        
-        // Update track
+      if (audioTrack && audioTrack.readyState === 'live') {
+        // Direct toggle based on UI state for consistency
+        const newState = !isMicOn;
         audioTrack.enabled = newState;
         
-        // CRITICAL: Update WebRTC senders for voice transmission
+        // Update WebRTC senders
         if (webRTCRef.current) {
           webRTCRef.current.updateAudioSenders(newState);
         }
         
-        // Update UI
+        // Update UI state
         setIsMicOn(newState);
         
-        console.log('🎤 TOGGLE COMPLETE:', {
-          oldTrackState: oldState,
-          newTrackState: newState,
-          oldUIState: isMicOn,
-          newUIState: newState,
-          voiceTransmission: newState ? 'ENABLED' : 'DISABLED'
+        console.log('✅ Mic toggle:', {
+          newState,
+          trackEnabled: audioTrack.enabled,
+          trackId: audioTrack.id
         });
         
-        // Visual feedback for testing
-        console.log('🎤 VISUAL CHECK: Button color should be', newState ? 'GRAY (bg-gray-700)' : 'RED (bg-red-500)');
-        console.log('🎤 ICON CHECK: Should show', newState ? 'MicrophoneIcon' : 'MicrophoneSlashIcon');
-        
-        // Verify track state after update
-        setTimeout(() => {
-          const verifyTrack = localStreamRef.current?.getAudioTracks()[0];
-          console.log('🔍 VERIFY: Track enabled =', verifyTrack?.enabled, 'UI state should be =', newState);
-        }, 50);
-        
       } else {
-        console.error('❌ No audio track found for toggle');
+        console.error('❌ Audio track not available:', {
+          trackExists: !!audioTrack,
+          readyState: audioTrack?.readyState
+        });
+        
+        // Attempt recovery for dead tracks
+        if (!audioTrack || audioTrack.readyState !== 'live') {
+          console.log('🔄 Attempting audio recovery...');
+          startLocalAudio().catch(console.error);
+        }
       }
     } else {
       console.error('❌ No local stream available for mic toggle');
