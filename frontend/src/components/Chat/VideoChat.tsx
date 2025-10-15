@@ -32,10 +32,20 @@ const VideoChat: React.FC = () => {
   const [isMicOn, setIsMicOn] = useState(true);
   // const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [partnerId, setPartnerId] = useState<string>(''); // Track partner user ID
+  const [currentState, setCurrentState] = useState<'disconnected' | 'finding' | 'connected'>('disconnected'); // Track chat state
   const [showTextChat, setShowTextChat] = useState(true); // Default show for better UX
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [cameraBlocked, setCameraBlocked] = useState(false);
+
+  // Handle window resize for responsive video aspect ratio
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Define reusable remote stream handler
   const handleRemoteStream = useCallback((stream: MediaStream) => {
@@ -68,6 +78,7 @@ const VideoChat: React.FC = () => {
     
     // Update connection state
     setIsMatchConnected(true);
+    setCurrentState('connected');
     setIsSearching(false);
   }, []);
 
@@ -82,6 +93,10 @@ const VideoChat: React.FC = () => {
       // setConnectionState(state);
       if (state === 'disconnected') {
         setIsMatchConnected(false);
+        setCurrentState('disconnected');
+      } else if (state === 'connected') {
+        setIsMatchConnected(true);
+        setCurrentState('connected');
       }
     });
 
@@ -90,6 +105,8 @@ const VideoChat: React.FC = () => {
       socket.on('match-found', async (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
         console.log('📱 Video chat match found:', data);
         setSessionId(data.sessionId);
+        setPartnerId(data.matchUserId); // Set partner ID
+        setCurrentState('connected'); // Set state to connected
         setIsSearching(false);
         setMessages([]);
         // Match found - no system message needed
@@ -162,10 +179,11 @@ const VideoChat: React.FC = () => {
       socket.on('searching', (data: { position: number; totalWaiting: number }) => {
         console.log('🔍 Searching for video chat partner:', data);
         setIsSearching(true);
+        setCurrentState('finding'); // Set state to finding
       });
 
       socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string }) => {
-        console.log('� RECEIVED MESSAGE IN FRONTEND:', data);
+        console.log('📨 RECEIVED MESSAGE IN FRONTEND:', data);
         console.log('🔍 Current sessionId state:', sessionId);
         console.log('🔍 isMatchConnected state:', isMatchConnected);
         console.log('🔍 Session comparison:', { 
@@ -186,12 +204,21 @@ const VideoChat: React.FC = () => {
         console.log('❌ Video chat session ended:', data);
         setIsMatchConnected(false);
         setSessionId(null);
+        setPartnerId(''); // Reset partner ID
+        setCurrentState('disconnected'); // Reset state
         setMessages([]);
         console.log(`Chat ended. ${data.reason || 'Your partner left the chat.'}`);
         
         // Clean up WebRTC connection
         if (webRTCRef.current) {
           webRTCRef.current.cleanup();
+        }
+        
+        // Stop remote stream tracks explicitly
+        if (remoteVideoRef.current?.srcObject) {
+          const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
+          remoteStream.getTracks().forEach(track => track.stop());
+          remoteVideoRef.current.srcObject = null;
         }
         
         // ALWAYS auto-search when session ends (partner disconnected/next person)
@@ -207,9 +234,43 @@ const VideoChat: React.FC = () => {
 
       socket.on('user_disconnected', (data: { userId: string }) => {
         console.log('👋 User disconnected:', data.userId);
-        // This will help clean up any stale connections
-        if (webRTCRef.current) {
-          // Could add specific cleanup for this user if needed
+
+        // If we're currently connected and the disconnected user is our partner
+        if (isMatchConnected && data.userId === partnerId) {
+          console.log('🔄 Partner disconnected, automatically finding new partner...');
+
+          // Clean up current connection
+          if (webRTCRef.current) {
+            webRTCRef.current.forceDisconnect();
+          }
+
+          // Stop and clear remote video stream explicitly
+          if (remoteVideoRef.current?.srcObject) {
+            const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
+            remoteStream.getTracks().forEach(track => {
+              console.log('🛑 Stopping remote track on disconnect:', track.kind);
+              track.stop();
+            });
+            remoteVideoRef.current.srcObject = null;
+          }
+
+          // Reset partner info and state
+          setPartnerId('');
+          setSessionId(null);
+          setIsMatchConnected(false);
+          setCurrentState('finding');
+          setIsSearching(true);
+
+          // Add message to chat
+          addMessage('Your partner disconnected. Finding someone new...', false);
+
+          // Start searching for new partner immediately
+          setTimeout(() => {
+            if (socket && socket.connected) {
+              console.log('🔍 Auto-searching for new partner after disconnect...');
+              socket.emit('find_match', { mode: 'video' });
+            }
+          }, 1000); // Give a bit more time for cleanup
         }
       });
 
@@ -329,7 +390,7 @@ const VideoChat: React.FC = () => {
       });
 
       socket.on('searching', (data) => {
-        console.log('� SEARCHING EVENT RECEIVED:', data);
+        console.log('🔍 SEARCHING EVENT RECEIVED:', data);
       });
 
       socket.on('error', (data) => {
@@ -364,10 +425,11 @@ const VideoChat: React.FC = () => {
 
   const startLocalVideo = async () => {
     try {
+      const isMobile = windowWidth < 768;
       const constraints = {
         video: {
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 },
+          width: { ideal: isMobile ? 480 : 640, max: isMobile ? 640 : 1280 },
+          height: { ideal: isMobile ? 640 : 480, max: isMobile ? 720 : 720 },
           facingMode: 'user',
           frameRate: { ideal: 15, max: 30 }
         },
@@ -429,7 +491,7 @@ const VideoChat: React.FC = () => {
     
     // INSTANT DISCONNECT: End current session first if exists
     if (sessionId && isMatchConnected) {
-      console.log('� Ending current session immediately:', sessionId);
+      console.log('🔚 Ending current session immediately:', sessionId);
       socket.emit('end_session', { 
         sessionId: sessionId,
         duration: Date.now() 
@@ -488,6 +550,8 @@ const VideoChat: React.FC = () => {
     // INSTANT STATE RESET
     setIsMatchConnected(false);
     setSessionId(null);
+    setPartnerId(''); // Reset partner ID
+    setCurrentState('finding'); // Set to finding state
     setMessages([]);
     setIsSearching(true);
     
@@ -518,6 +582,13 @@ const VideoChat: React.FC = () => {
     if (webRTCRef.current) {
       webRTCRef.current.forceDisconnect();
     }
+    
+    // Reset state
+    setCurrentState('disconnected');
+    setIsMatchConnected(false);
+    setSessionId(null);
+    setPartnerId('');
+    setIsSearching(false);
     
     // Navigate to home
     navigate('/');
@@ -662,20 +733,26 @@ const VideoChat: React.FC = () => {
             )}
           </div>
 
-          {/* Local Video - Enhanced responsive sizing for better PC experience */}
+          {/* Local Video - Mobile vertical, PC horizontal */}
           <div className="absolute bottom-20 right-2 lg:bottom-4 lg:right-4 xl:bottom-6 xl:right-6">
-            <div className="w-32 h-24 sm:w-36 sm:h-27 lg:w-56 lg:h-40 xl:w-64 xl:h-48 bg-gray-800 rounded-lg border-2 border-white border-opacity-30 overflow-hidden shadow-2xl">
+            <div className={`bg-gray-800 rounded-lg border-2 border-white border-opacity-30 overflow-hidden shadow-2xl ${
+              windowWidth < 768 ? 'w-20 h-28' : 'w-32 h-24 sm:w-36 sm:h-27 md:w-32 md:h-24 lg:w-56 lg:h-40 xl:w-64 xl:h-48'
+            }`}>
               <video
                 ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
                 className="w-full h-full object-cover"
-                style={{ transform: 'scaleX(-1)' }}
+                style={{
+                  transform: 'scaleX(-1)',
+                  width: '100%',
+                  height: '100%'
+                }}
               />
               {!isCameraOn && (
                 <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                  <VideoCameraSlashIcon className="w-6 h-6 lg:w-12 lg:h-12 text-gray-400" />
+                  <VideoCameraSlashIcon className={`text-gray-400 ${windowWidth < 768 ? 'w-4 h-4' : 'w-6 h-6 lg:w-12 lg:h-12'}`} />
                 </div>
               )}
             </div>
