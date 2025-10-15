@@ -816,7 +816,7 @@ const VideoChat: React.FC = () => {
                         <p className={`text-xs mt-1 ${
                           message.isOwnMessage ? 'text-primary-200' : 'text-gray-400'
                         }`}>
-                          {message.timestamp.toLocaleTimeString()}
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       )}
                     </div>
