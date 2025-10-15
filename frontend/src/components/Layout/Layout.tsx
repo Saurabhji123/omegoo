@@ -40,9 +40,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [isMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex flex-col">
+    <div className={`min-h-screen flex flex-col ${
+      darkMode 
+        ? 'bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900' 
+        : 'bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100'
+    }`}>
       {/* Header */}
-      <header className="bg-black bg-opacity-20 backdrop-blur-md border-b border-white border-opacity-20 sticky top-0 z-50">
+      <header className={`backdrop-blur-md sticky top-0 z-50 ${
+        darkMode 
+          ? 'bg-black bg-opacity-20 border-b border-white border-opacity-20' 
+          : 'bg-white bg-opacity-20 border-b border-gray-200 border-opacity-30'
+      }`}>
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16 relative">
             {/* Logo - Clickable */}
@@ -55,7 +63,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 alt="Omegoo Logo" 
                 className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl mr-2 sm:mr-3 shadow-sm object-cover"
               />
-              <h1 className="text-lg sm:text-xl font-bold text-white">
+              <h1 className={`text-lg sm:text-xl font-bold ${
+                darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
                 Omegoo
               </h1>
             </div>
@@ -85,15 +95,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {/* Theme Toggle */}
               <button
                 onClick={toggleDarkMode}
-                className="p-2 rounded-lg bg-white bg-opacity-10 backdrop-blur-sm hover:bg-opacity-20 transition-all border border-white border-opacity-30"
+                className={`p-2 rounded-lg backdrop-blur-sm hover:bg-opacity-20 transition-all border ${
+                  darkMode 
+                    ? 'bg-white bg-opacity-10 border-white border-opacity-30 hover:bg-white' 
+                    : 'bg-gray-200 bg-opacity-30 border-gray-300 border-opacity-40 hover:bg-gray-200'
+                }`}
                 aria-label="Toggle dark mode"
               >
                 {darkMode ? (
-                  <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                   </svg>
                 )}
@@ -250,7 +264,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-black bg-opacity-20 backdrop-blur-md border-t border-white border-opacity-20 mt-auto">
+      <footer className={`backdrop-blur-md border-t mt-auto ${
+        darkMode 
+          ? 'bg-black bg-opacity-20 border-white border-opacity-20' 
+          : 'bg-white bg-opacity-20 border-gray-200 border-opacity-30'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Main Footer Content */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
