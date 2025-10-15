@@ -3,9 +3,9 @@ import { ShieldCheckIcon, ExclamationTriangleIcon, UserGroupIcon, HeartIcon } fr
 
 const SafetyGuidelines: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700 text-white py-12 sm:py-16 lg:py-20">
+      <div className="relative overflow-hidden bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl mx-4 mt-8 text-white py-12 sm:py-16 lg:py-20">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
         
@@ -49,11 +49,11 @@ const SafetyGuidelines: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           {/* Core Safety Principles */}
           <div className="mb-12 lg:mb-16 -mt-8">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-800 dark:to-emerald-800 p-6 sm:p-8 border-b border-green-200 dark:border-green-700">
                 <div className="text-center">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">Core Safety Principles</h2>
-                  <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Core Safety Principles</h2>
+                  <p className="text-gray-300 max-w-2xl mx-auto">
                     Four pillars that ensure everyone can connect safely and respectfully on Omegoo
                   </p>
                 </div>
@@ -108,12 +108,12 @@ const SafetyGuidelines: React.FC = () => {
           {/* Main Safety Content */}
           <div className="space-y-8 lg:space-y-12">
             {/* Personal Safety */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">1. Personal Safety First</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">1. Personal Safety First</h2>
                   </div>
                   
                   <div className="space-y-6">
@@ -200,12 +200,12 @@ const SafetyGuidelines: React.FC = () => {
             </div>
 
             {/* Community Standards */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-purple-500 to-indigo-500 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">2. Community Standards</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">2. Community Standards</h2>
                   </div>
                   
                   <div className="space-y-6">
@@ -290,12 +290,12 @@ const SafetyGuidelines: React.FC = () => {
             </div>
 
             {/* Reporting & Response */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-red-500 to-pink-500 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-red-500 to-pink-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">3. Reporting & Safety Tools</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">3. Reporting & Safety Tools</h2>
                   </div>
                   
                   <div className="space-y-6">
@@ -404,12 +404,12 @@ const SafetyGuidelines: React.FC = () => {
             </div>
 
             {/* Support & Resources */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">4. Support & Resources</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">4. Support & Resources</h2>
                   </div>
                   
                   <div className="grid lg:grid-cols-2 gap-8">
@@ -558,8 +558,8 @@ const SafetyGuidelines: React.FC = () => {
                   <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Together We Make Omegoo Safe</h3>
-              <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed max-w-3xl mx-auto mb-6">
+              <h3 className="text-3xl font-bold text-white mb-4">Together We Make Omegoo Safe</h3>
+              <p className="text-gray-300 text-lg leading-relaxed max-w-3xl mx-auto mb-6">
                 Safety is a shared responsibility. Every positive interaction you have and every time you report inappropriate behavior, 
                 you're helping create a better experience for everyone in our global community.
               </p>

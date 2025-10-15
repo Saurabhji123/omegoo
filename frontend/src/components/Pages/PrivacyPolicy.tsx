@@ -3,9 +3,9 @@ import { ShieldCheckIcon, EyeIcon, LockClosedIcon, ServerIcon, GlobeAltIcon, Use
 
 const PrivacyPolicy: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-600 via-blue-600 to-primary-700 text-white py-12 sm:py-16 lg:py-20">
+      <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl mx-4 mt-8 text-white py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center mb-6">
             <div className="relative">
@@ -32,55 +32,55 @@ const PrivacyPolicy: React.FC = () => {
           {/* Key Principles */}
           <div className="mb-16 lg:mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
                 Our Privacy Principles
               </h2>
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg text-gray-300 max-w-3xl mx-auto">
                 We built Omegoo with privacy-first design. Here's how we protect you:
               </p>
             </div>
             
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
+              <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
                 <div className="relative mb-6">
                   <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-pink-400 rounded-full opacity-20 group-hover:opacity-30 transition-opacity blur-lg"></div>
                   <EyeIcon className="w-12 h-12 text-red-500 mx-auto relative z-10" />
                 </div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Zero Tracking</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                <h3 className="text-lg font-semibold mb-3 text-white">Zero Tracking</h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
                   No cookies, analytics, or behavioral tracking of any kind
                 </p>
               </div>
               
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
+              <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
                 <div className="relative mb-6">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-20 group-hover:opacity-30 transition-opacity blur-lg"></div>
                   <LockClosedIcon className="w-12 h-12 text-blue-500 mx-auto relative z-10" />
                 </div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Complete Anonymity</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                <h3 className="text-lg font-semibold mb-3 text-white">Complete Anonymity</h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
                   No accounts, names, or personal data required ever
                 </p>
               </div>
               
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
+              <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
                 <div className="relative mb-6">
                   <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-20 group-hover:opacity-30 transition-opacity blur-lg"></div>
                   <ServerIcon className="w-12 h-12 text-green-500 mx-auto relative z-10" />
                 </div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Zero Storage</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                <h3 className="text-lg font-semibold mb-3 text-white">Zero Storage</h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
                   Conversations vanish instantly when you disconnect
                 </p>
               </div>
               
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
+              <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
                 <div className="relative mb-6">
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-violet-400 rounded-full opacity-20 group-hover:opacity-30 transition-opacity blur-lg"></div>
                   <GlobeAltIcon className="w-12 h-12 text-purple-500 mx-auto relative z-10" />
                 </div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Global Privacy</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                <h3 className="text-lg font-semibold mb-3 text-white">Global Privacy</h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
                   GDPR, CCPA, and worldwide privacy standards compliant
                 </p>
               </div>
@@ -89,12 +89,12 @@ const PrivacyPolicy: React.FC = () => {
 
           {/* Policy Content */}
           <div className="space-y-8 lg:space-y-12">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-red-500 to-pink-500 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-6">
                     <div className="w-2 h-8 bg-gradient-to-b from-red-500 to-pink-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">1. Data We NEVER Collect</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">1. Data We NEVER Collect</h2>
                   </div>
                   
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 mb-8">
@@ -113,13 +113,13 @@ const PrivacyPolicy: React.FC = () => {
 
                   <div className="grid sm:grid-cols-2 gap-6 mb-8">
                     <div className="space-y-4">
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
                         <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
                         </svg>
                         Personal Information
                       </h3>
-                      <ul className="text-gray-600 dark:text-gray-400 space-y-3 text-sm">
+                      <ul className="text-gray-300 space-y-3 text-sm">
                         <li className="flex items-start">
                           <svg className="w-4 h-4 text-red-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -148,13 +148,13 @@ const PrivacyPolicy: React.FC = () => {
                     </div>
                     
                     <div className="space-y-4">
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
                         <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
                         </svg>
                         Content & Behavior
                       </h3>
-                      <ul className="text-gray-600 dark:text-gray-400 space-y-3 text-sm">
+                      <ul className="text-gray-300 space-y-3 text-sm">
                         <li className="flex items-start">
                           <svg className="w-4 h-4 text-red-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -206,12 +206,12 @@ const PrivacyPolicy: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">2. How We Use Minimal Data</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">2. How We Use Minimal Data</h2>
                   </div>
                   
                   <div className="space-y-6">
@@ -292,7 +292,7 @@ const PrivacyPolicy: React.FC = () => {
                       <svg className="w-8 h-8 text-blue-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                       </svg>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Important: What We Never Do</h3>
+                      <h3 className="text-xl font-bold text-white">Important: What We Never Do</h3>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="text-sm text-gray-700 dark:text-gray-300">
@@ -319,12 +319,12 @@ const PrivacyPolicy: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">3. Ultra-Secure Architecture</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">3. Ultra-Secure Architecture</h2>
                   </div>
                   
                   <div className="grid lg:grid-cols-2 gap-8 mb-8">
@@ -472,8 +472,8 @@ const PrivacyPolicy: React.FC = () => {
                           <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Security Promise</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed max-w-2xl mx-auto">
+                      <h3 className="text-2xl font-bold text-white mb-3">Security Promise</h3>
+                      <p className="text-gray-300 text-sm leading-relaxed max-w-2xl mx-auto">
                         Our security infrastructure is designed with one principle: <strong className="text-indigo-600 dark:text-indigo-400">your privacy comes first</strong>. 
                         We've built a system where even we cannot access your conversations, ensuring true end-to-end privacy.
                       </p>
@@ -483,12 +483,12 @@ const PrivacyPolicy: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-yellow-500 to-orange-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">4. Zero Tracking Policy</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">4. Zero Tracking Policy</h2>
                   </div>
                   
                   <div className="grid md:grid-cols-3 gap-6">
@@ -608,12 +608,12 @@ const PrivacyPolicy: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-indigo-600 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">5. Zero Third-Party Sharing</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">5. Zero Third-Party Sharing</h2>
                   </div>
                   
                   <div className="space-y-6">
@@ -755,12 +755,12 @@ const PrivacyPolicy: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">6. Your Complete Control</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">6. Your Complete Control</h2>
                   </div>
                   
                   <div className="grid md:grid-cols-2 gap-6">
@@ -918,12 +918,12 @@ const PrivacyPolicy: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">7. Age Restrictions & Child Safety</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">7. Age Restrictions & Child Safety</h2>
                   </div>
                   
                   <div className="grid lg:grid-cols-2 gap-8">
@@ -1044,12 +1044,12 @@ const PrivacyPolicy: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-slate-600 to-gray-700 p-1">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-slate-600 to-gray-700 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">8. Contact & Support</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">8. Contact & Support</h2>
                   </div>
                   
                   <div className="grid lg:grid-cols-2 gap-8">
@@ -1152,7 +1152,7 @@ const PrivacyPolicy: React.FC = () => {
                           <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
                             <strong>Transparency Promise:</strong> Any significant changes to this Privacy Policy will be clearly communicated.
                           </p>
-                          <ul className="text-gray-600 dark:text-gray-400 text-sm space-y-2">
+                          <ul className="text-gray-300 text-sm space-y-2">
                             <li className="flex items-start">
                               <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -1185,8 +1185,8 @@ const PrivacyPolicy: React.FC = () => {
                         </svg>
                       </div>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Our Commitment to You</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed max-w-2xl mx-auto">
+                    <h3 className="text-2xl font-bold text-white mb-3">Our Commitment to You</h3>
+                    <p className="text-gray-300 text-sm leading-relaxed max-w-2xl mx-auto">
                       This Privacy Policy reflects our core values: <strong className="text-slate-600 dark:text-slate-400">absolute privacy, complete transparency, and user empowerment</strong>. 
                       We built Omegoo to prove that meaningful connections don't require sacrificing your privacy.
                     </p>

@@ -3,9 +3,9 @@ import { DocumentTextIcon, ExclamationTriangleIcon, ShieldCheckIcon, UserGroupIc
 
 const TermsOfService: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-blue-600 to-purple-700 text-white py-12 sm:py-16 lg:py-20">
+      <div className="relative overflow-hidden bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl mx-4 mt-8 text-white py-12 sm:py-16 lg:py-20">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
         
@@ -84,13 +84,13 @@ const TermsOfService: React.FC = () => {
                 <div className="p-8 sm:p-12">
                   <div className="flex items-center mb-8">
                     <div className="w-2 h-8 bg-gradient-to-b from-primary-500 to-blue-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Comprehensive Terms of Service</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">Comprehensive Terms of Service</h2>
                   </div>
                   
                   <div className="prose prose-lg max-w-none dark:prose-invert">
                     {/* 1. Acceptance of Terms */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">1</span>
                         Acceptance of Terms
                       </h3>
@@ -103,7 +103,7 @@ const TermsOfService: React.FC = () => {
 
                     {/* 2. Description of Service */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">2</span>
                         Description of Service
                       </h3>
@@ -112,7 +112,7 @@ const TermsOfService: React.FC = () => {
                           Omegoo is a random video chat platform that connects users with strangers for conversations through video, audio, and text. The Service is designed to facilitate connections between people worldwide in a safe and respectful environment.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Key Features:</strong>
+                          <strong className="text-white">Key Features:</strong>
                         </p>
                         <ul className="list-disc list-inside space-y-2 ml-4">
                           <li>Random video and audio chat matching</li>
@@ -126,32 +126,32 @@ const TermsOfService: React.FC = () => {
 
                     {/* 3. Eligibility */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">3</span>
                         Eligibility
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Age Requirements:</strong> You must be at least 18 years old to use Omegoo. Users between 13-17 years old may only use the Service with explicit parental consent and supervision.
+                          <strong className="text-white">Age Requirements:</strong> You must be at least 18 years old to use Omegoo. Users between 13-17 years old may only use the Service with explicit parental consent and supervision.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Legal Capacity:</strong> You must have the legal capacity to enter into this agreement in your jurisdiction.
+                          <strong className="text-white">Legal Capacity:</strong> You must have the legal capacity to enter into this agreement in your jurisdiction.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Geographic Restrictions:</strong> The Service may not be available in all countries or regions due to local laws and regulations.
+                          <strong className="text-white">Geographic Restrictions:</strong> The Service may not be available in all countries or regions due to local laws and regulations.
                         </p>
                       </div>
                     </div>
 
                     {/* 4. User Conduct and Community Guidelines */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">4</span>
                         User Conduct and Community Guidelines
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Acceptable Use:</strong> Users are expected to maintain respectful, appropriate behavior during all interactions.
+                          <strong className="text-white">Acceptable Use:</strong> Users are expected to maintain respectful, appropriate behavior during all interactions.
                         </p>
                         
                         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -186,7 +186,7 @@ const TermsOfService: React.FC = () => {
 
                     {/* 5. Privacy and Data Protection */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">5</span>
                         Privacy and Data Protection  
                       </h3>
@@ -195,29 +195,29 @@ const TermsOfService: React.FC = () => {
                           Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and protect your information.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Data Collection:</strong> We collect only the minimum data necessary to provide the Service, including basic usage analytics and safety-related information.
+                          <strong className="text-white">Data Collection:</strong> We collect only the minimum data necessary to provide the Service, including basic usage analytics and safety-related information.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Data Retention:</strong> Personal data is retained only as long as necessary for service provision and legal compliance.
+                          <strong className="text-white">Data Retention:</strong> Personal data is retained only as long as necessary for service provision and legal compliance.
                         </p>
                       </div>
                     </div>
 
                     {/* 6. Safety and Moderation */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">6</span>
                         Safety and Moderation
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Automated Moderation:</strong> We employ AI-powered content moderation to detect and prevent inappropriate content in real-time.
+                          <strong className="text-white">Automated Moderation:</strong> We employ AI-powered content moderation to detect and prevent inappropriate content in real-time.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Human Review:</strong> Reported content is reviewed by trained moderators within 24 hours.
+                          <strong className="text-white">Human Review:</strong> Reported content is reviewed by trained moderators within 24 hours.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">User Reporting:</strong> Users can report inappropriate behavior through in-app reporting tools available during and after conversations.
+                          <strong className="text-white">User Reporting:</strong> Users can report inappropriate behavior through in-app reporting tools available during and after conversations.
                         </p>
                         
                         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
@@ -235,26 +235,26 @@ const TermsOfService: React.FC = () => {
 
                     {/* 7. Account Termination */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">7</span>
                         Account Termination
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Voluntary Termination:</strong> You may discontinue using the Service at any time.
+                          <strong className="text-white">Voluntary Termination:</strong> You may discontinue using the Service at any time.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Involuntary Termination:</strong> We reserve the right to suspend or terminate accounts that violate these Terms or pose a risk to user safety.
+                          <strong className="text-white">Involuntary Termination:</strong> We reserve the right to suspend or terminate accounts that violate these Terms or pose a risk to user safety.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Appeals Process:</strong> Users may appeal termination decisions through our support system within 30 days.
+                          <strong className="text-white">Appeals Process:</strong> Users may appeal termination decisions through our support system within 30 days.
                         </p>
                       </div>
                     </div>
 
                     {/* 8. Limitation of Liability */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">8</span>
                         Limitation of Liability
                       </h3>
@@ -263,14 +263,14 @@ const TermsOfService: React.FC = () => {
                           The Service is provided "as is" without warranties of any kind. We are not liable for user-generated content or interactions between users.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Disclaimer:</strong> While we implement safety measures, users interact at their own risk and should exercise caution when sharing personal information.
+                          <strong className="text-white">Disclaimer:</strong> While we implement safety measures, users interact at their own risk and should exercise caution when sharing personal information.
                         </p>
                       </div>
                     </div>
 
                     {/* 9. Changes to Terms */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">9</span>
                         Changes to Terms
                       </h3>
@@ -279,14 +279,14 @@ const TermsOfService: React.FC = () => {
                           We may update these Terms periodically. Users will be notified of significant changes through the platform or email.
                         </p>
                         <p>
-                          <strong className="text-gray-900 dark:text-white">Effective Date:</strong> Changes become effective 30 days after notification unless otherwise specified.
+                          <strong className="text-white">Effective Date:</strong> Changes become effective 30 days after notification unless otherwise specified.
                         </p>
                       </div>
                     </div>
 
                     {/* 10. Contact Information */}
                     <div className="mb-8">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                         <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">10</span>
                         Contact Information
                       </h3>
@@ -297,12 +297,12 @@ const TermsOfService: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                             <p>
-                              <strong className="text-gray-900 dark:text-white">General Inquiries:</strong> support@omegoo.com
+                              <strong className="text-white">General Inquiries:</strong> support@omegoo.com
                             </p>
                           </div>
                           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                             <p>
-                              <strong className="text-gray-900 dark:text-white">Safety Reports:</strong> safety@omegoo.com
+                              <strong className="text-white">Safety Reports:</strong> safety@omegoo.com
                             </p>
                           </div>
                         </div>
@@ -314,13 +314,13 @@ const TermsOfService: React.FC = () => {
                 
                 <div className="bg-gradient-to-r from-primary-50 via-blue-50 to-purple-50 dark:from-primary-900/20 dark:via-blue-900/20 dark:to-purple-900/20 p-6 border-t border-gray-200 dark:border-gray-700">
                   <p className="text-gray-700 dark:text-gray-300">
-                    <strong className="text-gray-900 dark:text-white">Legal Disclaimer:</strong> These terms are governed by applicable law and jurisdiction requirements.
+                    <strong className="text-white">Legal Disclaimer:</strong> These terms are governed by applicable law and jurisdiction requirements.
                   </p>
                   <p>
-                    <strong className="text-gray-900 dark:text-white">Safety Concerns:</strong> Contact us at safety@omegoo.com
+                    <strong className="text-white">Safety Concerns:</strong> Contact us at safety@omegoo.com
                   </p>
                   <p>
-                    <strong className="text-gray-900 dark:text-white">Terms Updates:</strong> We may update these terms from time to time. Continued use of the service constitutes acceptance of updated terms.
+                    <strong className="text-white">Terms Updates:</strong> We may update these terms from time to time. Continued use of the service constitutes acceptance of updated terms.
                   </p>
                   
                   <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4 mt-6">
