@@ -577,12 +577,31 @@ const VideoChat: React.FC = () => {
     <div className="fixed inset-0 bg-gray-900 flex flex-col lg:flex-row">
       {/* Main Video Area */}
       <div className="flex-1 flex flex-col min-h-0">
-        {/* Header - More compact on mobile */}
-        <div className="bg-primary-600 dark:bg-primary-700 px-3 py-2 lg:px-4 lg:py-3 flex items-center justify-between shadow-lg safe-area-top">
-          <div className="flex items-center space-x-2 lg:space-x-4">
-            <h1 className="text-white text-lg lg:text-2xl font-bold">Omegoo</h1>
-            <span className="text-primary-100 text-xs lg:text-sm hidden sm:inline">Talk to strangers!</span>
+        {/* Enhanced Header with logo - matching AudioChat theme */}
+        <div className="bg-black bg-opacity-20 p-4 flex justify-between items-center border-b border-white border-opacity-20">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <img 
+                src="/logo512.png" 
+                alt="Omegoo" 
+                className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg shadow-sm object-cover"
+              />
+              <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                <VideoCameraIcon className="w-6 h-6 sm:w-8 sm:h-8" />
+                <span className="hidden sm:inline">Video Chat</span>
+                <span className="sm:hidden">Video</span>
+              </h1>
+            </div>
+            
+            {/* Status indicator */}
+            {isSearching && (
+              <div className="flex items-center gap-2 text-yellow-300">
+                <div className="w-2 h-2 bg-yellow-300 rounded-full animate-pulse"></div>
+                <span className="text-sm hidden md:inline">Finding someone...</span>
+              </div>
+            )}
           </div>
+
           <div className="flex items-center space-x-2 lg:space-x-3">
             <div className={`w-2 h-2 lg:w-3 lg:h-3 rounded-full ${
               socketConnected && isMatchConnected ? 'bg-green-400' : 
@@ -615,7 +634,7 @@ const VideoChat: React.FC = () => {
                 ref={remoteVideoRef}
                 autoPlay
                 playsInline
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover lg:object-contain xl:object-contain"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-500 p-4">
@@ -634,9 +653,9 @@ const VideoChat: React.FC = () => {
             )}
           </div>
 
-          {/* Local Video - Responsive positioning */}
-          <div className="absolute bottom-20 right-2 lg:bottom-4 lg:left-4">
-            <div className="w-24 h-18 lg:w-40 lg:h-28 bg-gray-800 rounded border-2 border-gray-600 overflow-hidden">
+          {/* Local Video - Enhanced responsive sizing for better PC experience */}
+          <div className="absolute bottom-20 right-2 lg:bottom-4 lg:right-4 xl:bottom-6 xl:right-6">
+            <div className="w-32 h-24 sm:w-36 sm:h-27 lg:w-56 lg:h-40 xl:w-64 xl:h-48 bg-gray-800 rounded-lg border-2 border-white border-opacity-30 overflow-hidden shadow-2xl">
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -647,7 +666,7 @@ const VideoChat: React.FC = () => {
               />
               {!isCameraOn && (
                 <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                  <VideoCameraSlashIcon className="w-4 h-4 lg:w-8 lg:h-8 text-gray-400" />
+                  <VideoCameraSlashIcon className="w-6 h-6 lg:w-12 lg:h-12 text-gray-400" />
                 </div>
               )}
             </div>
