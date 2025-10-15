@@ -14,11 +14,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex flex-col">
       {/* Header */}
       <header className="bg-black bg-opacity-20 backdrop-blur-md border-b border-white border-opacity-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo - Clickable */}
             <div 
               className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
@@ -27,15 +27,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <img 
                 src="/logo512.png" 
                 alt="Omegoo Logo" 
-                className="w-8 h-8 rounded-xl mr-3 shadow-sm object-cover"
+                className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl mr-2 sm:mr-3 shadow-sm object-cover"
               />
-              <h1 className="text-xl font-bold text-white">
+              <h1 className="text-lg sm:text-xl font-bold text-white">
                 Omegoo
               </h1>
             </div>
 
             {/* User Info & Actions */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* User Status */}
               {user && (
                 <div className="flex items-center space-x-2">
@@ -90,7 +90,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                 {/* Dropdown Menu */}
                 {isMenuOpen && (
-                  <div className="absolute right-0 bottom-full mb-2 w-56 bg-white bg-opacity-20 backdrop-blur-md rounded-lg shadow-lg border border-white border-opacity-40 z-50">
+                  <div className="absolute right-0 bottom-full mb-2 w-56 sm:w-64 bg-white bg-opacity-20 backdrop-blur-md rounded-lg shadow-lg border border-white border-opacity-40 z-50 max-w-[calc(100vw-2rem)]">
                     <div className="py-2">
                       <button
                         onClick={() => {
@@ -213,12 +213,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+      <footer className="bg-black bg-opacity-20 backdrop-blur-md border-t border-white border-opacity-20 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Main Footer Content */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
@@ -230,20 +230,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   alt="Omegoo" 
                   className="w-8 h-8 rounded-lg shadow-sm mr-3 object-cover"
                 />
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Omegoo</h3>
+                <h3 className="text-lg font-bold text-white">Omegoo</h3>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-gray-300 mb-4">
                 Connect with interesting people worldwide through safe, anonymous video and text conversations. 
                 Meet new friends, practice languages, or just have fun chatting!
               </p>
               <div className="flex space-x-4">
-                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center text-sm text-gray-400">
                   <svg className="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   AI-Moderated
                 </div>
-                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center text-sm text-gray-400">
                   <svg className="w-4 h-4 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                   </svg>
@@ -254,12 +254,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h4>
+              <h4 className="text-sm font-semibold text-white mb-4">Quick Links</h4>
               <ul className="space-y-2">
                 <li>
                   <button
                     onClick={() => navigate('/')}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Home
                   </button>
@@ -267,7 +267,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li>
                   <button
                     onClick={() => navigate('/about')}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     About Us
                   </button>
@@ -275,7 +275,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li>
                   <button
                     onClick={() => navigate('/contact')}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Contact
                   </button>
@@ -283,7 +283,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li>
                   <button
                     onClick={() => navigate('/chat/video')}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Start Chatting
                   </button>
@@ -293,12 +293,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Legal & Support */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Legal & Support</h4>
+              <h4 className="text-sm font-semibold text-white mb-4">Legal & Support</h4>
               <ul className="space-y-2">
                 <li>
                   <button
                     onClick={() => navigate('/privacy')}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Privacy Policy
                   </button>
@@ -306,7 +306,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li>
                   <button
                     onClick={() => navigate('/terms')}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Terms of Service
                   </button>
@@ -314,7 +314,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li>
                   <button
                     onClick={() => navigate('/safety')}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Safety Guidelines
                   </button>
@@ -322,7 +322,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li>
                   <a 
                     href="mailto:support@omegoo.com" 
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Report Issue
                   </a>
@@ -332,11 +332,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6 flex flex-col sm:flex-row items-center justify-between">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-0">
+          <div className="border-t border-white border-opacity-20 pt-6 flex flex-col sm:flex-row items-center justify-between">
+            <p className="text-sm text-gray-300 mb-4 sm:mb-0">
               © 2025 Omegoo. All rights reserved. Safe anonymous connections worldwide.
             </p>
-            <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center space-x-4 text-sm text-gray-400">
               <span>Made with ❤️ for connecting people</span>
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>

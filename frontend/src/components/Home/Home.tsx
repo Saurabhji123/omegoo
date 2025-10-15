@@ -61,21 +61,21 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
       {/* Welcome Section */}
-      <div className="text-center mb-12 text-white px-4 py-16">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
+      <div className="text-center mb-8 sm:mb-12 text-white px-4 py-8 sm:py-16">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
           Ready to make a new friend?
         </h1>
-        <p className="text-xl text-gray-200 mb-8">
+        <p className="text-lg sm:text-xl text-gray-200 mb-6 sm:mb-8 max-w-2xl mx-auto">
           Connect with interesting people from around the world
         </p>
         
         {/* User Status */}
-        <div className="inline-flex items-center bg-white bg-opacity-10 backdrop-blur-md rounded-full px-6 py-3 border border-white border-opacity-30">
+        <div className="inline-flex items-center bg-white bg-opacity-10 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-white border-opacity-30 mx-2">
           <div className="flex items-center space-x-3">
             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-white">
+            <span className="text-xs sm:text-sm font-medium text-white">
               {user?.tier === 'guest' ? 'Guest User' : 'Verified User'}
             </span>
             {user?.isVerified && (
@@ -90,75 +90,75 @@ const Home: React.FC = () => {
 
 
       {/* Chat Options */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8 px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 px-4 max-w-6xl mx-auto">
         {/* Text Chat */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-8 text-center border border-white border-opacity-20 hover:bg-opacity-15 transition-all transform hover:scale-105">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 bg-opacity-20 rounded-full mb-6 border border-blue-400 border-opacity-30">
-            <svg className="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 bg-opacity-20 rounded-full mb-4 sm:mb-6 backdrop-blur-sm border border-blue-400 border-opacity-30">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-white mb-3">
+          <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">
             Text Chat
           </h3>
-          <p className="text-gray-300 mb-6">
+          <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
             Start with safe text conversations
           </p>
           <button
             onClick={() => handleStartChat('text')}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg"
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base"
           >
             Start Text Chat
           </button>
-          <p className="text-xs text-green-400 mt-2">
+          <p className="text-xs sm:text-sm text-blue-400 mt-2">
             ✓ Available for all users
           </p>
         </div>
 
         {/* Audio Chat */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 bg-opacity-20 rounded-full mb-6 backdrop-blur-sm border border-green-400 border-opacity-30">
-            <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-green-500 bg-opacity-20 rounded-full mb-4 sm:mb-6 backdrop-blur-sm border border-green-400 border-opacity-30">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-white mb-3">
+          <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">
             Voice Chat
           </h3>
-          <p className="text-gray-300 mb-6">
+          <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
             Have real conversations with voice
           </p>
           <button
             onClick={() => handleStartChat('audio')}
-            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full"
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base"
           >
             Start Voice Chat
           </button>
-          <p className="text-xs text-green-400 mt-2">
+          <p className="text-xs sm:text-sm text-green-400 mt-2">
             ✓ Available for all users
           </p>
         </div>
 
         {/* Video Chat */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-500 bg-opacity-20 rounded-full mb-6 backdrop-blur-sm border border-purple-400 border-opacity-30">
-            <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-purple-500 bg-opacity-20 rounded-full mb-4 sm:mb-6 backdrop-blur-sm border border-purple-400 border-opacity-30">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-white mb-3">
+          <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">
             Video Chat
           </h3>
-          <p className="text-gray-300 mb-6">
+          <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
             Face-to-face conversations
           </p>
           <button
             onClick={() => handleStartChat('video')}
-            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full"
+            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base"
           >
             Start Video Chat
           </button>
-          <p className="text-xs text-purple-400 mt-2">
+          <p className="text-xs sm:text-sm text-purple-400 mt-2">
             ✓ Available for all users
           </p>
         </div>
