@@ -208,8 +208,8 @@ const Contact: React.FC = () => {
                     <p className="text-gray-600 dark:text-gray-400 mb-3">
                       Send us an email and we'll respond within 24 hours
                     </p>
-                    <a href="mailto:support@omegoo.com" className="text-primary-600 hover:text-primary-700 font-medium">
-                      support@omegoo.com
+                    <a href="mailto:omegoochat@gmail.com" className="text-primary-600 hover:text-primary-700 font-medium">
+                      omegoochat@gmail.com
                     </a>
                   </div>
                 </div>
@@ -225,8 +225,8 @@ const Contact: React.FC = () => {
                     <p className="text-gray-600 dark:text-gray-400 mb-3">
                       Report inappropriate behavior or safety concerns
                     </p>
-                    <a href="mailto:safety@omegoo.com" className="text-red-600 hover:text-red-700 font-medium">
-                      safety@omegoo.com
+                    <a href="mailto:omegoochat@gmail.com" className="text-red-600 hover:text-red-700 font-medium">
+                      omegoochat@gmail.com
                     </a>
                   </div>
                 </div>
