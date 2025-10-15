@@ -52,15 +52,15 @@ const Contact: React.FC = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex items-center justify-center">
         <div className="max-w-md w-full text-center">
-          <div className="bg-green-100 dark:bg-green-900/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-green-500 bg-opacity-20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 backdrop-blur-sm border border-green-400 border-opacity-30">
+            <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Message Sent!</h2>
-          <p className="text-gray-600 dark:text-gray-400">
+          <h2 className="text-2xl font-bold text-white mb-2">Message Sent!</h2>
+          <p className="text-gray-300">
             Thank you for contacting us. We'll get back to you within 24 hours.
           </p>
         </div>
@@ -69,12 +69,12 @@ const Contact: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-16">
+      <div className="py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl lg:text-6xl font-bold mb-4">Contact Us</h1>
-          <p className="text-xl lg:text-2xl text-primary-100 max-w-3xl mx-auto">
+          <h1 className="text-4xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">Contact Us</h1>
+          <p className="text-xl lg:text-2xl text-gray-200 max-w-3xl mx-auto">
             We're here to help! Reach out to us with any questions or concerns
           </p>
         </div>
@@ -83,13 +83,13 @@ const Contact: React.FC = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact Form */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Send us a Message</h2>
+          <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-white border-opacity-20">
+            <h2 className="text-2xl font-bold text-white mb-6">Send us a Message</h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
                     Your Name
                   </label>
                   <input
@@ -98,12 +98,12 @@ const Contact: React.FC = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white placeholder-gray-300"
                     placeholder="Enter your name"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
                     Email Address
                   </label>
                   <input
@@ -112,33 +112,33 @@ const Contact: React.FC = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white placeholder-gray-300"
                     placeholder="your.email@example.com"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
                   Category
                 </label>
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white"
                 >
-                  <option value="general">General Inquiry</option>
-                  <option value="technical">Technical Support</option>
-                  <option value="safety">Safety & Moderation</option>
-                  <option value="feedback">Feedback & Suggestions</option>
-                  <option value="partnership">Partnership</option>
-                  <option value="press">Press & Media</option>
+                  <option value="general" className="text-gray-900">General Inquiry</option>
+                  <option value="technical" className="text-gray-900">Technical Support</option>
+                  <option value="safety" className="text-gray-900">Safety & Moderation</option>
+                  <option value="feedback" className="text-gray-900">Feedback & Suggestions</option>
+                  <option value="partnership" className="text-gray-900">Partnership</option>
+                  <option value="press" className="text-gray-900">Press & Media</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
                   Subject
                 </label>
                 <input
@@ -147,13 +147,13 @@ const Contact: React.FC = () => {
                   value={formData.subject}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white placeholder-gray-300"
                   placeholder="Brief subject of your message"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
                   Message
                 </label>
                 <textarea
@@ -162,7 +162,7 @@ const Contact: React.FC = () => {
                   onChange={handleInputChange}
                   required
                   rows={6}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                  className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white placeholder-gray-300 resize-none"
                   placeholder="Tell us more about your inquiry..."
                 />
               </div>
@@ -170,7 +170,7 @@ const Contact: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 transform hover:scale-105 disabled:transform-none shadow-lg"
               >
                 {isSubmitting ? 'Sending...' : 'Send Message'}
               </button>
@@ -181,51 +181,51 @@ const Contact: React.FC = () => {
           <div className="space-y-8">
             {/* Quick Contact Cards */}
             <div className="grid gap-6">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+              <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-20">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
-                    <ChatBubbleLeftRightIcon className="w-8 h-8 text-primary-600" />
+                    <ChatBubbleLeftRightIcon className="w-8 h-8 text-purple-300" />
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Live Chat Support</h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-3">
+                    <h3 className="text-lg font-semibold text-white mb-2">Live Chat Support</h3>
+                    <p className="text-gray-300 mb-3">
                       Get instant help from our support team
                     </p>
-                    <button className="text-primary-600 hover:text-primary-700 font-medium">
+                    <button className="text-purple-300 hover:text-purple-200 font-medium transition-colors">
                       Start Live Chat →
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+              <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-20">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
-                    <EnvelopeIcon className="w-8 h-8 text-primary-600" />
+                    <EnvelopeIcon className="w-8 h-8 text-blue-300" />
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Email Support</h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-3">
+                    <h3 className="text-lg font-semibold text-white mb-2">Email Support</h3>
+                    <p className="text-gray-300 mb-3">
                       Send us an email and we'll respond within 24 hours
                     </p>
-                    <a href="mailto:omegoochat@gmail.com" className="text-primary-600 hover:text-primary-700 font-medium">
+                    <a href="mailto:omegoochat@gmail.com" className="text-blue-300 hover:text-blue-200 font-medium transition-colors">
                       omegoochat@gmail.com
                     </a>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+              <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-20">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
-                    <ExclamationTriangleIcon className="w-8 h-8 text-red-600" />
+                    <ExclamationTriangleIcon className="w-8 h-8 text-red-300" />
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Report Abuse</h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-3">
+                    <h3 className="text-lg font-semibold text-white mb-2">Report Abuse</h3>
+                    <p className="text-gray-300 mb-3">
                       Report inappropriate behavior or safety concerns
                     </p>
-                    <a href="mailto:omegoochat@gmail.com" className="text-red-600 hover:text-red-700 font-medium">
+                    <a href="mailto:omegoochat@gmail.com" className="text-red-300 hover:text-red-200 font-medium transition-colors">
                       omegoochat@gmail.com
                     </a>
                   </div>

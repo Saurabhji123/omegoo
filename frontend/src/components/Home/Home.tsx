@@ -63,23 +63,23 @@ const Home: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Welcome Section */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+      <div className="text-center mb-12 text-white px-4 py-16">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
           Ready to make a new friend?
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+        <p className="text-xl text-gray-200 mb-8">
           Connect with interesting people from around the world
         </p>
         
         {/* User Status */}
-        <div className="inline-flex items-center bg-white dark:bg-gray-800 rounded-full px-6 py-3 shadow-lg">
+        <div className="inline-flex items-center bg-white bg-opacity-10 backdrop-blur-md rounded-full px-6 py-3 border border-white border-opacity-30">
           <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 bg-success-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-white">
               {user?.tier === 'guest' ? 'Guest User' : 'Verified User'}
             </span>
             {user?.isVerified && (
-              <svg className="w-4 h-4 text-success-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
             )}
@@ -90,75 +90,75 @@ const Home: React.FC = () => {
 
 
       {/* Chat Options */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="grid md:grid-cols-3 gap-6 mb-8 px-4">
         {/* Text Chat */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full mb-6">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-8 text-center border border-white border-opacity-20 hover:bg-opacity-15 transition-all transform hover:scale-105">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 bg-opacity-20 rounded-full mb-6 border border-blue-400 border-opacity-30">
+            <svg className="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+          <h3 className="text-xl font-bold text-white mb-3">
             Text Chat
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-gray-300 mb-6">
             Start with safe text conversations
           </p>
           <button
             onClick={() => handleStartChat('text')}
-            className="btn-primary w-full"
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg"
           >
             Start Text Chat
           </button>
-          <p className="text-xs text-success-600 dark:text-success-400 mt-2">
+          <p className="text-xs text-green-400 mt-2">
             ✓ Available for all users
           </p>
         </div>
 
         {/* Audio Chat */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-success-100 dark:bg-success-900 rounded-full mb-6">
-            <svg className="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-8 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 bg-opacity-20 rounded-full mb-6 backdrop-blur-sm border border-green-400 border-opacity-30">
+            <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+          <h3 className="text-xl font-bold text-white mb-3">
             Voice Chat
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-gray-300 mb-6">
             Have real conversations with voice
           </p>
           <button
             onClick={() => handleStartChat('audio')}
-            className="btn-primary w-full"
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full"
           >
             Start Voice Chat
           </button>
-          <p className="text-xs text-success-600 dark:text-success-400 mt-2">
+          <p className="text-xs text-green-400 mt-2">
             ✓ Available for all users
           </p>
         </div>
 
         {/* Video Chat */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full mb-6">
-            <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-8 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-500 bg-opacity-20 rounded-full mb-6 backdrop-blur-sm border border-purple-400 border-opacity-30">
+            <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+          <h3 className="text-xl font-bold text-white mb-3">
             Video Chat
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-gray-300 mb-6">
             Face-to-face conversations
           </p>
           <button
             onClick={() => handleStartChat('video')}
-            className="btn-primary w-full"
+            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full"
           >
             Start Video Chat
           </button>
-          <p className="text-xs text-success-600 dark:text-success-400 mt-2">
+          <p className="text-xs text-purple-400 mt-2">
             ✓ Available for all users
           </p>
         </div>

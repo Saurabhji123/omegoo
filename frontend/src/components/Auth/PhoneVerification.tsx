@@ -91,18 +91,18 @@ const PhoneVerification: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-success-100 dark:bg-success-900 rounded-full mb-4">
-            <svg className="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 bg-opacity-20 backdrop-blur-sm border border-green-400 border-opacity-30 rounded-full mb-4">
+            <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-white">
             {step === 'phone' ? 'Verify Your Phone' : 'Enter OTP'}
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-300 mt-2">
             {step === 'phone' 
               ? 'Get verified to unlock video chat and premium features'
               : `We've sent a 6-digit code to +91 ${phone}`
@@ -112,12 +112,12 @@ const PhoneVerification: React.FC = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg p-4 mb-6">
+          <div className="bg-red-500 bg-opacity-10 backdrop-blur-sm border border-red-400 border-opacity-30 rounded-lg p-4 mb-6">
             <div className="flex items-center">
-              <svg className="h-5 w-5 text-danger-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-5 w-5 text-red-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
-              <p className="text-sm text-danger-800 dark:text-danger-200">{error}</p>
+              <p className="text-sm text-red-300">{error}</p>
             </div>
           </div>
         )}
@@ -126,12 +126,12 @@ const PhoneVerification: React.FC = () => {
         {step === 'phone' && (
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-2">
                 Mobile Number
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">+91</span>
+                  <span className="text-gray-400 text-sm">+91</span>
                 </div>
                 <input
                   type="tel"
@@ -144,7 +144,7 @@ const PhoneVerification: React.FC = () => {
                   required
                 />
               </div>
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-xs text-gray-400">
                 We'll only use this for verification. Your number won't be shared.
               </p>
             </div>
@@ -152,7 +152,7 @@ const PhoneVerification: React.FC = () => {
             <button
               type="submit"
               disabled={loading || phone.length !== 10}
-              className="btn-primary w-full flex items-center justify-center"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 disabled:transform-none w-full flex items-center justify-center"
             >
               {loading ? (
                 <LoadingSpinner size="small" />
@@ -162,11 +162,11 @@ const PhoneVerification: React.FC = () => {
             </button>
 
             {/* Benefits */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+            <div className="pt-4 border-t border-gray-600 border-opacity-30">
+              <h3 className="text-sm font-medium text-white mb-3">
                 Verification Benefits:
               </h3>
-              <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+              <ul className="space-y-2 text-xs text-gray-300">
                 <li className="flex items-center">
                   <svg className="h-3 w-3 text-success-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -200,7 +200,7 @@ const PhoneVerification: React.FC = () => {
         {step === 'otp' && (
           <form onSubmit={handleOtpSubmit} className="space-y-6">
             <div>
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="otp" className="block text-sm font-medium text-gray-300 mb-2">
                 6-Digit OTP
               </label>
               <input
@@ -219,14 +219,14 @@ const PhoneVerification: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBack}
-                className="btn-secondary flex-1"
+                className="bg-gray-600 bg-opacity-50 hover:bg-opacity-70 text-white px-6 py-3 rounded-full font-semibold transition-all duration-200 flex-1"
               >
                 Back
               </button>
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="btn-primary flex-1 flex items-center justify-center"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 disabled:transform-none flex-1 flex items-center justify-center"
               >
                 {loading ? (
                   <LoadingSpinner size="small" />
@@ -244,8 +244,8 @@ const PhoneVerification: React.FC = () => {
                 disabled={resendCooldown > 0 || loading}
                 className={`text-sm ${
                   resendCooldown > 0 
-                    ? 'text-gray-400 cursor-not-allowed' 
-                    : 'text-primary-600 hover:text-primary-500'
+                    ? 'text-gray-500 cursor-not-allowed' 
+                    : 'text-blue-400 hover:text-blue-300'
                 }`}
               >
                 {resendCooldown > 0 
@@ -258,11 +258,11 @@ const PhoneVerification: React.FC = () => {
         )}
 
         {/* Skip Option */}
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+        <div className="mt-6 pt-6 border-t border-gray-600 border-opacity-30 text-center">
+          <p className="text-xs text-gray-400 mb-2">
             Want to try text chat first?
           </p>
-          <button className="text-sm text-primary-600 hover:text-primary-500">
+          <button className="text-sm text-blue-400 hover:text-blue-300">
             Skip for now
           </button>
         </div>
