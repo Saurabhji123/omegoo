@@ -628,14 +628,28 @@ const VideoChat: React.FC = () => {
           )}
 
           {/* Remote Video */}
-          <div className="w-full h-full">
+          <div className="w-full h-full relative">
             {isMatchConnected ? (
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover lg:object-contain xl:object-contain"
-              />
+              <>
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover lg:object-contain xl:object-contain"
+                />
+                
+                {/* Omegoo Watermark - Floating with animation */}
+                <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black bg-opacity-40 backdrop-blur-sm px-3 py-2 rounded-xl border border-white border-opacity-20 animate-pulse">
+                  <img 
+                    src="/logo512.png" 
+                    alt="Omegoo" 
+                    className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg shadow-sm object-cover opacity-90"
+                  />
+                  <span className="text-white text-sm sm:text-base font-bold tracking-wider opacity-90 drop-shadow-lg">
+                    Omegoo
+                  </span>
+                </div>
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-500 p-4">
                 {isSearching ? (
