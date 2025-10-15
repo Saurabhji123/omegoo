@@ -194,13 +194,14 @@ const VideoChat: React.FC = () => {
           webRTCRef.current.cleanup();
         }
         
-        // Auto-search if partner left (optional - for better UX)
-        if (data.reason === 'partner_left' && socket) {
-          console.log('🔄 Partner left, starting auto-search...');
+        // ALWAYS auto-search when session ends (partner disconnected/next person)
+        if (socket) {
+          console.log('🔄 Session ended, starting auto-search...');
           setIsSearching(true);
+          addMessage('Searching for someone to chat with...', false);
           setTimeout(() => {
             socket.emit('find_match', { mode: 'video' });
-          }, 2000); // Longer delay for stability
+          }, 1000); // Quick restart for better UX
         }
       });
 
@@ -593,13 +594,7 @@ const VideoChat: React.FC = () => {
               </h1>
             </div>
             
-            {/* Status indicator */}
-            {isSearching && (
-              <div className="flex items-center gap-2 text-yellow-300">
-                <div className="w-2 h-2 bg-yellow-300 rounded-full animate-pulse"></div>
-                <span className="text-sm hidden md:inline">Finding someone...</span>
-              </div>
-            )}
+
           </div>
 
           <div className="flex items-center space-x-2 lg:space-x-3">
