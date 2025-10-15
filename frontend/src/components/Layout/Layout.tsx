@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -12,13 +12,39 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { darkMode, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMenuOpen]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex flex-col">
       {/* Header */}
-      <header className="bg-black bg-opacity-20 backdrop-blur-md border-b border-white border-opacity-20">
+      <header className="bg-black bg-opacity-20 backdrop-blur-md border-b border-white border-opacity-20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16">
+          <div className="flex justify-between items-center h-14 sm:h-16 relative">
             {/* Logo - Clickable */}
             <div 
               className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
@@ -74,10 +100,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </button>
 
               {/* Hamburger Menu */}
-              <div className="relative">
+              <div className="relative" ref={menuRef}>
                 <button 
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="p-2 rounded-lg bg-white bg-opacity-10 backdrop-blur-sm hover:bg-opacity-20 transition-all border border-white border-opacity-30"
+                  aria-label="Toggle menu"
                 >
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {isMenuOpen ? (
@@ -90,7 +117,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                 {/* Dropdown Menu */}
                 {isMenuOpen && (
-                  <div className="absolute right-0 bottom-full mb-2 w-56 sm:w-64 bg-white bg-opacity-20 backdrop-blur-md rounded-lg shadow-lg border border-white border-opacity-40 z-50 max-w-[calc(100vw-2rem)]">
+                  <>
+                    {/* Mobile backdrop overlay */}
+                    <div className="fixed inset-0 bg-black bg-opacity-30 z-40 sm:hidden" onClick={() => setIsMenuOpen(false)} />
+                    
+                    <div className="absolute right-0 top-full mt-2 w-56 sm:w-64 bg-white bg-opacity-20 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-40 z-[100] max-w-[calc(100vw-1rem)] mr-2 sm:mr-0">
                     <div className="py-2">
                       <button
                         onClick={() => {
@@ -205,6 +236,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       )}
                     </div>
                   </div>
+                  </>
                 )}
               </div>
             </div>
