@@ -25,11 +25,13 @@ const VideoChat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const localStreamRef = useRef<MediaStream | null>(null); // Track local stream for mic control
   
   const [isSearching, setIsSearching] = useState(false);
   const [isMatchConnected, setIsMatchConnected] = useState(false); // Renamed for clarity - this is for match connection
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
+  const [cameraBlocked, setCameraBlocked] = useState(false);
   // const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [partnerId, setPartnerId] = useState<string>(''); // Track partner user ID
@@ -38,7 +40,6 @@ const VideoChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const [cameraBlocked, setCameraBlocked] = useState(false);
 
   // Handle window resize for responsive video aspect ratio
   useEffect(() => {
@@ -90,10 +91,31 @@ const VideoChat: React.FC = () => {
     webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
 
     webRTCRef.current.onConnectionStateChanged((state: RTCPeerConnectionState) => {
-      // setConnectionState(state);
-      if (state === 'disconnected') {
-        setIsMatchConnected(false);
-        setCurrentState('disconnected');
+      console.log('🔌 WebRTC Connection State Changed:', state);
+      
+      if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+        console.log('⚠️ WebRTC connection lost, triggering reconnection...');
+        
+        // Only trigger auto-search if we were actually connected
+        if (isMatchConnected && sessionId) {
+          setIsMatchConnected(false);
+          setCurrentState('finding');
+          setIsSearching(true);
+          
+          // Clear remote video
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = null;
+          }
+          
+          // Auto-search for new partner
+          addMessage('Connection lost. Finding someone new...', false);
+          setTimeout(() => {
+            if (socket && socket.connected) {
+              console.log('🔍 Auto-searching after WebRTC disconnect...');
+              socket.emit('find_match', { mode: 'video' });
+            }
+          }, 1000);
+        }
       } else if (state === 'connected') {
         setIsMatchConnected(true);
         setCurrentState('connected');
@@ -339,10 +361,17 @@ const VideoChat: React.FC = () => {
         webRTCRef.current.forceDisconnect();
       }
       
+      // Clean up local stream tracks
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => {
+          console.log('🛑 Stopping local track:', track.kind);
+          track.stop();
+        });
+        localStreamRef.current = null;
+      }
+      
       // Clean up video elements
       if (localVideoRef.current?.srcObject) {
-        const localStream = localVideoRef.current.srcObject as MediaStream;
-        localStream.getTracks().forEach(track => track.stop());
         localVideoRef.current.srcObject = null;
       }
       
@@ -454,6 +483,7 @@ const VideoChat: React.FC = () => {
       
       if (stream && localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        localStreamRef.current = stream; // Store stream reference for mic control
         setCameraBlocked(false);
         console.log('✅ Local video stream set to video element');
         
@@ -609,8 +639,50 @@ const VideoChat: React.FC = () => {
   };
 
   const toggleMic = () => {
-    const newState = webRTCRef.current?.toggleAudio();
-    setIsMicOn(newState || false);
+    console.log('🎤 MIC TOGGLE: Current state =', isMicOn);
+    
+    // Check if we have a valid local stream
+    if (!localStreamRef.current) {
+      console.error('❌ No local stream available for mic toggle');
+      return;
+    }
+    
+    const audioTrack = localStreamRef.current.getAudioTracks()[0];
+    if (audioTrack && audioTrack.readyState === 'live') {
+      // Direct toggle based on UI state for consistency
+      const newState = !isMicOn;
+      audioTrack.enabled = newState;
+      
+      // Update WebRTC senders to propagate mic state
+      if (webRTCRef.current) {
+        // Get peer connection and update audio senders
+        const pc = (webRTCRef.current as any).peerConnection;
+        if (pc) {
+          const senders = pc.getSenders();
+          senders.forEach((sender: RTCRtpSender) => {
+            if (sender.track?.kind === 'audio') {
+              sender.track.enabled = newState;
+              console.log('🔄 Updated audio sender:', sender.track.id, 'enabled:', newState);
+            }
+          });
+        }
+      }
+      
+      // Update UI state
+      setIsMicOn(newState);
+      
+      console.log('✅ Mic toggle:', {
+        newState,
+        trackEnabled: audioTrack.enabled,
+        trackId: audioTrack.id
+      });
+      
+    } else {
+      console.error('❌ Audio track not available:', {
+        trackExists: !!audioTrack,
+        readyState: audioTrack?.readyState
+      });
+    }
   };
 
   const sendMessage = () => {
