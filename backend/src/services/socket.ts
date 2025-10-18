@@ -89,6 +89,23 @@ export class SocketService {
       socket.on('disconnect', async () => {
         console.log(`🔌 User ${socket.userId} disconnected`);
         
+        // IMMEDIATE: Notify partner if user is in an active session
+        for (const [sessionId, session] of this.activeSessions.entries()) {
+          if (session.user1 === socket.userId || session.user2 === socket.userId) {
+            const partnerId = session.user1 === socket.userId ? session.user2 : session.user1;
+            const partnerSocketId = this.connectedUsers.get(partnerId);
+            
+            if (partnerSocketId) {
+              const partnerSocket = this.io.sockets.sockets.get(partnerSocketId);
+              if (partnerSocket) {
+                console.log(`📢 Immediately notifying partner ${partnerId} about disconnect`);
+                partnerSocket.emit('user_disconnected', { userId: socket.userId });
+                partnerSocket.emit('session_ended', { reason: 'Partner disconnected' });
+              }
+            }
+          }
+        }
+        
         // Set a delayed cleanup timer (60 seconds) to handle reconnections
         const cleanupTimer = setTimeout(async () => {
           console.log(`🧹 Cleaning up sessions for user ${socket.userId} (after delay)`);
@@ -530,10 +547,6 @@ export class SocketService {
       
       // Delete user session from Redis
       await DevRedisService.deleteUserSession(userId);
-      
-      // Broadcast to all connected users that this user disconnected
-      // This will trigger session_ended events on the frontend
-      this.io.emit('user_disconnected', { userId });
       
       console.log(`✅ Session cleanup completed for user ${userId}`);
     } catch (error) {

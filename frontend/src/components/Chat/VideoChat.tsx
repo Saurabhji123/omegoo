@@ -515,6 +515,13 @@ const VideoChat: React.FC = () => {
         setCameraBlocked(false);
         console.log('✅ Local video stream set to video element');
         
+        // Apply current mic state to audio track (important for fresh stream after Next Person)
+        const audioTrack = stream.getAudioTracks()[0];
+        if (audioTrack) {
+          audioTrack.enabled = isMicOn;
+          console.log('🎤 Applied mic state to fresh stream:', { isMicOn, trackEnabled: audioTrack.enabled });
+        }
+        
         // Ensure video plays
         try {
           await localVideoRef.current.play();
@@ -614,13 +621,16 @@ const VideoChat: React.FC = () => {
       }, 100);
     }
     
-    // INSTANT STATE RESET
+    // INSTANT STATE RESET including mic/camera state
     setIsMatchConnected(false);
     setSessionId(null);
     setPartnerId(''); // Reset partner ID
     setCurrentState('finding'); // Set to finding state
     setMessages([]);
     setIsSearching(true);
+    setIsMicOn(true); // CRITICAL: Reset mic to ON for next match (AudioChat pattern)
+    setIsCameraOn(true); // Reset camera to ON for next match
+    console.log('🔄 State reset for new connection - Mic and Camera ON');
     
     // START NEW SEARCH (with delay if force cleanup)
     const searchDelay = forceCleanup ? 200 : 0;
