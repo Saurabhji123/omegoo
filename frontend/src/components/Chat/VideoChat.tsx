@@ -202,14 +202,8 @@ const VideoChat: React.FC = () => {
 
       socket.on('session_ended', (data: { reason?: string }) => {
         console.log('❌ Video chat session ended:', data);
-        setIsMatchConnected(false);
-        setSessionId(null);
-        setPartnerId(''); // Reset partner ID
-        setCurrentState('disconnected'); // Reset state
-        setMessages([]);
-        console.log(`Chat ended. ${data.reason || 'Your partner left the chat.'}`);
         
-        // Clean up WebRTC connection
+        // Clean up WebRTC connection first
         if (webRTCRef.current) {
           webRTCRef.current.cleanup();
         }
@@ -221,22 +215,36 @@ const VideoChat: React.FC = () => {
           remoteVideoRef.current.srcObject = null;
         }
         
+        // Reset all state
+        setIsMatchConnected(false);
+        setSessionId(null);
+        setPartnerId('');
+        setCurrentState('finding'); // IMPORTANT: Set to finding, not disconnected
+        setMessages([]);
+        setIsSearching(true); // Start searching immediately
+        
+        console.log(`Chat ended. ${data.reason || 'Your partner left the chat.'}`);
+        
         // ALWAYS auto-search when session ends (partner disconnected/next person)
-        if (socket) {
-          console.log('🔄 Session ended, starting auto-search...');
-          setIsSearching(true);
-          addMessage('Searching for someone to chat with...', false);
-          setTimeout(() => {
+        addMessage('Partner left. Searching for someone new...', false);
+        
+        setTimeout(() => {
+          if (socket && socket.connected) {
+            console.log('🔍 Auto-searching after session end...');
             socket.emit('find_match', { mode: 'video' });
-          }, 1000); // Quick restart for better UX
-        }
+          }
+        }, 500); // Quick restart for better UX
       });
 
       socket.on('user_disconnected', (data: { userId: string }) => {
         console.log('👋 User disconnected:', data.userId);
+        console.log('Current state:', { isMatchConnected, partnerId, currentState });
 
-        // If we're currently connected and the disconnected user is our partner
-        if (isMatchConnected && data.userId === partnerId) {
+        // CRITICAL FIX: If we're connected OR if partner matches, clean up and auto-search
+        // This handles cases where state might be slightly out of sync
+        const shouldReconnect = isMatchConnected || data.userId === partnerId || currentState === 'connected';
+        
+        if (shouldReconnect) {
           console.log('🔄 Partner disconnected, automatically finding new partner...');
 
           // Clean up current connection
@@ -254,12 +262,13 @@ const VideoChat: React.FC = () => {
             remoteVideoRef.current.srcObject = null;
           }
 
-          // Reset partner info and state
+          // Reset partner info and state - ALWAYS reset to prevent stuck state
           setPartnerId('');
           setSessionId(null);
           setIsMatchConnected(false);
           setCurrentState('finding');
           setIsSearching(true);
+          setMessages([]); // Clear messages for fresh start
 
           // Add message to chat
           addMessage('Your partner disconnected. Finding someone new...', false);
@@ -270,7 +279,7 @@ const VideoChat: React.FC = () => {
               console.log('🔍 Auto-searching for new partner after disconnect...');
               socket.emit('find_match', { mode: 'video' });
             }
-          }, 1000); // Give a bit more time for cleanup
+          }, 500); // Reduced delay for faster reconnection
         }
       });
 
