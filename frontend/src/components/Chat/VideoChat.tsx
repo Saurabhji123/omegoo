@@ -102,9 +102,17 @@ const VideoChat: React.FC = () => {
           setCurrentState('finding');
           setIsSearching(true);
           
-          // Clear remote video
+          // Clear remote video with proper cleanup
           if (remoteVideoRef.current) {
+            // Stop all tracks first
+            if (remoteVideoRef.current.srcObject) {
+              const stream = remoteVideoRef.current.srcObject as MediaStream;
+              stream.getTracks().forEach(track => track.stop());
+            }
+            // CRITICAL: Pause video, clear srcObject, and force reload
+            remoteVideoRef.current.pause();
             remoteVideoRef.current.srcObject = null;
+            remoteVideoRef.current.load(); // Force video element to reset
           }
           
           // Auto-search for new partner
@@ -230,11 +238,17 @@ const VideoChat: React.FC = () => {
           webRTCRef.current.cleanup();
         }
         
-        // Stop remote stream tracks explicitly
-        if (remoteVideoRef.current?.srcObject) {
-          const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
-          remoteStream.getTracks().forEach(track => track.stop());
+        // Stop remote stream tracks explicitly with proper video element cleanup
+        if (remoteVideoRef.current) {
+          // Stop all tracks first
+          if (remoteVideoRef.current.srcObject) {
+            const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
+            remoteStream.getTracks().forEach(track => track.stop());
+          }
+          // CRITICAL: Pause video, clear srcObject, and force reload
+          remoteVideoRef.current.pause();
           remoteVideoRef.current.srcObject = null;
+          remoteVideoRef.current.load(); // Force video element to reset
         }
         
         // Reset all state
@@ -274,14 +288,20 @@ const VideoChat: React.FC = () => {
             webRTCRef.current.forceDisconnect();
           }
 
-          // Stop and clear remote video stream explicitly
-          if (remoteVideoRef.current?.srcObject) {
-            const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
-            remoteStream.getTracks().forEach(track => {
-              console.log('🛑 Stopping remote track on disconnect:', track.kind);
-              track.stop();
-            });
+          // Stop and clear remote video stream explicitly with proper cleanup
+          if (remoteVideoRef.current) {
+            // Stop all tracks first
+            if (remoteVideoRef.current.srcObject) {
+              const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
+              remoteStream.getTracks().forEach(track => {
+                console.log('🛑 Stopping remote track on disconnect:', track.kind);
+                track.stop();
+              });
+            }
+            // CRITICAL: Pause video, clear srcObject, and force reload
+            remoteVideoRef.current.pause();
             remoteVideoRef.current.srcObject = null;
+            remoteVideoRef.current.load(); // Force video element to reset
           }
 
           // Reset partner info and state - ALWAYS reset to prevent stuck state
@@ -370,15 +390,23 @@ const VideoChat: React.FC = () => {
         localStreamRef.current = null;
       }
       
-      // Clean up video elements
-      if (localVideoRef.current?.srcObject) {
-        localVideoRef.current.srcObject = null;
+      // Clean up video elements with proper reset
+      if (localVideoRef.current) {
+        if (localVideoRef.current.srcObject) {
+          localVideoRef.current.pause();
+          localVideoRef.current.srcObject = null;
+          localVideoRef.current.load();
+        }
       }
       
-      if (remoteVideoRef.current?.srcObject) {
-        const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
-        remoteStream.getTracks().forEach(track => track.stop());
-        remoteVideoRef.current.srcObject = null;
+      if (remoteVideoRef.current) {
+        if (remoteVideoRef.current.srcObject) {
+          const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
+          remoteStream.getTracks().forEach(track => track.stop());
+          remoteVideoRef.current.pause();
+          remoteVideoRef.current.srcObject = null;
+          remoteVideoRef.current.load();
+        }
       }
       
       // Remove all socket listeners
