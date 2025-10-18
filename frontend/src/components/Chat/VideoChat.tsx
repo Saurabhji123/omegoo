@@ -7,7 +7,8 @@ import {
   VideoCameraSlashIcon,
   MicrophoneIcon,
   ChatBubbleLeftRightIcon,
-  PaperAirplaneIcon
+  PaperAirplaneIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
 
@@ -37,6 +38,7 @@ const VideoChat: React.FC = () => {
   const [isMatchConnected, setIsMatchConnected] = useState(false); // Renamed for clarity - this is for match connection
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user'); // Track camera facing mode
   const [cameraBlocked, setCameraBlocked] = useState(false);
   // const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -525,7 +527,7 @@ const VideoChat: React.FC = () => {
         video: {
           width: { ideal: isMobile ? 480 : 640, max: isMobile ? 640 : 1280 },
           height: { ideal: isMobile ? 640 : 480, max: isMobile ? 720 : 720 },
-          facingMode: 'user',
+          facingMode: facingMode, // Use current facing mode state
           frameRate: { ideal: 15, max: 30 }
         },
         audio: {
@@ -752,6 +754,83 @@ const VideoChat: React.FC = () => {
     }
   };
 
+  const switchCamera = async () => {
+    console.log('📷 CAMERA SWITCH: Current facing mode =', facingMode);
+    
+    try {
+      // Toggle facing mode
+      const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
+      setFacingMode(newFacingMode);
+      
+      // Stop current video track
+      if (localStreamRef.current) {
+        const videoTrack = localStreamRef.current.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.stop();
+          console.log('🛑 Stopped current video track');
+        }
+      }
+      
+      // Get new stream with switched camera
+      const isMobile = windowWidth < 768;
+      const constraints = {
+        video: {
+          width: { ideal: isMobile ? 480 : 640, max: isMobile ? 640 : 1280 },
+          height: { ideal: isMobile ? 640 : 480, max: isMobile ? 720 : 720 },
+          facingMode: newFacingMode,
+          frameRate: { ideal: 15, max: 30 }
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      };
+      
+      console.log('🎥 Requesting new stream with facingMode:', newFacingMode);
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      // Update local video
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = newStream;
+        await localVideoRef.current.play();
+      }
+      
+      // Update stream reference
+      const oldAudioTrack = localStreamRef.current?.getAudioTracks()[0];
+      localStreamRef.current = newStream;
+      
+      // Apply mic state to audio track
+      const newAudioTrack = newStream.getAudioTracks()[0];
+      if (newAudioTrack && oldAudioTrack) {
+        newAudioTrack.enabled = oldAudioTrack.enabled;
+      }
+      
+      // Update WebRTC peer connection with new video track
+      if (webRTCRef.current && isMatchConnected) {
+        const pc = (webRTCRef.current as any).peerConnection;
+        if (pc) {
+          const newVideoTrack = newStream.getVideoTracks()[0];
+          const senders = pc.getSenders();
+          const videoSender = senders.find((sender: RTCRtpSender) => sender.track?.kind === 'video');
+          
+          if (videoSender && newVideoTrack) {
+            await videoSender.replaceTrack(newVideoTrack);
+            console.log('✅ Replaced video track in peer connection');
+          }
+        }
+      }
+      
+      console.log('✅ Camera switched to:', newFacingMode);
+      
+    } catch (error) {
+      console.error('❌ Failed to switch camera:', error);
+      // Revert facing mode on error
+      setFacingMode(facingMode);
+      addMessage('Failed to switch camera. Please try again.', false);
+    }
+  };
+
   const sendMessage = () => {
     if (!messageInput.trim() || !isMatchConnected || !sessionId || !socket) {
       console.warn('❌ Cannot send message:', {
@@ -935,6 +1014,15 @@ const VideoChat: React.FC = () => {
                 ) : (
                   <MicrophoneSlashIcon className="w-4 h-4 lg:w-5 lg:h-5" />
                 )}
+              </button>
+
+              {/* Camera Switch */}
+              <button
+                onClick={switchCamera}
+                className="p-2 lg:p-3 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors touch-manipulation"
+                title="Switch Camera"
+              >
+                <ArrowPathIcon className="w-4 h-4 lg:w-5 lg:h-5" />
               </button>
             </div>
           </div>
