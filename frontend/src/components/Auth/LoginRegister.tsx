@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { LockClosedIcon, EnvelopeIcon, UserIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
@@ -8,6 +9,7 @@ interface LoginRegisterProps {
 
 const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
   const { loginWithEmail, register, loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,10 +25,17 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
 
     try {
       if (isLogin) {
+        console.log('🔐 Logging in...');
         await loginWithEmail(email, password);
+        console.log('✅ Login successful, redirecting to home...');
       } else {
+        console.log('📝 Registering...');
         await register(email, username, password);
+        console.log('✅ Registration successful, redirecting to home...');
       }
+      
+      // Navigate to home page after successful auth
+      navigate('/');
       
       if (onSuccess) onSuccess();
     } catch (err: any) {
