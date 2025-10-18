@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 interface User {
   id: string;
   deviceId: string;
+  email?: string;
+  username?: string;
+  passwordHash?: string;
   phoneHash?: string;
   tier: string;
   status: string;
@@ -70,10 +73,22 @@ export class DatabaseService {
     return null;
   }
 
+  static async getUserByEmail(email: string): Promise<User | null> {
+    for (const user of this.users.values()) {
+      if (user.email === email) {
+        return user;
+      }
+    }
+    return null;
+  }
+
   static async createUser(userData: Partial<User>): Promise<User> {
     const user: User = {
       id: userData.id || `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       deviceId: userData.deviceId!,
+      email: userData.email,
+      username: userData.username,
+      passwordHash: userData.passwordHash,
       phoneHash: userData.phoneHash,
       tier: userData.tier || 'guest',
       status: userData.status || 'active',

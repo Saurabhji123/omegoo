@@ -299,6 +299,67 @@ export class SocketService {
     if (match) {
       console.log(`✅ CREATING SESSION: ${socket.userId} <-> ${match.userId} (${mode})`);
       
+      // Deduct coins from both users (1 coin per session)
+      const COIN_COST = 1;
+      
+      try {
+        // Get both users
+        const user1 = await DatabaseService.getUserById(socket.userId!);
+        const user2 = await DatabaseService.getUserById(match.userId);
+        
+        if (!user1 || !user2) {
+          console.error('❌ User not found for coin deduction');
+          socket.emit('error', { message: 'User not found' });
+          return;
+        }
+
+        // Check if both users have enough coins
+        const user1Coins = user1.coins || 0;
+        const user2Coins = user2.coins || 0;
+        
+        if (user1Coins < COIN_COST) {
+          console.log(`❌ User ${socket.userId} has insufficient coins: ${user1Coins}`);
+          socket.emit('insufficient-coins', { 
+            required: COIN_COST, 
+            current: user1Coins,
+            message: 'Not enough coins to start chat'
+          });
+          // Put the other user back in queue
+          await DevRedisService.addToMatchQueue(match);
+          return;
+        }
+        
+        if (user2Coins < COIN_COST) {
+          console.log(`❌ User ${match.userId} has insufficient coins: ${user2Coins}`);
+          // Put both back in queue and notify
+          await DevRedisService.addToMatchQueue(matchRequest);
+          socket.emit('match-retry', { message: 'Match found but partner has insufficient coins' });
+          return;
+        }
+
+        // Deduct coins from both users
+        await DatabaseService.updateUser(socket.userId!, {
+          coins: user1Coins - COIN_COST,
+          totalChats: (user1.totalChats || 0) + 1,
+          dailyChats: (user1.dailyChats || 0) + 1
+        });
+        
+        await DatabaseService.updateUser(match.userId, {
+          coins: user2Coins - COIN_COST,
+          totalChats: (user2.totalChats || 0) + 1,
+          dailyChats: (user2.dailyChats || 0) + 1
+        });
+        
+        console.log(`💰 Coins deducted: User ${socket.userId}: ${user1Coins} -> ${user1Coins - COIN_COST}`);
+        console.log(`💰 Coins deducted: User ${match.userId}: ${user2Coins} -> ${user2Coins - COIN_COST}`);
+        console.log(`📈 Chat counts incremented for both users`);
+        
+      } catch (error) {
+        console.error('❌ Error during coin deduction:', error);
+        socket.emit('error', { message: 'Failed to process payment' });
+        return;
+      }
+      
       // Create chat session
       const session = await DatabaseService.createChatSession({
         user1Id: socket.userId!,
@@ -315,13 +376,20 @@ export class SocketService {
       });
       console.log(`🔗 Tracked session ${session.id} between ${socket.userId} and ${match.userId}`);
 
+      // Get updated user data for both
+      const updatedUser1 = await DatabaseService.getUserById(socket.userId!);
+      const updatedUser2 = await DatabaseService.getUserById(match.userId);
+
       // Notify both users - current user is the initiator
       console.log(`📤 Sending match-found to ${socket.userId} (initiator)`);
       socket.emit('match-found', { 
         sessionId: session.id,
         matchUserId: match.userId,
         isInitiator: true,
-        mode: mode
+        mode: mode,
+        coins: updatedUser1?.coins || 0,
+        totalChats: updatedUser1?.totalChats || 0,
+        dailyChats: updatedUser1?.dailyChats || 0
       });
       
       const matchSocketId = this.connectedUsers.get(match.userId);
@@ -331,7 +399,10 @@ export class SocketService {
           sessionId: session.id,
           matchUserId: socket.userId,
           isInitiator: false,
-          mode: mode
+          mode: mode,
+          coins: updatedUser2?.coins || 0,
+          totalChats: updatedUser2?.totalChats || 0,
+          dailyChats: updatedUser2?.dailyChats || 0
         });
       } else {
         console.error(`❌ Match user ${match.userId} not connected!`);

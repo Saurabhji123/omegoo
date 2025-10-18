@@ -6,12 +6,18 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 interface IUserDoc extends Document {
   id: string;
   deviceId: string;
+  email?: string;
+  username?: string;
+  passwordHash?: string;
   phoneNumber?: string;
   phoneHash?: string;
   isVerified: boolean;
   tier: 'guest' | 'verified' | 'premium';
   status: 'active' | 'banned' | 'suspended';
   coins?: number;
+  totalChats?: number;
+  dailyChats?: number;
+  lastCoinClaim?: Date;
   preferences?: any;
   subscription?: any;
   isOnline?: boolean;
@@ -103,12 +109,18 @@ interface IAdminDoc extends Document {
 const UserSchema = new Schema<IUserDoc>({
   id: { type: String, required: true, unique: true },
   deviceId: { type: String, required: true, unique: true },
+  email: { type: String, sparse: true, unique: true },
+  username: { type: String },
+  passwordHash: { type: String },
   phoneNumber: { type: String },
   phoneHash: { type: String },
   isVerified: { type: Boolean, default: false },
   tier: { type: String, enum: ['guest', 'verified', 'premium'], default: 'guest' },
   status: { type: String, enum: ['active', 'banned', 'suspended'], default: 'active' },
   coins: { type: Number, default: 0 },
+  totalChats: { type: Number, default: 0 },
+  dailyChats: { type: Number, default: 0 },
+  lastCoinClaim: { type: Date },
   preferences: { type: Schema.Types.Mixed, default: {} },
   subscription: { type: Schema.Types.Mixed, default: {} },
   isOnline: { type: Boolean, default: false },
@@ -305,6 +317,9 @@ export class DatabaseService {
     return {
       id: mongoUser.id || mongoUser._id?.toString(),
       deviceId: mongoUser.deviceId,
+      email: mongoUser.email,
+      username: mongoUser.username,
+      passwordHash: mongoUser.passwordHash,
       phoneHash: mongoUser.phoneHash,
       phoneNumber: mongoUser.phoneNumber,
       tier: mongoUser.tier,
@@ -328,6 +343,9 @@ export class DatabaseService {
         const userDoc = new UserModel({
           id: this.generateId('user-'),
           deviceId: userData.deviceId,
+          email: userData.email,
+          username: userData.username,
+          passwordHash: userData.passwordHash,
           phoneNumber: userData.phoneNumber,
           phoneHash: userData.phoneHash,
           isVerified: userData.isVerified ?? false,
@@ -337,12 +355,14 @@ export class DatabaseService {
           preferences: userData.preferences ?? {},
           subscription: userData.subscription ?? {},
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          lastActiveAt: new Date()
         });
         await userDoc.save();
+        console.log('✅ User saved to MongoDB:', { id: userDoc.id, email: userDoc.email, username: userDoc.username });
         return this.mongoUserToUser(userDoc);
       } catch (err) {
-        console.error('MongoDB createUser failed, fallback to in-memory:', err);
+        console.error('❌ MongoDB createUser failed, fallback to in-memory:', err);
       }
     }
 
@@ -351,6 +371,9 @@ export class DatabaseService {
     const newUser = {
       id,
       deviceId: userData.deviceId!,
+      email: userData.email,
+      username: userData.username,
+      passwordHash: userData.passwordHash,
       phoneNumber: userData.phoneNumber,
       phoneHash: userData.phoneHash,
       isVerified: userData.isVerified ?? false,
@@ -360,9 +383,11 @@ export class DatabaseService {
       preferences: userData.preferences ?? {},
       subscription: userData.subscription ?? {},
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      lastActiveAt: new Date()
     };
     this.users.set(id, newUser);
+    console.log('✅ User saved to in-memory storage:', { id, email: newUser.email, username: newUser.username });
     return newUser;
   }
 
@@ -417,6 +442,29 @@ export class DatabaseService {
     for (const u of this.users.values()) {
       if (u.phoneNumber === phoneNumber) return u;
     }
+    return null;
+  }
+
+  static async getUserByEmail(email: string): Promise<any | null> {
+    console.log('🔍 Searching for user by email:', { email });
+    if (this.isConnected) {
+      try {
+        const user = await UserModel.findOne({ email }).lean();
+        console.log('📊 MongoDB query result:', { found: !!user, email: user?.email });
+        return this.mongoUserToUser(user);
+      } catch (err) {
+        console.error('❌ MongoDB getUserByEmail failed, using fallback:', err);
+      }
+    }
+    // Fallback to in-memory
+    console.log('💾 Searching in-memory storage, total users:', this.users.size);
+    for (const u of this.users.values()) {
+      if (u.email === email) {
+        console.log('✅ User found in in-memory:', { id: u.id, email: u.email });
+        return u;
+      }
+    }
+    console.log('❌ User not found for email:', email);
     return null;
   }
 

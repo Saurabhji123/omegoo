@@ -3,10 +3,16 @@
 export interface User {
   id: string;
   deviceId: string;
+  email?: string;
+  username?: string;
+  passwordHash?: string;
   phoneHash?: string;
   tier: 'guest' | 'verified' | 'premium';
   status: 'active' | 'banned' | 'suspended';
   coins: number;
+  totalChats?: number;
+  dailyChats?: number;
+  lastCoinClaim?: Date;
   isVerified: boolean;
   preferences: {
     language: string;
