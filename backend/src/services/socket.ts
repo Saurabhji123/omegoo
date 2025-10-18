@@ -88,6 +88,7 @@ export class SocketService {
 
       socket.on('disconnect', async () => {
         console.log(`🔌 User ${socket.userId} disconnected`);
+        console.log(`📊 Active sessions before cleanup:`, Array.from(this.activeSessions.entries()));
         
         // IMMEDIATE: Notify partner if user is in an active session
         for (const [sessionId, session] of this.activeSessions.entries()) {
@@ -95,13 +96,21 @@ export class SocketService {
             const partnerId = session.user1 === socket.userId ? session.user2 : session.user1;
             const partnerSocketId = this.connectedUsers.get(partnerId);
             
+            console.log(`🔍 Found active session ${sessionId} with partner ${partnerId}`);
+            console.log(`🔍 Partner socket ID: ${partnerSocketId}`);
+            
             if (partnerSocketId) {
               const partnerSocket = this.io.sockets.sockets.get(partnerSocketId);
               if (partnerSocket) {
                 console.log(`📢 Immediately notifying partner ${partnerId} about disconnect`);
                 partnerSocket.emit('user_disconnected', { userId: socket.userId });
                 partnerSocket.emit('session_ended', { reason: 'Partner disconnected' });
+                console.log(`✅ Partner ${partnerId} notified successfully`);
+              } else {
+                console.log(`⚠️ Partner socket not found in io.sockets.sockets`);
               }
+            } else {
+              console.log(`⚠️ Partner ${partnerId} not found in connectedUsers map`);
             }
           }
         }

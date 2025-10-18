@@ -27,6 +27,12 @@ const VideoChat: React.FC = () => {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null); // Track local stream for mic control
   
+  // Track latest state values for event handlers (prevent stale closures)
+  const isMatchConnectedRef = useRef(false);
+  const partnerIdRef = useRef<string>('');
+  const currentStateRef = useRef<'disconnected' | 'finding' | 'connected'>('disconnected');
+  const sessionIdRef = useRef<string | null>(null);
+  
   const [isSearching, setIsSearching] = useState(false);
   const [isMatchConnected, setIsMatchConnected] = useState(false); // Renamed for clarity - this is for match connection
   const [isCameraOn, setIsCameraOn] = useState(true);
@@ -40,6 +46,14 @@ const VideoChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  // Sync refs with state values to avoid stale closures
+  useEffect(() => {
+    isMatchConnectedRef.current = isMatchConnected;
+    partnerIdRef.current = partnerId;
+    currentStateRef.current = currentState;
+    sessionIdRef.current = sessionId;
+  }, [isMatchConnected, partnerId, currentState, sessionId]);
 
   // Handle window resize for responsive video aspect ratio
   useEffect(() => {
@@ -95,9 +109,13 @@ const VideoChat: React.FC = () => {
       
       if (state === 'disconnected' || state === 'failed' || state === 'closed') {
         console.log('⚠️ WebRTC connection lost, triggering reconnection...');
+        console.log('Current state (from refs):', { 
+          isMatchConnected: isMatchConnectedRef.current, 
+          sessionId: sessionIdRef.current 
+        });
         
-        // Only trigger auto-search if we were actually connected
-        if (isMatchConnected && sessionId) {
+        // Only trigger auto-search if we were actually connected (use refs for latest state)
+        if (isMatchConnectedRef.current && sessionIdRef.current) {
           setIsMatchConnected(false);
           setCurrentState('finding');
           setIsSearching(true);
@@ -132,6 +150,8 @@ const VideoChat: React.FC = () => {
 
     // Socket event listeners
     if (socket) {
+      console.log('🔌 Setting up socket event listeners for VideoChat');
+      
       socket.on('match-found', async (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
         console.log('📱 Video chat match found:', data);
         setSessionId(data.sessionId);
@@ -274,11 +294,18 @@ const VideoChat: React.FC = () => {
 
       socket.on('user_disconnected', (data: { userId: string }) => {
         console.log('👋 User disconnected:', data.userId);
-        console.log('Current state:', { isMatchConnected, partnerId, currentState });
+        console.log('Current state (from refs):', { 
+          isMatchConnected: isMatchConnectedRef.current, 
+          partnerId: partnerIdRef.current, 
+          currentState: currentStateRef.current,
+          sessionId: sessionIdRef.current
+        });
 
-        // CRITICAL FIX: If we're connected OR if partner matches, clean up and auto-search
-        // This handles cases where state might be slightly out of sync
-        const shouldReconnect = isMatchConnected || data.userId === partnerId || currentState === 'connected';
+        // CRITICAL FIX: Use refs for latest state values to avoid stale closures
+        const shouldReconnect = 
+          isMatchConnectedRef.current || 
+          data.userId === partnerIdRef.current || 
+          currentStateRef.current === 'connected';
         
         if (shouldReconnect) {
           console.log('🔄 Partner disconnected, automatically finding new partner...');
@@ -322,6 +349,8 @@ const VideoChat: React.FC = () => {
               socket.emit('find_match', { mode: 'video' });
             }
           }, 500); // Reduced delay for faster reconnection
+        } else {
+          console.log('⚠️ Disconnect event ignored - not in active session');
         }
       });
 
