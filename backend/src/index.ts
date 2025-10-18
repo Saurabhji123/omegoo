@@ -7,6 +7,9 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import rateLimit from 'express-rate-limit';
 
+// Load environment variables FIRST before any other imports
+dotenv.config();
+
 // Import routes
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
@@ -19,12 +22,9 @@ import adminRoutes from './routes/admin';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticateToken } from './middleware/auth';
 
-// Import services
+// Import services (AFTER dotenv.config)
 import { SocketService } from './services/socket';
 import { ServiceFactory } from './services/serviceFactory';
-
-// Load environment variables
-dotenv.config();
 
 const app: express.Application = express();
 const server = createServer(app);

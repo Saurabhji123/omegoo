@@ -70,6 +70,33 @@ interface IChatRoomDoc extends Document {
   endReason?: string;
 }
 
+interface IBanHistoryDoc extends Document {
+  id: string;
+  userId: string;
+  reportCount: number;
+  banType: 'temporary' | 'permanent';
+  banDuration?: number; // in days
+  bannedAt: Date;
+  expiresAt?: Date;
+  reason: string;
+  bannedBy?: string; // admin ID or 'auto'
+  isActive: boolean;
+  createdAt: Date;
+}
+
+interface IAdminDoc extends Document {
+  id: string;
+  username: string;
+  email: string;
+  passwordHash: string;
+  role: 'super_admin' | 'admin' | 'moderator';
+  permissions: string[];
+  isActive: boolean;
+  lastLoginAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 /* -------------------------
    Schemas
    ------------------------- */
@@ -140,6 +167,39 @@ const ChatRoomSchema = new Schema<IChatRoomDoc>({
   updatedAt: { type: Date, default: Date.now }
 });
 
+const BanHistorySchema = new Schema<IBanHistoryDoc>({
+  id: { type: String, required: true, unique: true },
+  userId: { type: String, required: true, index: true },
+  reportCount: { type: Number, required: true },
+  banType: { type: String, enum: ['temporary', 'permanent'], required: true },
+  banDuration: { type: Number }, // days
+  bannedAt: { type: Date, default: Date.now },
+  expiresAt: { type: Date },
+  reason: { type: String, required: true },
+  bannedBy: { type: String, default: 'auto' },
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const AdminSchema = new Schema<IAdminDoc>({
+  id: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true },
+  role: { type: String, enum: ['super_admin', 'admin', 'moderator'], default: 'moderator' },
+  permissions: [{ type: String }],
+  isActive: { type: Boolean, default: true },
+  lastLoginAt: { type: Date },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Indexes for better query performance
+BanHistorySchema.index({ userId: 1, isActive: 1 });
+BanHistorySchema.index({ expiresAt: 1 });
+AdminSchema.index({ username: 1 });
+AdminSchema.index({ email: 1 });
+
 /* -------------------------
    Models
    ------------------------- */
@@ -148,6 +208,8 @@ const ChatSessionModel: Model<IChatSessionDoc> = mongoose.model<IChatSessionDoc>
 const ModerationReportModel: Model<IModerationReportDoc> = mongoose.model<IModerationReportDoc>('ModerationReport', ModerationReportSchema);
 const MessageModel: Model<IMessageDoc> = mongoose.model<IMessageDoc>('Message', MessageSchema);
 const ChatRoomModel: Model<IChatRoomDoc> = mongoose.model<IChatRoomDoc>('ChatRoom', ChatRoomSchema);
+const BanHistoryModel: Model<IBanHistoryDoc> = mongoose.model<IBanHistoryDoc>('BanHistory', BanHistorySchema);
+const AdminModel: Model<IAdminDoc> = mongoose.model<IAdminDoc>('Admin', AdminSchema);
 
 /* -------------------------
    DatabaseService
@@ -329,6 +391,18 @@ export class DatabaseService {
       if (u.deviceId === deviceId) return u;
     }
     return null;
+  }
+
+  static async getUsersByStatus(status: string): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        const users = await UserModel.find({ status }).sort({ createdAt: -1 }).lean();
+        return users.map(u => this.mongoUserToUser(u)).filter(Boolean);
+      } catch (err) {
+        console.error('MongoDB getUsersByStatus failed, using fallback:', err);
+      }
+    }
+    return Array.from(this.users.values()).filter((u: any) => u.status === status);
   }
 
   static async getUserByPhoneNumber(phoneNumber: string): Promise<any | null> {
@@ -609,5 +683,408 @@ export class DatabaseService {
     }
     const arr = this.messages.get(roomId) || [];
     return arr.slice(-limit);
+  }
+
+  /* ---------- Ban & Report System ---------- */
+  
+  /**
+   * Check if user is currently banned
+   * Returns active ban if exists, null otherwise
+   */
+  static async checkUserBanStatus(userId: string): Promise<any | null> {
+    if (this.isConnected) {
+      try {
+        const activeBan = await BanHistoryModel.findOne({
+          userId,
+          isActive: true,
+          $or: [
+            { banType: 'permanent' },
+            { expiresAt: { $gt: new Date() } }
+          ]
+        }).sort({ bannedAt: -1 }).lean();
+        
+        // If ban expired, mark as inactive
+        if (activeBan && activeBan.banType === 'temporary' && activeBan.expiresAt && activeBan.expiresAt < new Date()) {
+          await BanHistoryModel.updateOne(
+            { id: activeBan.id },
+            { isActive: false }
+          );
+          return null;
+        }
+        
+        return activeBan || null;
+      } catch (err) {
+        console.error('MongoDB checkUserBanStatus failed:', err);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get total report count for a user
+   */
+  static async getUserReportCount(userId: string): Promise<number> {
+    if (this.isConnected) {
+      try {
+        return await ModerationReportModel.countDocuments({ 
+          reportedUserId: userId,
+          status: { $in: ['pending', 'reviewed'] }
+        });
+      } catch (err) {
+        console.error('MongoDB getUserReportCount failed:', err);
+      }
+    }
+    return 0;
+  }
+
+  /**
+   * Auto-ban user based on report count
+   * 3 reports = 7 days ban
+   * 6 reports = 14 days ban  
+   * 9+ reports = permanent ban
+   */
+  static async autoBanUserByReports(userId: string, reportCount: number, reason: string): Promise<any | null> {
+    if (!this.isConnected) {
+      console.warn('MongoDB not connected, cannot auto-ban user');
+      return null;
+    }
+
+    try {
+      let banType: 'temporary' | 'permanent';
+      let banDuration: number | undefined;
+      let expiresAt: Date | undefined;
+
+      // Escalating ban logic
+      if (reportCount >= 9) {
+        // Permanent ban
+        banType = 'permanent';
+        banDuration = undefined;
+        expiresAt = undefined;
+      } else if (reportCount >= 6) {
+        // 14 days ban (2 weeks)
+        banType = 'temporary';
+        banDuration = 14;
+        expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      } else if (reportCount >= 3) {
+        // 7 days ban (1 week)
+        banType = 'temporary';
+        banDuration = 7;
+        expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      } else {
+        // Not enough reports to ban
+        return null;
+      }
+
+      const banObj = {
+        id: this.generateId('ban-'),
+        userId,
+        reportCount,
+        banType,
+        banDuration,
+        bannedAt: new Date(),
+        expiresAt,
+        reason,
+        bannedBy: 'auto',
+        isActive: true,
+        createdAt: new Date()
+      };
+
+      const banDoc = new BanHistoryModel(banObj);
+      await banDoc.save();
+
+      // Update user status to banned
+      await UserModel.updateOne(
+        { id: userId },
+        { status: 'banned', updatedAt: new Date() }
+      );
+
+      console.log(`✅ User ${userId} auto-banned: ${banType} (${reportCount} reports)`);
+      return banDoc.toObject();
+    } catch (err) {
+      console.error('MongoDB autoBanUserByReports failed:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Manually ban user (admin action)
+   */
+  static async banUser(userId: string, banType: 'temporary' | 'permanent', duration?: number, reason?: string, adminId?: string): Promise<any | null> {
+    if (!this.isConnected) {
+      console.warn('MongoDB not connected, cannot ban user');
+      return null;
+    }
+
+    try {
+      const expiresAt = banType === 'temporary' && duration 
+        ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000)
+        : undefined;
+
+      const banObj = {
+        id: this.generateId('ban-'),
+        userId,
+        reportCount: 0,
+        banType,
+        banDuration: duration,
+        bannedAt: new Date(),
+        expiresAt,
+        reason: reason || 'Manual ban by admin',
+        bannedBy: adminId || 'admin',
+        isActive: true,
+        createdAt: new Date()
+      };
+
+      const banDoc = new BanHistoryModel(banObj);
+      await banDoc.save();
+
+      // Update user status
+      await UserModel.updateOne(
+        { id: userId },
+        { status: 'banned', updatedAt: new Date() }
+      );
+
+      console.log(`✅ User ${userId} manually banned by ${adminId || 'admin'}`);
+      return banDoc.toObject();
+    } catch (err) {
+      console.error('MongoDB banUser failed:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Unban user (admin action)
+   */
+  static async unbanUser(userId: string, adminId?: string): Promise<boolean> {
+    if (!this.isConnected) {
+      console.warn('MongoDB not connected, cannot unban user');
+      return false;
+    }
+
+    try {
+      // Deactivate all active bans
+      await BanHistoryModel.updateMany(
+        { userId, isActive: true },
+        { isActive: false }
+      );
+
+      // Update user status to active
+      await UserModel.updateOne(
+        { id: userId },
+        { status: 'active', updatedAt: new Date() }
+      );
+
+      console.log(`✅ User ${userId} unbanned by ${adminId || 'admin'}`);
+      return true;
+    } catch (err) {
+      console.error('MongoDB unbanUser failed:', err);
+      return false;
+    }
+  }
+
+  /**
+   * Get all bans for a user
+   */
+  static async getUserBanHistory(userId: string): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        return await BanHistoryModel.find({ userId }).sort({ bannedAt: -1 }).lean();
+      } catch (err) {
+        console.error('MongoDB getUserBanHistory failed:', err);
+      }
+    }
+    return [];
+  }
+
+  /* ---------- Admin Operations ---------- */
+
+  /**
+   * Create admin user
+   */
+  static async createAdmin(adminData: { username: string; email: string; passwordHash: string; role?: string }): Promise<any | null> {
+    if (!this.isConnected) {
+      console.warn('MongoDB not connected, cannot create admin');
+      return null;
+    }
+
+    try {
+      const adminObj = {
+        id: this.generateId('admin-'),
+        username: adminData.username,
+        email: adminData.email,
+        passwordHash: adminData.passwordHash,
+        role: (adminData.role as any) || 'moderator',
+        permissions: this.getDefaultPermissions(adminData.role as any || 'moderator'),
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const adminDoc = new AdminModel(adminObj);
+      await adminDoc.save();
+      
+      console.log(`✅ Admin created: ${adminData.username}`);
+      return adminDoc.toObject();
+    } catch (err) {
+      console.error('MongoDB createAdmin failed:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Find admin by username
+   */
+  static async findAdminByUsername(username: string): Promise<any | null> {
+    if (this.isConnected) {
+      try {
+        return await AdminModel.findOne({ username, isActive: true }).lean();
+      } catch (err) {
+        console.error('MongoDB findAdminByUsername failed:', err);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Find admin by email
+   */
+  static async findAdminByEmail(email: string): Promise<any | null> {
+    if (this.isConnected) {
+      try {
+        return await AdminModel.findOne({ email, isActive: true }).lean();
+      } catch (err) {
+        console.error('MongoDB findAdminByEmail failed:', err);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Update admin last login
+   */
+  static async updateAdminLastLogin(adminId: string): Promise<void> {
+    if (this.isConnected) {
+      try {
+        await AdminModel.updateOne(
+          { id: adminId },
+          { lastLoginAt: new Date(), updatedAt: new Date() }
+        );
+      } catch (err) {
+        console.error('MongoDB updateAdminLastLogin failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Get all admins
+   */
+  static async getAllAdmins(): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        return await AdminModel.find({}).sort({ createdAt: -1 }).lean();
+      } catch (err) {
+        console.error('MongoDB getAllAdmins failed:', err);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Get default permissions by role
+   */
+  private static getDefaultPermissions(role: string): string[] {
+    const permissionMap: Record<string, string[]> = {
+      super_admin: ['all'],
+      admin: ['view_users', 'ban_users', 'view_reports', 'resolve_reports', 'view_stats'],
+      moderator: ['view_users', 'view_reports', 'resolve_reports']
+    };
+    return permissionMap[role] || permissionMap.moderator;
+  }
+
+  /**
+   * Get all pending reports
+   */
+  static async getPendingReports(limit: number = 50): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        return await ModerationReportModel.find({ status: 'pending' })
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .lean();
+      } catch (err) {
+        console.error('MongoDB getPendingReports failed:', err);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Get all reports for a specific user
+   */
+  static async getUserReports(userId: string): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        return await ModerationReportModel.find({ reportedUserId: userId })
+          .sort({ createdAt: -1 })
+          .lean();
+      } catch (err) {
+        console.error('MongoDB getUserReports failed:', err);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Update report status
+   */
+  static async updateReportStatus(reportId: string, status: 'pending' | 'reviewed' | 'resolved'): Promise<boolean> {
+    if (this.isConnected) {
+      try {
+        const result = await ModerationReportModel.updateOne(
+          { id: reportId },
+          { status }
+        );
+        return result.modifiedCount > 0;
+      } catch (err) {
+        console.error('MongoDB updateReportStatus failed:', err);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Get platform statistics
+   */
+  static async getPlatformStats(): Promise<any> {
+    if (this.isConnected) {
+      try {
+        const [totalUsers, activeUsers, bannedUsers, totalReports, pendingReports, totalSessions] = await Promise.all([
+          UserModel.countDocuments(),
+          UserModel.countDocuments({ isOnline: true }),
+          UserModel.countDocuments({ status: 'banned' }),
+          ModerationReportModel.countDocuments(),
+          ModerationReportModel.countDocuments({ status: 'pending' }),
+          ChatSessionModel.countDocuments()
+        ]);
+
+        return {
+          totalUsers,
+          activeUsers,
+          bannedUsers,
+          totalReports,
+          pendingReports,
+          totalSessions
+        };
+      } catch (err) {
+        console.error('MongoDB getPlatformStats failed:', err);
+      }
+    }
+    return {
+      totalUsers: 0,
+      activeUsers: 0,
+      bannedUsers: 0,
+      totalReports: 0,
+      pendingReports: 0,
+      totalSessions: 0
+    };
   }
 }

@@ -168,6 +168,9 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         } />
         
+        {/* Special Admin Panel Route */}
+        <Route path="/omegoo-admin/*" element={<Admin />} />
+        
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

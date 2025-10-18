@@ -1,23 +1,25 @@
 // Service factory to provide the correct services based on environment
-import { DatabaseService as ProductionDatabaseService } from './database';
+import { DatabaseService as MongoDBDatabaseService } from './database-mongodb';
 import { RedisService as ProductionRedisService } from './redis';
 import { DatabaseService as DevDatabaseService } from './database-dev';
 import { RedisService as DevRedisService } from './redis-dev';
 
 export class ServiceFactory {
-  // Force development mode for now (no external database needed)
-  private static _isDevelopment = true;
+  // Check if MongoDB should be used (from environment variable)
+  private static _isDevelopment = process.env.USE_MONGODB !== 'true';
 
   static get DatabaseService() {
-    console.log(`🔧 ServiceFactory: NODE_ENV=${process.env.NODE_ENV}, isDevelopment=${this._isDevelopment}`);
-    const service = this._isDevelopment ? DevDatabaseService : ProductionDatabaseService;
-    console.log(`🔧 ServiceFactory: Using ${this._isDevelopment ? 'Development' : 'Production'} DatabaseService`);
+    console.log(`🔧 ServiceFactory: NODE_ENV=${process.env.NODE_ENV}, USE_MONGODB=${process.env.USE_MONGODB}, isDevelopment=${this._isDevelopment}`);
+    const service = this._isDevelopment ? DevDatabaseService : MongoDBDatabaseService;
+    console.log(`🔧 ServiceFactory: Using ${this._isDevelopment ? 'In-Memory Development' : 'MongoDB Production'} DatabaseService`);
     return service;
   }
 
   static get RedisService() {
-    const service = this._isDevelopment ? DevRedisService : ProductionRedisService;
-    console.log(`🔧 ServiceFactory: Using ${this._isDevelopment ? 'Development' : 'Production'} RedisService`);
+    // Always use development Redis (in-memory) for now
+    // Production Redis requires separate Redis server setup
+    const service = DevRedisService;
+    console.log(`🔧 ServiceFactory: Using Development RedisService (in-memory)`);
     return service;
   }
 

@@ -185,4 +185,171 @@ export class DatabaseService {
     }
     return { rows: [] };
   }
+
+  /* ---------- Ban & Report System (Dev Mock) ---------- */
+  
+  static async checkUserBanStatus(userId: string): Promise<any | null> {
+    const ban = this.bans.get(userId);
+    if (!ban || !ban.isActive) return null;
+    
+    // Check if temporary ban expired
+    if (ban.banType === 'temporary' && ban.expiresAt && new Date(ban.expiresAt) < new Date()) {
+      ban.isActive = false;
+      this.bans.set(userId, ban);
+      return null;
+    }
+    
+    return ban;
+  }
+
+  static async getUserReportCount(userId: string): Promise<number> {
+    // Mock: return 0 in dev mode (reports stored in memory would be lost)
+    return 0;
+  }
+
+  static async autoBanUserByReports(userId: string, reportCount: number, reason: string): Promise<any | null> {
+    let banType: 'temporary' | 'permanent';
+    let banDuration: number | undefined;
+    let expiresAt: Date | undefined;
+
+    if (reportCount >= 9) {
+      banType = 'permanent';
+    } else if (reportCount >= 6) {
+      banType = 'temporary';
+      banDuration = 14;
+      expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    } else if (reportCount >= 3) {
+      banType = 'temporary';
+      banDuration = 7;
+      expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    } else {
+      return null;
+    }
+
+    const ban = {
+      id: `ban-${Date.now()}`,
+      userId,
+      reportCount,
+      banType,
+      banDuration,
+      bannedAt: new Date(),
+      expiresAt,
+      reason,
+      bannedBy: 'auto',
+      isActive: true
+    };
+
+    this.bans.set(userId, ban);
+    
+    const user = this.users.get(userId);
+    if (user) {
+      user.status = 'banned';
+    }
+
+    console.log(`🚫 User ${userId} auto-banned (dev): ${banType}`);
+    return ban;
+  }
+
+  static async banUser(userId: string, banType: 'temporary' | 'permanent', duration?: number, reason?: string, adminId?: string): Promise<any | null> {
+    const expiresAt = banType === 'temporary' && duration 
+      ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000)
+      : undefined;
+
+    const ban = {
+      id: `ban-${Date.now()}`,
+      userId,
+      reportCount: 0,
+      banType,
+      banDuration: duration,
+      bannedAt: new Date(),
+      expiresAt,
+      reason: reason || 'Manual ban',
+      bannedBy: adminId || 'admin',
+      isActive: true
+    };
+
+    this.bans.set(userId, ban);
+    
+    const user = this.users.get(userId);
+    if (user) {
+      user.status = 'banned';
+    }
+
+    console.log(`🚫 User ${userId} manually banned (dev) by ${adminId}`);
+    return ban;
+  }
+
+  static async unbanUser(userId: string, adminId?: string): Promise<boolean> {
+    this.bans.delete(userId);
+    
+    const user = this.users.get(userId);
+    if (user) {
+      user.status = 'active';
+    }
+
+    console.log(`✅ User ${userId} unbanned (dev) by ${adminId}`);
+    return true;
+  }
+
+  static async getUserBanHistory(userId: string): Promise<any[]> {
+    const ban = this.bans.get(userId);
+    return ban ? [ban] : [];
+  }
+
+  static async getUserReports(userId: string): Promise<any[]> {
+    // Mock: return empty array in dev mode
+    return [];
+  }
+
+  static async getUsersByStatus(status: string): Promise<any[]> {
+    return Array.from(this.users.values()).filter(u => u.status === status);
+  }
+
+  static async getPendingReports(limit: number = 50): Promise<any[]> {
+    // Mock: return empty array in dev mode
+    return [];
+  }
+
+  static async updateReportStatus(reportId: string, status: string): Promise<boolean> {
+    console.log(`📝 Report ${reportId} status updated to ${status} (dev)`);
+    return true;
+  }
+
+  static async getPlatformStats(): Promise<any> {
+    return {
+      totalUsers: this.users.size,
+      activeUsers: Array.from(this.users.values()).filter(u => u.status === 'active').length,
+      bannedUsers: this.bans.size,
+      totalReports: 0,
+      pendingReports: 0,
+      totalSessions: this.sessions.size
+    };
+  }
+
+  static async createAdmin(adminData: any): Promise<any | null> {
+    console.log('👤 Admin created (dev):', adminData.username);
+    return {
+      id: `admin-${Date.now()}`,
+      ...adminData,
+      createdAt: new Date()
+    };
+  }
+
+  static async findAdminByUsername(username: string): Promise<any | null> {
+    // Mock: return null in dev (admins require MongoDB)
+    console.log('🔍 Admin lookup (dev):', username);
+    return null;
+  }
+
+  static async findAdminByEmail(email: string): Promise<any | null> {
+    return null;
+  }
+
+  static async updateAdminLastLogin(adminId: string): Promise<void> {
+    console.log('📝 Admin login tracked (dev):', adminId);
+  }
+
+  static async getAllAdmins(): Promise<any[]> {
+    return [];
+  }
 }

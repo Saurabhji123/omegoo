@@ -257,4 +257,94 @@ export class DatabaseService {
     const result = await this.query(query, [date]);
     return result.rows[0];
   }
+
+  /* ---------- Ban & Report System (Stub - Use MongoDB) ---------- */
+  // These methods are stubs - actual implementation is in database-mongodb.ts
+  // PostgreSQL schema would need migrations for full support
+  
+  static async checkUserBanStatus(userId: string): Promise<any | null> {
+    console.warn('⚠️ checkUserBanStatus called on PostgreSQL - use MongoDB for ban system');
+    return null;
+  }
+
+  static async getUserReportCount(userId: string): Promise<number> {
+    console.warn('⚠️ getUserReportCount called on PostgreSQL - use MongoDB for ban system');
+    return 0;
+  }
+
+  static async autoBanUserByReports(userId: string, reportCount: number, reason: string): Promise<any | null> {
+    console.warn('⚠️ autoBanUserByReports called on PostgreSQL - use MongoDB for ban system');
+    return null;
+  }
+
+  static async banUser(userId: string, banType: string, duration?: number, reason?: string, adminId?: string): Promise<any | null> {
+    console.warn('⚠️ banUser called on PostgreSQL - use MongoDB for ban system');
+    return null;
+  }
+
+  static async unbanUser(userId: string, adminId?: string): Promise<boolean> {
+    console.warn('⚠️ unbanUser called on PostgreSQL - use MongoDB for ban system');
+    return false;
+  }
+
+  static async getUserBanHistory(userId: string): Promise<any[]> {
+    console.warn('⚠️ getUserBanHistory called on PostgreSQL - use MongoDB for ban system');
+    return [];
+  }
+
+  static async getUserReports(userId: string): Promise<any[]> {
+    console.warn('⚠️ getUserReports called on PostgreSQL - use MongoDB for ban system');
+    return [];
+  }
+
+  static async getUsersByStatus(status: string): Promise<any[]> {
+    console.warn('⚠️ getUsersByStatus called on PostgreSQL - use MongoDB for ban system');
+    return [];
+  }
+
+  static async getPendingReports(limit: number = 50): Promise<any[]> {
+    console.warn('⚠️ getPendingReports called on PostgreSQL - use MongoDB for ban system');
+    return [];
+  }
+
+  static async updateReportStatus(reportId: string, status: string): Promise<boolean> {
+    console.warn('⚠️ updateReportStatus called on PostgreSQL - use MongoDB for ban system');
+    return false;
+  }
+
+  static async getPlatformStats(): Promise<any> {
+    console.warn('⚠️ getPlatformStats called on PostgreSQL - use MongoDB for ban system');
+    return {
+      totalUsers: 0,
+      activeUsers: 0,
+      bannedUsers: 0,
+      totalReports: 0,
+      pendingReports: 0,
+      totalSessions: 0
+    };
+  }
+
+  static async createAdmin(adminData: any): Promise<any | null> {
+    console.warn('⚠️ createAdmin called on PostgreSQL - use MongoDB for admin system');
+    return null;
+  }
+
+  static async findAdminByUsername(username: string): Promise<any | null> {
+    console.warn('⚠️ findAdminByUsername called on PostgreSQL - use MongoDB for admin system');
+    return null;
+  }
+
+  static async findAdminByEmail(email: string): Promise<any | null> {
+    console.warn('⚠️ findAdminByEmail called on PostgreSQL - use MongoDB for admin system');
+    return null;
+  }
+
+  static async updateAdminLastLogin(adminId: string): Promise<void> {
+    console.warn('⚠️ updateAdminLastLogin called on PostgreSQL - use MongoDB for admin system');
+  }
+
+  static async getAllAdmins(): Promise<any[]> {
+    console.warn('⚠️ getAllAdmins called on PostgreSQL - use MongoDB for admin system');
+    return [];
+  }
 }

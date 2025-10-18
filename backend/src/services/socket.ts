@@ -50,9 +50,31 @@ export class SocketService {
       next();
     });
 
-    io.on('connection', (socket: AuthenticatedSocket) => {
+    io.on('connection', async (socket: AuthenticatedSocket) => {
       console.log(`🔌 NEW CONNECTION: User ${socket.userId} connected from ${socket.handshake.address}`);
       console.log(`📊 Total connected users: ${this.connectedUsers.size + 1}`);
+      
+      // Check if user is banned
+      const banStatus = await DatabaseService.checkUserBanStatus(socket.userId!);
+      if (banStatus) {
+        console.log(`🚫 BANNED USER tried to connect: ${socket.userId}`);
+        
+        const banMessage = banStatus.banType === 'permanent'
+          ? 'Your account has been permanently banned due to multiple violations.'
+          : `Your account is temporarily banned until ${new Date(banStatus.expiresAt).toLocaleString()}. Reason: ${banStatus.reason}`;
+        
+        socket.emit('user_banned', {
+          banned: true,
+          banType: banStatus.banType,
+          reason: banStatus.reason,
+          bannedAt: banStatus.bannedAt,
+          expiresAt: banStatus.expiresAt,
+          message: banMessage
+        });
+        
+        socket.disconnect(true);
+        return;
+      }
       
       // Check if user already has an active connection
       const existingSocketId = this.connectedUsers.get(socket.userId!);
@@ -500,8 +522,8 @@ export class SocketService {
 
   // Utility methods
   private static async getSessionById(sessionId: string) {
-    const result = await DatabaseService.query('SELECT * FROM chat_sessions WHERE id = $1', [sessionId]);
-    return result.rows[0];
+    // Use getChatSession instead of raw SQL query (works with both MongoDB and PostgreSQL)
+    return await DatabaseService.getChatSession(sessionId);
   }
 
   static async sendModerationWarning(userId: string, message: string) {
