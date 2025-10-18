@@ -1,16 +1,21 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { authAPI } from '../services/api';
+import apiService, { authAPI } from '../services/api';
 import { storageService } from '../services/storage';
 
 // Define types locally to avoid import issues
 export interface User {
   id: string;
   deviceId: string;
+  email?: string;
+  username?: string;
   phoneHash?: string;
   tier: 'guest' | 'verified' | 'premium';
   status: 'active' | 'banned' | 'suspended';
   coins: number;
   isVerified: boolean;
+  totalChats?: number;
+  dailyChats?: number;
+  lastCoinClaim?: Date;
   preferences: {
     language: string;
     interests: string[];
@@ -34,7 +39,9 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (deviceId: string, userAgent: string, fingerprint?: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  register: (email: string, username: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
   verifyPhone: (phone: string, otp: string) => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
@@ -112,30 +119,108 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       if (token) {
+        // Set token in API service
+        apiService.setToken(token);
         dispatch({ type: 'SET_TOKEN', payload: token });
-        const user = await authAPI.getCurrentUser();
-        dispatch({ type: 'SET_USER', payload: user });
+        
+        try {
+          // Fetch current user data from backend
+          const response = await authAPI.getCurrentUser();
+          dispatch({ type: 'SET_USER', payload: response.user });
+          console.log('✅ User data loaded:', { userId: response.user.id, coins: response.user.coins });
+        } catch (error) {
+          console.error('❌ Failed to fetch user data, clearing auth:', error);
+          // Token is invalid, clear it
+          storageService.removeToken();
+          apiService.setToken(null);
+          dispatch({ type: 'SET_TOKEN', payload: null });
+        }
       }
     } catch (error) {
       console.error('Auth initialization failed:', error);
       storageService.removeToken();
+      apiService.setToken(null);
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
       setIsInitializing(false);
     }
   };
 
-  const login = async (deviceId: string, userAgent: string, fingerprint?: string) => {
+  const loginWithEmail = async (email: string, password: string) => {
     try {
+      console.log('🔐 Attempting login with:', { email });
       dispatch({ type: 'SET_LOADING', payload: true });
-      const response = await authAPI.login({ deviceId, userAgent, fingerprint });
+      const response = await authAPI.loginWithEmail(email, password);
+      
+      console.log('✅ Login response received:', { 
+        hasToken: !!response.token, 
+        hasUser: !!response.user,
+        userId: response.user?.id 
+      });
+      
+      // Set token in API service
+      apiService.setToken(response.token);
       
       dispatch({ type: 'SET_TOKEN', payload: response.token });
       dispatch({ type: 'SET_USER', payload: response.user });
       
       storageService.setToken(response.token);
+      storageService.setUser(response.user);
+      
+      console.log('💾 Login data saved to storage');
+    } catch (error: any) {
+      console.error('❌ Email login failed:', error);
+      console.error('Error details:', error.message);
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const register = async (email: string, username: string, password: string) => {
+    try {
+      console.log('📝 Attempting registration:', { email, username });
+      dispatch({ type: 'SET_LOADING', payload: true });
+      const response = await authAPI.register(email, username, password);
+      
+      console.log('✅ Registration response received:', { 
+        hasToken: !!response.token, 
+        hasUser: !!response.user,
+        userId: response.user?.id,
+        coins: response.user?.coins
+      });
+      
+      // Set token in API service
+      apiService.setToken(response.token);
+      
+      dispatch({ type: 'SET_TOKEN', payload: response.token });
+      dispatch({ type: 'SET_USER', payload: response.user });
+      
+      storageService.setToken(response.token);
+      storageService.setUser(response.user);
+      
+      console.log('💾 Registration data saved to storage');
+    } catch (error: any) {
+      console.error('❌ Registration failed:', error);
+      console.error('Error details:', error.message);
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const loginWithGoogle = async (idToken: string) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      const response = await authAPI.loginWithGoogle(idToken);
+      
+      dispatch({ type: 'SET_TOKEN', payload: response.token });
+      dispatch({ type: 'SET_USER', payload: response.user });
+      
+      storageService.setToken(response.token);
+      storageService.setUser(response.user);
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Google login failed:', error);
       throw error;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -143,7 +228,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
+    console.log('👋 Logging out user');
     storageService.removeToken();
+    apiService.setToken(null);
     dispatch({ type: 'LOGOUT' });
   };
 
@@ -171,7 +258,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const value: AuthContextType = {
     ...state,
-    login,
+    loginWithEmail,
+    register,
+    loginWithGoogle,
     logout,
     verifyPhone,
     updateUser,

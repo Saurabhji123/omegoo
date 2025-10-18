@@ -80,8 +80,18 @@ const apiService = new ApiService(API_BASE_URL);
 
 // Auth API
 export const authAPI = {
-  login: async (credentials: { deviceId: string; userAgent: string; fingerprint?: string }) => {
-    return apiService.post<{ token: string; user: any }>('/api/auth/login', credentials);
+  // Email/Password Authentication
+  loginWithEmail: async (email: string, password: string) => {
+    return apiService.post<{ token: string; user: any }>('/api/auth/login', { email, password });
+  },
+
+  register: async (email: string, username: string, password: string) => {
+    return apiService.post<{ token: string; user: any }>('/api/auth/register', { email, username, password });
+  },
+
+  // Google OAuth
+  loginWithGoogle: async (idToken: string) => {
+    return apiService.post<{ token: string; user: any }>('/api/auth/google', { idToken });
   },
 
   getCurrentUser: async () => {

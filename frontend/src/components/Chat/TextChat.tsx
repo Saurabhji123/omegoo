@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   PaperAirplaneIcon,
   ArrowPathIcon,
@@ -21,6 +22,7 @@ interface Message {
 const TextChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
+  const { updateUser } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Core states - following AudioChat pattern
@@ -63,8 +65,26 @@ const TextChat: React.FC = () => {
     if (!socket) return;
 
     // Socket event listeners - exact AudioChat pattern
-    socket.on('match-found', async (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
+    socket.on('match-found', async (data: { 
+      sessionId: string; 
+      matchUserId: string; 
+      isInitiator: boolean;
+      coins?: number;
+      totalChats?: number;
+      dailyChats?: number;
+    }) => {
       console.log('💬 Text chat match found:', data);
+      
+      // Update user coins and chat counts from backend
+      if (data.coins !== undefined) {
+        updateUser({ 
+          coins: data.coins,
+          totalChats: data.totalChats || 0,
+          dailyChats: data.dailyChats || 0
+        });
+        console.log(`💰 Updated user: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
+      }
+      
       setSessionId(data.sessionId);
       setIsSearching(false);
       setMessages([]);

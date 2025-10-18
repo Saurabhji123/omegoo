@@ -1,32 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { 
   UserCircleIcon, 
-  ChatBubbleLeftRightIcon, 
   VideoCameraIcon,
-  ClockIcon,
-  FlagIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  ArrowRightOnRectangleIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 
 const Profile: React.FC = () => {
-  const { user } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState('Anonymous User');
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  // Mock user statistics - in a real app, this would come from the backend
-  const stats = {
-    totalChats: 47,
-    totalTime: 235, // minutes
-    reportsMade: 2,
-    trustScore: 85
-  };
-
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      logout();
+      navigate('/login');
+    }
   };
 
   const getTierBadge = (tier: string) => {
@@ -45,7 +36,16 @@ const Profile: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Your Profile</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Your Profile</h1>
+        <button
+          onClick={handleLogout}
+          className="flex items-center space-x-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+        >
+          <ArrowRightOnRectangleIcon className="w-5 h-5" />
+          <span className="hidden sm:inline">Logout</span>
+        </button>
+      </div>
       
       {/* Profile Card */}
       <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
@@ -59,36 +59,23 @@ const Profile: React.FC = () => {
           
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-col sm:flex-row items-center sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="text-xl font-bold bg-transparent border-b border-gray-400 focus:border-blue-500 outline-none text-white text-center sm:text-left"
-                  onBlur={() => setIsEditing(false)}
-                  onKeyPress={(e) => e.key === 'Enter' && setIsEditing(false)}
-                  autoFocus
-                />
-              ) : (
-                <h2 
-                  className="text-xl font-bold text-white cursor-pointer hover:text-blue-400 transition-colors"
-                  onClick={() => setIsEditing(true)}
-                >
-                  {displayName}
-                </h2>
-              )}
+              <h2 className="text-xl font-bold text-white">
+                {user?.username || 'Anonymous User'}
+              </h2>
               <span className={`${tierBadge.color} text-white px-2 py-1 rounded text-sm font-medium`}>
                 {tierBadge.text}
               </span>
             </div>
             
             <p className="text-gray-300 mb-2 text-sm sm:text-base">
-              Device ID: {user?.deviceId || 'Unknown'}
+              {user?.email || 'No email'}
             </p>
             
-            <p className="text-sm text-gray-400">
-              Joined: {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Today'}
-            </p>
+            <div className="flex items-center justify-center sm:justify-start space-x-2 text-sm text-gray-400">
+              <CurrencyDollarIcon className="w-5 h-5 text-yellow-400" />
+              <span className="font-bold text-yellow-400">{user?.coins || 0}</span>
+              <span>coins</span>
+            </div>
           </div>
         </div>
       </div>
@@ -96,27 +83,29 @@ const Profile: React.FC = () => {
       {/* Statistics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
-          <ChatBubbleLeftRightIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 mx-auto mb-2" />
-          <div className="text-xl sm:text-2xl font-bold text-white">{stats.totalChats}</div>
+          <VideoCameraIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 mx-auto mb-2" />
+          <div className="text-xl sm:text-2xl font-bold text-white">{user?.totalChats || 0}</div>
           <div className="text-xs sm:text-sm text-gray-300">Total Chats</div>
         </div>
 
         <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
-          <ClockIcon className="w-6 h-6 sm:w-8 sm:h-8 text-green-400 mx-auto mb-2" />
-          <div className="text-xl sm:text-2xl font-bold text-white">{formatTime(stats.totalTime)}</div>
-          <div className="text-xs sm:text-sm text-gray-300">Time Spent</div>
+          <ShieldCheckIcon className="w-6 h-6 sm:w-8 sm:h-8 text-green-400 mx-auto mb-2" />
+          <div className="text-xl sm:text-2xl font-bold text-white">{user?.dailyChats || 0}</div>
+          <div className="text-xs sm:text-sm text-gray-300">Today's Chats</div>
         </div>
 
         <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
-          <FlagIcon className="w-6 h-6 sm:w-8 sm:h-8 text-orange-400 mx-auto mb-2" />
-          <div className="text-xl sm:text-2xl font-bold text-white">{stats.reportsMade}</div>
-          <div className="text-xs sm:text-sm text-gray-300">Reports Made</div>
+          <CurrencyDollarIcon className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400 mx-auto mb-2" />
+          <div className="text-xl sm:text-2xl font-bold text-white">{user?.coins || 0}</div>
+          <div className="text-xs sm:text-sm text-gray-300">Total Coins</div>
         </div>
 
         <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
-          <ShieldCheckIcon className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400 mx-auto mb-2" />
-          <div className="text-xl sm:text-2xl font-bold text-white">{stats.trustScore}%</div>
-          <div className="text-xs sm:text-sm text-gray-300">Trust Score</div>
+          <span className={`inline-block w-6 h-6 sm:w-8 sm:h-8 ${tierBadge.color} rounded-full mx-auto mb-2 flex items-center justify-center text-lg`}>
+            {tierBadge.icon}
+          </span>
+          <div className="text-sm sm:text-base font-bold text-white">{tierBadge.text}</div>
+          <div className="text-xs sm:text-sm text-gray-300">Account Status</div>
         </div>
       </div>
 
@@ -162,9 +151,19 @@ const Profile: React.FC = () => {
         <h3 className="text-lg font-semibold text-white mb-4">Account</h3>
         
         <div className="space-y-3">
-          <button className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
-            <div className="font-medium text-white text-sm sm:text-base">Change Display Name</div>
-            <div className="text-xs sm:text-sm text-gray-300">Update how others see you</div>
+          <button 
+            onClick={handleLogout}
+            className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-white text-sm sm:text-base group-hover:text-red-400 transition-colors">
+                  Logout
+                </div>
+                <div className="text-xs sm:text-sm text-gray-300">Sign out from your account</div>
+              </div>
+              <ArrowRightOnRectangleIcon className="w-5 h-5 text-red-400" />
+            </div>
           </button>
 
           <button className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">

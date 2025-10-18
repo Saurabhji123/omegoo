@@ -7,7 +7,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 // Components
 import Layout from './components/Layout/Layout';
 import AgeGate from './components/Auth/AgeGate';
-import Login from './components/Auth/Login';
+import LoginRegister from './components/Auth/LoginRegister';
 import PhoneVerification from './components/Auth/PhoneVerification';
 import Home from './components/Home/Home';
 import Chat from './components/Chat/Chat';
@@ -70,11 +70,16 @@ const AppRoutes: React.FC = () => {
     return <AgeGate />;
   }
 
+  // Show login/register if no user is authenticated
+  if (!user) {
+    return <LoginRegister />;
+  }
+
   return (
     <Router>
       <Routes>
         {/* Public routes */}
-        <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
         
         {/* Static Pages */}
         <Route path="/about" element={

@@ -14,6 +14,20 @@ class StorageService {
     localStorage.removeItem('omegoo_token');
   }
 
+  // User data
+  setUser(user: any): void {
+    localStorage.setItem('omegoo_user', JSON.stringify(user));
+  }
+
+  getUser(): any {
+    const stored = localStorage.getItem('omegoo_user');
+    return stored ? JSON.parse(stored) : null;
+  }
+
+  removeUser(): void {
+    localStorage.removeItem('omegoo_user');
+  }
+
   // Terms acceptance
   setHasAcceptedTerms(accepted: boolean): void {
     localStorage.setItem('omegoo_terms_accepted', JSON.stringify(accepted));
@@ -140,6 +154,9 @@ class StorageService {
         sessionStorage.removeItem(key);
       }
     });
+    
+    // Explicitly remove user data
+    this.removeUser();
   }
 
   // Analytics opt-out

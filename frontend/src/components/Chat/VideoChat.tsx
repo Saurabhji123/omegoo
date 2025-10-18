@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
+import { useAuth } from '../../contexts/AuthContext';
 import WebRTCService from '../../services/webrtc';
 import { 
   VideoCameraIcon,
@@ -22,6 +23,7 @@ interface Message {
 const VideoChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
+  const { updateUser } = useAuth();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -154,8 +156,26 @@ const VideoChat: React.FC = () => {
     if (socket) {
       console.log('🔌 Setting up socket event listeners for VideoChat');
       
-      socket.on('match-found', async (data: { sessionId: string; matchUserId: string; isInitiator: boolean }) => {
+      socket.on('match-found', async (data: { 
+        sessionId: string; 
+        matchUserId: string; 
+        isInitiator: boolean;
+        coins?: number;
+        totalChats?: number;
+        dailyChats?: number;
+      }) => {
         console.log('📱 Video chat match found:', data);
+        
+        // Update user coins and chat counts from backend
+        if (data.coins !== undefined) {
+          updateUser({ 
+            coins: data.coins,
+            totalChats: data.totalChats || 0,
+            dailyChats: data.dailyChats || 0
+          });
+          console.log(`💰 Updated user: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
+        }
+        
         setSessionId(data.sessionId);
         setPartnerId(data.matchUserId); // Set partner ID
         setCurrentState('connected'); // Set state to connected
