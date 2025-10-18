@@ -12,10 +12,11 @@
 
 ### 1. **MongoDB Connection String** 
 ```
-mongodb+srv://omegoo_db_user:omegoo_pass@cluster0.fabck1e.mongodb.net/omegoo_db
+mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE
 ```
 **Risk Level:** CRITICAL
 **Exposure:** Public repository - anyone can access
+**Note:** Actual credentials have been removed from this document
 
 ### 2. **JWT Production Secrets**
 - JWT_SECRET

@@ -10,6 +10,8 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+.env.render
 RENDER_ENV_VARIABLES.txt
 *_ENV_VARIABLES.txt
 *.env.example
@@ -17,6 +19,7 @@ RENDER_ENV_VARIABLES.txt
 # Build outputs
 dist/
 build/
+static/
 *.tgz
 *.tar.gz
 

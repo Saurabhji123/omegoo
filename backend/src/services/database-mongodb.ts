@@ -240,10 +240,14 @@ export class DatabaseService {
 
     const mongoUri =
       process.env.MONGODB_URI ||
-      'mongodb+srv://omegoo_db_user:omegoo_pass@cluster0.fabck1e.mongodb.net/omegoo_db?retryWrites=true&w=majority';
+      'mongodb://localhost:27017/omegoo';
+
+    if (!process.env.MONGODB_URI) {
+      console.warn('⚠️ MONGODB_URI not set in environment variables. Using local MongoDB.');
+    }
 
     try {
-      console.log('🔌 Connecting to MongoDB Atlas...');
+      console.log('🔌 Connecting to MongoDB...');
       await mongoose.connect(mongoUri, {
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
