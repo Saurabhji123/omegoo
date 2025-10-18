@@ -25,10 +25,17 @@ const Home: React.FC = () => {
   };
 
   const handleStartChat = (mode: 'text' | 'audio' | 'video') => {
+    // Check if user is logged in
+    if (!user) {
+      // Redirect to login page
+      navigate('/login');
+      return;
+    }
+
     const cost = COIN_COSTS[mode];
     
     // Check if user has enough coins (frontend validation)
-    if (!user || (user.coins || 0) < cost) {
+    if ((user.coins || 0) < cost) {
       alert(`Not enough coins! You need ${cost} coin for ${mode} chat. You have ${user?.coins || 0} coins.`);
       return;
     }
@@ -62,11 +69,6 @@ const Home: React.FC = () => {
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
-  }
-
-  // Don't render if not authenticated
-  if (!user) {
-    return null;
   }
 
   if (isMatching) {

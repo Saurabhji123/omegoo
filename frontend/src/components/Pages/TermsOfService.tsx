@@ -184,10 +184,42 @@ const TermsOfService: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 5. Privacy and Data Protection */}
+                    {/* 5. Coin Economy System */}
                     <div className="mb-8">
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">5</span>
+                        <span className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">5</span>
+                        Coin Economy System
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          <strong className="text-white">Daily Coin Allocation:</strong> Every registered user receives <strong className="text-yellow-400">50 coins daily</strong>, automatically renewed at midnight (UTC).
+                        </p>
+                        <p>
+                          <strong className="text-white">Chat Session Cost:</strong> Each chat session (video, audio, or text) costs <strong className="text-yellow-400">1 coin</strong> to initiate. The coin is deducted when you start a new conversation.
+                        </p>
+                        
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                          <h4 className="font-bold text-yellow-800 dark:text-yellow-200 mb-2">💰 Coin System Rules</h4>
+                          <ul className="text-yellow-700 dark:text-yellow-300 text-sm space-y-2">
+                            <li>• <strong>Auto-Renewal:</strong> Coins automatically reset to 50 every day at midnight UTC</li>
+                            <li>• <strong>No Manual Claiming:</strong> Coins are added automatically; no need to claim them manually</li>
+                            <li>• <strong>No Rollover:</strong> Unused coins do not carry over to the next day</li>
+                            <li>• <strong>Free Service:</strong> All users get free daily coins; no purchase required</li>
+                            <li>• <strong>Login Required:</strong> You must be logged in to use coins and access chat features</li>
+                            <li>• <strong>Fair Usage:</strong> The coin system ensures fair distribution of chat opportunities across all users</li>
+                          </ul>
+                        </div>
+
+                        <p>
+                          <strong className="text-white">Anonymous Browsing:</strong> Guests can explore the platform, view pages, and learn about features without using coins. Login is required only when starting a chat session.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 6. Privacy and Data Protection */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">6</span>
                         Privacy and Data Protection  
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">
@@ -203,10 +235,10 @@ const TermsOfService: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 6. Safety and Moderation */}
+                    {/* 7. Safety and Moderation */}
                     <div className="mb-8">
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">6</span>
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">7</span>
                         Safety and Moderation
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">
@@ -233,10 +265,10 @@ const TermsOfService: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 7. Account Termination */}
+                    {/* 8. Account Termination */}
                     <div className="mb-8">
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">7</span>
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">8</span>
                         Account Termination
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">
@@ -252,10 +284,10 @@ const TermsOfService: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 8. Limitation of Liability */}
+                    {/* 9. Limitation of Liability */}
                     <div className="mb-8">
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">8</span>
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">9</span>
                         Limitation of Liability
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">
@@ -268,10 +300,10 @@ const TermsOfService: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 9. Changes to Terms */}
+                    {/* 10. Changes to Terms */}
                     <div className="mb-8">
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">9</span>
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">10</span>
                         Changes to Terms
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">
@@ -284,10 +316,10 @@ const TermsOfService: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 10. Contact Information */}
+                    {/* 11. Contact Information */}
                     <div className="mb-8">
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">10</span>
+                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">11</span>
                         Contact Information
                       </h3>
                       <div className="space-y-4 text-gray-700 dark:text-gray-300">

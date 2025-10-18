@@ -51,7 +51,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiresVerification
 
 // App Routes Component
 const AppRoutes: React.FC = () => {
-  const { user, hasAcceptedTerms, loading } = useAuth();
+  const { hasAcceptedTerms, loading } = useAuth();
 
   // Show loading spinner while initializing auth
   if (loading) {
@@ -70,18 +70,14 @@ const AppRoutes: React.FC = () => {
     return <AgeGate />;
   }
 
-  // Show login/register if no user is authenticated
-  if (!user) {
-    return <LoginRegister />;
-  }
-
+  // Allow browsing without login - login required only for chat features
   return (
     <Router>
       <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<Navigate to="/" replace />} />
+        {/* Login/Register route */}
+        <Route path="/login" element={<LoginRegister />} />
         
-        {/* Static Pages */}
+        {/* Static Pages - Public Access */}
         <Route path="/about" element={
           <Layout>
             <About />
@@ -108,13 +104,25 @@ const AppRoutes: React.FC = () => {
           </Layout>
         } />
         
-        {/* Protected routes */}
+        {/* Home - Public Access (No login required) */}
         <Route path="/" element={
-          <ProtectedRoute>
-            <Layout>
-              <Home />
-            </Layout>
-          </ProtectedRoute>
+          <Layout>
+            <Home />
+          </Layout>
+        } />
+        
+        {/* Profile - Public Access (Shows login option if not logged in) */}
+        <Route path="/profile" element={
+          <Layout>
+            <Profile />
+          </Layout>
+        } />
+        
+        {/* Settings - Public Access */}
+        <Route path="/settings" element={
+          <Layout>
+            <Settings />
+          </Layout>
         } />
         
         <Route path="/verify" element={
@@ -132,6 +140,7 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         } />
         
+        {/* Chat routes - Protected (Login required) */}
         <Route path="/chat/text" element={
           <ProtectedRoute>
             <TextChat />
@@ -150,23 +159,7 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Layout>
-              <Profile />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <Layout>
-              <Settings />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Admin routes */}
+        {/* Admin routes - Protected */}
         <Route path="/admin/*" element={
           <ProtectedRoute requiresVerification>
             <Admin />

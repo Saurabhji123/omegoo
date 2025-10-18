@@ -34,6 +34,72 @@ const Profile: React.FC = () => {
 
   const tierBadge = getTierBadge(user?.tier || 'guest');
 
+  // Anonymous user view
+  if (!user) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Profile</h1>
+        
+        {/* Anonymous Profile Card */}
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-6 sm:p-8 text-center">
+          <UserCircleIcon className="w-24 h-24 text-gray-400 mx-auto mb-4" />
+          
+          <h2 className="text-2xl font-bold text-white mb-2">Anonymous User</h2>
+          <p className="text-gray-300 mb-6">
+            You're currently browsing as a guest. Login or register to save your preferences and access all features.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <button
+              onClick={() => navigate('/login')}
+              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-medium rounded-lg transition-all shadow-lg"
+            >
+              Login / Register
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="w-full sm:w-auto px-6 py-3 bg-white bg-opacity-10 hover:bg-opacity-20 text-white font-medium rounded-lg transition-all border border-white border-opacity-20"
+            >
+              Continue Browsing
+            </button>
+          </div>
+        </div>
+
+        {/* Features Preview */}
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">What you'll get with an account:</h3>
+          
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3">
+              <CurrencyDollarIcon className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" />
+              <div>
+                <h4 className="font-medium text-white">50 Daily Coins</h4>
+                <p className="text-sm text-gray-300">Auto-renewed every day to chat with others</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <VideoCameraIcon className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+              <div>
+                <h4 className="font-medium text-white">Video, Audio & Text Chat</h4>
+                <p className="text-sm text-gray-300">Connect with people from around the world</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <ShieldCheckIcon className="w-6 h-6 text-green-400 flex-shrink-0 mt-1" />
+              <div>
+                <h4 className="font-medium text-white">Safe & Anonymous</h4>
+                <p className="text-sm text-gray-300">Your privacy is protected at all times</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Logged-in user view
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">

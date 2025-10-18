@@ -61,8 +61,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* User Info & Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* User Status */}
-              {user && (
+              {/* If logged in - show coins, if not - show login button */}
+              {user ? (
                 <div className="flex items-center space-x-2">
                   {user.isVerified && (
                     <span className="safety-badge">
@@ -79,6 +79,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {user.coins}
                   </div>
                 </div>
+              ) : (
+                <button
+                  onClick={() => navigate('/login')}
+                  className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all shadow-lg"
+                >
+                  Login / Register
+                </button>
               )}
 
               {/* Hamburger Menu */}
