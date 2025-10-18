@@ -104,7 +104,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
     } catch (error: any) {
       console.error('Failed to fetch dashboard data:', error);
       if (error.response?.status === 401) {
-        alert('Session expired. Please login again.');
+        window.alert('Session expired. Please login again.');
         onLogout();
       }
       setLoading(false);
@@ -120,16 +120,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
       );
 
       if (response.data.success) {
-        alert('Report status updated!');
+        window.alert('Report status updated!');
         fetchDashboardData();
       }
     } catch (error: any) {
-      alert('Failed to update report: ' + (error.response?.data?.error || 'Unknown error'));
+      window.alert('Failed to update report: ' + (error.response?.data?.error || 'Unknown error'));
     }
   };
 
   const handleUnbanUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to unban this user?')) return;
+    if (!window.confirm('Are you sure you want to unban this user?')) return;
 
     try {
       const response = await axios.post(
@@ -139,11 +139,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
       );
 
       if (response.data.success) {
-        alert('User unbanned successfully!');
+        window.alert('User unbanned successfully!');
         fetchDashboardData();
       }
     } catch (error: any) {
-      alert('Failed to unban user: ' + (error.response?.data?.error || 'Unknown error'));
+      window.alert('Failed to unban user: ' + (error.response?.data?.error || 'Unknown error'));
     }
   };
 
