@@ -45,11 +45,11 @@ const Profile: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Your Profile</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Your Profile</h1>
       
       {/* Profile Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex items-center space-x-6">
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
           <div className="relative">
             <UserCircleIcon className="w-24 h-24 text-gray-400" />
             <div className={`absolute -bottom-2 -right-2 ${tierBadge.color} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold`}>
@@ -57,21 +57,21 @@ const Profile: React.FC = () => {
             </div>
           </div>
           
-          <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
+          <div className="flex-1 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
               {isEditing ? (
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="text-xl font-bold bg-transparent border-b border-gray-400 focus:border-blue-500 outline-none"
+                  className="text-xl font-bold bg-transparent border-b border-gray-400 focus:border-blue-500 outline-none text-white text-center sm:text-left"
                   onBlur={() => setIsEditing(false)}
                   onKeyPress={(e) => e.key === 'Enter' && setIsEditing(false)}
                   autoFocus
                 />
               ) : (
                 <h2 
-                  className="text-xl font-bold text-gray-900 dark:text-white cursor-pointer hover:text-blue-500"
+                  className="text-xl font-bold text-white cursor-pointer hover:text-blue-400 transition-colors"
                   onClick={() => setIsEditing(true)}
                 >
                   {displayName}
@@ -82,11 +82,11 @@ const Profile: React.FC = () => {
               </span>
             </div>
             
-            <p className="text-gray-600 dark:text-gray-400 mb-2">
+            <p className="text-gray-300 mb-2 text-sm sm:text-base">
               Device ID: {user?.deviceId || 'Unknown'}
             </p>
             
-            <p className="text-sm text-gray-500 dark:text-gray-500">
+            <p className="text-sm text-gray-400">
               Joined: {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Today'}
             </p>
           </div>
@@ -94,87 +94,87 @@ const Profile: React.FC = () => {
       </div>
 
       {/* Statistics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-          <ChatBubbleLeftRightIcon className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalChats}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total Chats</div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
+          <ChatBubbleLeftRightIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 mx-auto mb-2" />
+          <div className="text-xl sm:text-2xl font-bold text-white">{stats.totalChats}</div>
+          <div className="text-xs sm:text-sm text-gray-300">Total Chats</div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-          <ClockIcon className="w-8 h-8 text-green-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatTime(stats.totalTime)}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Time Spent</div>
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
+          <ClockIcon className="w-6 h-6 sm:w-8 sm:h-8 text-green-400 mx-auto mb-2" />
+          <div className="text-xl sm:text-2xl font-bold text-white">{formatTime(stats.totalTime)}</div>
+          <div className="text-xs sm:text-sm text-gray-300">Time Spent</div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-          <FlagIcon className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.reportsMade}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Reports Made</div>
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
+          <FlagIcon className="w-6 h-6 sm:w-8 sm:h-8 text-orange-400 mx-auto mb-2" />
+          <div className="text-xl sm:text-2xl font-bold text-white">{stats.reportsMade}</div>
+          <div className="text-xs sm:text-sm text-gray-300">Reports Made</div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-          <ShieldCheckIcon className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.trustScore}%</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Trust Score</div>
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
+          <ShieldCheckIcon className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400 mx-auto mb-2" />
+          <div className="text-xl sm:text-2xl font-bold text-white">{stats.trustScore}%</div>
+          <div className="text-xs sm:text-sm text-gray-300">Trust Score</div>
         </div>
       </div>
 
       {/* Safety & Privacy */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Safety & Privacy</h3>
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Safety & Privacy</h3>
         
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-white bg-opacity-5 rounded-lg">
             <div>
-              <h4 className="font-medium text-gray-900 dark:text-white">Anonymous Mode</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Your identity is always protected</p>
+              <h4 className="font-medium text-white text-sm sm:text-base">Anonymous Mode</h4>
+              <p className="text-xs sm:text-sm text-gray-300">Your identity is always protected</p>
             </div>
-            <div className="text-green-500">
-              <ShieldCheckIcon className="w-6 h-6" />
+            <div className="text-green-400">
+              <ShieldCheckIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-white bg-opacity-5 rounded-lg">
             <div>
-              <h4 className="font-medium text-gray-900 dark:text-white">Age Verification</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Confirmed 18+ years old</p>
+              <h4 className="font-medium text-white text-sm sm:text-base">Age Verification</h4>
+              <p className="text-xs sm:text-sm text-gray-300">Confirmed 18+ years old</p>
             </div>
-            <div className="text-green-500">
-              <ShieldCheckIcon className="w-6 h-6" />
+            <div className="text-green-400">
+              <ShieldCheckIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-white bg-opacity-5 rounded-lg">
             <div>
-              <h4 className="font-medium text-gray-900 dark:text-white">Data Protection</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Conversations are not stored</p>
+              <h4 className="font-medium text-white text-sm sm:text-base">Data Protection</h4>
+              <p className="text-xs sm:text-sm text-gray-300">Conversations are not stored</p>
             </div>
-            <div className="text-green-500">
-              <ShieldCheckIcon className="w-6 h-6" />
+            <div className="text-green-400">
+              <ShieldCheckIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Account Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account</h3>
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Account</h3>
         
         <div className="space-y-3">
-          <button className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-            <div className="font-medium text-gray-900 dark:text-white">Change Display Name</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Update how others see you</div>
+          <button className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+            <div className="font-medium text-white text-sm sm:text-base">Change Display Name</div>
+            <div className="text-xs sm:text-sm text-gray-300">Update how others see you</div>
           </button>
 
-          <button className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-            <div className="font-medium text-gray-900 dark:text-white">Privacy Settings</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Manage your privacy preferences</div>
+          <button className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+            <div className="font-medium text-white text-sm sm:text-base">Privacy Settings</div>
+            <div className="text-xs sm:text-sm text-gray-300">Manage your privacy preferences</div>
           </button>
 
-          <button className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors text-red-600 dark:text-red-400">
-            <div className="font-medium">Delete Account</div>
-            <div className="text-sm">Permanently remove your account</div>
+          <button className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors text-red-400">
+            <div className="font-medium text-sm sm:text-base">Delete Account</div>
+            <div className="text-xs sm:text-sm">Permanently remove your account</div>
           </button>
         </div>
       </div>

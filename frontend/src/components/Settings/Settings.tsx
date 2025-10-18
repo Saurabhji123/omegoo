@@ -64,115 +64,115 @@ const Settings: React.FC = () => {
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Settings</h1>
+    <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-0">
+      <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Settings</h1>
 
       {/* Video & Audio Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
           <VideoCameraIcon className="w-5 h-5 mr-2" />
           Video & Audio
         </h2>
         
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <VideoCameraIcon className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">Camera</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Enable camera for video chats</div>
+            <div className="flex items-center space-x-3 flex-1">
+              <VideoCameraIcon className="w-5 h-5 text-gray-300" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-white text-sm sm:text-base">Camera</div>
+                <div className="text-xs sm:text-sm text-gray-300 truncate">Enable camera for video chats</div>
               </div>
             </div>
             <ToggleSwitch enabled={settings.cameraEnabled} onChange={(value) => updateSetting('cameraEnabled', value)} />
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <MicrophoneIcon className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">Microphone</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Enable microphone for audio</div>
+            <div className="flex items-center space-x-3 flex-1">
+              <MicrophoneIcon className="w-5 h-5 text-gray-300" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-white text-sm sm:text-base">Microphone</div>
+                <div className="text-xs sm:text-sm text-gray-300 truncate">Enable microphone for audio</div>
               </div>
             </div>
             <ToggleSwitch enabled={settings.micEnabled} onChange={(value) => updateSetting('micEnabled', value)} />
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <SpeakerWaveIcon className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">Speaker</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Enable audio output</div>
+            <div className="flex items-center space-x-3 flex-1">
+              <SpeakerWaveIcon className="w-5 h-5 text-gray-300" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-white text-sm sm:text-base">Speaker</div>
+                <div className="text-xs sm:text-sm text-gray-300 truncate">Enable audio output</div>
               </div>
             </div>
             <ToggleSwitch enabled={settings.speakerEnabled} onChange={(value) => updateSetting('speakerEnabled', value)} />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
             <div>
-              <div className="font-medium text-gray-900 dark:text-white">Video Quality</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Choose video quality preference</div>
+              <div className="font-medium text-white text-sm sm:text-base">Video Quality</div>
+              <div className="text-xs sm:text-sm text-gray-300">Choose video quality preference</div>
             </div>
             <select 
               value={settings.videoQuality}
               onChange={(e) => updateSetting('videoQuality', e.target.value)}
-              className="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2"
+              className="bg-white bg-opacity-10 border border-white border-opacity-30 rounded-lg px-3 py-2 text-white text-sm"
             >
-              <option value="low">Low (Data Saver)</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              <option value="low" className="bg-gray-800">Low (Data Saver)</option>
+              <option value="medium" className="bg-gray-800">Medium</option>
+              <option value="high" className="bg-gray-800">High</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Privacy & Safety */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
           <ShieldCheckIcon className="w-5 h-5 mr-2" />
           Privacy & Safety
         </h2>
         
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <UserGroupIcon className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">Allow Strangers</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Connect with random strangers</div>
+            <div className="flex items-center space-x-3 flex-1">
+              <UserGroupIcon className="w-5 h-5 text-gray-300" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-white text-sm sm:text-base">Allow Strangers</div>
+                <div className="text-xs sm:text-sm text-gray-300 truncate">Connect with random strangers</div>
               </div>
             </div>
             <ToggleSwitch enabled={settings.allowStrangers} onChange={(value) => updateSetting('allowStrangers', value)} />
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <ExclamationTriangleIcon className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">Auto-Report Suspicious Activity</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Automatically report inappropriate behavior</div>
+            <div className="flex items-center space-x-3 flex-1">
+              <ExclamationTriangleIcon className="w-5 h-5 text-gray-300" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-white text-sm sm:text-base">Auto-Report Suspicious Activity</div>
+                <div className="text-xs sm:text-sm text-gray-300 truncate">Automatically report inappropriate behavior</div>
               </div>
             </div>
             <ToggleSwitch enabled={settings.reportSuspicious} onChange={(value) => updateSetting('reportSuspicious', value)} />
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <EyeSlashIcon className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">Block Inappropriate Content</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">AI-powered content filtering</div>
+            <div className="flex items-center space-x-3 flex-1">
+              <EyeSlashIcon className="w-5 h-5 text-gray-300" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-white text-sm sm:text-base">Block Inappropriate Content</div>
+                <div className="text-xs sm:text-sm text-gray-300 truncate">AI-powered content filtering</div>
               </div>
             </div>
             <ToggleSwitch enabled={settings.blockInappropriate} onChange={(value) => updateSetting('blockInappropriate', value)} />
           </div>
 
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <div className="p-3 sm:p-4 bg-blue-500 bg-opacity-20 rounded-lg border border-blue-400 border-opacity-30">
             <div className="flex items-center space-x-3">
-              <ShieldCheckIcon className="w-5 h-5 text-blue-500" />
+              <ShieldCheckIcon className="w-5 h-5 text-blue-300" />
               <div>
-                <div className="font-medium text-blue-900 dark:text-blue-200">Age Verification Required</div>
-                <div className="text-sm text-blue-700 dark:text-blue-300">You must be 18+ to use Omegoo</div>
+                <div className="font-medium text-blue-200 text-sm sm:text-base">Age Verification Required</div>
+                <div className="text-xs sm:text-sm text-blue-300">You must be 18+ to use Omegoo</div>
               </div>
             </div>
           </div>
@@ -180,98 +180,58 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Notifications */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
           <BellIcon className="w-5 h-5 mr-2" />
           Notifications
         </h2>
         
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">Chat Notifications</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Get notified about new matches</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-white text-sm sm:text-base">Chat Notifications</div>
+              <div className="text-xs sm:text-sm text-gray-300 truncate">Get notified about new matches</div>
             </div>
             <ToggleSwitch enabled={settings.chatNotifications} onChange={(value) => updateSetting('chatNotifications', value)} />
           </div>
 
           <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">System Notifications</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Updates and system messages</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-white text-sm sm:text-base">System Notifications</div>
+              <div className="text-xs sm:text-sm text-gray-300 truncate">Updates and system messages</div>
             </div>
             <ToggleSwitch enabled={settings.systemNotifications} onChange={(value) => updateSetting('systemNotifications', value)} />
           </div>
 
           <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">Sound Effects</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Play sounds for notifications</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-white text-sm sm:text-base">Sound Effects</div>
+              <div className="text-xs sm:text-sm text-gray-300 truncate">Play sounds for notifications</div>
             </div>
             <ToggleSwitch enabled={settings.soundEnabled} onChange={(value) => updateSetting('soundEnabled', value)} />
           </div>
         </div>
       </div>
 
-      {/* Appearance */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <SunIcon className="w-5 h-5 mr-2" />
-          Appearance
-        </h2>
-        
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <MoonIcon className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">Dark Mode</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Switch to dark theme</div>
-              </div>
-            </div>
-            <ToggleSwitch enabled={settings.darkMode} onChange={(value) => updateSetting('darkMode', value)} />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">Language</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Choose your preferred language</div>
-            </div>
-            <select 
-              value={settings.language}
-              onChange={(e) => updateSetting('language', e.target.value)}
-              className="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2"
-            >
-              <option value="en">English</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
-              <option value="de">Deutsch</option>
-              <option value="it">Italiano</option>
-              <option value="pt">Português</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
       {/* Matching Preferences */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Matching Preferences</h2>
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Matching Preferences</h2>
         
         <div className="space-y-4">
           <div>
-            <div className="font-medium text-gray-900 dark:text-white mb-2">Default Chat Mode</div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="font-medium text-white mb-2 text-sm sm:text-base">Default Chat Mode</div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {['text', 'video', 'audio'].map((mode) => (
                 <button
                   key={mode}
                   onClick={() => updateSetting('matchingMode', mode)}
-                  className={`p-3 rounded-lg border-2 transition-colors ${
+                  className={`p-2 sm:p-3 rounded-lg border-2 transition-colors ${
                     settings.matchingMode === mode
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                      ? 'border-blue-400 bg-blue-500 bg-opacity-20'
+                      : 'border-white border-opacity-30 hover:border-opacity-50'
                   }`}
                 >
-                  <div className="font-medium text-gray-900 dark:text-white capitalize">{mode}</div>
+                  <div className="font-medium text-white capitalize text-sm sm:text-base">{mode}</div>
                 </button>
               ))}
             </div>
@@ -280,12 +240,12 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Save Button */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors">
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
+        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors text-sm sm:text-base">
           Save Settings
         </button>
         
-        <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
+        <p className="text-xs sm:text-sm text-gray-300 text-center mt-2">
           Changes are saved automatically
         </p>
       </div>

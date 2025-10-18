@@ -37,39 +37,39 @@ const TermsOfService: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative bg-white dark:bg-gray-900">
+      <div className="relative">
         {/* Core Principles */}
-        <div className="py-12 sm:py-16 lg:py-20">
+        <div className="py-8 sm:py-12 lg:py-16">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                <div className="bg-gradient-to-br from-blue-50 to-primary-50 dark:from-blue-900/30 dark:to-primary-900/30 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-primary-500 rounded-lg flex items-center justify-center mb-4">
-                    <ShieldCheckIcon className="w-6 h-6 text-white" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 sm:p-6 rounded-xl border border-white border-opacity-20">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-primary-500 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
+                    <ShieldCheckIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-2">Safety First</h3>
-                  <p className="text-blue-700 dark:text-blue-300 text-sm">Zero tolerance for harassment, abuse, or harmful content</p>
+                  <h3 className="font-bold text-white mb-2 text-sm sm:text-base">Safety First</h3>
+                  <p className="text-gray-200 text-xs sm:text-sm">Zero tolerance for harassment, abuse, or harmful content</p>
                 </div>
-                <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 p-6 rounded-xl border border-purple-200 dark:border-purple-800">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
-                    <UserGroupIcon className="w-6 h-6 text-white" />
+                <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 sm:p-6 rounded-xl border border-white border-opacity-20">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
+                    <UserGroupIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <h3 className="font-bold text-purple-900 dark:text-purple-100 mb-2">Respectful Community</h3>
-                  <p className="text-purple-700 dark:text-purple-300 text-sm">Treating all users with dignity and kindness</p>
+                  <h3 className="font-bold text-white mb-2 text-sm sm:text-base">Respectful Community</h3>
+                  <p className="text-gray-200 text-xs sm:text-sm">Treating all users with dignity and kindness</p>
                 </div>
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 p-6 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center mb-4">
-                    <DocumentTextIcon className="w-6 h-6 text-white" />
+                <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 sm:p-6 rounded-xl border border-white border-opacity-20">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
+                    <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <h3 className="font-bold text-emerald-900 dark:text-emerald-100 mb-2">Clear Guidelines</h3>
-                  <p className="text-emerald-700 dark:text-emerald-300 text-sm">Transparent rules that protect everyone's experience</p>
+                  <h3 className="font-bold text-white mb-2 text-sm sm:text-base">Clear Guidelines</h3>
+                  <p className="text-gray-200 text-xs sm:text-sm">Transparent rules that protect everyone's experience</p>
                 </div>
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 p-6 rounded-xl border border-orange-200 dark:border-orange-800">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center mb-4">
-                    <ExclamationTriangleIcon className="w-6 h-6 text-white" />
+                <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 sm:p-6 rounded-xl border border-white border-opacity-20">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
+                    <ExclamationTriangleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <h3 className="font-bold text-orange-900 dark:text-orange-100 mb-2">Fair Enforcement</h3>
-                  <p className="text-orange-700 dark:text-orange-300 text-sm">Consistent application of rules with appeals process</p>
+                  <h3 className="font-bold text-white mb-2 text-sm sm:text-base">Fair Enforcement</h3>
+                  <p className="text-gray-200 text-xs sm:text-sm">Consistent application of rules with appeals process</p>
                 </div>
               </div>
             </div>
@@ -77,24 +77,24 @@ const TermsOfService: React.FC = () => {
         </div>
 
         {/* Terms Content */}
-        <div className="py-12 bg-gray-50 dark:bg-gray-800">
+        <div className="py-8 sm:py-12">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="p-8 sm:p-12">
-                  <div className="flex items-center mb-8">
-                    <div className="w-2 h-8 bg-gradient-to-b from-primary-500 to-blue-500 rounded-full mr-4"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-white">Comprehensive Terms of Service</h2>
+              <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl border border-white border-opacity-20 overflow-hidden">
+                <div className="p-6 sm:p-8 lg:p-12">
+                  <div className="flex items-center mb-6 sm:mb-8">
+                    <div className="w-2 h-6 sm:h-8 bg-gradient-to-b from-primary-400 to-blue-400 rounded-full mr-3 sm:mr-4"></div>
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Comprehensive Terms of Service</h2>
                   </div>
                   
-                  <div className="prose prose-lg max-w-none dark:prose-invert">
+                  <div className="prose prose-sm sm:prose-lg max-w-none">
                     {/* 1. Acceptance of Terms */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">1</span>
+                    <div className="mb-6 sm:mb-8">
+                      <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4 flex items-center">
+                        <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-primary-400 to-blue-400 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold mr-2 sm:mr-3">1</span>
                         Acceptance of Terms
                       </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                      <div className="space-y-3 sm:space-y-4 text-gray-200 text-sm sm:text-base">
                         <p>
                           By accessing or using Omegoo ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, you may not access the Service.
                         </p>
