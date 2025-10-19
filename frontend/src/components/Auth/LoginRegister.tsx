@@ -46,8 +46,32 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
   };
 
   const handleGoogleLogin = async () => {
-    // TODO: Implement Google OAuth
-    window.alert('Google login coming soon!');
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Simple Google OAuth flow using popup
+      // In production, you'd use Google OAuth library or redirect flow
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID'}` +
+        `&redirect_uri=${encodeURIComponent(window.location.origin + '/auth/google/callback')}` +
+        `&response_type=token` +
+        `&scope=email profile`;
+      
+      // For now, show instruction message
+      window.alert(
+        'Google Login Setup:\n\n' +
+        '1. Get Google OAuth credentials from console.cloud.google.com\n' +
+        '2. Add VITE_GOOGLE_CLIENT_ID to .env file\n' +
+        '3. Configure authorized redirect URIs\n\n' +
+        'Meanwhile, you can use Email/Password registration!'
+      );
+      
+    } catch (err: any) {
+      setError('Google login failed. Please try email/password instead.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

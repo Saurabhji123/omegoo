@@ -344,23 +344,35 @@ router.post('/google', async (req, res) => {
       });
     }
 
+    // Extract username from email (part before @)
+    const autoUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+
     // Find or create user
     let user = await DatabaseService.getUserByEmail(email);
 
     if (!user) {
-      // Create new user from Google
+      // Create new user from Google OAuth
+      console.log('🆕 Creating new Google OAuth user:', email);
+      
       user = await DatabaseService.createUser({
         email,
-        username: name || email.split('@')[0],
+        username: name || autoUsername, // Use Google name or auto-generated username
+        passwordHash: undefined, // No password for OAuth users
         tier: 'guest',
         status: 'active',
         isVerified: true, // Google accounts are pre-verified
         coins: 50,
+        totalChats: 0,
+        dailyChats: 0,
+        lastCoinClaim: new Date(),
         deviceId: `google-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         preferences: {
-          avatar: picture
+          avatar: picture,
+          authProvider: 'google'
         }
       });
+      
+      console.log('✅ Google OAuth user created:', { id: user.id, email: user.email, username: user.username });
     } else {
       // Check if user is banned
       const banStatus = await DatabaseService.checkUserBanStatus(user.id);
@@ -377,7 +389,11 @@ router.post('/google', async (req, res) => {
         });
       }
 
-      // Update last active
+      // Update last active & daily coin reset check
+      const updatedUser = await checkAndResetDailyCoins(user.id);
+      if (updatedUser) {
+        user = updatedUser;
+      }
       await DatabaseService.updateUser(user.id, {
         lastActiveAt: new Date()
       });
@@ -611,10 +627,84 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 /**
+ * Change Password
+ * POST /api/auth/change-password
+ */
+router.post('/change-password', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated'
+      });
+    }
+
+    // Validation
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'New password must be at least 6 characters'
+      });
+    }
+
+    // Get user
+    const user = await DatabaseService.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // If user has existing password (not OAuth user), verify current password
+    if (user.passwordHash) {
+      if (!currentPassword) {
+        return res.status(400).json({
+          success: false,
+          error: 'Current password is required'
+        });
+      }
+
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isPasswordValid) {
+        return res.status(400).json({
+          success: false,
+          error: 'Current password is incorrect'
+        });
+      }
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await DatabaseService.updateUser(userId, {
+      passwordHash: newPasswordHash
+    });
+
+    console.log('✅ Password changed for user:', userId);
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully'
+    });
+  } catch (error) {
+    console.error('❌ Change password error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to change password'
+    });
+  }
+});
+
+/**
  * Logout
  * POST /api/auth/logout
  */
-router.post('/logout', (req, res) => {
+router.post('/logout', authMiddleware, async (req, res) => {
   res.json({
     success: true,
     message: 'Logged out successfully'
