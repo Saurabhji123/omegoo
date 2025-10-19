@@ -18,13 +18,40 @@ export class SocketService {
   static initialize(io: SocketIOServer) {
     this.io = io;
 
-    // Authentication middleware - simplified for development
+    // Authentication middleware - check JWT token first
     io.use(async (socket: AuthenticatedSocket, next) => {
       console.log(`🔐 Socket auth attempt from: ${socket.handshake.address} with origin: ${socket.handshake.headers.origin}`);
       const token = socket.handshake.auth.token;
       console.log(`🔑 Token received: ${token ? 'YES' : 'NO'}`);
       
-      // For development - always create guest user to avoid auth issues
+      // Try to verify JWT token first
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+          console.log(`✅ JWT verified for user: ${decoded.userId || decoded.id}`);
+          
+          // Use real user ID from token
+          socket.userId = decoded.userId || decoded.id;
+          
+          // Fetch user data from database
+          try {
+            const userData = await DatabaseService.getUserById(socket.userId);
+            if (userData) {
+              socket.user = userData;
+              console.log(`✅ Authenticated user: ${userData.username} (${socket.userId})`);
+              return next();
+            } else {
+              console.log(`⚠️ Token valid but user not found in DB: ${socket.userId}`);
+            }
+          } catch (dbError) {
+            console.error(`❌ Database error fetching user:`, dbError);
+          }
+        } catch (error) {
+          console.log(`⚠️ JWT verification failed:`, error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
+      
+      // Fallback: Create guest user for development/testing
       const guestId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       socket.userId = guestId;
       socket.user = {
@@ -46,7 +73,7 @@ export class SocketService {
         updatedAt: new Date(),
         lastActiveAt: new Date()
       };
-      console.log(`🔓 Dev user created: ${guestId}`);
+      console.log(`🔓 Guest user created: ${guestId}`);
       next();
     });
 
