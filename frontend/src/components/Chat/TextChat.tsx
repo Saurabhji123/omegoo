@@ -75,14 +75,14 @@ const TextChat: React.FC = () => {
     }) => {
       console.log('💬 Text chat match found:', data);
       
-      // Update user coins and chat counts from backend
+      // Update user coins and chat counts from backend response
       if (data.coins !== undefined) {
         updateUser({ 
           coins: data.coins,
           totalChats: data.totalChats || 0,
           dailyChats: data.dailyChats || 0
         });
-        console.log(`💰 Updated user: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
+        console.log(`💰 Updated user coins: ${data.coins}, totalChats: ${data.totalChats}, dailyChats: ${data.dailyChats}`);
       }
       
       setSessionId(data.sessionId);
