@@ -70,8 +70,19 @@ const checkAndResetDailyCoins = async (userId: string) => {
     const now = new Date();
     const lastReset = user.lastCoinClaim ? new Date(user.lastCoinClaim) : null;
 
-    // Check if it's a new day (date changed)
-    const isNewDay = !lastReset || lastReset.toDateString() !== now.toDateString();
+    // MIGRATION: If user doesn't have lastCoinClaim, set it to today without resetting coins
+    if (!lastReset) {
+      console.log('🔧 Migration: Setting lastCoinClaim for existing user:', userId);
+      await DatabaseService.updateUser(userId, {
+        lastCoinClaim: now,
+        totalChats: user.totalChats || 0,
+        dailyChats: user.dailyChats || 0
+      });
+      return await DatabaseService.getUserById(userId);
+    }
+
+    // Check if it's a new day (date changed at 12 AM)
+    const isNewDay = lastReset.toDateString() !== now.toDateString();
 
     if (isNewDay) {
       // Automatic reset: Set coins to 50 regardless of current balance
@@ -80,7 +91,7 @@ const checkAndResetDailyCoins = async (userId: string) => {
       await DatabaseService.updateUser(userId, {
         coins: DAILY_COINS,
         lastCoinClaim: now,
-        dailyChats: 0 // Reset daily chats counter
+        dailyChats: 0 // Reset daily chats counter (keep totalChats unchanged)
       });
 
       console.log('🔄 Auto-reset daily coins:', { 
@@ -167,6 +178,9 @@ router.post('/register', async (req, res) => {
       status: 'active',
       isVerified: false,
       coins: 50, // Welcome bonus
+      lastCoinClaim: new Date(), // Set initial claim date to prevent auto-reset
+      totalChats: 0, // Initialize chat counters
+      dailyChats: 0,
       deviceId: `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     });
 
