@@ -236,6 +236,26 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       window.location.href = '/banned';
     });
 
+    // Insufficient coins event
+    socket.on('insufficient-coins', (data: { required: number; current: number; message: string }) => {
+      console.log('❌ Insufficient coins:', data);
+      alert(`Not enough coins! You need ${data.required} coins but have ${data.current} coins. Get more coins tomorrow!`);
+      dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
+    });
+
+    // Match retry event (when partner has insufficient coins)
+    socket.on('match-retry', (data: { message: string }) => {
+      console.log('🔄 Match retry:', data);
+      dispatch({ type: 'SET_MATCHING_STATUS', payload: 'searching' });
+      // Automatically retry matching
+      setTimeout(() => {
+        if (state.socket && state.socket.connected) {
+          console.log('🔄 Retrying match...');
+          state.socket.emit('find_match', { mode: 'video' });
+        }
+      }, 1000);
+    });
+
     dispatch({ type: 'SET_SOCKET', payload: socket });
   };
 
