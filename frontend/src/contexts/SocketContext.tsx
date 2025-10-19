@@ -82,15 +82,21 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const { user, token } = useAuth();
 
   useEffect(() => {
-    // For development, always connect once (guest mode enabled on backend)
-    connect();
+    // Connect when component mounts or when token changes (user logs in/out)
+    if (token) {
+      console.log('🔐 User logged in, connecting socket with real token');
+      connect();
+    } else {
+      console.log('👤 No token, connecting as guest');
+      connect();
+    }
 
     return () => {
       if (state.socket) {
         state.socket.disconnect();
       }
     };
-  }, []); // No dependencies - connect only once
+  }, [token]); // Re-connect when token changes (login/logout)
 
   const connect = () => {
     if (state.socket && state.socket.connected) {
@@ -147,7 +153,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const socket = io(backendUrl, {
       auth: {
-        token: 'dev-token'  // Simple token for development
+        token: token || 'dev-guest-token'  // Use REAL JWT token from AuthContext
       },
       transports: ['polling', 'websocket'],
       timeout: 15000,
@@ -241,6 +247,13 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       console.log('❌ Insufficient coins:', data);
       alert(`Not enough coins! You need ${data.required} coins but have ${data.current} coins. Get more coins tomorrow!`);
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
+    });
+
+    // NEW: Listen for stats updates and sync with AuthContext
+    socket.on('stats-update', (data: { coins: number; totalChats: number; dailyChats: number }) => {
+      console.log('📊 STATS UPDATE RECEIVED:', data);
+      // Trigger a custom event that AuthContext or components can listen to
+      window.dispatchEvent(new CustomEvent('user-stats-update', { detail: data }));
     });
 
     // Match retry event (when partner has insufficient coins)

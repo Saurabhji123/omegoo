@@ -9,6 +9,21 @@ const Home: React.FC = () => {
   const { user, updateUser, loading } = useAuthContext();
   const { darkMode } = useTheme();
   const navigate = useNavigate();
+  const [, forceUpdate] = useState({});
+
+  // Listen for real-time stats updates
+  useEffect(() => {
+    const handleStatsUpdate = (event: any) => {
+      console.log('🏠 Home received stats update:', event.detail);
+      forceUpdate({}); // Force re-render to show updated coins
+    };
+    
+    window.addEventListener('user-stats-update', handleStatsUpdate);
+    
+    return () => {
+      window.removeEventListener('user-stats-update', handleStatsUpdate);
+    };
+  }, []);
 
   // No redirect - allow browsing without login
   // User will be prompted to login when clicking chat buttons

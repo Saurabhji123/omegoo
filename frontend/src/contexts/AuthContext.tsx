@@ -100,6 +100,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!isInitializing) {
       initializeAuth();
     }
+    
+    // Listen for stats updates from socket
+    const handleStatsUpdate = (event: any) => {
+      const stats = event.detail;
+      console.log('🔔 AuthContext received stats update:', stats);
+      dispatch({ 
+        type: 'UPDATE_USER', 
+        payload: {
+          coins: stats.coins,
+          totalChats: stats.totalChats,
+          dailyChats: stats.dailyChats
+        }
+      });
+    };
+    
+    window.addEventListener('user-stats-update', handleStatsUpdate);
+    
+    return () => {
+      window.removeEventListener('user-stats-update', handleStatsUpdate);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

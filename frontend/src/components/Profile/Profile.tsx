@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -12,6 +12,21 @@ import {
 const Profile: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [, forceUpdate] = useState({});
+
+  // Listen for real-time stats updates
+  useEffect(() => {
+    const handleStatsUpdate = (event: any) => {
+      console.log('👤 Profile received stats update:', event.detail);
+      forceUpdate({}); // Force re-render to show updated stats
+    };
+    
+    window.addEventListener('user-stats-update', handleStatsUpdate);
+    
+    return () => {
+      window.removeEventListener('user-stats-update', handleStatsUpdate);
+    };
+  }, []);
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
