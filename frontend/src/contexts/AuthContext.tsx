@@ -289,13 +289,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const response = await authAPI.getCurrentUser();
-      if (response) {
+      if (response && response.user) {
         console.log('✅ Fresh user data received:', {
-          coins: response.coins,
-          totalChats: response.totalChats,
-          dailyChats: response.dailyChats
+          username: response.user.username,
+          email: response.user.email,
+          coins: response.user.coins,
+          totalChats: response.user.totalChats,
+          dailyChats: response.user.dailyChats
         });
-        dispatch({ type: 'SET_USER', payload: response });
+        dispatch({ type: 'SET_USER', payload: response.user });
       }
     } catch (error) {
       console.error('❌ Failed to refresh user data:', error);
