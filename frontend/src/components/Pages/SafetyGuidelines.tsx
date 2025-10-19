@@ -355,7 +355,7 @@ const SafetyGuidelines: React.FC = () => {
                           <div className="bg-indigo-100 dark:bg-indigo-800/30 rounded-lg p-4">
                             <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 text-sm mb-2">📧 After Chat</h4>
                             <p className="text-indigo-700 dark:text-indigo-300 text-sm">
-                              Email <strong>safety@omegoo.com</strong> with details about the incident for follow-up investigation.
+                              Email <strong>omegoochat@gmail.com</strong> with details about the incident for follow-up investigation.
                             </p>
                           </div>
                         </div>
@@ -433,7 +433,7 @@ const SafetyGuidelines: React.FC = () => {
                               <span className="font-semibold text-emerald-800 dark:text-emerald-200">Safety Support</span>
                             </div>
                             <p className="text-emerald-700 dark:text-emerald-300 text-sm">
-                              <strong>safety@omegoo.com</strong><br />
+                              <strong>omegoochat@gmail.com</strong><br />
                               24/7 response for urgent safety concerns and incident reports
                             </p>
                           </div>
@@ -446,7 +446,7 @@ const SafetyGuidelines: React.FC = () => {
                               <span className="font-semibold text-teal-800 dark:text-teal-200">General Support</span>
                             </div>
                             <p className="text-teal-700 dark:text-teal-300 text-sm">
-                              <strong>support@omegoo.com</strong><br />
+                              <strong>omegoochat@gmail.com</strong><br />
                               Questions, feedback, and general assistance
                             </p>
                           </div>

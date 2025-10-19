@@ -1035,7 +1035,7 @@ const PrivacyPolicy: React.FC = () => {
                         </div>
                         <p className="text-green-700 dark:text-green-300 text-sm">
                           If you believe a minor is accessing our platform, please contact us immediately at 
-                          <span className="font-semibold"> safety@omegoo.com</span> for investigation.
+                          <span className="font-semibold"> omegoochat@gmail.com</span> for investigation.
                         </p>
                       </div>
                     </div>
@@ -1078,7 +1078,7 @@ const PrivacyPolicy: React.FC = () => {
                               <span className="font-semibold text-blue-800 dark:text-blue-200">Privacy Questions</span>
                             </div>
                             <p className="text-blue-700 dark:text-blue-300 text-sm">
-                              <strong>privacy@omegoo.com</strong><br />
+                              <strong>omegoochat@gmail.com</strong><br />
                               For privacy policy questions and data inquiries
                             </p>
                           </div>
@@ -1091,7 +1091,7 @@ const PrivacyPolicy: React.FC = () => {
                               <span className="font-semibold text-red-800 dark:text-red-200">Safety & Abuse</span>
                             </div>
                             <p className="text-red-700 dark:text-red-300 text-sm">
-                              <strong>safety@omegoo.com</strong><br />
+                              <strong>omegoochat@gmail.com</strong><br />
                               Report violations, abuse, or safety concerns
                             </p>
                           </div>
@@ -1104,7 +1104,7 @@ const PrivacyPolicy: React.FC = () => {
                               <span className="font-semibold text-green-800 dark:text-green-200">General Support</span>
                             </div>
                             <p className="text-green-700 dark:text-green-300 text-sm">
-                              <strong>support@omegoo.com</strong><br />
+                              <strong>omegoochat@gmail.com</strong><br />
                               Technical issues and general inquiries
                             </p>
                           </div>

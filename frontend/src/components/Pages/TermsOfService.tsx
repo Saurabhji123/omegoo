@@ -143,6 +143,65 @@ const TermsOfService: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* 3.5. Data Collection and Privacy */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3">3.5</span>
+                        Data Collection and Privacy
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                          <h4 className="font-bold text-green-800 dark:text-green-200 mb-3">🔒 Your Data, Your Privacy</h4>
+                          
+                          <div className="space-y-3">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
+                              <h5 className="font-semibold text-green-800 dark:text-green-200 text-sm mb-2">What We Collect</h5>
+                              <p className="text-green-700 dark:text-green-300 text-sm">
+                                We collect <strong>only the essential information</strong> required for authentication:
+                              </p>
+                              <ul className="text-green-700 dark:text-green-300 text-xs space-y-1 mt-2 ml-4">
+                                <li>• Email address (for account creation and login)</li>
+                                <li>• Username (for display purposes)</li>
+                                <li>• Password (encrypted and never shared)</li>
+                              </ul>
+                            </div>
+
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
+                              <h5 className="font-semibold text-blue-800 dark:text-blue-200 text-sm mb-2">What We DON'T Share</h5>
+                              <p className="text-blue-700 dark:text-blue-300 text-sm font-bold">
+                                ⚠️ ZERO data is shared with other users during chat sessions!
+                              </p>
+                              <ul className="text-blue-700 dark:text-blue-300 text-xs space-y-1 mt-2 ml-4">
+                                <li>✓ Your email is NEVER visible to chat partners</li>
+                                <li>✓ Your username is NEVER shared with strangers</li>
+                                <li>✓ All chats are completely anonymous</li>
+                                <li>✓ No personal data is exposed during conversations</li>
+                              </ul>
+                            </div>
+
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
+                              <h5 className="font-semibold text-purple-800 dark:text-purple-200 text-sm mb-2">How We Use Your Data</h5>
+                              <p className="text-purple-700 dark:text-purple-300 text-sm">
+                                Your data is used <strong>exclusively</strong> for:
+                              </p>
+                              <ul className="text-purple-700 dark:text-purple-300 text-xs space-y-1 mt-2 ml-4">
+                                <li>• Account authentication and login verification</li>
+                                <li>• Sending important account notifications</li>
+                                <li>• Tracking your coin balance and chat statistics</li>
+                                <li>• Ensuring platform security and preventing abuse</li>
+                              </ul>
+                            </div>
+
+                            <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-3 border border-indigo-300 dark:border-indigo-700">
+                              <p className="text-indigo-800 dark:text-indigo-200 text-sm font-semibold">
+                                🛡️ <strong>Anonymous by Design:</strong> When you chat with strangers, they see NOTHING about you - no email, no username, no personal information. Your identity remains completely private.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* 4. User Conduct and Community Guidelines */}
                     <div className="mb-8">
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center">
@@ -329,12 +388,12 @@ const TermsOfService: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                             <p>
-                              <strong className="text-white">General Inquiries:</strong> support@omegoo.com
+                              <strong className="text-white">General Inquiries:</strong> omegoochat@gmail.com
                             </p>
                           </div>
                           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                             <p>
-                              <strong className="text-white">Safety Reports:</strong> safety@omegoo.com
+                              <strong className="text-white">Safety Reports:</strong> omegoochat@gmail.com
                             </p>
                           </div>
                         </div>
@@ -349,7 +408,7 @@ const TermsOfService: React.FC = () => {
                     <strong className="text-white">Legal Disclaimer:</strong> These terms are governed by applicable law and jurisdiction requirements.
                   </p>
                   <p>
-                    <strong className="text-white">Safety Concerns:</strong> Contact us at safety@omegoo.com
+                    <strong className="text-white">Safety Concerns:</strong> Contact us at omegoochat@gmail.com
                   </p>
                   <p>
                     <strong className="text-white">Terms Updates:</strong> We may update these terms from time to time. Continued use of the service constitutes acceptance of updated terms.

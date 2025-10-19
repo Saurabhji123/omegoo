@@ -10,9 +10,17 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Profile: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [, forceUpdate] = useState({});
+
+  // Fetch fresh user data when profile loads
+  useEffect(() => {
+    console.log('🔄 Profile loaded - refreshing user data from database');
+    if (refreshUser) {
+      refreshUser();
+    }
+  }, [refreshUser]);
 
   // Listen for real-time stats updates
   useEffect(() => {

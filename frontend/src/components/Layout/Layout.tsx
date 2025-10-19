@@ -342,7 +342,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </li>
                 <li>
                   <a 
-                    href="mailto:support@omegoo.com" 
+                    href="mailto:omegoochat@gmail.com" 
                     className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                   >
                     Report Issue

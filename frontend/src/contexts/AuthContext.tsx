@@ -45,6 +45,7 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   verifyPhone: (phone: string, otp: string) => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
   acceptTerms: () => void;
 }
 
@@ -278,6 +279,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     console.log('✅ UPDATE_USER action dispatched');
   };
 
+  const refreshUser = async () => {
+    try {
+      console.log('🔄 Refreshing user data from database...');
+      const token = storageService.getToken();
+      if (!token) {
+        console.log('⚠️ No token found, skipping refresh');
+        return;
+      }
+
+      const response = await authAPI.getCurrentUser();
+      if (response) {
+        console.log('✅ Fresh user data received:', {
+          coins: response.coins,
+          totalChats: response.totalChats,
+          dailyChats: response.dailyChats
+        });
+        dispatch({ type: 'SET_USER', payload: response });
+      }
+    } catch (error) {
+      console.error('❌ Failed to refresh user data:', error);
+    }
+  };
+
   const acceptTerms = () => {
     storageService.setHasAcceptedTerms(true);
     dispatch({ type: 'ACCEPT_TERMS' });
@@ -291,6 +315,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logout,
     verifyPhone,
     updateUser,
+    refreshUser,
     acceptTerms
   };
 
