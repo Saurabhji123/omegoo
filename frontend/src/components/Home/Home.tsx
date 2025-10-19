@@ -10,13 +10,8 @@ const Home: React.FC = () => {
   const { darkMode } = useTheme();
   const navigate = useNavigate();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      console.log('❌ User not authenticated, redirecting to login');
-      navigate('/login');
-    }
-  }, [user, loading, navigate]);
+  // No redirect - allow browsing without login
+  // User will be prompted to login when clicking chat buttons
 
   const COIN_COSTS = {
     text: 1,
@@ -27,8 +22,9 @@ const Home: React.FC = () => {
   const handleStartChat = (mode: 'text' | 'audio' | 'video') => {
     // Check if user is logged in
     if (!user) {
-      // Redirect to login page
-      navigate('/login');
+      // Redirect to login page with return URL
+      console.log('🔒 User not logged in, redirecting to login...');
+      navigate('/login', { state: { returnTo: '/', chatMode: mode } });
       return;
     }
 
@@ -115,38 +111,51 @@ const Home: React.FC = () => {
           Connect with interesting people from around the world
         </p>
         
-        {/* User Status & Coins */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-          <div className="inline-flex items-center bg-white bg-opacity-10 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-white border-opacity-30">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-xs sm:text-sm font-medium text-white">
-                {user?.tier === 'guest' ? 'Guest User' : 'Verified User'}
-              </span>
-              {user?.isVerified && (
-                <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              )}
+        {/* User Status & Coins - Only show if logged in */}
+        {user ? (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+            <div className="inline-flex items-center bg-white bg-opacity-10 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-white border-opacity-30">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-xs sm:text-sm font-medium text-white">
+                  {user?.tier === 'guest' ? 'Guest User' : 'Verified User'}
+                </span>
+                {user?.isVerified && (
+                  <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Coins Display */}
-          <div className="inline-flex items-center bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full px-4 sm:px-6 py-2 sm:py-3 border-2 border-yellow-400 shadow-lg">
-            <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-              </svg>
-              <span className="text-sm sm:text-base font-bold text-white">
-                {user?.coins || 0} Coins
-              </span>
-            </div>
-            <div className="text-xs text-gray-300 mt-2">
-              🔄 Auto-resets to 50 coins daily at 12 AM
+            {/* Coins Display */}
+            <div className="inline-flex items-center bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full px-4 sm:px-6 py-2 sm:py-3 border-2 border-yellow-400 shadow-lg">
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm sm:text-base font-bold text-white">
+                  {user?.coins || 0} Coins
+                </span>
+              </div>
+              <div className="text-xs text-gray-300 mt-2">
+                🔄 Auto-resets to 50 coins daily at 12 AM
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="mb-6">
+            <div className="inline-flex items-center bg-blue-500 bg-opacity-20 backdrop-blur-md rounded-full px-6 py-3 border border-blue-400 border-opacity-50 shadow-lg">
+              <svg className="w-5 h-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm text-white font-medium">
+                👋 Welcome! Login to start chatting and get 50 free coins daily
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Chat Options */}
@@ -168,16 +177,18 @@ const Home: React.FC = () => {
           </p>
           <button
             onClick={() => handleStartChat('text')}
-            disabled={(user?.coins || 0) < COIN_COSTS.text}
+            disabled={!!(user && (user?.coins || 0) < COIN_COSTS.text)}
             className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base ${
-              (user?.coins || 0) < COIN_COSTS.text ? 'opacity-50 cursor-not-allowed' : ''
+              user && (user?.coins || 0) < COIN_COSTS.text ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            Start Text Chat
+            {user ? 'Start Text Chat' : '🔒 Login to Start Text Chat'}
           </button>
-          <p className="text-xs sm:text-sm text-yellow-400 mt-2">
-            💰 {COIN_COSTS.text} coins per session
-          </p>
+          {user && (
+            <p className="text-xs sm:text-sm text-yellow-400 mt-2">
+              💰 {COIN_COSTS.text} coins per session
+            </p>
+          )}
         </div>
 
         {/* Audio Chat */}
@@ -197,16 +208,18 @@ const Home: React.FC = () => {
           </p>
           <button
             onClick={() => handleStartChat('audio')}
-            disabled={(user?.coins || 0) < COIN_COSTS.audio}
+            disabled={!!(user && (user?.coins || 0) < COIN_COSTS.audio)}
             className={`bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base ${
-              (user?.coins || 0) < COIN_COSTS.audio ? 'opacity-50 cursor-not-allowed' : ''
+              user && (user?.coins || 0) < COIN_COSTS.audio ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            Start Voice Chat
+            {user ? 'Start Voice Chat' : '🔒 Login to Start Voice Chat'}
           </button>
-          <p className="text-xs sm:text-sm text-yellow-400 mt-2">
-            💰 {COIN_COSTS.audio} coins per session
-          </p>
+          {user && (
+            <p className="text-xs sm:text-sm text-yellow-400 mt-2">
+              💰 {COIN_COSTS.audio} coins per session
+            </p>
+          )}
         </div>
 
         {/* Video Chat */}
@@ -226,16 +239,18 @@ const Home: React.FC = () => {
           </p>
           <button
             onClick={() => handleStartChat('video')}
-            disabled={(user?.coins || 0) < COIN_COSTS.video}
+            disabled={!!(user && (user?.coins || 0) < COIN_COSTS.video)}
             className={`bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base ${
-              (user?.coins || 0) < COIN_COSTS.video ? 'opacity-50 cursor-not-allowed' : ''
+              user && (user?.coins || 0) < COIN_COSTS.video ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            Start Video Chat
+            {user ? 'Start Video Chat' : '🔒 Login to Start Video Chat'}
           </button>
-          <p className="text-xs sm:text-sm text-yellow-400 mt-2">
-            💰 {COIN_COSTS.video} coins per session
-          </p>
+          {user && (
+            <p className="text-xs sm:text-sm text-yellow-400 mt-2">
+              💰 {COIN_COSTS.video} coins per session
+            </p>
+          )}
         </div>
       </div>
 
