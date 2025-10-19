@@ -28,23 +28,26 @@ export class SocketService {
       if (token) {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-          console.log(`✅ JWT verified for user: ${decoded.userId || decoded.id}`);
+          const userId = decoded.userId || decoded.id;
+          console.log(`✅ JWT verified for user: ${userId}`);
           
           // Use real user ID from token
-          socket.userId = decoded.userId || decoded.id;
-          
-          // Fetch user data from database
-          try {
-            const userData = await DatabaseService.getUserById(socket.userId);
-            if (userData) {
-              socket.user = userData;
-              console.log(`✅ Authenticated user: ${userData.username} (${socket.userId})`);
-              return next();
-            } else {
-              console.log(`⚠️ Token valid but user not found in DB: ${socket.userId}`);
+          if (userId && typeof userId === 'string') {
+            socket.userId = userId;
+            
+            // Fetch user data from database
+            try {
+              const userData = await DatabaseService.getUserById(userId);
+              if (userData) {
+                socket.user = userData;
+                console.log(`✅ Authenticated user: ${userData.username} (${userId})`);
+                return next();
+              } else {
+                console.log(`⚠️ Token valid but user not found in DB: ${userId}`);
+              }
+            } catch (dbError) {
+              console.error(`❌ Database error fetching user:`, dbError);
             }
-          } catch (dbError) {
-            console.error(`❌ Database error fetching user:`, dbError);
           }
         } catch (error) {
           console.log(`⚠️ JWT verification failed:`, error instanceof Error ? error.message : 'Unknown error');
