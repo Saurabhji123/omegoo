@@ -72,6 +72,11 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
     case 'SET_TOKEN':
       return { ...state, token: action.payload };
     case 'UPDATE_USER':
+      console.log('📝 AuthContext UPDATE_USER action:', {
+        before: state.user ? { coins: state.user.coins, totalChats: state.user.totalChats, dailyChats: state.user.dailyChats } : null,
+        updates: action.payload,
+        after: state.user ? { ...state.user, ...action.payload } : null
+      });
       return {
         ...state,
         user: state.user ? { ...state.user, ...action.payload } : null
@@ -248,7 +253,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateUser = (updates: Partial<User>) => {
+    console.log('🔄 updateUser function called with:', updates);
     dispatch({ type: 'UPDATE_USER', payload: updates });
+    console.log('✅ UPDATE_USER action dispatched');
   };
 
   const acceptTerms = () => {

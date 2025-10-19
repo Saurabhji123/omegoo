@@ -164,15 +164,30 @@ const AudioChat: React.FC = () => {
         dailyChats?: number;
       }) => {
         console.log('🎤 Audio match found:', data);
+        console.log('📊 Match data received:', {
+          coins: data.coins,
+          totalChats: data.totalChats,
+          dailyChats: data.dailyChats,
+          hasCoinsData: data.coins !== undefined
+        });
         
         // Update user coins and chat counts from backend
         if (data.coins !== undefined) {
+          console.log('🔄 CALLING updateUser with:', { 
+            coins: data.coins,
+            totalChats: data.totalChats || 0,
+            dailyChats: data.dailyChats || 0
+          });
+          
           updateUser({ 
             coins: data.coins,
             totalChats: data.totalChats || 0,
             dailyChats: data.dailyChats || 0
           });
-          console.log(`💰 Updated user: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
+          
+          console.log(`✅ updateUser CALLED - New values: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
+        } else {
+          console.warn('⚠️ No coins data in match-found event!');
         }
         
         setSessionId(data.sessionId);
