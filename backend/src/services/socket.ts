@@ -438,6 +438,13 @@ export class SocketService {
         dailyChats: user1DailyChats
       });
       
+      // ALSO send separate stats-update event for guaranteed UI refresh
+      socket.emit('stats-update', {
+        coins: user1UpdatedCoins,
+        totalChats: user1TotalChats,
+        dailyChats: user1DailyChats
+      });
+      
       const matchSocketId = this.connectedUsers.get(match.userId);
       if (matchSocketId) {
         console.log(`📤 Sending match-found to ${match.userId} (receiver) with coins: ${user2UpdatedCoins}`);
@@ -446,6 +453,13 @@ export class SocketService {
           matchUserId: socket.userId,
           isInitiator: false,
           mode: mode,
+          coins: user2UpdatedCoins,
+          totalChats: user2TotalChats,
+          dailyChats: user2DailyChats
+        });
+        
+        // ALSO send separate stats-update to partner
+        this.io.to(matchSocketId).emit('stats-update', {
           coins: user2UpdatedCoins,
           totalChats: user2TotalChats,
           dailyChats: user2DailyChats
