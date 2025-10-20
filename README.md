@@ -272,7 +272,7 @@ Found a bug or have an idea? We'd love to hear from you!
 
 - 🐛 [Report a Bug](https://github.com/Saurabhji123/omegoo/issues/new?labels=bug)
 - 💡 [Request a Feature](https://github.com/Saurabhji123/omegoo/issues/new?labels=enhancement)
-- 📧 Contact: [your-email@example.com](mailto:your-email@example.com)
+- 📧 Contact: [omegoochat@gmail.com](mailto:omegoochat@gmail.com)
 
 ---
 
