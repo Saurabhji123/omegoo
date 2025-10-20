@@ -81,25 +81,25 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-3 sm:p-4">
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-white mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2">
             Omegoo
           </h1>
-          <p className="text-purple-200 text-lg">
+          <p className="text-purple-200 text-base sm:text-lg">
             Connect with strangers worldwide
           </p>
         </div>
 
         {/* Login/Register Card */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white border-opacity-20">
+        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-2xl p-6 sm:p-8 border border-white border-opacity-20">
           {/* Toggle Tabs */}
-          <div className="flex mb-8 bg-white bg-opacity-10 rounded-lg p-1">
+          <div className="flex mb-6 sm:mb-8 bg-white bg-opacity-10 rounded-lg p-1">
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+              className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium text-sm sm:text-base transition ${
                 isLogin 
                   ? 'bg-purple-600 text-white' 
                   : 'text-purple-200 hover:bg-white hover:bg-opacity-10'
@@ -109,7 +109,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+              className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium text-sm sm:text-base transition ${
                 !isLogin 
                   ? 'bg-purple-600 text-white' 
                   : 'text-purple-200 hover:bg-white hover:bg-opacity-10'
@@ -119,9 +119,9 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {error && (
-              <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-100 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-100 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm">
                 {error}
               </div>
             )}
@@ -129,16 +129,16 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             {/* Username (Register only) */}
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-purple-200 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                   Username
                 </label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-3 h-5 w-5 text-purple-300" />
+                  <UserIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-purple-300" />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Choose a username"
                     required={!isLogin}
                   />
@@ -148,16 +148,16 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                 Email
               </label>
               <div className="relative">
-                <EnvelopeIcon className="absolute left-3 top-3 h-5 w-5 text-purple-300" />
+                <EnvelopeIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-purple-300" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter your email"
                   required
                 />
@@ -166,16 +166,16 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                 Password
               </label>
               <div className="relative">
-                <LockClosedIcon className="absolute left-3 top-3 h-5 w-5 text-purple-300" />
+                <LockClosedIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-purple-300" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter your password"
                   required
                   minLength={6}
@@ -183,12 +183,12 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-purple-300 hover:text-white"
+                  className="absolute right-3 top-2.5 sm:top-3 text-purple-300 hover:text-white"
                 >
                   {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" />
+                    <EyeSlashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   ) : (
-                    <EyeIcon className="h-5 w-5" />
+                    <EyeIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   )}
                 </button>
               </div>
@@ -203,16 +203,16 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2.5 sm:py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm sm:text-base rounded-lg transition flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
                   <span>{isLogin ? 'Signing in...' : 'Creating account...'}</span>
                 </>
               ) : (
                 <>
-                  <LockClosedIcon className="h-5 w-5" />
+                  <LockClosedIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
                 </>
               )}
@@ -220,29 +220,32 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-5 sm:my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white border-opacity-20"></div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-transparent text-purple-200">Or continue with</span>
+            <div className="relative flex justify-center text-xs sm:text-sm">
+              <span className="px-3 sm:px-4 bg-transparent text-purple-200">Or continue with</span>
             </div>
           </div>
 
-          {/* Google Sign-In Button */}
+          {/* Google Sign-In Button - Responsive Size */}
           <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="filled_black"
-              size="large"
-              width="384"
-              text="continue_with"
-            />
+            <div className="w-full max-w-[280px] sm:max-w-xs">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="filled_black"
+                size="medium"
+                width="100%"
+                text="continue_with"
+                shape="rectangular"
+              />
+            </div>
           </div>
 
           {/* Terms */}
-          <p className="mt-6 text-center text-xs text-purple-300">
+          <p className="mt-5 sm:mt-6 text-center text-xs text-purple-300">
             By continuing, you agree to our{' '}
             <a href="/terms" className="text-purple-100 hover:underline">
               Terms of Service
@@ -255,7 +258,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 text-center text-sm text-purple-300">
+        <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-purple-300">
           <p>Omegoo v1.0 - Connect Safely</p>
         </div>
       </div>
