@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../../services/api';
 import { 
   UserCircleIcon, 
   VideoCameraIcon,
@@ -67,32 +68,23 @@ const Profile: React.FC = () => {
     }
 
     try {
-      // TODO: Call API to change password
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword
-        })
-      });
-
-      if (response.ok) {
-        setPasswordSuccess(true);
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        setTimeout(() => {
-          setShowPasswordModal(false);
-          setPasswordSuccess(false);
-        }, 2000);
-      } else {
-        const data = await response.json();
-        setPasswordError(data.error || 'Failed to change password');
-      }
-    } catch (error) {
-      setPasswordError('Network error. Please try again.');
+      // Call API to change password
+      const currentPwd = user?.passwordHash ? passwordData.currentPassword : undefined;
+      
+      await authAPI.changePassword(currentPwd, passwordData.newPassword);
+      
+      setPasswordSuccess(true);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      
+      // Refresh user data to get updated passwordHash status
+      await refreshUser();
+      
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setPasswordSuccess(false);
+      }, 2000);
+    } catch (error: any) {
+      setPasswordError(error.message || 'Failed to change password. Please try again.');
     }
   };
 
@@ -327,7 +319,10 @@ const Profile: React.FC = () => {
             </div>
           </button>
 
-          <button className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+          <button 
+            onClick={() => navigate('/settings')}
+            className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors"
+          >
             <div className="font-medium text-white text-sm sm:text-base">Privacy Settings</div>
             <div className="text-xs sm:text-sm text-gray-300">Manage your privacy preferences</div>
           </button>

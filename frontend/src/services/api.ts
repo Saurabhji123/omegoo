@@ -108,6 +108,13 @@ export const authAPI = {
 
   logout: async () => {
     return apiService.post<{ success: boolean }>('/api/auth/logout');
+  },
+
+  changePassword: async (currentPassword: string | undefined, newPassword: string) => {
+    return apiService.post<{ success: boolean; message: string }>('/api/auth/change-password', { 
+      currentPassword, 
+      newPassword 
+    });
   }
 };
 

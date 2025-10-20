@@ -390,7 +390,7 @@ router.post('/google', async (req, res) => {
       
       user = await DatabaseService.createUser({
         email,
-        username: name || autoUsername, // Use Google name or auto-generated username
+        username: autoUsername, // Auto-generated username from email (before @)
         passwordHash: undefined, // No password for OAuth users
         tier: 'guest',
         status: 'active',
