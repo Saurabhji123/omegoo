@@ -1,11 +1,11 @@
-/// <reference types="vite/client" />
+/// <reference types="react-scripts" />
 
-interface ImportMetaEnv {
-  readonly VITE_API_URL: string;
-  readonly VITE_GOOGLE_CLIENT_ID: string;
-  // Add more env variables as needed
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
+// For React Scripts (Create React App)
+declare namespace NodeJS {
+  interface ProcessEnv {
+    readonly REACT_APP_API_URL: string;
+    readonly REACT_APP_GOOGLE_CLIENT_ID: string;
+    readonly REACT_APP_BACKEND_URL: string;
+    readonly REACT_APP_BACKEND_URL_PROD: string;
+  }
 }

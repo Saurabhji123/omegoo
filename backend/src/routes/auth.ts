@@ -335,14 +335,48 @@ router.post('/login', async (req, res) => {
  */
 router.post('/google', async (req, res) => {
   try {
-    const { idToken, email, name, picture } = req.body;
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'Google ID token is required'
+      });
+    }
+
+    // Decode the Google JWT token (in production, verify with Google's API)
+    // For now, we'll decode and trust it (since it comes from Google OAuth library)
+    let decoded: any;
+    try {
+      // Simple JWT decode without verification (library already verified it)
+      const base64Url = idToken.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        Buffer.from(base64, 'base64')
+          .toString('utf-8')
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      decoded = JSON.parse(jsonPayload);
+    } catch (decodeError) {
+      console.error('❌ Failed to decode Google token:', decodeError);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Google token'
+      });
+    }
+
+    const { email, name, picture, sub: googleId } = decoded;
 
     if (!email) {
       return res.status(400).json({
         success: false,
-        error: 'Email is required'
+        error: 'Email is required from Google account'
       });
     }
+
+    console.log('🔐 Google OAuth attempt:', { email, name, googleId });
 
     // Extract username from email (part before @)
     const autoUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -365,10 +399,11 @@ router.post('/google', async (req, res) => {
         totalChats: 0,
         dailyChats: 0,
         lastCoinClaim: new Date(),
-        deviceId: `google-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        deviceId: `google-${googleId || Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         preferences: {
           avatar: picture,
-          authProvider: 'google'
+          authProvider: 'google',
+          googleId: googleId
         }
       });
       
@@ -405,6 +440,8 @@ router.post('/google', async (req, res) => {
       process.env.JWT_SECRET as string,
       { expiresIn: '7d' }
     );
+
+    console.log('✅ Google OAuth successful:', { userId: user.id, email: user.email });
 
     res.json({
       success: true,

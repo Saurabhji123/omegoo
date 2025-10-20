@@ -179,7 +179,8 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   // Google OAuth Client ID - From your Google Cloud Console
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '493047971159-6089h729jnghpfo7scujvjjhcb0lmg8d.apps.googleusercontent.com';
+  // Note: React Scripts uses process.env, not import.meta.env
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '493047971159-6089h729jnghpfo7scujvjjhcb0lmg8d.apps.googleusercontent.com';
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
