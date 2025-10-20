@@ -1,12 +1,15 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "build",
-  "installCommand": "npm install",
+  "installCommand": "npm ci --legacy-peer-deps --fetch-retries=10 --fetch-retry-mintimeout=30000 || npm install --legacy-peer-deps --fetch-retries=10 --fetch-retry-mintimeout=30000",
   "framework": "create-react-app",
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "github": {
+    "silent": true
+  }
 }
