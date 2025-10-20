@@ -66,7 +66,8 @@ const AppRoutes: React.FC = () => {
     );
   }
 
-  // Show age gate if user hasn't accepted terms
+  // CRITICAL: Show age gate for first-time users BEFORE any other routes
+  // This ensures every new user sees age verification before accessing the app
   if (!hasAcceptedTerms) {
     return <AgeGate />;
   }
