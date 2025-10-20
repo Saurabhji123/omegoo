@@ -230,8 +230,8 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
           </div>
 
           {/* Google Sign-In Button - Centered and Styled */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-[280px] sm:max-w-xs">
+          <div className="flex justify-center items-center">
+            <div className="flex justify-center" style={{ width: '100%' }}>
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={handleGoogleError}
@@ -259,7 +259,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
 
         {/* Footer */}
         <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-purple-300">
-          <p>Omegoo v1.0 - Connect Safely</p>
+          <p>Omegoo - Connect Safely</p>
         </div>
       </div>
     </div>
