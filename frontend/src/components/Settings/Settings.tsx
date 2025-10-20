@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { userAPI } from '../../services/api';
 import { 
   VideoCameraIcon,
   MicrophoneIcon,
@@ -14,9 +15,11 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Settings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
   
-  // Settings state
+  // Settings state - initialized from user preferences
   const [settings, setSettings] = useState({
     // Video & Audio
     cameraEnabled: true,
@@ -44,8 +47,47 @@ const Settings: React.FC = () => {
     interestTags: [] as string[],
   });
 
-  const updateSetting = (key: string, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  // Load settings from user preferences on mount
+  useEffect(() => {
+    if (user?.preferences) {
+      setSettings(prev => ({
+        ...prev,
+        ...(user.preferences.settings || {}),
+        videoQuality: user.preferences.videoQuality || 'high',
+        matchingMode: user.preferences.matchingMode || 'video',
+      }));
+    }
+  }, [user]);
+
+  const updateSetting = async (key: string, value: any) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    
+    // Auto-save to database
+    await saveSettingsToDatabase(newSettings);
+  };
+
+  const saveSettingsToDatabase = async (settingsToSave: any) => {
+    try {
+      setSaving(true);
+      await userAPI.updatePreferences({
+        settings: settingsToSave,
+        videoQuality: settingsToSave.videoQuality,
+        matchingMode: settingsToSave.matchingMode,
+      });
+      
+      // Refresh user data to get updated preferences
+      await refreshUser();
+      
+      setSaveMessage('Settings saved successfully!');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      setSaveMessage('Failed to save settings');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const ToggleSwitch: React.FC<{ enabled: boolean; onChange: (value: boolean) => void }> = ({ enabled, onChange }) => (
@@ -116,11 +158,14 @@ const Settings: React.FC = () => {
             <select 
               value={settings.videoQuality}
               onChange={(e) => updateSetting('videoQuality', e.target.value)}
-              className="bg-white bg-opacity-10 border border-white border-opacity-30 rounded-lg px-3 py-2 text-white text-sm"
+              className="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 border-2 border-purple-500 border-opacity-50 rounded-lg px-4 py-2 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent hover:border-purple-400 transition-all cursor-pointer"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, rgba(88, 28, 135, 0.9), rgba(30, 58, 138, 0.9), rgba(49, 46, 129, 0.9))',
+              }}
             >
-              <option value="low" className="bg-gray-800">Low (Data Saver)</option>
-              <option value="medium" className="bg-gray-800">Medium</option>
-              <option value="high" className="bg-gray-800">High</option>
+              <option value="low" className="bg-purple-900 text-white py-2">Low (Data Saver)</option>
+              <option value="medium" className="bg-purple-900 text-white py-2">Medium</option>
+              <option value="high" className="bg-purple-900 text-white py-2">High</option>
             </select>
           </div>
         </div>
@@ -239,14 +284,35 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
-      {/* Save Button */}
-      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
-        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors text-sm sm:text-base">
-          Save Settings
-        </button>
-        
-        <p className="text-xs sm:text-sm text-gray-300 text-center mt-2">
-          Changes are saved automatically
+      {/* Auto-save Status */}
+      {saveMessage && (
+        <div className={`bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border ${
+          saveMessage.includes('success') 
+            ? 'border-green-500 border-opacity-50' 
+            : 'border-red-500 border-opacity-50'
+        } p-4 sm:p-6`}>
+          <p className={`text-center font-medium ${
+            saveMessage.includes('success') ? 'text-green-400' : 'text-red-400'
+          }`}>
+            {saveMessage}
+          </p>
+        </div>
+      )}
+
+      {/* Info */}
+      <div className="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg border border-white border-opacity-10 p-4 sm:p-6">
+        <p className="text-xs sm:text-sm text-gray-300 text-center flex items-center justify-center gap-2">
+          {saving ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+              <span>Saving settings...</span>
+            </>
+          ) : (
+            <>
+              <span className="text-green-400">✓</span>
+              <span>Changes are saved automatically</span>
+            </>
+          )}
         </p>
       </div>
     </div>

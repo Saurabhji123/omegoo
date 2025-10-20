@@ -22,6 +22,10 @@ export interface User {
     interests: string[];
     ageRange?: [number, number];
     genderPreference: 'any' | 'male' | 'female';
+    settings?: any;
+    videoQuality?: string;
+    matchingMode?: string;
+    [key: string]: any;
   };
   subscription: {
     type: 'none' | 'starter' | 'standard' | 'premium';
@@ -244,6 +248,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       dispatch({ type: 'SET_TOKEN', payload: response.token });
       dispatch({ type: 'SET_USER', payload: response.user });
       
+      apiService.setToken(response.token);
       storageService.setToken(response.token);
       storageService.setUser(response.user);
     } catch (error) {
