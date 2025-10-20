@@ -225,21 +225,21 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               <div className="w-full border-t border-white border-opacity-20"></div>
             </div>
             <div className="relative flex justify-center text-xs sm:text-sm">
-              <span className="px-3 sm:px-4 bg-transparent text-purple-200">Or continue with</span>
+              <span className="px-3 sm:px-4 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-purple-200">Or continue with</span>
             </div>
           </div>
 
-          {/* Google Sign-In Button - Responsive Size */}
+          {/* Google Sign-In Button - Centered and Styled */}
           <div className="flex justify-center">
             <div className="w-full max-w-[280px] sm:max-w-xs">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={handleGoogleError}
-                theme="filled_black"
-                size="medium"
-                width="100%"
+                theme="outline"
+                size="large"
                 text="continue_with"
-                shape="rectangular"
+                shape="pill"
+                logo_alignment="center"
               />
             </div>
           </div>
