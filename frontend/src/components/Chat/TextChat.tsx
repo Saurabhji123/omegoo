@@ -5,12 +5,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { 
   PaperAirplaneIcon,
   // ArrowPathIcon, // Reserved for reconnect button
-  // ExclamationTriangleIcon, // Reserved for warning messages
+  ExclamationTriangleIcon, // For report button
   XMarkIcon,
   PhoneXMarkIcon,
   ChatBubbleLeftRightIcon,
   SignalIcon
 } from '@heroicons/react/24/outline';
+import ReportModal from './ReportModal';
 
 interface Message {
   id: string;
@@ -22,13 +23,15 @@ interface Message {
 const TextChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
-  const { updateUser } = useAuth();
+  const { updateUser, user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Core states - following AudioChat pattern
   const [isSearching, setIsSearching] = useState(false);
   const [isMatchConnected, setIsMatchConnected] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [partnerId, setPartnerId] = useState<string>(''); // Track partner user ID
+  const [showReportModal, setShowReportModal] = useState(false);
   
   // Text chat specific states
   const [messages, setMessages] = useState<Message[]>([]);
@@ -101,6 +104,7 @@ const TextChat: React.FC = () => {
       }
       
       setSessionId(data.sessionId);
+      setPartnerId(data.matchUserId); // Track partner ID for reporting
       setIsSearching(false);
       setMessages([]);
       
@@ -269,6 +273,14 @@ const TextChat: React.FC = () => {
   const nextMatch = () => {
     console.log('🔄 Next Person clicked - starting fresh text chat');
     startNewChat(true);
+  };
+
+  const handleReport = () => {
+    if (partnerId && sessionId) {
+      setShowReportModal(true);
+    } else {
+      alert('No active session to report');
+    }
   };
 
   const exitChat = () => {
@@ -478,6 +490,16 @@ const TextChat: React.FC = () => {
                     <span className="sm:hidden">🔄 Next</span>
                   </button>
                   <button
+                    onClick={handleReport}
+                    disabled={!isMatchConnected}
+                    className="flex-1 bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 disabled:from-gray-500 disabled:to-gray-600 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2 font-medium disabled:cursor-not-allowed text-xs sm:text-sm shadow-lg hover:shadow-yellow-500/25"
+                    title="Report User"
+                  >
+                    <ExclamationTriangleIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Report</span>
+                    <span className="sm:hidden">⚠️</span>
+                  </button>
+                  <button
                     onClick={exitChat}
                     className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2 font-medium text-xs sm:text-sm shadow-lg hover:shadow-red-500/25"
                   >
@@ -623,6 +645,18 @@ const TextChat: React.FC = () => {
         )}
         
       </div>
+
+      {/* Report Modal */}
+      {showReportModal && user && (
+        <ReportModal
+          isOpen={showReportModal}
+          sessionId={sessionId || ''}
+          reportedUserId={partnerId}
+          reporterUserId={user.id}
+          chatMode="text"
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
     </div>
   );
 };

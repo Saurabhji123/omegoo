@@ -960,6 +960,32 @@ export class DatabaseService {
     return [];
   }
 
+  /**
+   * Set user online/offline status
+   */
+  static async setUserOnlineStatus(userId: string, isOnline: boolean): Promise<boolean> {
+    if (this.isConnected) {
+      try {
+        await UserModel.updateOne(
+          { id: userId },
+          { isOnline, updatedAt: new Date() }
+        );
+        return true;
+      } catch (err) {
+        console.error('MongoDB setUserOnlineStatus failed:', err);
+        return false;
+      }
+    }
+    // Update in-memory fallback
+    const user = this.users.get(userId);
+    if (user) {
+      user.isOnline = isOnline;
+      this.users.set(userId, user);
+      return true;
+    }
+    return false;
+  }
+
   /* ---------- Admin Operations ---------- */
 
   /**
@@ -1077,6 +1103,23 @@ export class DatabaseService {
           .lean();
       } catch (err) {
         console.error('MongoDB getPendingReports failed:', err);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Get all reports (all statuses)
+   */
+  static async getAllReports(limit: number = 100): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        return await ModerationReportModel.find({})
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .lean();
+      } catch (err) {
+        console.error('MongoDB getAllReports failed:', err);
       }
     }
     return [];

@@ -12,6 +12,7 @@ interface User {
   status: string;
   coins: number;
   reportCount?: number;
+  isOnline?: boolean;
   isVerified: boolean;
   preferences: any;
   subscription: any;
@@ -312,6 +313,16 @@ export class DatabaseService {
     return ban ? [ban] : [];
   }
 
+  static async setUserOnlineStatus(userId: string, isOnline: boolean): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.isOnline = isOnline;
+      this.users.set(userId, user);
+      return true;
+    }
+    return false;
+  }
+
   static async getUserReports(userId: string): Promise<any[]> {
     // Mock: return empty array in dev mode
     return [];
@@ -322,6 +333,11 @@ export class DatabaseService {
   }
 
   static async getPendingReports(limit: number = 50): Promise<any[]> {
+    // Mock: return empty array in dev mode
+    return [];
+  }
+
+  static async getAllReports(limit: number = 100): Promise<any[]> {
     // Mock: return empty array in dev mode
     return [];
   }

@@ -9,14 +9,16 @@ import {
   SpeakerXMarkIcon,
   XMarkIcon,
   PhoneXMarkIcon,
-  SignalIcon
+  SignalIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
+import ReportModal from './ReportModal';
 
 const AudioChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
-  const { updateUser } = useAuth();
+  const { updateUser, user } = useAuth();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
@@ -28,6 +30,8 @@ const AudioChat: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isMatchConnected, setIsMatchConnected] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [partnerId, setPartnerId] = useState<string>(''); // Track partner user ID
+  const [showReportModal, setShowReportModal] = useState(false);
   
   // Enhanced audio states
   const [isMicOn, setIsMicOn] = useState(true);
@@ -191,6 +195,7 @@ const AudioChat: React.FC = () => {
         }
         
         setSessionId(data.sessionId);
+        setPartnerId(data.matchUserId); // Track partner ID for reporting
         setIsSearching(false);
         
         if (webRTCRef.current) {
@@ -573,6 +578,14 @@ const AudioChat: React.FC = () => {
     startNewChat(true);
   };
 
+  const handleReport = () => {
+    if (partnerId && sessionId) {
+      setShowReportModal(true);
+    } else {
+      alert('No active session to report');
+    }
+  };
+
   const exitChat = () => {
     // Clean up current session
     if (sessionId) {
@@ -866,6 +879,15 @@ const AudioChat: React.FC = () => {
                 Next Person
               </button>
               <button
+                onClick={handleReport}
+                disabled={!isMatchConnected}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-400 px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium disabled:cursor-not-allowed"
+                title="Report User"
+              >
+                <ExclamationTriangleIcon className="w-5 h-5" />
+                Report
+              </button>
+              <button
                 onClick={exitChat}
                 className="flex-1 bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium"
               >
@@ -911,6 +933,18 @@ const AudioChat: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && user && (
+        <ReportModal
+          isOpen={showReportModal}
+          sessionId={sessionId || ''}
+          reportedUserId={partnerId}
+          reporterUserId={user.id}
+          chatMode="audio"
+          onClose={() => setShowReportModal(false)}
+        />
       )}
     </div>
   );

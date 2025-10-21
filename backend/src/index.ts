@@ -17,6 +17,7 @@ import chatRoutes from './routes/chat';
 import moderationRoutes from './routes/moderation';
 import paymentRoutes from './routes/payment';
 import adminRoutes from './routes/admin';
+import reportsRoutes from './routes/reports';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -138,6 +139,7 @@ app.get('/test-connection', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/reports', reportsRoutes); // Public reports endpoint
 app.use('/api/user', authenticateToken, userRoutes);
 app.use('/api/chat', authenticateToken, chatRoutes);
 app.use('/api/moderation', authenticateToken, moderationRoutes);

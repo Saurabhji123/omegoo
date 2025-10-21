@@ -128,8 +128,12 @@ export class SocketService {
       // Store new connection
       this.connectedUsers.set(socket.userId!, socket.id);
       
-      // Set user online status
+      // Set user online status in Redis and Database
       DevRedisService.setUserOnline(socket.userId!);
+      
+      // Update user's isOnline status in database
+      await DatabaseService.setUserOnlineStatus(socket.userId!, true);
+      console.log(`✅ User ${socket.userId} marked as online in database`);
 
       this.setupSocketHandlers(socket);
       
@@ -197,6 +201,10 @@ export class SocketService {
             
             // Set user offline
             DevRedisService.setUserOffline(socket.userId!);
+            
+            // Update user's isOnline status in database
+            await DatabaseService.setUserOnlineStatus(socket.userId!, false);
+            console.log(`✅ User ${socket.userId} marked as offline in database`);
           } else {
             console.log(`👤 User ${socket.userId} reconnected, skipping cleanup`);
           }

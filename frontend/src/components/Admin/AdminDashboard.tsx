@@ -88,7 +88,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
     try {
       const [statsRes, reportsRes, bansRes] = await Promise.all([
         axios.get(`${API_URL}/api/admin/stats`, axiosConfig),
-        axios.get(`${API_URL}/api/admin/reports?limit=50`, axiosConfig),
+        axios.get(`${API_URL}/api/admin/reports?limit=100`, axiosConfig), // Fetch all reports, not just pending
         axios.get(`${API_URL}/api/admin/bans`, axiosConfig)
       ]);
 

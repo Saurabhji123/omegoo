@@ -12,6 +12,7 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
+import ReportModal from './ReportModal';
 
 interface Message {
   id: string;
@@ -23,7 +24,7 @@ interface Message {
 const VideoChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
-  const { updateUser } = useAuth();
+  const { updateUser, user } = useAuth();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -50,6 +51,7 @@ const VideoChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Sync refs with state values to avoid stale closures
   useEffect(() => {
@@ -903,14 +905,11 @@ const VideoChat: React.FC = () => {
   };
 
   const handleReport = () => {
-    if (sessionId) {
-      socket?.emit('report_user', {
-        sessionId,
-        reason: 'Inappropriate behavior',
-        description: 'Reported from video chat'
-      });
+    if (partnerId && sessionId) {
+      setShowReportModal(true);
+    } else {
+      alert('No active session to report');
     }
-    nextMatch();
   };
 
   return (
@@ -1208,6 +1207,18 @@ const VideoChat: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Report Modal */}
+      {partnerId && sessionId && user?.id && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          sessionId={sessionId}
+          reportedUserId={partnerId}
+          reporterUserId={user.id}
+          chatMode="video"
+        />
       )}
     </div>
   );

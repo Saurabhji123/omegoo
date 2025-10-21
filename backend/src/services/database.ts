@@ -292,6 +292,11 @@ export class DatabaseService {
     return [];
   }
 
+  static async setUserOnlineStatus(userId: string, isOnline: boolean): Promise<boolean> {
+    console.warn('⚠️ setUserOnlineStatus called on PostgreSQL - use MongoDB for online tracking');
+    return false;
+  }
+
   static async getUserReports(userId: string): Promise<any[]> {
     console.warn('⚠️ getUserReports called on PostgreSQL - use MongoDB for ban system');
     return [];
@@ -304,6 +309,11 @@ export class DatabaseService {
 
   static async getPendingReports(limit: number = 50): Promise<any[]> {
     console.warn('⚠️ getPendingReports called on PostgreSQL - use MongoDB for ban system');
+    return [];
+  }
+
+  static async getAllReports(limit: number = 100): Promise<any[]> {
+    console.warn('⚠️ getAllReports called on PostgreSQL - use MongoDB for ban system');
     return [];
   }
 

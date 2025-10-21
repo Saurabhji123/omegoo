@@ -189,8 +189,13 @@ router.get('/stats', authenticateAdmin, async (req: Request, res: Response) => {
  */
 router.get('/reports', authenticateAdmin, requirePermission('view_reports'), async (req: Request, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const reports = await DatabaseService.getPendingReports(limit);
+    const limit = parseInt(req.query.limit as string) || 100;
+    const status = req.query.status as string;
+    
+    // Fetch all reports (not just pending) for admin dashboard
+    const reports = status === 'pending' 
+      ? await DatabaseService.getPendingReports(limit)
+      : await DatabaseService.getAllReports(limit);
     
     res.json({
       success: true,
