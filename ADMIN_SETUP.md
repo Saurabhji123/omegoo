@@ -86,17 +86,21 @@ Content-Type: application/json
 
 ---
 
-## 🎯 Recommended Admin Credentials
+## 🎯 Example Credentials Template
 
-For testing/development:
-- **Username:** `admin`
-- **Email:** `admin@omegoochat.com`
-- **Password:** `Admin@Omegoo2024!`
+```json
+{
+  "username": "your_username",
+  "email": "your_email@example.com",
+  "password": "YourSecurePassword123!"
+}
+```
 
-For production:
-- Use a unique, strong password
+**Security Best Practices:**
+- Use a strong password (12+ characters, mix of letters, numbers, symbols)
 - Use your actual email address
-- Change password after first login
+- Store credentials securely (password manager recommended)
+- Change password after first login if needed
 
 ---
 

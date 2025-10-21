@@ -40,10 +40,10 @@ async function createOwnerAdmin() {
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
 
-    // Owner admin details - SET IN ENVIRONMENT OR CHANGE HERE
-    const ownerEmail = process.env.OWNER_EMAIL || 'admin@example.com';
-    const ownerUsername = process.env.OWNER_USERNAME || ownerEmail;
-    const ownerPassword = process.env.OWNER_PASSWORD || 'CHANGE_THIS_PASSWORD';
+    // Owner admin details - ACTUAL OWNER CREDENTIALS
+    const ownerEmail = 'saurabhshukla1966@gmail.com';
+    const ownerUsername = ownerEmail;
+    const ownerPassword = '@Omegoo133';
 
     // Check if owner already exists
     const existingOwner = await AdminModel.findOne({ email: ownerEmail });

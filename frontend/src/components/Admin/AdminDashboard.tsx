@@ -12,7 +12,9 @@ import {
   NoSymbolIcon
 } from '@heroicons/react/24/outline';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// Use production URL when deployed, localhost only for local dev
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const API_URL = isLocalhost ? 'http://localhost:3001' : 'https://omegoo-api-clean.onrender.com';
 
 interface DashboardStats {
   totalUsers: number;

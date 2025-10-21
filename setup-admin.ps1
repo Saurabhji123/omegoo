@@ -41,7 +41,7 @@ try {
     Write-Host "👤 Username: $username" -ForegroundColor White
     Write-Host "📧 Email: $email" -ForegroundColor White
     Write-Host "🔑 Password: $passwordPlain" -ForegroundColor White
-    Write-Host "👑 Role: super_admin (Owner)" -ForegroundColor White
+    Write-Host "👑 Role: $($response.admin.role)" -ForegroundColor White
     Write-Host ""
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
     Write-Host ""

@@ -16,7 +16,8 @@
     "admin:create": "ts-node src/scripts/createOwnerAdmin.ts",
     "admin:setup": "ts-node src/scripts/createFirstAdmin.ts",
     "admin:check": "ts-node src/scripts/checkAdmin.ts",
-    "admin:test-password": "ts-node src/scripts/testPassword.ts"
+    "admin:test-password": "ts-node src/scripts/testPassword.ts",
+    "admin:update-password": "ts-node src/scripts/updateOwnerPassword.ts"
   },
   "keywords": [
     "chat",
