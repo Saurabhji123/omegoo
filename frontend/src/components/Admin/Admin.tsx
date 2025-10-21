@@ -19,13 +19,21 @@ const Admin: React.FC = () => {
     setLoading(true);
     setError('');
 
+    console.log('🔐 Admin login started');
+    console.log('📡 API URL:', API_URL);
+    console.log('📧 Email/Username:', username);
+
     try {
+      console.log('📤 Sending login request...');
       const response = await axios.post(`${API_URL}/api/admin/login`, {
         username,
         password
       });
 
+      console.log('✅ Login response received:', response.data);
+
       if (response.data.success) {
+        console.log('✅ Login successful!');
         setToken(response.data.token);
         setAdmin(response.data.admin);
         setIsAuthenticated(true);
@@ -35,6 +43,9 @@ const Admin: React.FC = () => {
         localStorage.setItem('adminUser', JSON.stringify(response.data.admin));
       }
     } catch (err: any) {
+      console.error('❌ Login error:', err);
+      console.error('❌ Error response:', err.response?.data);
+      console.error('❌ Error status:', err.response?.status);
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
