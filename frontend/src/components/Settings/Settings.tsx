@@ -6,8 +6,8 @@ import {
   MicrophoneIcon,
   SpeakerWaveIcon,
   ShieldCheckIcon,
-  MoonIcon,
-  SunIcon,
+  // MoonIcon, // Reserved for dark mode toggle
+  // SunIcon, // Reserved for dark mode toggle
   BellIcon,
   EyeSlashIcon,
   UserGroupIcon,

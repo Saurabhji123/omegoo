@@ -439,6 +439,10 @@ const VideoChat: React.FC = () => {
     // Start local video
     startLocalVideo();
 
+    // Copy refs to local variables for cleanup to avoid stale closure warnings
+    const localVideo = localVideoRef.current;
+    const remoteVideo = remoteVideoRef.current;
+
     return () => {
       console.log('🧹 VideoChat component cleanup');
       
@@ -456,22 +460,22 @@ const VideoChat: React.FC = () => {
         localStreamRef.current = null;
       }
       
-      // Clean up video elements with proper reset
-      if (localVideoRef.current) {
-        if (localVideoRef.current.srcObject) {
-          localVideoRef.current.pause();
-          localVideoRef.current.srcObject = null;
-          localVideoRef.current.load();
+      // Clean up video elements with proper reset using copied refs
+      if (localVideo) {
+        if (localVideo.srcObject) {
+          localVideo.pause();
+          localVideo.srcObject = null;
+          localVideo.load();
         }
       }
       
-      if (remoteVideoRef.current) {
-        if (remoteVideoRef.current.srcObject) {
-          const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
+      if (remoteVideo) {
+        if (remoteVideo.srcObject) {
+          const remoteStream = remoteVideo.srcObject as MediaStream;
           remoteStream.getTracks().forEach(track => track.stop());
-          remoteVideoRef.current.pause();
-          remoteVideoRef.current.srcObject = null;
-          remoteVideoRef.current.load();
+          remoteVideo.pause();
+          remoteVideo.srcObject = null;
+          remoteVideo.load();
         }
       }
       
@@ -488,6 +492,7 @@ const VideoChat: React.FC = () => {
       
       console.log('✅ VideoChat cleanup completed');
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
 
   // Auto-start matching when component mounts and socket is ready
@@ -553,6 +558,7 @@ const VideoChat: React.FC = () => {
     } else {
       console.error('❌ No socket available! Please refresh the page.');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
 
   const startLocalVideo = async () => {

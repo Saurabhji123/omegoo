@@ -4,8 +4,8 @@ import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   PaperAirplaneIcon,
-  ArrowPathIcon,
-  ExclamationTriangleIcon,
+  // ArrowPathIcon, // Reserved for reconnect button
+  // ExclamationTriangleIcon, // Reserved for warning messages
   XMarkIcon,
   PhoneXMarkIcon,
   ChatBubbleLeftRightIcon,
@@ -36,8 +36,8 @@ const TextChat: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [partnerTyping, setPartnerTyping] = useState(false);
   
-  // Connection quality state (like AudioChat)
-  const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('good');
+  // Connection quality state (reserved for future implementation)
+  // const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('good');
 
   // Add message helper function
   const addMessage = useCallback((content: string, isOwnMessage: boolean) => {
@@ -149,6 +149,7 @@ const TextChat: React.FC = () => {
       socket?.off('typing');
       socket?.off('session_ended');
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, sessionId, addMessage, addSystemMessage]);
 
   useEffect(() => {
@@ -179,22 +180,23 @@ const TextChat: React.FC = () => {
 
 
   // Enhanced session management - following AudioChat pattern
-  const performCompleteCleanup = () => {
-    console.log('🧹 Performing complete text chat cleanup...');
-    
-    // Reset states
-    setIsMatchConnected(false);
-    setSessionId(null);
-    setMessages([]);
-    setPartnerTyping(false);
-    setIsTyping(false);
-    
-    // Clear multi-device session tracking
-    localStorage.removeItem('omegoo_text_session');
-    console.log('🗑️ Cleared text session tracking for multi-device protection');
-    
-    console.log('✅ Complete text chat cleanup finished');
-  };
+  // Reserved for future use in connection recovery scenarios
+  // const performCompleteCleanup = () => {
+  //   console.log('🧹 Performing complete text chat cleanup...');
+  //   
+  //   // Reset states
+  //   setIsMatchConnected(false);
+  //   setSessionId(null);
+  //   setMessages([]);
+  //   setPartnerTyping(false);
+  //   setIsTyping(false);
+  //   
+  //   // Clear multi-device session tracking
+  //   localStorage.removeItem('omegoo_text_session');
+  //   console.log('🗑️ Cleared text session tracking for multi-device protection');
+  //   
+  //   console.log('✅ Complete text chat cleanup finished');
+  // };
 
   // Start new chat - following AudioChat pattern
   const startNewChat = (forceCleanup = false) => {
@@ -322,15 +324,15 @@ const TextChat: React.FC = () => {
     }
   };
 
-  // Connection quality helper (like AudioChat)
-  const getConnectionQualityColor = () => {
-    switch (connectionQuality) {
-      case 'excellent': return 'text-green-400';
-      case 'good': return 'text-yellow-400';
-      case 'poor': return 'text-red-400';
-      default: return 'text-gray-400';
-    }
-  };
+  // Connection quality helper (reserved for future implementation)
+  // const getConnectionQualityColor = () => {
+  //   switch (connectionQuality) {
+  //     case 'excellent': return 'text-green-400';
+  //     case 'good': return 'text-yellow-400';
+  //     case 'poor': return 'text-red-400';
+  //     default: return 'text-gray-400';
+  //   }
+  // };
 
   // Loading states (like AudioChat)
   if (socketConnecting) {
@@ -368,7 +370,7 @@ const TextChat: React.FC = () => {
           
           {/* Status indicator */}
           <div className="flex items-center gap-2">
-            <SignalIcon className={`w-4 h-4 ${getConnectionQualityColor()}`} />
+            <SignalIcon className="w-4 h-4 text-gray-400" />
             <div className={`w-2 h-2 rounded-full ${
               isMatchConnected ? 'bg-green-400' : 
               isSearching ? 'bg-yellow-400' : 'bg-red-400'

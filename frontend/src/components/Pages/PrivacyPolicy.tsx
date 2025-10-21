@@ -1,5 +1,6 @@
 import React from 'react';
-import { ShieldCheckIcon, EyeIcon, LockClosedIcon, ServerIcon, GlobeAltIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { ShieldCheckIcon, EyeIcon, LockClosedIcon, ServerIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+// UserGroupIcon reserved for future social features section
 
 const PrivacyPolicy: React.FC = () => {
   return (

@@ -78,6 +78,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
     fetchDashboardData();
     const interval = setInterval(fetchDashboardData, 30000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchDashboardData = async () => {

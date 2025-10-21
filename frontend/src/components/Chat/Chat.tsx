@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WebRTCService from '../../services/webrtc';
 import { 
-  PhoneIcon, 
+  // PhoneIcon, // Not used currently
   PhoneXMarkIcon, 
   VideoCameraSlashIcon, 
   VideoCameraIcon,
   MicrophoneIcon,
-  ChatBubbleLeftRightIcon,
+  // ChatBubbleLeftRightIcon, // Not used currently
   ExclamationTriangleIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
@@ -24,7 +24,7 @@ const Chat: React.FC = () => {
   const [isMicOn, setIsMicOn] = useState(true);
   const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [showReportModal, setShowReportModal] = useState(false);
-  const [queueInfo, setQueueInfo] = useState<{ position: number, totalWaiting: number } | null>(null);
+  // const [queueInfo, setQueueInfo] = useState<{ position: number, totalWaiting: number } | null>(null); // Reserved for future use
 
   useEffect(() => {
     // Initialize WebRTC service
@@ -164,7 +164,8 @@ const Chat: React.FC = () => {
               <ArrowPathIcon className="w-12 h-12 mx-auto mb-4 animate-spin text-blue-500" />
               <h2 className="text-2xl font-bold mb-2">Finding someone for you...</h2>
               <p className="text-gray-400 mb-4">Please wait while we connect you to a stranger</p>
-              {queueInfo && (
+              {/* Queue info display - reserved for future implementation */}
+              {/* {queueInfo && (
                 <div className="bg-gray-900 bg-opacity-50 rounded-lg p-4 max-w-sm mx-auto">
                   <p className="text-sm text-gray-300">
                     <span className="text-blue-400 font-semibold">{queueInfo.totalWaiting}</span> people waiting
@@ -173,7 +174,7 @@ const Chat: React.FC = () => {
                     You're in position <span className="text-blue-400">{queueInfo.position}</span>
                   </p>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         )}

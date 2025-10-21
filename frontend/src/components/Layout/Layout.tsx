@@ -1,7 +1,8 @@
 import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useTheme } from '../../contexts/ThemeContext';
+// Theme context available but not currently used
+// import { useTheme } from '../../contexts/ThemeContext';
 
 interface LayoutProps {
   children: ReactNode;

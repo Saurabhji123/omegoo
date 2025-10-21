@@ -6,7 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 
 const Home: React.FC = () => {
   const [isMatching, setIsMatching] = useState(false);
-  const { user, updateUser, loading } = useAuthContext();
+  const { user, loading } = useAuthContext(); // Removed unused 'updateUser'
   const { darkMode } = useTheme();
   const navigate = useNavigate();
   const [, forceUpdate] = useState({});

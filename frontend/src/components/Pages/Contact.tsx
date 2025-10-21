@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { 
   EnvelopeIcon, 
-  PhoneIcon, 
-  MapPinIcon,
+  // PhoneIcon, // Reserved for phone contact display
+  // MapPinIcon, // Reserved for address display
   ChatBubbleLeftRightIcon,
   ExclamationTriangleIcon,
   QuestionMarkCircleIcon

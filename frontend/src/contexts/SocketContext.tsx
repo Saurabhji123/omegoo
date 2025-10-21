@@ -79,7 +79,7 @@ const SocketContext = createContext<SocketContextType | null>(null);
 
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(socketReducer, initialState);
-  const { user, token } = useAuth();
+  const { token } = useAuth(); // Removed unused 'user'
 
   useEffect(() => {
     // Connect when component mounts or when token changes (user logs in/out)
@@ -96,6 +96,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         state.socket.disconnect();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]); // Re-connect when token changes (login/logout)
 
   const connect = () => {

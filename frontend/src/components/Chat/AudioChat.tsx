@@ -290,6 +290,10 @@ const AudioChat: React.FC = () => {
       });
     }
 
+    // Copy refs to local variables for cleanup to avoid stale closure warnings
+    const remoteAudio = remoteAudioRef.current;
+    const localAudio = localAudioRef.current;
+
     // Cleanup on unmount
     return () => {
       socket?.off('match-found');
@@ -306,22 +310,24 @@ const AudioChat: React.FC = () => {
         localStreamRef.current = null;
       }
       
-      if (remoteAudioRef.current?.srcObject) {
-        const remoteStream = remoteAudioRef.current.srcObject as MediaStream;
+      // Use copied refs for cleanup
+      if (remoteAudio?.srcObject) {
+        const remoteStream = remoteAudio.srcObject as MediaStream;
         remoteStream.getTracks().forEach(track => track.stop());
-        remoteAudioRef.current.srcObject = null;
+        remoteAudio.srcObject = null;
       }
       
-      if (localAudioRef.current?.srcObject) {
-        const localStream = localAudioRef.current.srcObject as MediaStream;
+      if (localAudio?.srcObject) {
+        const localStream = localAudio.srcObject as MediaStream;
         localStream.getTracks().forEach(track => track.stop());
-        localAudioRef.current.srcObject = null;
+        localAudio.srcObject = null;
       }
       
       if (webRTCRef.current) {
         webRTCRef.current.cleanup();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, handleRemoteStream, startAudioLevelMonitoring, stopAudioLevelMonitoring]);
 
   // Enhanced cleanup for multiple device reliability
