@@ -14,6 +14,7 @@
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
     "admin:create": "ts-node src/scripts/createOwnerAdmin.ts",
+    "admin:setup": "ts-node src/scripts/createFirstAdmin.ts",
     "admin:check": "ts-node src/scripts/checkAdmin.ts",
     "admin:test-password": "ts-node src/scripts/testPassword.ts"
   },
