@@ -142,7 +142,7 @@ app.use('/api/user', authenticateToken, userRoutes);
 app.use('/api/chat', authenticateToken, chatRoutes);
 app.use('/api/moderation', authenticateToken, moderationRoutes);
 app.use('/api/payment', authenticateToken, paymentRoutes);
-app.use('/api/admin', authenticateToken, adminRoutes);
+app.use('/api/admin', adminRoutes); // Admin routes handle their own authentication
 
 // 404 handler
 app.use('*', (req, res) => {

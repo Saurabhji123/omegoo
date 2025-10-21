@@ -86,9 +86,14 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
       <nav className="bg-white bg-opacity-10 backdrop-blur-md border-b border-white border-opacity-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="text-2xl sm:text-3xl font-bold text-white">
+            {/* Logo with Image */}
+            <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
+              <img 
+                src="/logo512.png" 
+                alt="Omegoo" 
+                className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg"
+              />
+              <div className="text-xl sm:text-2xl font-bold text-white">
                 Omegoo
               </div>
             </Link>
