@@ -13,20 +13,27 @@ const router: Router = Router();
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
+    console.log('🔐 Admin login attempt received');
+    console.log('📝 Request body:', { username: req.body.username, hasPassword: !!req.body.password });
+    
     const { username, password } = req.body;
 
     if (!username || !password) {
+      console.log('❌ Missing username or password');
       return res.status(400).json({
         success: false,
         error: 'Username and password required'
       });
     }
 
+    console.log('🔍 Searching for admin:', username);
+    
     // Find admin by username OR email
     let admin = await DatabaseService.findAdminByUsername(username);
     
     // If not found by username, try email
     if (!admin) {
+      console.log('❌ Not found by username, trying email...');
       admin = await DatabaseService.findAdminByEmail(username);
     }
 
@@ -41,14 +48,18 @@ router.post('/login', async (req: Request, res: Response) => {
     console.log('✅ Admin found:', admin.email, 'Role:', admin.role, 'isOwner:', admin.isOwner);
 
     // Verify password
+    console.log('🔒 Verifying password...');
     const isValidPassword = await bcrypt.compare(password, admin.passwordHash);
 
     if (!isValidPassword) {
+      console.log('❌ Password verification failed!');
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
       });
     }
+    
+    console.log('✅ Password verified successfully!');
 
     // Generate JWT token
     const jwtSecret = (process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || 'fallback-secret');

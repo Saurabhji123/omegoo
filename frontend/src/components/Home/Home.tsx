@@ -124,16 +124,19 @@ const Home: React.FC = () => {
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text animate-pulse drop-shadow-2xl tracking-wider">
             Made for LPU Students
           </h1>
-          <p className="text-sm sm:text-base text-gray-400 mt-2 font-medium">
-            Connect • Chat • Make Friends 🎓
+          <p className="text-base sm:text-lg md:text-xl text-gray-300 mt-3 font-medium tracking-wide">
+            Meet LPU Friends — Chat & Vibe Live! 🎥
+          </p>
+          <p className="text-xs sm:text-sm text-gray-400 mt-1">
+            Connect with LPU Students Instantly
           </p>
         </div>
 
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
-          Ready to make a new friend?
+          Ready to meet your LPU batchmates?
         </h1>
-        <p className="text-lg sm:text-xl text-gray-200 mb-6 sm:mb-8 max-w-2xl mx-auto">
-          Connect with interesting people from around the world
+        <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-2xl mx-auto">
+          Join Lovely Professional University's fastest growing social platform
         </p>
         
         {/* User Status & Coins - Only show if logged in */}
@@ -173,12 +176,12 @@ const Home: React.FC = () => {
           </div>
         ) : (
           <div className="mb-6">
-            <div className="inline-flex items-center bg-blue-500 bg-opacity-20 backdrop-blur-md rounded-full px-6 py-3 border border-blue-400 border-opacity-50 shadow-lg">
-              <svg className="w-5 h-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="inline-flex items-center bg-blue-500 bg-opacity-20 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-blue-400 border-opacity-50 shadow-lg">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-sm text-white font-medium">
-                👋 Welcome! Login to start chatting and get 50 free coins daily
+              <span className="text-xs sm:text-sm text-white font-medium text-center">
+                👋 Welcome LPU Student! Login to chat & get 50 free coins daily
               </span>
             </div>
           </div>
@@ -200,7 +203,7 @@ const Home: React.FC = () => {
             Text Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Start with safe text conversations
+            Chat with LPU students anonymously
           </p>
           <button
             onClick={() => handleStartChat('text')}
@@ -231,7 +234,7 @@ const Home: React.FC = () => {
             Voice Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Have real conversations with voice
+            Voice call with your LPU peers
           </p>
           <button
             onClick={() => handleStartChat('audio')}
@@ -262,7 +265,7 @@ const Home: React.FC = () => {
             Video Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Face-to-face conversations
+            Face-to-face with LPU friends
           </p>
           <button
             onClick={() => handleStartChat('video')}

@@ -13,7 +13,9 @@
     "lint": "eslint src/**/*.ts",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
-    "admin:create": "ts-node src/scripts/createOwnerAdmin.ts"
+    "admin:create": "ts-node src/scripts/createOwnerAdmin.ts",
+    "admin:check": "ts-node src/scripts/checkAdmin.ts",
+    "admin:test-password": "ts-node src/scripts/testPassword.ts"
   },
   "keywords": [
     "chat",

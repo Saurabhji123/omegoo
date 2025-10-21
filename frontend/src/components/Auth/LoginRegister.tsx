@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '../../contexts/AuthContext';
@@ -81,7 +81,31 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-3 sm:p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Navbar */}
+      <nav className="bg-white bg-opacity-10 backdrop-blur-md border-b border-white border-opacity-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="text-2xl sm:text-3xl font-bold text-white">
+                Omegoo
+              </div>
+            </Link>
+
+            {/* Right side - Home link */}
+            <Link 
+              to="/"
+              className="text-white hover:text-purple-300 transition-colors font-medium text-sm sm:text-base"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <div className="flex items-center justify-center p-3 sm:p-4 min-h-[calc(100vh-64px)]">
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-6 sm:mb-8">
@@ -261,6 +285,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
         <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-purple-300">
           <p>Omegoo - Connect Safely</p>
         </div>
+      </div>
       </div>
     </div>
   );
