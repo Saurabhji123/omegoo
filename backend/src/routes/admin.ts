@@ -22,15 +22,23 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
 
-    // Find admin by username
-    const admin = await DatabaseService.findAdminByUsername(username);
+    // Find admin by username OR email
+    let admin = await DatabaseService.findAdminByUsername(username);
+    
+    // If not found by username, try email
+    if (!admin) {
+      admin = await DatabaseService.findAdminByEmail(username);
+    }
 
     if (!admin || !admin.isActive) {
+      console.log('❌ Admin not found or inactive:', username);
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
       });
     }
+    
+    console.log('✅ Admin found:', admin.email, 'Role:', admin.role, 'isOwner:', admin.isOwner);
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, admin.passwordHash);
@@ -69,6 +77,7 @@ router.post('/login', async (req: Request, res: Response) => {
         username: admin.username,
         email: admin.email,
         role: admin.role,
+        isOwner: admin.isOwner || false,
         permissions: admin.permissions
       }
     });
