@@ -17,7 +17,6 @@ import AudioChat from './components/Chat/AudioChat';
 import VideoChat from './components/Chat/VideoChat';
 import Profile from './components/Profile/Profile';
 import Settings from './components/Settings/Settings';
-import Legal from './components/Legal/Legal';
 import Admin from './components/Admin/Admin';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 
