@@ -46,7 +46,7 @@ try {
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
     Write-Host ""
     Write-Host "🎉 You can now login to the admin panel!" -ForegroundColor Green
-    Write-Host "🔗 Admin Panel: https://omegoo.vercel.app/admin" -ForegroundColor Cyan
+    Write-Host "🔗 Admin Panel: https://omegoo.vercel.app/omegoo-admin" -ForegroundColor Cyan
     Write-Host ""
 }
 catch {

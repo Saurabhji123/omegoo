@@ -18,7 +18,7 @@ The `/api/admin/login` endpoint works correctly, but you need to create the firs
    .\setup-admin.ps1
    ```
 3. Enter your desired admin credentials when prompted
-4. Done! You can now login at: https://omegoo.vercel.app/admin
+4. Done! You can now login at: https://omegoo.vercel.app/omegoo-admin
 
 ---
 
@@ -36,7 +36,7 @@ The `/api/admin/login` endpoint works correctly, but you need to create the firs
 
 3. Enter your credentials when prompted
 
-4. Login at: https://omegoo.vercel.app/admin
+4. Login at: https://omegoo.vercel.app/omegoo-admin
 
 ---
 
@@ -104,7 +104,7 @@ For production:
 
 Once admin is created:
 
-1. Visit: https://omegoo.vercel.app/admin
+1. Visit: https://omegoo.vercel.app/omegoo-admin
 2. Login with your credentials
 3. You'll see the admin dashboard with:
    - Platform statistics
@@ -147,7 +147,7 @@ This will show all existing admin users in the database.
 
 ## 🔑 Login After Setup
 
-**Admin Panel URL:** https://omegoo.vercel.app/admin
+**Admin Panel URL:** https://omegoo.vercel.app/omegoo-admin
 
 **Login with:**
 - Username OR Email
