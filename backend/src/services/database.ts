@@ -347,4 +347,29 @@ export class DatabaseService {
     console.warn('⚠️ getAllAdmins called on PostgreSQL - use MongoDB for admin system');
     return [];
   }
+
+  static async getAllUsers(): Promise<any[]> {
+    console.warn('⚠️ getAllUsers called on PostgreSQL - use MongoDB for user management');
+    return [];
+  }
+
+  static async updateUserRole(userId: string, newRole: string): Promise<boolean> {
+    console.warn('⚠️ updateUserRole called on PostgreSQL - use MongoDB for user management');
+    return false;
+  }
+
+  static async deleteUser(userId: string): Promise<boolean> {
+    console.warn('⚠️ deleteUser called on PostgreSQL - use MongoDB for user management');
+    return false;
+  }
+
+  static async searchUsers(query: string): Promise<any[]> {
+    console.warn('⚠️ searchUsers called on PostgreSQL - use MongoDB for user management');
+    return [];
+  }
+
+  static async incrementUserReportCount(userId: string): Promise<number> {
+    console.warn('⚠️ incrementUserReportCount called on PostgreSQL - use MongoDB for user management');
+    return 0;
+  }
 }

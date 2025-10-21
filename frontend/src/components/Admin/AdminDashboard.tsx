@@ -11,6 +11,7 @@ import {
   ArrowRightOnRectangleIcon,
   NoSymbolIcon
 } from '@heroicons/react/24/outline';
+import UserManagement from './UserManagement';
 
 // Use production URL when deployed, localhost only for local dev
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -67,7 +68,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
 
   const [reports, setReports] = useState<Report[]>([]);
   const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'reports' | 'bans'>('overview');
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'users' | 'reports' | 'bans'>('overview');
   const [loading, setLoading] = useState(true);
 
   const axiosConfig = {
@@ -188,7 +189,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
           <div className="flex items-center space-x-4">
             <span className="text-purple-200 text-sm">
               <ClockIcon className="h-4 w-4 inline mr-1" />
-              {new Date().toLocaleTimeString()}
+              {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
             </span>
             <button
               onClick={onLogout}
@@ -205,6 +206,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
           <nav className="flex space-x-2">
             {[
               { id: 'overview', label: 'Overview', icon: ChartBarIcon },
+              { id: 'users', label: 'Total Users', icon: UsersIcon },
               { id: 'reports', label: 'Reports', icon: ExclamationTriangleIcon },
               { id: 'bans', label: 'Banned Users', icon: NoSymbolIcon }
             ].map(tab => (
@@ -266,6 +268,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
               />
             </div>
           </div>
+        )}
+
+        {/* Users Tab */}
+        {selectedTab === 'users' && (
+          <UserManagement token={token} />
         )}
 
         {/* Reports Tab */}

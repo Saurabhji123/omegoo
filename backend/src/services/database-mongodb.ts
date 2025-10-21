@@ -18,6 +18,7 @@ interface IUserDoc extends Document {
   totalChats?: number;
   dailyChats?: number;
   lastCoinClaim?: Date;
+  reportCount?: number;
   preferences?: any;
   subscription?: any;
   isOnline?: boolean;
@@ -122,6 +123,7 @@ const UserSchema = new Schema<IUserDoc>({
   totalChats: { type: Number, default: 0 },
   dailyChats: { type: Number, default: 0 },
   lastCoinClaim: { type: Date },
+  reportCount: { type: Number, default: 0 },
   preferences: { type: Schema.Types.Mixed, default: {} },
   subscription: { type: Schema.Types.Mixed, default: {} },
   isOnline: { type: Boolean, default: false },
@@ -1150,4 +1152,167 @@ export class DatabaseService {
       totalSessions: 0
     };
   }
+
+  /**
+   * Get all users with their report counts
+   */
+  static async getAllUsers(): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        const users = await UserModel.find({}).lean();
+        return users.map((user: any) => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          tier: user.tier || 'guest',
+          status: user.status,
+          reportCount: user.reportCount || 0,
+          isVerified: user.isVerified || false,
+          coins: user.coins || 0,
+          totalChats: user.totalChats || 0,
+          dailyChats: user.dailyChats || 0,
+          createdAt: user.createdAt,
+          lastActiveAt: user.lastActiveAt
+        }));
+      } catch (err) {
+        console.error('MongoDB getAllUsers failed:', err);
+      }
+    }
+    return Array.from(this.users.values());
+  }
+
+  /**
+   * Update user role (tier)
+   */
+  static async updateUserRole(userId: string, newRole: 'guest' | 'user' | 'admin' | 'super_admin'): Promise<boolean> {
+    if (this.isConnected) {
+      try {
+        const result = await UserModel.updateOne(
+          { id: userId },
+          { tier: newRole, updatedAt: new Date() }
+        );
+        return result.modifiedCount > 0;
+      } catch (err) {
+        console.error('MongoDB updateUserRole failed:', err);
+      }
+    }
+    const user = this.users.get(userId);
+    if (user) {
+      user.tier = newRole;
+      user.updatedAt = new Date();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Delete user permanently
+   */
+  static async deleteUser(userId: string): Promise<boolean> {
+    if (this.isConnected) {
+      try {
+        const result = await UserModel.deleteOne({ id: userId });
+        return result.deletedCount > 0;
+      } catch (err) {
+        console.error('MongoDB deleteUser failed:', err);
+      }
+    }
+    return this.users.delete(userId);
+  }
+
+  /**
+   * Increment user report count
+   */
+  static async incrementUserReportCount(userId: string): Promise<number> {
+    if (this.isConnected) {
+      try {
+        const user = await UserModel.findOne({ id: userId });
+        if (user) {
+          const newCount = (user.reportCount || 0) + 1;
+          await UserModel.updateOne(
+            { id: userId },
+            { 
+              reportCount: newCount,
+              updatedAt: new Date()
+            }
+          );
+          
+          // Auto-ban based on report count
+          if (newCount === 3) {
+            // 1 week ban
+            await this.banUser(userId, 'temporary', 7 * 24 * 60 * 60 * 1000, '3 reports received - automatic 1 week ban');
+          } else if (newCount === 6) {
+            // 2 weeks ban
+            await this.banUser(userId, 'temporary', 14 * 24 * 60 * 60 * 1000, '6 reports received - automatic 2 weeks ban');
+          } else if (newCount >= 9) {
+            // Permanent ban
+            await this.banUser(userId, 'permanent', undefined, '9+ reports received - permanent ban');
+          }
+          
+          return newCount;
+        }
+      } catch (err) {
+        console.error('MongoDB incrementUserReportCount failed:', err);
+      }
+    }
+    
+    // In-memory fallback
+    const user = this.users.get(userId);
+    if (user) {
+      const newCount = (user.reportCount || 0) + 1;
+      user.reportCount = newCount;
+      user.updatedAt = new Date();
+      
+      // Auto-ban logic for in-memory
+      if (newCount === 3) {
+        await this.banUser(userId, 'temporary', 7 * 24 * 60 * 60 * 1000, '3 reports - 1 week ban');
+      } else if (newCount === 6) {
+        await this.banUser(userId, 'temporary', 14 * 24 * 60 * 60 * 1000, '6 reports - 2 weeks ban');
+      } else if (newCount >= 9) {
+        await this.banUser(userId, 'permanent', undefined, '9+ reports - permanent ban');
+      }
+      
+      return newCount;
+    }
+    return 0;
+  }
+
+  /**
+   * Search users by username or email
+   */
+  static async searchUsers(query: string): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        const users = await UserModel.find({
+          $or: [
+            { username: { $regex: query, $options: 'i' } },
+            { email: { $regex: query, $options: 'i' } }
+          ]
+        }).limit(50).lean();
+        
+        return users.map((user: any) => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          tier: user.tier || 'guest',
+          status: user.status,
+          reportCount: user.reportCount || 0,
+          isVerified: user.isVerified || false,
+          coins: user.coins || 0,
+          createdAt: user.createdAt,
+          lastActiveAt: user.lastActiveAt
+        }));
+      } catch (err) {
+        console.error('MongoDB searchUsers failed:', err);
+      }
+    }
+    
+    // In-memory fallback
+    const lowerQuery = query.toLowerCase();
+    return Array.from(this.users.values()).filter((user: any) => 
+      user.username?.toLowerCase().includes(lowerQuery) ||
+      user.email?.toLowerCase().includes(lowerQuery)
+    );
+  }
 }
+

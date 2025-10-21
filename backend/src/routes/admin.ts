@@ -419,27 +419,104 @@ router.get('/bans/:userId', authenticateAdmin, requirePermission('view_users'), 
  */
 router.get('/users', authenticateAdmin, requirePermission('view_users'), async (req: Request, res: Response) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const status = req.query.status as string;
-
-    // This would need pagination support in DatabaseService
-    const allUsers = status 
-      ? await DatabaseService.getUsersByStatus(status)
-      : []; // Implement getAllUsers() in DatabaseService if needed
+    const search = req.query.search as string;
+    
+    let users;
+    if (search) {
+      users = await DatabaseService.searchUsers(search);
+    } else {
+      users = await DatabaseService.getAllUsers();
+    }
 
     res.json({
       success: true,
-      users: allUsers.slice((page - 1) * limit, page * limit),
-      total: allUsers.length,
-      page,
-      limit
+      users,
+      total: users.length
     });
   } catch (error: any) {
     console.error('Get users error:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to fetch users'
+    });
+  }
+});
+
+/**
+ * Update user role
+ */
+router.put('/users/:userId/role', authenticateAdmin, requirePermission('manage_users'), async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    if (!['guest', 'user', 'admin', 'super_admin'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid role'
+      });
+    }
+
+    // Check super_admin limit
+    if (role === 'super_admin') {
+      const allUsers = await DatabaseService.getAllUsers();
+      const superAdminCount = allUsers.filter((u: any) => u.tier === 'super_admin').length;
+      
+      if (superAdminCount >= 2) {
+        return res.status(400).json({
+          success: false,
+          error: 'Maximum 2 super_admins allowed'
+        });
+      }
+    }
+
+    const success = await DatabaseService.updateUserRole(userId, role);
+
+    if (success) {
+      res.json({
+        success: true,
+        message: 'User role updated successfully'
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+  } catch (error: any) {
+    console.error('Update user role error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to update user role'
+    });
+  }
+});
+
+/**
+ * Delete user
+ */
+router.delete('/users/:userId', authenticateAdmin, requirePermission('manage_users'), async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    const success = await DatabaseService.deleteUser(userId);
+
+    if (success) {
+      res.json({
+        success: true,
+        message: 'User deleted successfully'
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+  } catch (error: any) {
+    console.error('Delete user error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to delete user'
     });
   }
 });

@@ -11,6 +11,7 @@ interface User {
   tier: string;
   status: string;
   coins: number;
+  reportCount?: number;
   isVerified: boolean;
   preferences: any;
   subscription: any;
@@ -366,5 +367,54 @@ export class DatabaseService {
 
   static async getAllAdmins(): Promise<any[]> {
     return [];
+  }
+
+  static async getAllUsers(): Promise<any[]> {
+    return Array.from(this.users.values());
+  }
+
+  static async updateUserRole(userId: string, newRole: string): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.tier = newRole;
+      user.updatedAt = new Date();
+      this.users.set(userId, user);
+      return true;
+    }
+    return false;
+  }
+
+  static async deleteUser(userId: string): Promise<boolean> {
+    return this.users.delete(userId);
+  }
+
+  static async searchUsers(query: string): Promise<any[]> {
+    const lowerQuery = query.toLowerCase();
+    return Array.from(this.users.values()).filter((user: any) => 
+      user.username?.toLowerCase().includes(lowerQuery) ||
+      user.email?.toLowerCase().includes(lowerQuery)
+    );
+  }
+
+  static async incrementUserReportCount(userId: string): Promise<number> {
+    const user = this.users.get(userId);
+    if (user) {
+      const newCount = (user.reportCount || 0) + 1;
+      user.reportCount = newCount;
+      user.updatedAt = new Date();
+      this.users.set(userId, user);
+      
+      // Auto-ban logic
+      if (newCount === 3) {
+        await this.banUser(userId, 'temporary', 7 * 24 * 60 * 60 * 1000, '3 reports - 1 week ban');
+      } else if (newCount === 6) {
+        await this.banUser(userId, 'temporary', 14 * 24 * 60 * 60 * 1000, '6 reports - 2 weeks ban');
+      } else if (newCount >= 9) {
+        await this.banUser(userId, 'permanent', undefined, '9+ reports - permanent ban');
+      }
+      
+      return newCount;
+    }
+    return 0;
   }
 }
