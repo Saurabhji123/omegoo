@@ -98,6 +98,7 @@ interface IAdminDoc extends Document {
   role: 'super_admin' | 'admin' | 'moderator';
   permissions: string[];
   isActive: boolean;
+  isOwner?: boolean; // NEW: Owner flag
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -201,6 +202,7 @@ const AdminSchema = new Schema<IAdminDoc>({
   role: { type: String, enum: ['super_admin', 'admin', 'moderator'], default: 'moderator' },
   permissions: [{ type: String }],
   isActive: { type: Boolean, default: true },
+  isOwner: { type: Boolean, default: false }, // NEW: Owner flag (cannot be deleted)
   lastLoginAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
