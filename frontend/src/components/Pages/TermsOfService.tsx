@@ -324,6 +324,117 @@ const TermsOfService: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* 7.5. Reporting System & Automatic Ban Policy */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                        <span className="w-8 h-8 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3">7.5</span>
+                        Reporting System & Automatic Ban Policy
+                      </h3>
+                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>
+                          <strong className="text-white">User Empowerment:</strong> Every user has the right to report inappropriate behavior. Reports are taken seriously and trigger immediate protective actions.
+                        </p>
+
+                        <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+                          <h4 className="font-bold text-red-800 dark:text-red-200 mb-4 text-lg">⚠️ Automatic Ban System</h4>
+                          
+                          <div className="space-y-4">
+                            <div className="bg-red-100 dark:bg-red-900/30 rounded-lg p-4">
+                              <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2 flex items-center">
+                                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                3-Report Rule
+                              </h5>
+                              <p className="text-red-700 dark:text-red-300 text-sm mb-3">
+                                When a user receives <strong>3 reports</strong> from different users, they are automatically banned from the platform. This protects our community from repeat offenders.
+                              </p>
+                              <ul className="text-red-700 dark:text-red-300 text-sm space-y-2">
+                                <li className="flex items-start">
+                                  <span className="font-bold mr-2">1st Report:</span> User receives a warning notification
+                                </li>
+                                <li className="flex items-start">
+                                  <span className="font-bold mr-2">2nd Report:</span> User receives a final warning; behavior logged
+                                </li>
+                                <li className="flex items-start">
+                                  <span className="font-bold mr-2">3rd Report:</span> <strong>Automatic account suspension</strong> — immediate platform ban
+                                </li>
+                              </ul>
+                            </div>
+
+                            <div className="bg-orange-100 dark:bg-orange-900/30 rounded-lg p-4">
+                              <h5 className="font-semibold text-orange-800 dark:text-orange-200 mb-2">Ban Duration & Types</h5>
+                              <div className="space-y-3">
+                                <div>
+                                  <p className="text-orange-800 dark:text-orange-200 font-semibold text-sm mb-1">🕐 Temporary Ban (3 Reports)</p>
+                                  <p className="text-orange-700 dark:text-orange-300 text-sm">
+                                    • Duration: <strong>7 days</strong> from ban date<br />
+                                    • User cannot login or access any features<br />
+                                    • Account automatically reinstated after 7 days if no additional violations<br />
+                                    • Ban notification sent via email
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-red-800 dark:text-red-200 font-semibold text-sm mb-1">🚫 Permanent Ban (5+ Reports or Severe Violations)</p>
+                                  <p className="text-red-700 dark:text-red-300 text-sm">
+                                    • <strong>Permanent</strong> account termination<br />
+                                    • All user data deleted immediately<br />
+                                    • Device and IP blocked from creating new accounts<br />
+                                    • No reinstatement possible
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                              <h5 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 flex items-center">
+                                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                What Triggers a Report?
+                              </h5>
+                              <ul className="text-yellow-700 dark:text-yellow-300 text-sm space-y-1">
+                                <li>• Nudity or sexual content</li>
+                                <li>• Harassment, bullying, or threats</li>
+                                <li>• Hate speech or discrimination</li>
+                                <li>• Spam or commercial solicitation</li>
+                                <li>• Impersonation or fraud</li>
+                                <li>• Sharing illegal content</li>
+                              </ul>
+                            </div>
+
+                            <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                              <h5 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Appeals Process</h5>
+                              <p className="text-blue-700 dark:text-blue-300 text-sm">
+                                If you believe your ban was issued in error, you may appeal within <strong>7 days</strong> by contacting 
+                                <span className="font-semibold"> omegoochat@gmail.com</span> with:
+                              </p>
+                              <ul className="text-blue-700 dark:text-blue-300 text-sm space-y-1 mt-2">
+                                <li>• Your account email/username</li>
+                                <li>• Ban date and reason (if provided)</li>
+                                <li>• Explanation of why ban should be lifted</li>
+                                <li>• Any evidence supporting your claim</li>
+                              </ul>
+                              <p className="text-blue-700 dark:text-blue-300 text-sm mt-3">
+                                Appeals are reviewed within 48 hours. Decision is final.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
+                          <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2">✅ How to Avoid Getting Banned</h5>
+                          <ul className="text-green-700 dark:text-green-300 text-sm space-y-1">
+                            <li>• Follow all community guidelines and terms of service</li>
+                            <li>• Treat other users with respect and kindness</li>
+                            <li>• Avoid sharing inappropriate content (nudity, violence, hate speech)</li>
+                            <li>• Report violations instead of engaging with violators</li>
+                            <li>• Use the platform for its intended purpose: genuine connections</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* 8. Account Termination */}
                     <div className="mb-8">
                       <h3 className="text-xl font-bold text-white mb-4 flex items-center">

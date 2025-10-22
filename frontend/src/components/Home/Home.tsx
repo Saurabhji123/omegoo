@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth as useAuthContext } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
 // import { useSocket } from '../../contexts/SocketContext';
 
 const Home: React.FC = () => {
   const [isMatching, setIsMatching] = useState(false);
   const { user, loading } = useAuthContext(); // Removed unused 'updateUser'
-  const { darkMode } = useTheme();
   const navigate = useNavigate();
   const [, forceUpdate] = useState({});
 
@@ -76,7 +74,7 @@ const Home: React.FC = () => {
   // Show loading while checking authentication
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
@@ -84,10 +82,10 @@ const Home: React.FC = () => {
 
   if (isMatching) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
-            <div className="animate-spin rounded-full h-32 w-32 border-4 border-primary-200 border-t-primary-600 mx-auto mb-8"></div>
+            <div className="animate-spin rounded-full h-32 w-32 border-4 border-purple-200 border-t-purple-600 mx-auto mb-8"></div>
             <div className="absolute inset-0 flex items-center justify-center">
               <img 
                 src="/logo512.png" 
@@ -96,15 +94,15 @@ const Home: React.FC = () => {
               />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-2xl font-bold text-white mb-2">
             Finding your chat partner...
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-gray-400 mb-6">
             We're matching you with someone who shares your interests
           </p>
           <button
             onClick={() => setIsMatching(false)}
-            className="btn-secondary"
+            className="bg-white bg-opacity-10 hover:bg-opacity-20 text-white px-6 py-3 rounded-full font-semibold border border-white border-opacity-30 transition-all"
           >
             Cancel
           </button>
@@ -116,9 +114,7 @@ const Home: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
       {/* Welcome Section */}
-      <div className={`text-center mb-8 sm:mb-12 px-4 py-8 sm:py-16 ${
-        darkMode ? 'text-white' : 'text-gray-800'
-      }`}>
+      <div className="text-center mb-8 sm:mb-12 px-4 py-8 sm:py-16 text-white">
         {/* LPU Banner */}
         <div className="mb-6">
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text animate-pulse drop-shadow-2xl tracking-wider">
@@ -197,9 +193,7 @@ const Home: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h3 className={`text-lg sm:text-xl font-bold mb-2 sm:mb-3 ${
-            darkMode ? 'text-white' : 'text-gray-800'
-          }`}>
+          <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">
             Text Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
@@ -228,9 +222,7 @@ const Home: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
           </div>
-          <h3 className={`text-lg sm:text-xl font-bold mb-2 sm:mb-3 ${
-            darkMode ? 'text-white' : 'text-gray-800'
-          }`}>
+          <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">
             Voice Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
@@ -259,9 +251,7 @@ const Home: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </div>
-          <h3 className={`text-lg sm:text-xl font-bold mb-2 sm:mb-3 ${
-            darkMode ? 'text-white' : 'text-gray-800'
-          }`}>
+          <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">
             Video Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">

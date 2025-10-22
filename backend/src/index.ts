@@ -177,22 +177,10 @@ async function runMigrations() {
   try {
     console.log('🔄 Running database migrations...');
     
-    const DatabaseServiceClass = ServiceFactory.DatabaseService;
+    // MongoDB doesn't need SQL migrations - schema is defined in models
+    // activeDeviceToken and lastLoginDevice fields are already in UserSchema
     
-    // Add active_device_token and last_login_device columns if they don't exist
-    await (DatabaseServiceClass as any).query(`
-      ALTER TABLE users 
-      ADD COLUMN IF NOT EXISTS active_device_token TEXT,
-      ADD COLUMN IF NOT EXISTS last_login_device TEXT
-    `);
-    
-    // Add index for faster token lookups
-    await (DatabaseServiceClass as any).query(`
-      CREATE INDEX IF NOT EXISTS idx_users_active_device_token 
-      ON users(active_device_token)
-    `);
-    
-    console.log('✅ Database migrations completed');
+    console.log('✅ Database migrations completed (MongoDB schema-based)');
   } catch (error) {
     console.error('❌ Migration error:', error);
     // Don't exit - continue server startup even if migration fails
