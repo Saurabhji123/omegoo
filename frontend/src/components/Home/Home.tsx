@@ -118,12 +118,9 @@ const Home: React.FC = () => {
         {/* LPU Banner */}
         <div className="mb-6">
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text animate-pulse drop-shadow-2xl tracking-wider">
-            Made for LPU Students
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-gray-300 mt-3 font-medium tracking-wide">
             Meet LPU Friends — Chat & Vibe Live! 🎥
-          </p>
-          <p className="text-xs sm:text-sm text-gray-400 mt-1">
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-400 mt-3">
             Connect with LPU Students Instantly
           </p>
         </div>
