@@ -18,6 +18,11 @@ interface Message {
   content: string;
   isOwnMessage: boolean;
   timestamp: Date;
+  replyTo?: {
+    id: string;
+    content: string;
+    isOwnMessage: boolean;
+  };
 }
 
 const TextChat: React.FC = () => {
@@ -39,16 +44,23 @@ const TextChat: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [partnerTyping, setPartnerTyping] = useState(false);
   
+  // Reply feature states
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
+  const [swipingMessageId, setSwipingMessageId] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState<number>(0);
+  
   // Connection quality state (reserved for future implementation)
   // const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('good');
 
   // Add message helper function
-  const addMessage = useCallback((content: string, isOwnMessage: boolean) => {
+  const addMessage = useCallback((content: string, isOwnMessage: boolean, replyTo?: Message['replyTo']) => {
     const newMessage: Message = {
       id: Date.now().toString(),
       content,
       isOwnMessage,
-      timestamp: new Date()
+      timestamp: new Date(),
+      ...(replyTo && { replyTo })
     };
     setMessages(prev => [...prev, newMessage]);
   }, []);
@@ -76,40 +88,45 @@ const TextChat: React.FC = () => {
       totalChats?: number;
       dailyChats?: number;
     }) => {
-      console.log('💬 Text chat match found:', data);
-      console.log('📊 Match data received:', {
-        coins: data.coins,
-        totalChats: data.totalChats,
-        dailyChats: data.dailyChats,
-        hasCoinsData: data.coins !== undefined
-      });
-      
-      // Update user coins and chat counts from backend response
-      if (data.coins !== undefined) {
-        console.log('🔄 CALLING updateUser with:', { 
+      try {
+        console.log('💬 Text chat match found:', data);
+        console.log('📊 Match data received:', {
           coins: data.coins,
-          totalChats: data.totalChats || 0,
-          dailyChats: data.dailyChats || 0
+          totalChats: data.totalChats,
+          dailyChats: data.dailyChats,
+          hasCoinsData: data.coins !== undefined
         });
         
-        updateUser({ 
-          coins: data.coins,
-          totalChats: data.totalChats || 0,
-          dailyChats: data.dailyChats || 0
-        });
+        // Update user coins and chat counts from backend response
+        if (data.coins !== undefined) {
+          console.log('🔄 CALLING updateUser with:', { 
+            coins: data.coins,
+            totalChats: data.totalChats || 0,
+            dailyChats: data.dailyChats || 0
+          });
+          
+          updateUser({ 
+            coins: data.coins,
+            totalChats: data.totalChats || 0,
+            dailyChats: data.dailyChats || 0
+          });
+          
+          console.log(`✅ updateUser CALLED - New values: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
+        } else {
+          console.warn('⚠️ No coins data in match-found event!');
+        }
         
-        console.log(`✅ updateUser CALLED - New values: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
-      } else {
-        console.warn('⚠️ No coins data in match-found event!');
+        setSessionId(data.sessionId);
+        setPartnerId(data.matchUserId); // Track partner ID for reporting
+        setIsSearching(false);
+        setMessages([]);
+        
+        setIsMatchConnected(true);
+        addSystemMessage('Connected! Say hello to your new friend.');
+      } catch (error) {
+        console.error('❌ Error handling match-found event:', error);
+        addSystemMessage('Connection established but some data may be outdated.');
       }
-      
-      setSessionId(data.sessionId);
-      setPartnerId(data.matchUserId); // Track partner ID for reporting
-      setIsSearching(false);
-      setMessages([]);
-      
-      setIsMatchConnected(true);
-      addSystemMessage('Connected! Say hello to your new friend.');
     });
 
     socket.on('searching', (data: { position: number; totalWaiting: number }) => {
@@ -117,31 +134,56 @@ const TextChat: React.FC = () => {
       setIsSearching(true);
     });
 
-    socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string }) => {
-      console.log('📝 RECEIVED MESSAGE IN TEXTCHAT:', data);
-      if (data.sessionId === sessionId) {
-        addMessage(data.content, false);
-        setPartnerTyping(false);
+    socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string; replyTo?: Message['replyTo'] }) => {
+      try {
+        console.log('📝 RECEIVED MESSAGE IN TEXTCHAT:', data);
+        if (data.sessionId === sessionId) {
+          if (!data.content || typeof data.content !== 'string') {
+            console.error('Invalid message content received:', data);
+            return;
+          }
+          addMessage(data.content, false, data.replyTo);
+          setPartnerTyping(false);
+        }
+      } catch (error) {
+        console.error('❌ Error handling chat_message event:', error);
       }
     });
 
     socket.on('typing', (data: { isTyping: boolean }) => {
-      setPartnerTyping(data.isTyping);
+      try {
+        if (typeof data.isTyping === 'boolean') {
+          setPartnerTyping(data.isTyping);
+        } else {
+          console.warn('Invalid typing indicator data:', data);
+        }
+      } catch (error) {
+        console.error('❌ Error handling typing event:', error);
+      }
     });
 
     socket.on('session_ended', (data: { reason?: string }) => {
-      console.log('❌ Text chat session ended:', data);
-      setIsMatchConnected(false);
-      setSessionId(null);
-      
-      addSystemMessage('Your partner has left the chat.');
-      
-      // Auto-search if partner left
-      if (data.reason === 'partner_left' && socket) {
-        setIsSearching(true);
-        setTimeout(() => {
-          socket.emit('find_match', { mode: 'text' });
-        }, 2000);
+      try {
+        console.log('❌ Text chat session ended:', data);
+        setIsMatchConnected(false);
+        setSessionId(null);
+        
+        addSystemMessage('Your partner has left the chat.');
+        
+        // Auto-search if partner left
+        if (data.reason === 'partner_left' && socket) {
+          setIsSearching(true);
+          setTimeout(() => {
+            if (socket) {
+              socket.emit('find_match', { mode: 'text' });
+            }
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('❌ Error handling session_ended event:', error);
+        // Ensure state is reset even on error
+        setIsMatchConnected(false);
+        setSessionId(null);
       }
     });
 
@@ -204,70 +246,91 @@ const TextChat: React.FC = () => {
 
   // Start new chat - following AudioChat pattern
   const startNewChat = (forceCleanup = false) => {
-    if (!socket) {
-      console.error('❌ Socket not available');
-      return;
-    }
-    
-    if (!socketConnected) {
-      console.error('❌ Socket not connected');
-      return;
-    }
-
-    // MULTI-DEVICE PROTECTION: Check if user has active session in another tab/device
-    const activeSession = localStorage.getItem('omegoo_text_session');
-    if (activeSession && !forceCleanup) {
-      const sessionData = JSON.parse(activeSession);
-      const sessionAge = Date.now() - sessionData.timestamp;
+    try {
+      if (!socket) {
+        console.error('❌ Socket not available');
+        addSystemMessage('Connection error. Please refresh the page.');
+        return;
+      }
       
-      // If session is less than 5 minutes old, warn user
-      if (sessionAge < 5 * 60 * 1000) {
-        console.log('⚠️ Active text session detected in another tab/device');
-        const shouldContinue = window.confirm(
-          'You seem to have an active text chat in another tab or device. Continue anyway? This will end your previous session.'
-        );
-        
-        if (!shouldContinue) {
-          return;
+      if (!socketConnected) {
+        console.error('❌ Socket not connected');
+        addSystemMessage('Not connected to server. Please check your internet.');
+        return;
+      }
+
+      // MULTI-DEVICE PROTECTION: Check if user has active session in another tab/device
+      const activeSession = localStorage.getItem('omegoo_text_session');
+      if (activeSession && !forceCleanup) {
+        try {
+          const sessionData = JSON.parse(activeSession);
+          const sessionAge = Date.now() - sessionData.timestamp;
+          
+          // If session is less than 5 minutes old, warn user
+          if (sessionAge < 5 * 60 * 1000) {
+            console.log('⚠️ Active text session detected in another tab/device');
+            const shouldContinue = window.confirm(
+              'You seem to have an active text chat in another tab or device. Continue anyway? This will end your previous session.'
+            );
+            
+            if (!shouldContinue) {
+              return;
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing session data:', parseError);
+          // Continue anyway if parsing fails
         }
       }
-    }
-    
-    // Store current session attempt
-    localStorage.setItem('omegoo_text_session', JSON.stringify({
-      timestamp: Date.now(),
-      userId: socket.id
-    }));
-
-    // INSTANT DISCONNECT: End current session first if exists
-    if (sessionId && isMatchConnected) {
-      console.log('🔚 Ending current text session immediately:', sessionId);
-      socket.emit('end_session', { 
-        sessionId: sessionId,
-        duration: Date.now() 
-      });
       
-      // Notify partner immediately
-      socket.emit('session_ended', { 
-        sessionId: sessionId,
-        reason: 'user_clicked_next' 
-      });
+      // Store current session attempt
+      try {
+        localStorage.setItem('omegoo_text_session', JSON.stringify({
+          timestamp: Date.now(),
+          userId: socket.id
+        }));
+      } catch (storageError) {
+        console.warn('Failed to store session in localStorage:', storageError);
+        // Continue anyway
+      }
+
+      // INSTANT DISCONNECT: End current session first if exists
+      if (sessionId && isMatchConnected) {
+        console.log('🔚 Ending current text session immediately:', sessionId);
+        socket.emit('end_session', { 
+          sessionId: sessionId,
+          duration: Date.now() 
+        });
+        
+        // Notify partner immediately
+        socket.emit('session_ended', { 
+          sessionId: sessionId,
+          reason: 'user_clicked_next' 
+        });
+      }
+      
+      // INSTANT STATE RESET
+      setIsMatchConnected(false);
+      setSessionId(null);
+      setIsSearching(true);
+      setMessages([]);
+      setPartnerTyping(false);
+      setReplyingTo(null); // Clear reply state
+      console.log('🔄 State reset for new text chat connection');
+      
+      // START NEW SEARCH
+      setTimeout(() => {
+        if (socket) {
+          console.log('🔍 Starting search for new text chat partner');
+          socket.emit('find_match', { mode: 'text' });
+          console.log('✅ New text chat partner search started');
+        }
+      }, 100);
+    } catch (error) {
+      console.error('❌ Error in startNewChat:', error);
+      addSystemMessage('Failed to start new chat. Please try again.');
+      setIsSearching(false);
     }
-    
-    // INSTANT STATE RESET
-    setIsMatchConnected(false);
-    setSessionId(null);
-    setIsSearching(true);
-    setMessages([]);
-    setPartnerTyping(false);
-    console.log('🔄 State reset for new text chat connection');
-    
-    // START NEW SEARCH
-    setTimeout(() => {
-      console.log('🔍 Starting search for new text chat partner');
-      socket.emit('find_match', { mode: 'text' });
-      console.log('✅ New text chat partner search started');
-    }, 100);
   };
 
   const nextMatch = () => {
@@ -276,57 +339,112 @@ const TextChat: React.FC = () => {
   };
 
   const handleReport = () => {
-    if (partnerId && sessionId) {
+    try {
+      if (!partnerId || !sessionId) {
+        console.warn('Cannot report: missing partner or session', {
+          hasPartnerId: !!partnerId,
+          hasSessionId: !!sessionId
+        });
+        alert('No active session to report');
+        return;
+      }
       setShowReportModal(true);
-    } else {
-      alert('No active session to report');
+    } catch (error) {
+      console.error('❌ Error opening report modal:', error);
+      alert('Failed to open report. Please try again.');
     }
   };
 
   const exitChat = () => {
-    // Clean up current session
-    if (sessionId) {
-      socket?.emit('end_session', { sessionId });
+    try {
+      // Clean up current session
+      if (sessionId && socket) {
+        socket.emit('end_session', { sessionId });
+      }
+      
+      // Clear multi-device session tracking on exit
+      try {
+        localStorage.removeItem('omegoo_text_session');
+      } catch (storageError) {
+        console.warn('Failed to clear session from localStorage:', storageError);
+      }
+      
+      navigate('/');
+    } catch (error) {
+      console.error('❌ Error exiting chat:', error);
+      // Navigate anyway
+      navigate('/');
     }
-    
-    // Clear multi-device session tracking on exit
-    localStorage.removeItem('omegoo_text_session');
-    
-    navigate('/');
   };
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !isMatchConnected || !sessionId) return;
-    
-    const content = messageInput.trim();
-    addMessage(content, true);
-    
-    // Send message to backend - matching AudioChat pattern
-    socket?.emit('chat_message', {
-      sessionId,
-      content,
-      timestamp: Date.now()
-    });
-    
-    setMessageInput('');
-    setIsTyping(false);
-    
-    // Stop typing indicator
-    socket?.emit('typing', { sessionId, isTyping: false });
+    try {
+      if (!messageInput.trim() || !isMatchConnected || !sessionId) {
+        console.warn('Cannot send message: missing requirements', {
+          hasInput: !!messageInput.trim(),
+          isConnected: isMatchConnected,
+          hasSession: !!sessionId
+        });
+        return;
+      }
+      
+      if (!socket) {
+        console.error('❌ Socket not available for sending message');
+        return;
+      }
+      
+      const content = messageInput.trim();
+      
+      // Prepare reply data if replying to a message
+      const replyData = replyingTo ? {
+        id: replyingTo.id,
+        content: replyingTo.content,
+        isOwnMessage: replyingTo.isOwnMessage
+      } : undefined;
+      
+      addMessage(content, true, replyData);
+      
+      // Send message to backend - matching AudioChat pattern
+      socket.emit('chat_message', {
+        sessionId,
+        content,
+        timestamp: Date.now(),
+        ...(replyData && { replyTo: replyData })
+      });
+      
+      setMessageInput('');
+      setIsTyping(false);
+      setReplyingTo(null); // Clear reply state
+      
+      // Stop typing indicator
+      socket.emit('typing', { sessionId, isTyping: false });
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      // Show user-friendly error
+      addSystemMessage('Failed to send message. Please try again.');
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMessageInput(e.target.value);
-    
-    if (!isTyping && e.target.value.length > 0) {
-      setIsTyping(true);
-      socket?.emit('typing', { sessionId, isTyping: true });
+    try {
+      setMessageInput(e.target.value);
       
-      // Stop typing after 2 seconds of no input
-      setTimeout(() => {
-        setIsTyping(false);
-        socket?.emit('typing', { sessionId, isTyping: false });
-      }, 2000);
+      if (!isTyping && e.target.value.length > 0) {
+        setIsTyping(true);
+        if (socket && sessionId) {
+          socket.emit('typing', { sessionId, isTyping: true });
+          
+          // Stop typing after 2 seconds of no input
+          setTimeout(() => {
+            setIsTyping(false);
+            if (socket && sessionId) {
+              socket.emit('typing', { sessionId, isTyping: false });
+            }
+          }, 2000);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error handling input change:', error);
     }
   };
 
@@ -529,39 +647,106 @@ const TextChat: React.FC = () => {
               )}
 
               {/* Messages */}
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2 px-1 sm:px-0`}
-                >
+              {messages.map((message) => {
+                const isSwiping = swipingMessageId === message.id;
+                const transform = isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)';
+                
+                return (
                   <div
-                    className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${
-                      message.isOwnMessage
-                        ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
-                        : message.content.includes('Connected!') || message.content.includes('left the chat')
-                        ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full rounded-xl'
-                        : 'bg-white bg-opacity-10 text-white rounded-bl-md backdrop-blur-sm'
-                    }`}
+                    key={message.id}
+                    className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2 px-1 sm:px-0`}
                   >
-                    <p className="text-xs sm:text-sm leading-relaxed break-words">{message.content}</p>
-                    <div className={`text-xs mt-1 sm:mt-2 ${
-                      message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
-                    }`}>
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div
+                      className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm transition-transform ${
+                        message.isOwnMessage
+                          ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
+                          : message.content.includes('Connected!') || message.content.includes('left the chat')
+                          ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full rounded-xl'
+                          : 'bg-white bg-opacity-10 text-white rounded-bl-md backdrop-blur-sm'
+                      }`}
+                      style={{ transform }}
+                      onTouchStart={(e) => {
+                        try {
+                          // Only allow swipe on partner messages
+                          if (!message.isOwnMessage && !message.content.includes('Connected!') && !message.content.includes('left the chat')) {
+                            if (e.touches && e.touches[0]) {
+                              setSwipeStartX(e.touches[0].clientX);
+                              setSwipingMessageId(message.id);
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Touch start error:', error);
+                        }
+                      }}
+                      onTouchMove={(e) => {
+                        try {
+                          if (swipeStartX !== null && swipingMessageId === message.id) {
+                            if (e.touches && e.touches[0]) {
+                              const currentX = e.touches[0].clientX;
+                              const diff = currentX - swipeStartX;
+                              // Only allow right swipe (positive offset)
+                              if (diff > 0) {
+                                setSwipeOffset(Math.min(diff, 100)); // Cap at 100px
+                              }
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Touch move error:', error);
+                          // Reset swipe state on error
+                          setSwipeStartX(null);
+                          setSwipingMessageId(null);
+                          setSwipeOffset(0);
+                        }
+                      }}
+                      onTouchEnd={() => {
+                        try {
+                          if (swipeOffset > 60) { // Threshold: 60px
+                            setReplyingTo(message);
+                          }
+                        } catch (error) {
+                          console.error('Touch end error:', error);
+                        } finally {
+                          // Always reset swipe state
+                          setSwipeStartX(null);
+                          setSwipingMessageId(null);
+                          setSwipeOffset(0);
+                        }
+                      }}
+                    >
+                      {/* Reply context */}
+                      {message.replyTo && (
+                        <div className="mb-2 pb-2 border-l-4 border-purple-400 pl-2 bg-black bg-opacity-20 rounded p-1">
+                          <p className="text-xs opacity-70">
+                            {message.replyTo.isOwnMessage ? 'You' : 'Stranger'}
+                          </p>
+                          <p className="text-xs opacity-80 truncate">
+                            {message.replyTo.content.length > 50 
+                              ? message.replyTo.content.substring(0, 50) + '...' 
+                              : message.replyTo.content}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <p className="text-xs sm:text-sm leading-relaxed break-words">{message.content}</p>
+                      <div className={`text-xs mt-1 sm:mt-2 ${
+                        message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
+                      }`}>
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               
-              {/* Typing indicator */}
+              {/* Typing indicator - WhatsApp style */}
               {partnerTyping && (
-                <div className="flex justify-start mb-2">
+                <div className="flex justify-start mb-2 animate-fade-in">
                   <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md max-w-xs">
                     <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <span className="text-xs text-gray-400 ml-2">typing...</span>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+                      <span className="text-xs text-gray-300 ml-2 animate-pulse">typing...</span>
                     </div>
                   </div>
                 </div>
@@ -572,6 +757,30 @@ const TextChat: React.FC = () => {
 
             {/* Message Input - WhatsApp Style */}
             <div className="p-2 sm:p-3 lg:p-4 border-t border-white border-opacity-20 bg-black bg-opacity-30">
+              {/* Reply Preview */}
+              {replyingTo && (
+                <div className="mb-3 p-3 bg-purple-600 bg-opacity-20 border-l-4 border-purple-500 rounded-lg flex items-start justify-between animate-fade-in">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-purple-300 mb-1">
+                      Replying to {replyingTo.isOwnMessage ? 'yourself' : 'stranger'}
+                    </p>
+                    <p className="text-sm text-gray-200 truncate">
+                      {replyingTo.content.length > 60 
+                        ? replyingTo.content.substring(0, 60) + '...' 
+                        : replyingTo.content}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setReplyingTo(null)}
+                    className="ml-3 p-1 text-gray-400 hover:text-white transition-colors flex-shrink-0"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              
               <div className="flex items-end gap-2 sm:gap-3">
                 <div className="flex-1 relative">
                   <input
