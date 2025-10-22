@@ -235,10 +235,16 @@ router.get('/reports', authenticateAdmin, requirePermission('view_reports'), asy
             } : 'NOT FOUND'
           });
           
+          // Better fallback with more info
+          const reportedDisplay = reportedUser?.email || reportedUser?.username || `⚠️ Deleted User (${report.reportedUserId})`;
+          const reporterDisplay = reporterUser?.email || reporterUser?.username || `⚠️ Deleted User (${report.reporterUserId})`;
+          
           return {
             ...report,
-            reportedUserEmail: reportedUser?.email || reportedUser?.username || `User not found (${report.reportedUserId.substring(0, 8)}...)`,
-            reporterUserEmail: reporterUser?.email || reporterUser?.username || `User not found (${report.reporterUserId.substring(0, 8)}...)`
+            reportedUserEmail: reportedDisplay,
+            reporterUserEmail: reporterDisplay,
+            reportedUserExists: !!reportedUser,
+            reporterUserExists: !!reporterUser
           };
         } catch (err) {
           console.error('❌ Error enriching report:', err);

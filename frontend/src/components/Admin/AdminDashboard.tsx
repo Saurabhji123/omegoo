@@ -33,6 +33,8 @@ interface Report {
   reporterUserId: string;
   reportedUserEmail?: string; // 🆕 Added by backend
   reporterUserEmail?: string; // 🆕 Added by backend
+  reportedUserExists?: boolean; // 🆕 Flag if user exists in DB
+  reporterUserExists?: boolean; // 🆕 Flag if user exists in DB
   violationType: string;
   description: string;
   status: 'pending' | 'reviewed' | 'resolved';
@@ -357,23 +359,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
                       {/* Reported User (victim) */}
                       <div className="border-l-4 border-red-500 pl-3">
                         <p className="text-xs text-purple-300 mb-1">REPORTED USER (Violation)</p>
-                        <p className="text-white font-semibold mb-1">
+                        <p className={`font-semibold mb-1 ${report.reportedUserExists === false ? 'text-yellow-400' : 'text-white'}`}>
+                          {report.reportedUserExists === false && '⚠️ '}
                           📧 {report.reportedUserEmail || report.reportedUserId || 'Unknown User'}
                         </p>
                         <p className="text-purple-200 text-xs font-mono break-all">
                           🆔 {report.reportedUserId || 'N/A'}
                         </p>
+                        {report.reportedUserExists === false && (
+                          <p className="text-xs text-yellow-400 mt-1">⚠️ User deleted or not found in database</p>
+                        )}
                       </div>
                       
                       {/* Reporter User (who reported) */}
                       <div className="border-l-4 border-blue-500 pl-3">
                         <p className="text-xs text-purple-300 mb-1">REPORTER (Reported by)</p>
-                        <p className="text-white font-semibold mb-1">
+                        <p className={`font-semibold mb-1 ${report.reporterUserExists === false ? 'text-yellow-400' : 'text-white'}`}>
+                          {report.reporterUserExists === false && '⚠️ '}
                           📧 {report.reporterUserEmail || report.reporterUserId || 'Unknown User'}
                         </p>
                         <p className="text-purple-200 text-xs font-mono break-all">
                           🆔 {report.reporterUserId || 'N/A'}
                         </p>
+                        {report.reporterUserExists === false && (
+                          <p className="text-xs text-yellow-400 mt-1">⚠️ User deleted or not found in database</p>
+                        )}
                       </div>
                     </div>
                     

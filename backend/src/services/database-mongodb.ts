@@ -1154,19 +1154,31 @@ export class DatabaseService {
   /**
    * Update report status
    */
-  static async updateReportStatus(reportId: string, status: 'pending' | 'reviewed' | 'resolved'): Promise<boolean> {
+  static async updateReportStatus(reportId: string, status: 'pending' | 'reviewed' | 'resolved'): Promise<any | null> {
     if (this.isConnected) {
       try {
-        const result = await ModerationReportModel.updateOne(
+        console.log('🔄 Updating report status in DB:', { reportId, status });
+        
+        const result = await ModerationReportModel.findOneAndUpdate(
           { id: reportId },
-          { status }
-        );
-        return result.modifiedCount > 0;
+          { status },
+          { new: true } // Return updated document
+        ).lean();
+        
+        if (result) {
+          console.log('✅ Report updated successfully:', { id: result.id, newStatus: result.status });
+          return result;
+        } else {
+          console.log('❌ Report not found for update:', reportId);
+          return null;
+        }
       } catch (err) {
-        console.error('MongoDB updateReportStatus failed:', err);
+        console.error('❌ MongoDB updateReportStatus failed:', err);
+        return null;
       }
     }
-    return false;
+    console.log('❌ MongoDB not connected');
+    return null;
   }
 
   /**
