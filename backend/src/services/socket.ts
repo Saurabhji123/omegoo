@@ -605,7 +605,22 @@ export class SocketService {
     const session = await this.getSessionById(sessionId);
     if (!session) return;
 
-    const reportedUserId = session.user1_id === socket.userId ? session.user2_id : session.user1_id;
+    // FIX: MongoDB uses camelCase (user1Id, user2Id), not snake_case (user1_id, user2_id)
+    const reportedUserId = (session.user1Id === socket.userId || session.user1_id === socket.userId) 
+      ? (session.user2Id || session.user2_id) 
+      : (session.user1Id || session.user1_id);
+
+    console.log('🚨 Report User:', {
+      sessionId,
+      reporterUserId: socket.userId,
+      reportedUserId,
+      session: {
+        user1Id: session.user1Id,
+        user2Id: session.user2Id,
+        user1_id: session.user1_id,
+        user2_id: session.user2_id
+      }
+    });
 
     // Create moderation report
     await DatabaseService.createModerationReport({
