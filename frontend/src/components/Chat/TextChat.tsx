@@ -650,6 +650,7 @@ const TextChat: React.FC = () => {
               {messages.map((message) => {
                 const isSwiping = swipingMessageId === message.id;
                 const transform = isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)';
+                const transition = isSwiping ? 'none' : 'transform 0.3s ease-out';
                 
                 return (
                   <div
@@ -657,18 +658,18 @@ const TextChat: React.FC = () => {
                     className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2 px-1 sm:px-0`}
                   >
                     <div
-                      className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm transition-transform ${
+                      className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${
                         message.isOwnMessage
                           ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
                           : message.content.includes('Connected!') || message.content.includes('left the chat')
                           ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full rounded-xl'
                           : 'bg-white bg-opacity-10 text-white rounded-bl-md backdrop-blur-sm'
                       }`}
-                      style={{ transform }}
+                      style={{ transform, transition }}
                       onTouchStart={(e) => {
                         try {
-                          // Only allow swipe on partner messages
-                          if (!message.isOwnMessage && !message.content.includes('Connected!') && !message.content.includes('left the chat')) {
+                          // Allow swipe on ALL messages except system messages
+                          if (!message.content.includes('Connected!') && !message.content.includes('left the chat')) {
                             if (e.touches && e.touches[0]) {
                               setSwipeStartX(e.touches[0].clientX);
                               setSwipingMessageId(message.id);
@@ -706,7 +707,7 @@ const TextChat: React.FC = () => {
                         } catch (error) {
                           console.error('Touch end error:', error);
                         } finally {
-                          // Always reset swipe state
+                          // Always reset swipe state with smooth animation
                           setSwipeStartX(null);
                           setSwipingMessageId(null);
                           setSwipeOffset(0);
