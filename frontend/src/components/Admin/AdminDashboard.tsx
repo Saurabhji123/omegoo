@@ -122,26 +122,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
 
   const handleReportStatusUpdate = async (reportId: string, newStatus: 'reviewed' | 'resolved') => {
     try {
-      console.log('📝 Updating report:', { reportId, newStatus });
+      console.log('📝 Updating report:', { 
+        reportId, 
+        newStatus,
+        url: `${API_URL}/api/admin/reports/${reportId}`,
+        token: token ? 'Present' : 'Missing'
+      });
       
       const response = await axios.patch(
         `${API_URL}/api/admin/reports/${reportId}`,
         { status: newStatus },
-        axiosConfig
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000 // 10 second timeout
+        }
       );
 
       console.log('✅ Update response:', response.data);
 
       if (response.data.success) {
         window.alert(`Report marked as ${newStatus}!`);
-        fetchDashboardData(); // Refresh the reports list
+        await fetchDashboardData(); // Refresh the reports list
       } else {
         throw new Error(response.data.error || 'Update failed');
       }
     } catch (error: any) {
       console.error('❌ Failed to update report:', error);
-      console.error('Error response:', error.response?.data);
-      window.alert('Failed to update report: ' + (error.response?.data?.error || error.message || 'Unknown error'));
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config
+      });
+      
+      let errorMessage = 'Unknown error';
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server took too long to respond';
+      } else if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - cannot reach server. Check if backend is running on ' + API_URL;
+      } else if (error.response) {
+        errorMessage = error.response.data?.error || `Server error: ${error.response.status}`;
+      } else if (error.request) {
+        errorMessage = 'No response from server';
+      } else {
+        errorMessage = error.message;
+      }
+      
+      window.alert('Failed to update report: ' + errorMessage);
     }
   };
 

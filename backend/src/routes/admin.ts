@@ -210,25 +210,42 @@ router.get('/reports', authenticateAdmin, requirePermission('view_reports'), asy
             reporterUserId: report.reporterUserId
           });
           
-          const reportedUser = await DatabaseService.getUserById(report.reportedUserId);
-          const reporterUser = await DatabaseService.getUserById(report.reporterUserId);
+          // Fetch both users
+          const [reportedUser, reporterUser] = await Promise.all([
+            DatabaseService.getUserById(report.reportedUserId).catch(err => {
+              console.error(`❌ Error fetching reported user ${report.reportedUserId}:`, err);
+              return null;
+            }),
+            DatabaseService.getUserById(report.reporterUserId).catch(err => {
+              console.error(`❌ Error fetching reporter user ${report.reporterUserId}:`, err);
+              return null;
+            })
+          ]);
           
-          console.log(`👤 Users found:`, {
-            reportedEmail: reportedUser?.email || 'NOT FOUND',
-            reporterEmail: reporterUser?.email || 'NOT FOUND'
+          console.log(`👤 Users found for report ${report.id}:`, {
+            reportedUser: reportedUser ? {
+              id: reportedUser.id,
+              email: reportedUser.email || 'No email',
+              username: reportedUser.username
+            } : 'NOT FOUND',
+            reporterUser: reporterUser ? {
+              id: reporterUser.id,
+              email: reporterUser.email || 'No email',
+              username: reporterUser.username
+            } : 'NOT FOUND'
           });
           
           return {
             ...report,
-            reportedUserEmail: reportedUser?.email || 'Unknown User',
-            reporterUserEmail: reporterUser?.email || 'Unknown User'
+            reportedUserEmail: reportedUser?.email || reportedUser?.username || `User not found (${report.reportedUserId.substring(0, 8)}...)`,
+            reporterUserEmail: reporterUser?.email || reporterUser?.username || `User not found (${report.reporterUserId.substring(0, 8)}...)`
           };
         } catch (err) {
           console.error('❌ Error enriching report:', err);
           return {
             ...report,
-            reportedUserEmail: 'Error loading',
-            reporterUserEmail: 'Error loading'
+            reportedUserEmail: `Error: ${report.reportedUserId.substring(0, 8)}...`,
+            reporterUserEmail: `Error: ${report.reporterUserId.substring(0, 8)}...`
           };
         }
       })
