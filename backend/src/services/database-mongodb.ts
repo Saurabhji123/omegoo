@@ -23,6 +23,8 @@ interface IUserDoc extends Document {
   subscription?: any;
   isOnline?: boolean;
   socketId?: string | null;
+  activeDeviceToken?: string; // 🔒 Single-device session enforcement
+  lastLoginDevice?: string; // 🔒 Last login device info
   lastActiveAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -111,14 +113,14 @@ interface IAdminDoc extends Document {
 const UserSchema = new Schema<IUserDoc>({
   id: { type: String, required: true, unique: true },
   deviceId: { type: String, required: true, unique: true },
-  email: { type: String, sparse: true, unique: true },
+  email: { type: String, sparse: true, unique: true, index: true }, // 🔍 Index for fast email lookups
   username: { type: String },
   passwordHash: { type: String },
   phoneNumber: { type: String },
   phoneHash: { type: String },
   isVerified: { type: Boolean, default: false },
   tier: { type: String, enum: ['guest', 'verified', 'premium'], default: 'guest' },
-  status: { type: String, enum: ['active', 'banned', 'suspended'], default: 'active' },
+  status: { type: String, enum: ['active', 'banned', 'suspended'], default: 'active', index: true }, // 🔍 Index for status filtering
   coins: { type: Number, default: 0 },
   totalChats: { type: Number, default: 0 },
   dailyChats: { type: Number, default: 0 },
@@ -126,9 +128,11 @@ const UserSchema = new Schema<IUserDoc>({
   reportCount: { type: Number, default: 0 },
   preferences: { type: Schema.Types.Mixed, default: {} },
   subscription: { type: Schema.Types.Mixed, default: {} },
-  isOnline: { type: Boolean, default: false },
+  isOnline: { type: Boolean, default: false, index: true }, // 🔍 Index for active users query
   socketId: { type: String, default: null },
-  lastActiveAt: { type: Date },
+  activeDeviceToken: { type: String, default: null, index: true }, // 🔒🔍 Single-device session token + index for fast validation
+  lastLoginDevice: { type: String, default: null }, // 🔒 Last login device info
+  lastActiveAt: { type: Date, index: true }, // 🔍 Index for sorting by activity
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
@@ -213,8 +217,9 @@ const AdminSchema = new Schema<IAdminDoc>({
 // Indexes for better query performance
 BanHistorySchema.index({ userId: 1, isActive: 1 });
 BanHistorySchema.index({ expiresAt: 1 });
-AdminSchema.index({ username: 1 });
-AdminSchema.index({ email: 1 });
+// AdminSchema indexes already handled by unique: true in schema definition
+// Removed duplicate: AdminSchema.index({ username: 1 });
+// Removed duplicate: AdminSchema.index({ email: 1 });
 
 /* -------------------------
    Models
@@ -255,12 +260,17 @@ export class DatabaseService {
       await mongoose.connect(mongoUri, {
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
-        maxPoolSize: 10,
+        maxPoolSize: 100, // 🚀 Increased from 10 to 100 for high concurrency (lakhs of users)
+        minPoolSize: 10,  // 🚀 Maintain minimum 10 connections for fast response
+        maxIdleTimeMS: 30000, // Close idle connections after 30s
         bufferCommands: false,
+        retryWrites: true,
+        retryReads: true,
       });
       this.isConnected = true;
       console.log('✅ MongoDB Atlas connected successfully');
       console.log(`🔗 Database: ${mongoose.connection.name}`);
+      console.log(`🚀 Connection pool: min=10, max=100 (optimized for high traffic)`);
       await this.createIndexes();
     } catch (error) {
       console.error('❌ MongoDB connection failed, falling back to in-memory:', error);

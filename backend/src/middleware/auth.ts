@@ -47,6 +47,16 @@ export const authenticateToken = async (
       });
     }
 
+    // 🔒 SINGLE-DEVICE SESSION CHECK
+    // If user has activeDeviceToken and it doesn't match current token, they're logged in elsewhere
+    if (user.activeDeviceToken && user.activeDeviceToken !== token) {
+      return res.status(401).json({
+        success: false,
+        error: 'You have been logged in from another device',
+        code: 'SESSION_REPLACED'
+      });
+    }
+
     req.user = {
       id: user.id,
       deviceId: user.device_id,

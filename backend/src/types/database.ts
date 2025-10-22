@@ -14,6 +14,8 @@ export interface User {
   dailyChats?: number;
   lastCoinClaim?: Date;
   isVerified: boolean;
+  activeDeviceToken?: string; // Current active session token - only one device at a time
+  lastLoginDevice?: string; // Device info for last login
   preferences: {
     language: string;
     interests: string[];

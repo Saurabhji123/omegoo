@@ -137,7 +137,22 @@ app.get('/test-connection', (req, res) => {
   });
 });
 
+// Stricter rate limiting for auth endpoints (prevent brute force)
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // 5 login attempts per minute per IP
+  message: {
+    success: false,
+    error: 'Too many login attempts from this IP. Please try again after 1 minute.',
+    code: 'RATE_LIMIT_EXCEEDED'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // API routes
+app.use('/api/auth/login', authLimiter); // 🔒 Rate limit login endpoint
+app.use('/api/auth/register', authLimiter); // 🔒 Rate limit register endpoint
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportsRoutes); // Public reports endpoint
 app.use('/api/user', authenticateToken, userRoutes);
@@ -157,6 +172,33 @@ app.use('*', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
+// Run database migrations
+async function runMigrations() {
+  try {
+    console.log('🔄 Running database migrations...');
+    
+    const DatabaseServiceClass = ServiceFactory.DatabaseService;
+    
+    // Add active_device_token and last_login_device columns if they don't exist
+    await (DatabaseServiceClass as any).query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS active_device_token TEXT,
+      ADD COLUMN IF NOT EXISTS last_login_device TEXT
+    `);
+    
+    // Add index for faster token lookups
+    await (DatabaseServiceClass as any).query(`
+      CREATE INDEX IF NOT EXISTS idx_users_active_device_token 
+      ON users(active_device_token)
+    `);
+    
+    console.log('✅ Database migrations completed');
+  } catch (error) {
+    console.error('❌ Migration error:', error);
+    // Don't exit - continue server startup even if migration fails
+  }
+}
+
 // Initialize services
 async function initializeServices() {
   try {
@@ -167,6 +209,9 @@ async function initializeServices() {
     // Initialize Redis service using factory  
     const RedisServiceClass = ServiceFactory.RedisService;
     await (RedisServiceClass as any).initialize();
+
+    // Run migrations after database initialization
+    await runMigrations();
 
     // Initialize socket service
     SocketService.initialize(io);

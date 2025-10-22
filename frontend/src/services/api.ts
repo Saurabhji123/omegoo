@@ -43,6 +43,23 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        // 🔒 Handle session replaced error (logged in from another device)
+        if (data.code === 'SESSION_REPLACED') {
+          console.warn('⚠️ Session replaced - logged in from another device');
+          
+          // Clear local storage
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // Show alert to user
+          alert('You have been logged in from another device. Please login again.');
+          
+          // Reload page to reset app state
+          window.location.href = '/';
+          
+          throw new Error(data.error || 'Session replaced');
+        }
+
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 

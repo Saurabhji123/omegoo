@@ -29,6 +29,28 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
       req.userId = decoded.userId;
       req.userEmail = decoded.email;
+
+      // 🔒 Single-device session enforcement
+      const user = await DatabaseService.getUserById(decoded.userId);
+      
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          error: 'User not found',
+          code: 'USER_NOT_FOUND'
+        });
+      }
+
+      // Check if this token is still the active one
+      if (user.activeDeviceToken && user.activeDeviceToken !== token) {
+        console.log('⚠️ Session replaced for user:', decoded.userId);
+        return res.status(401).json({
+          success: false,
+          error: 'Your session has been replaced by a login from another device',
+          code: 'SESSION_REPLACED'
+        });
+      }
+
       next();
     } catch (jwtError) {
       return res.status(401).json({
@@ -121,10 +143,17 @@ router.post('/register', async (req, res) => {
   try {
     const { email, password, username } = req.body;
 
-    console.log('📝 Registration attempt:', { email, username });
+    console.log('\n=== 📝 REGISTRATION ATTEMPT START ===');
+    console.log('📧 Email:', email);
+    console.log('👤 Username:', username);
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    console.log('🌐 IP:', req.ip);
+    console.log('📱 User Agent:', req.headers['user-agent']);
 
     // Validation
     if (!email || !password || !username) {
+      console.log('❌ FAILED: Missing required fields');
+      console.log('=== REGISTRATION ATTEMPT END ===\n');
       return res.status(400).json({
         success: false,
         error: 'Email, username, and password are required'
@@ -132,44 +161,63 @@ router.post('/register', async (req, res) => {
     }
 
     // Email validation
+    console.log('✅ Validating email format...');
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.log('❌ FAILED: Invalid email format');
+      console.log('=== REGISTRATION ATTEMPT END ===\n');
       return res.status(400).json({
         success: false,
         error: 'Invalid email format'
       });
     }
+    console.log('✅ Email format valid');
 
     // Password validation (min 6 characters)
+    console.log('✅ Validating password...');
     if (password.length < 6) {
+      console.log('❌ FAILED: Password too short');
+      console.log('=== REGISTRATION ATTEMPT END ===\n');
       return res.status(400).json({
         success: false,
         error: 'Password must be at least 6 characters'
       });
     }
+    console.log('✅ Password valid');
 
     // Username validation
+    console.log('✅ Validating username...');
     if (username.length < 3) {
+      console.log('❌ FAILED: Username too short');
+      console.log('=== REGISTRATION ATTEMPT END ===\n');
       return res.status(400).json({
         success: false,
         error: 'Username must be at least 3 characters'
       });
     }
+    console.log('✅ Username valid');
 
     // Check if user already exists
+    console.log('🔍 Checking if email already registered...');
     const existingUser = await DatabaseService.getUserByEmail(email);
     if (existingUser) {
+      console.log('❌ FAILED: Email already registered:', email);
+      console.log('Existing user ID:', existingUser.id);
+      console.log('=== REGISTRATION ATTEMPT END ===\n');
       return res.status(400).json({
         success: false,
         error: 'Email already registered'
       });
     }
+    console.log('✅ Email available for registration');
 
     // Hash password
+    console.log('🔐 Hashing password...');
     const passwordHash = await bcrypt.hash(password, 10);
-    console.log('🔒 Password hashed successfully');
+    console.log('✅ Password hashed successfully');
 
     // Create user
+    console.log('💾 Creating user in database...');
     const user = await DatabaseService.createUser({
       email,
       username,
@@ -184,16 +232,37 @@ router.post('/register', async (req, res) => {
       deviceId: `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     });
 
-    console.log('✅ User created:', { id: user.id, email: user.email, username: user.username });
+    console.log('✅ User created successfully:', { 
+      id: user.id, 
+      email: user.email, 
+      username: user.username,
+      coins: user.coins,
+      tier: user.tier 
+    });
 
     // Generate JWT token
+    console.log('🎟️  Generating JWT token...');
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.tier },
       process.env.JWT_SECRET as string,
       { expiresIn: '7d' }
     );
+    console.log('✅ Token generated:', token.substring(0, 20) + '...');
 
-    console.log('🎟️ JWT token generated');
+    // 🔒 Save token for single-device session
+    const userAgent = req.headers['user-agent'] || 'Unknown Device';
+    const deviceInfo = `${userAgent.substring(0, 50)} - ${new Date().toLocaleString()}`;
+
+    console.log('💾 Saving initial session...');
+    console.log('🔒 activeDeviceToken:', token.substring(0, 20) + '...');
+    console.log('📱 Device info:', deviceInfo);
+
+    await DatabaseService.updateUser(user.id, {
+      activeDeviceToken: token,
+      lastLoginDevice: deviceInfo
+    });
+
+    console.log('✅ Session saved successfully');
 
     const responseData = {
       success: true,
@@ -210,11 +279,18 @@ router.post('/register', async (req, res) => {
       }
     };
 
-    console.log('📤 Sending response:', { hasToken: !!responseData.token, userId: responseData.user.id });
+    console.log('🎉 REGISTRATION SUCCESSFUL:', { 
+      userId: user.id,
+      email: user.email,
+      username: user.username 
+    });
+    console.log('=== REGISTRATION ATTEMPT END ===\n');
 
     res.json(responseData);
   } catch (error: any) {
-    console.error('Registration error:', error);
+    console.error('❌ CRITICAL REGISTRATION ERROR:', error);
+    console.error('Stack trace:', error.stack);
+    console.log('=== REGISTRATION ATTEMPT END (ERROR) ===\n');
     res.status(500).json({
       success: false,
       error: error.message || 'Registration failed'
@@ -230,10 +306,16 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log('🔐 Login attempt:', { email });
+    console.log('\n=== 🔐 LOGIN ATTEMPT START ===');
+    console.log('📧 Email:', email);
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    console.log('🌐 IP:', req.ip);
+    console.log('📱 User Agent:', req.headers['user-agent']);
 
     // Validation
     if (!email || !password) {
+      console.log('❌ FAILED: Missing credentials');
+      console.log('=== LOGIN ATTEMPT END ===\n');
       return res.status(400).json({
         success: false,
         error: 'Email and password are required'
@@ -241,19 +323,34 @@ router.post('/login', async (req, res) => {
     }
 
     // Find user by email
+    console.log('🔍 Looking up user in database...');
     const user = await DatabaseService.getUserByEmail(email);
     
-    console.log('👤 User lookup result:', { found: !!user, hasPassword: !!user?.passwordHash });
-    
     if (!user) {
+      console.log('❌ FAILED: User not found for email:', email);
+      console.log('=== LOGIN ATTEMPT END ===\n');
       return res.status(401).json({
         success: false,
         error: 'Invalid email or password'
       });
     }
 
+    console.log('✅ User found:', {
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+      tier: user.tier,
+      status: user.status,
+      hasPassword: !!user.passwordHash,
+      hasActiveToken: !!user.activeDeviceToken,
+      lastLoginDevice: user.lastLoginDevice || 'Never logged in',
+      isVerified: user.isVerified
+    });
+
     // Check if user has password (not OAuth user)
     if (!user.passwordHash) {
+      console.log('❌ FAILED: OAuth user trying email login:', email);
+      console.log('=== LOGIN ATTEMPT END ===\n');
       return res.status(400).json({
         success: false,
         error: 'Please login with Google'
@@ -261,20 +358,30 @@ router.post('/login', async (req, res) => {
     }
 
     // Verify password
+    console.log('🔑 Verifying password...');
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     
-    console.log('🔑 Password verification:', { isValid: isValidPassword });
-    
     if (!isValidPassword) {
+      console.log('❌ FAILED: Invalid password for user:', email);
+      console.log('=== LOGIN ATTEMPT END ===\n');
       return res.status(401).json({
         success: false,
         error: 'Invalid email or password'
       });
     }
 
+    console.log('✅ Password verified successfully');
+
     // Check if user is banned
+    console.log('🚫 Checking ban status...');
     const banStatus = await DatabaseService.checkUserBanStatus(user.id);
     if (banStatus) {
+      console.log('❌ FAILED: User is banned:', {
+        userId: user.id,
+        reason: banStatus.reason,
+        expiresAt: banStatus.expiresAt
+      });
+      console.log('=== LOGIN ATTEMPT END ===\n');
       return res.status(403).json({
         success: false,
         error: 'Account is banned',
@@ -286,24 +393,47 @@ router.post('/login', async (req, res) => {
         }
       });
     }
+    console.log('✅ User not banned');
 
     // Check and auto-reset daily coins if needed
+    console.log('🪙 Checking daily coin reset...');
     const updatedUser = await checkAndResetDailyCoins(user.id);
     const finalUser = updatedUser || user;
-
-    // Update last active
-    await DatabaseService.updateUser(finalUser.id, {
-      lastActiveAt: new Date()
-    });
+    console.log('✅ Coin check complete. Current coins:', finalUser.coins);
 
     // Generate JWT token
+    console.log('🎟️  Generating JWT token...');
     const token = jwt.sign(
       { userId: finalUser.id, email: finalUser.email, role: finalUser.tier },
       process.env.JWT_SECRET as string,
       { expiresIn: '7d' }
     );
+    console.log('✅ Token generated:', token.substring(0, 20) + '...');
 
-    console.log('✅ Login successful:', { userId: finalUser.id, email: finalUser.email, coins: finalUser.coins });
+    // 🔒 Save token to enforce single-device session
+    const userAgent = req.headers['user-agent'] || 'Unknown Device';
+    const deviceInfo = `${userAgent.substring(0, 50)} - ${new Date().toLocaleString()}`;
+
+    console.log('💾 Saving session to database...');
+    console.log('🔒 Previous activeDeviceToken:', finalUser.activeDeviceToken ? finalUser.activeDeviceToken.substring(0, 20) + '...' : 'None');
+    console.log('🔒 New activeDeviceToken:', token.substring(0, 20) + '...');
+    console.log('📱 Device info:', deviceInfo);
+
+    await DatabaseService.updateUser(finalUser.id, {
+      lastActiveAt: new Date(),
+      activeDeviceToken: token, // 🔒 This will REPLACE old token - previous sessions will be invalidated
+      lastLoginDevice: deviceInfo
+    });
+
+    console.log('✅ Session saved successfully');
+    console.log('🎉 LOGIN SUCCESSFUL:', { 
+      userId: finalUser.id, 
+      email: finalUser.email,
+      username: finalUser.username,
+      coins: finalUser.coins,
+      device: deviceInfo.substring(0, 50) 
+    });
+    console.log('=== LOGIN ATTEMPT END ===\n');
 
     res.json({
       success: true,
@@ -321,7 +451,9 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (error: any) {
-    console.error('Login error:', error);
+    console.error('❌ CRITICAL LOGIN ERROR:', error);
+    console.error('Stack trace:', error.stack);
+    console.log('=== LOGIN ATTEMPT END (ERROR) ===\n');
     res.status(500).json({
       success: false,
       error: 'Login failed'
@@ -441,7 +573,16 @@ router.post('/google', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    console.log('✅ Google OAuth successful:', { userId: user.id, email: user.email });
+    // 🔒 Save token for single-device session
+    const userAgent = req.headers['user-agent'] || 'Unknown Device';
+    const deviceInfo = `${userAgent.substring(0, 50)} - ${new Date().toLocaleString()}`;
+
+    await DatabaseService.updateUser(user.id, {
+      activeDeviceToken: token,
+      lastLoginDevice: deviceInfo
+    });
+
+    console.log('✅ Google OAuth successful:', { userId: user.id, email: user.email, device: deviceInfo });
 
     res.json({
       success: true,
