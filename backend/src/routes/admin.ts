@@ -205,16 +205,26 @@ router.get('/reports', authenticateAdmin, requirePermission('view_reports'), asy
     const enrichedReports = await Promise.all(
       reports.map(async (report) => {
         try {
+          console.log(`🔍 Fetching users for report ${report.id}:`, {
+            reportedUserId: report.reportedUserId,
+            reporterUserId: report.reporterUserId
+          });
+          
           const reportedUser = await DatabaseService.getUserById(report.reportedUserId);
           const reporterUser = await DatabaseService.getUserById(report.reporterUserId);
           
+          console.log(`👤 Users found:`, {
+            reportedEmail: reportedUser?.email || 'NOT FOUND',
+            reporterEmail: reporterUser?.email || 'NOT FOUND'
+          });
+          
           return {
             ...report,
-            reportedUserEmail: reportedUser?.email || 'Unknown',
-            reporterUserEmail: reporterUser?.email || 'Unknown'
+            reportedUserEmail: reportedUser?.email || 'Unknown User',
+            reporterUserEmail: reporterUser?.email || 'Unknown User'
           };
         } catch (err) {
-          console.error('Error enriching report:', err);
+          console.error('❌ Error enriching report:', err);
           return {
             ...report,
             reportedUserEmail: 'Error loading',
@@ -223,6 +233,8 @@ router.get('/reports', authenticateAdmin, requirePermission('view_reports'), asy
         }
       })
     );
+    
+    console.log(`✅ Enriched ${enrichedReports.length} reports with user emails`);
     
     res.json({
       success: true,

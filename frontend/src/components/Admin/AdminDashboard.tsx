@@ -31,6 +31,8 @@ interface Report {
   sessionId: string;
   reportedUserId: string;
   reporterUserId: string;
+  reportedUserEmail?: string; // 🆕 Added by backend
+  reporterUserEmail?: string; // 🆕 Added by backend
   violationType: string;
   description: string;
   status: 'pending' | 'reviewed' | 'resolved';
@@ -70,7 +72,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
   const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
   const [selectedTab, setSelectedTab] = useState<'overview' | 'users' | 'reports' | 'bans'>('overview');
   const [loading, setLoading] = useState(true);
-  const [userEmails, setUserEmails] = useState<{ [userId: string]: string }>({});
 
   const axiosConfig = {
     headers: {
@@ -85,27 +86,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchUserEmails = async (userIds: string[]) => {
-    try {
-      // Get all users to build email mapping
-      const usersRes = await axios.get(`${API_URL}/api/admin/users`, axiosConfig);
-      if (usersRes.data.success) {
-        const emailMap: { [userId: string]: string } = {};
-        usersRes.data.users.forEach((user: any) => {
-          emailMap[user.id] = user.email || 'No email';
-        });
-        setUserEmails(emailMap);
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch user emails:', error);
-    }
-  };
-
   const fetchDashboardData = async () => {
     try {
       const [statsRes, reportsRes, bansRes] = await Promise.all([
         axios.get(`${API_URL}/api/admin/stats`, axiosConfig),
-        axios.get(`${API_URL}/api/admin/reports?limit=100`, axiosConfig), // Fetch all reports, not just pending
+        axios.get(`${API_URL}/api/admin/reports?limit=100`, axiosConfig), // Backend now returns enriched reports with emails
         axios.get(`${API_URL}/api/admin/bans`, axiosConfig)
       ]);
 
@@ -114,10 +99,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
       }
 
       if (reportsRes.data.success) {
-        setReports(reportsRes.data.reports);
-        // Fetch user emails for all reported users
-        const userIds = Array.from(new Set(reportsRes.data.reports.map((r: Report) => r.reportedUserId))) as string[];
-        await fetchUserEmails(userIds);
+        console.log('📊 Reports fetched:', reportsRes.data.reports.length);
+        console.log('📧 Sample report:', reportsRes.data.reports[0]); // Debug: Check if emails are present
+        setReports(reportsRes.data.reports); // Now includes reportedUserEmail and reporterUserEmail
       }
 
       if (bansRes.data.success) {
@@ -126,7 +110,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
 
       setLoading(false);
     } catch (error: any) {
-      console.error('Failed to fetch dashboard data:', error);
+      console.error('❌ Failed to fetch dashboard data:', error);
+      console.error('Error response:', error.response?.data);
       if (error.response?.status === 401) {
         window.alert('Session expired. Please login again.');
         onLogout();
@@ -137,18 +122,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
 
   const handleReportStatusUpdate = async (reportId: string, newStatus: 'reviewed' | 'resolved') => {
     try {
+      console.log('📝 Updating report:', { reportId, newStatus });
+      
       const response = await axios.patch(
         `${API_URL}/api/admin/reports/${reportId}`,
         { status: newStatus },
         axiosConfig
       );
 
+      console.log('✅ Update response:', response.data);
+
       if (response.data.success) {
-        window.alert('Report status updated!');
-        fetchDashboardData();
+        window.alert(`Report marked as ${newStatus}!`);
+        fetchDashboardData(); // Refresh the reports list
+      } else {
+        throw new Error(response.data.error || 'Update failed');
       }
     } catch (error: any) {
-      window.alert('Failed to update report: ' + (error.response?.data?.error || 'Unknown error'));
+      console.error('❌ Failed to update report:', error);
+      console.error('Error response:', error.response?.data);
+      window.alert('Failed to update report: ' + (error.response?.data?.error || error.message || 'Unknown error'));
     }
   };
 
@@ -305,53 +298,79 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
             ) : (
               <div className="space-y-4">
                 {reports.map(report => (
-                  <div key={report.id} className="bg-white bg-opacity-5 border border-white border-opacity-20 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                          report.status === 'pending' ? 'bg-yellow-500 text-white' :
-                          report.status === 'reviewed' ? 'bg-blue-500 text-white' :
-                          'bg-green-500 text-white'
-                        }`}>
-                          {report.status.toUpperCase()}
-                        </span>
-                        <h4 className="text-lg font-semibold text-white mt-2">
-                          {report.violationType.replace(/_/g, ' ').toUpperCase()}
-                        </h4>
+                  <div key={report.id} className="bg-white bg-opacity-5 border border-white border-opacity-20 rounded-lg p-6">
+                    <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                            report.status === 'pending' ? 'bg-yellow-500 text-white' :
+                            report.status === 'reviewed' ? 'bg-blue-500 text-white' :
+                            'bg-green-500 text-white'
+                          }`}>
+                            {report.status.toUpperCase()}
+                          </span>
+                          <h4 className="text-lg font-semibold text-white">
+                            {report.violationType.replace(/_/g, ' ').toUpperCase()}
+                          </h4>
+                        </div>
+                        <p className="text-purple-100 mb-4">{report.description}</p>
                       </div>
-                      <span className="text-sm text-purple-200">
+                      
+                      <span className="text-sm text-purple-200 whitespace-nowrap">
                         {new Date(report.createdAt).toLocaleString()}
                       </span>
                     </div>
                     
-                    <p className="text-purple-100 mb-3">{report.description}</p>
-                    
-                    <div className="flex items-center justify-between text-sm text-purple-200">
-                      <div>
-                        <span>Reported User: <span className="font-semibold text-white">{userEmails[report.reportedUserId] || 'Loading...'}</span></span>
-                        <span className="mx-2">|</span>
-                        <span>User ID: <span className="font-mono text-xs">{report.reportedUserId.substring(0, 8)}...</span></span>
-                        <span className="mx-2">|</span>
-                        <span>Session: <span className="font-mono text-xs">{report.sessionId.substring(0, 8)}...</span></span>
+                    {/* Reporter and Reported User Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-white bg-opacity-5 rounded-lg">
+                      {/* Reported User (victim) */}
+                      <div className="border-l-4 border-red-500 pl-3">
+                        <p className="text-xs text-purple-300 mb-1">REPORTED USER (Violation)</p>
+                        <p className="text-white font-semibold mb-1">
+                          📧 {report.reportedUserEmail || report.reportedUserId || 'Unknown User'}
+                        </p>
+                        <p className="text-purple-200 text-xs font-mono break-all">
+                          🆔 {report.reportedUserId || 'N/A'}
+                        </p>
                       </div>
                       
-                      {report.status === 'pending' && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleReportStatusUpdate(report.id, 'reviewed')}
-                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
-                          >
-                            Mark Reviewed
-                          </button>
-                          <button
-                            onClick={() => handleReportStatusUpdate(report.id, 'resolved')}
-                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition"
-                          >
-                            Resolve
-                          </button>
-                        </div>
-                      )}
+                      {/* Reporter User (who reported) */}
+                      <div className="border-l-4 border-blue-500 pl-3">
+                        <p className="text-xs text-purple-300 mb-1">REPORTER (Reported by)</p>
+                        <p className="text-white font-semibold mb-1">
+                          📧 {report.reporterUserEmail || report.reporterUserId || 'Unknown User'}
+                        </p>
+                        <p className="text-purple-200 text-xs font-mono break-all">
+                          🆔 {report.reporterUserId || 'N/A'}
+                        </p>
+                      </div>
                     </div>
+                    
+                    {/* Session ID */}
+                    <div className="mb-4 p-3 bg-white bg-opacity-5 rounded-lg">
+                      <p className="text-xs text-purple-300 mb-1">SESSION ID</p>
+                      <p className="text-purple-200 text-xs font-mono break-all">
+                        🔗 {report.sessionId}
+                      </p>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    {report.status === 'pending' && (
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        <button
+                          onClick={() => handleReportStatusUpdate(report.id, 'reviewed')}
+                          className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition font-medium"
+                        >
+                          Mark Reviewed
+                        </button>
+                        <button
+                          onClick={() => handleReportStatusUpdate(report.id, 'resolved')}
+                          className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition font-medium"
+                        >
+                          Resolve
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
