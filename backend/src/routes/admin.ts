@@ -192,18 +192,45 @@ router.get('/reports', authenticateAdmin, requirePermission('view_reports'), asy
     const limit = parseInt(req.query.limit as string) || 100;
     const status = req.query.status as string;
     
+    console.log('📊 Fetching reports:', { limit, status });
+    
     // Fetch all reports (not just pending) for admin dashboard
     const reports = status === 'pending' 
       ? await DatabaseService.getPendingReports(limit)
       : await DatabaseService.getAllReports(limit);
     
+    console.log(`✅ Found ${reports.length} reports`);
+    
+    // Enrich reports with user emails
+    const enrichedReports = await Promise.all(
+      reports.map(async (report) => {
+        try {
+          const reportedUser = await DatabaseService.getUserById(report.reportedUserId);
+          const reporterUser = await DatabaseService.getUserById(report.reporterUserId);
+          
+          return {
+            ...report,
+            reportedUserEmail: reportedUser?.email || 'Unknown',
+            reporterUserEmail: reporterUser?.email || 'Unknown'
+          };
+        } catch (err) {
+          console.error('Error enriching report:', err);
+          return {
+            ...report,
+            reportedUserEmail: 'Error loading',
+            reporterUserEmail: 'Error loading'
+          };
+        }
+      })
+    );
+    
     res.json({
       success: true,
-      reports,
-      total: reports.length
+      reports: enrichedReports,
+      total: enrichedReports.length
     });
   } catch (error: any) {
-    console.error('Get reports error:', error);
+    console.error('❌ Get reports error:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to fetch reports'
@@ -241,28 +268,45 @@ router.patch('/reports/:reportId', authenticateAdmin, requirePermission('resolve
     const { reportId } = req.params;
     const { status } = req.body;
 
-    if (!['pending', 'reviewed', 'resolved'].includes(status)) {
+    console.log('📝 Update report request:', { reportId, status, admin: req.body.adminId });
+
+    if (!status) {
+      console.log('❌ Missing status in request body');
       return res.status(400).json({
         success: false,
-        error: 'Invalid status'
+        error: 'Status is required'
       });
     }
 
+    if (!['pending', 'reviewed', 'resolved'].includes(status)) {
+      console.log('❌ Invalid status value:', status);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid status. Must be: pending, reviewed, or resolved'
+      });
+    }
+
+    console.log('🔄 Updating report status...');
     const updated = await DatabaseService.updateReportStatus(reportId, status);
     
     if (!updated) {
+      console.log('❌ Report not found:', reportId);
       return res.status(404).json({
         success: false,
         error: 'Report not found'
       });
     }
 
+    console.log('✅ Report status updated successfully:', { reportId, newStatus: status });
+
     res.json({
       success: true,
-      message: 'Report status updated'
+      message: 'Report status updated',
+      report: updated
     });
   } catch (error: any) {
-    console.error('Update report error:', error);
+    console.error('❌ Update report error:', error);
+    console.error('Stack trace:', error.stack);
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to update report'
