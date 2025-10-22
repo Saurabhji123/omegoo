@@ -616,8 +616,8 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Check and auto-reset daily coins if needed
-    const user = await checkAndResetDailyCoins(req.userId);
+    // Fetch user WITHOUT resetting coins (reset only happens on login)
+    const user = await DatabaseService.getUserById(req.userId);
 
     if (!user) {
       return res.status(404).json({

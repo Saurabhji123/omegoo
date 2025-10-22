@@ -70,6 +70,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
   const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
   const [selectedTab, setSelectedTab] = useState<'overview' | 'users' | 'reports' | 'bans'>('overview');
   const [loading, setLoading] = useState(true);
+  const [userEmails, setUserEmails] = useState<{ [userId: string]: string }>({});
 
   const axiosConfig = {
     headers: {
@@ -83,6 +84,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const fetchUserEmails = async (userIds: string[]) => {
+    try {
+      // Get all users to build email mapping
+      const usersRes = await axios.get(`${API_URL}/api/admin/users`, axiosConfig);
+      if (usersRes.data.success) {
+        const emailMap: { [userId: string]: string } = {};
+        usersRes.data.users.forEach((user: any) => {
+          emailMap[user.id] = user.email || 'No email';
+        });
+        setUserEmails(emailMap);
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch user emails:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -98,6 +115,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
 
       if (reportsRes.data.success) {
         setReports(reportsRes.data.reports);
+        // Fetch user emails for all reported users
+        const userIds = Array.from(new Set(reportsRes.data.reports.map((r: Report) => r.reportedUserId))) as string[];
+        await fetchUserEmails(userIds);
       }
 
       if (bansRes.data.success) {
@@ -308,9 +328,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, admin, onLogout 
                     
                     <div className="flex items-center justify-between text-sm text-purple-200">
                       <div>
-                        <span>Reported User: <span className="font-mono">{report.reportedUserId}</span></span>
+                        <span>Reported User: <span className="font-semibold text-white">{userEmails[report.reportedUserId] || 'Loading...'}</span></span>
                         <span className="mx-2">|</span>
-                        <span>Session: <span className="font-mono">{report.sessionId}</span></span>
+                        <span>User ID: <span className="font-mono text-xs">{report.reportedUserId.substring(0, 8)}...</span></span>
+                        <span className="mx-2">|</span>
+                        <span>Session: <span className="font-mono text-xs">{report.sessionId.substring(0, 8)}...</span></span>
                       </div>
                       
                       {report.status === 'pending' && (

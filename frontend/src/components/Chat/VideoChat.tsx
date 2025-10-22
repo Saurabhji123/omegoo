@@ -565,11 +565,10 @@ const VideoChat: React.FC = () => {
 
   const startLocalVideo = async () => {
     try {
-      const isMobile = windowWidth < 768;
       const constraints = {
         video: {
-          width: { ideal: isMobile ? 480 : 640, max: isMobile ? 640 : 1280 },
-          height: { ideal: isMobile ? 640 : 480, max: isMobile ? 720 : 720 },
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
           facingMode: facingMode, // Use current facing mode state
           frameRate: { ideal: 15, max: 30 }
         },
@@ -1003,14 +1002,14 @@ const VideoChat: React.FC = () => {
           {/* Local Video - Mobile vertical, PC horizontal */}
           <div className="absolute bottom-20 right-2 lg:bottom-4 lg:right-4 xl:bottom-6 xl:right-6">
             <div className={`bg-gray-800 rounded-lg border-2 border-white border-opacity-30 overflow-hidden shadow-2xl ${
-              windowWidth < 768 ? 'w-20 h-28' : 'w-32 h-24 sm:w-36 sm:h-27 md:w-32 md:h-24 lg:w-56 lg:h-40 xl:w-64 xl:h-48'
+              windowWidth < 768 ? 'w-24 h-32' : 'w-40 h-32 sm:w-44 sm:h-36 md:w-48 md:h-36 lg:w-64 lg:h-48 xl:w-72 xl:h-54'
             }`}>
               <video
                 ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 style={{
                   transform: 'scaleX(-1)',
                   width: '100%',
