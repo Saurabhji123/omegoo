@@ -616,8 +616,9 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Fetch user WITHOUT resetting coins (reset only happens on login)
-    const user = await DatabaseService.getUserById(req.userId);
+    // Check and auto-reset daily coins if needed (same as login)
+    const updatedUser = await checkAndResetDailyCoins(req.userId);
+    const user = updatedUser || await DatabaseService.getUserById(req.userId);
 
     if (!user) {
       return res.status(404).json({
@@ -630,7 +631,9 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
       userId: user.id, 
       email: user.email, 
       username: user.username,
-      coins: user.coins 
+      coins: user.coins,
+      totalChats: user.totalChats,
+      dailyChats: user.dailyChats
     });
 
     res.json({
