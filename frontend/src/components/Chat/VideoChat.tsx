@@ -878,11 +878,11 @@ const VideoChat: React.FC = () => {
         console.log('🛑 Stopped current video track');
       }
       
-      // Get new stream with switched camera - FIXED: Consistent constraints
+      // Get new stream with switched camera - FIXED: Use same constraints as initial video
       const constraints = {
         video: {
-          width: { ideal: 480, max: 640 },
-          height: { ideal: 640, max: 720 },
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
           facingMode: { exact: newFacingMode }, // FIXED: Use exact mode
           frameRate: { ideal: 15, max: 30 }
         },
@@ -1072,11 +1072,12 @@ const VideoChat: React.FC = () => {
                   ref={remoteVideoRef}
                   autoPlay
                   playsInline
-                  className="w-full h-full object-cover"
+                  className="w-full h-full"
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover' // FIXED: Consistent object-cover to prevent zoom issues
+                    objectFit: 'contain', // FIXED: Use contain to show full original video without zoom
+                    backgroundColor: '#000'
                   }}
                 />
                 
@@ -1120,13 +1121,14 @@ const VideoChat: React.FC = () => {
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover"
+                className="w-full h-full"
                 style={{
                   // FIXED: Use isLocalMirrored state for consistent mirror control
                   transform: isLocalMirrored ? 'scaleX(-1)' : 'none',
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover' // FIXED: Maintain aspect ratio without stretching
+                  objectFit: 'contain', // FIXED: Use contain to show full original video without zoom
+                  backgroundColor: '#1f2937'
                 }}
               />
               {!isCameraOn && (
