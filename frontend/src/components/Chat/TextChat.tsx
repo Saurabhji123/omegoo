@@ -834,7 +834,7 @@ const TextChat: React.FC = () => {
               {/* Typing indicator - WhatsApp style with continuous blinking */}
               {partnerTyping && (
                 <div className="flex justify-start mb-2 animate-fade-in">
-                  <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md max-w-xs">
+                  <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md">
                     <div className="flex items-center space-x-1.5">
                       <style>{`
                         @keyframes typing-dot {
@@ -848,7 +848,6 @@ const TextChat: React.FC = () => {
                       <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-1"></div>
                       <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-2"></div>
                       <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-3"></div>
-                      <span className="text-xs text-gray-300 ml-2 animate-pulse">typing...</span>
                     </div>
                   </div>
                 </div>

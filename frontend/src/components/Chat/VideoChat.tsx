@@ -716,110 +716,159 @@ const VideoChat: React.FC = () => {
   };
 
   const nextMatch = () => {
-    console.log('🔄 Next Person clicked - using force cleanup for fresh reconnect');
-    
-    // Use startNewChat with force cleanup for same users reconnection
-    startNewChat(true);
+    try {
+      console.log('🔄 Next Person clicked - using force cleanup for fresh reconnect');
+      
+      // Use startNewChat with force cleanup for same users reconnection
+      startNewChat(true);
+    } catch (error) {
+      console.error('❌ Error in nextMatch:', error);
+      addMessage('Failed to find next match. Please try again.', false);
+    }
   };
 
   const exitChat = () => {
-    // Clean up current session
-    if (sessionId) {
-      socket?.emit('end_session', { sessionId });
+    try {
+      console.log('🚪 Exit Chat clicked');
+      
+      // Clean up current session
+      if (sessionId) {
+        socket?.emit('end_session', { sessionId });
+      }
+      
+      // Clean up WebRTC
+      if (webRTCRef.current) {
+        webRTCRef.current.forceDisconnect();
+      }
+      
+      // Reset state
+      setCurrentState('disconnected');
+      setIsMatchConnected(false);
+      setSessionId(null);
+      setPartnerId('');
+      setIsSearching(false);
+      
+      console.log('✅ Exit chat cleanup completed');
+      
+      // Navigate to home
+      navigate('/');
+    } catch (error) {
+      console.error('❌ Error in exitChat:', error);
+      // Still try to navigate even if cleanup fails
+      navigate('/');
     }
-    
-    // Clean up WebRTC
-    if (webRTCRef.current) {
-      webRTCRef.current.forceDisconnect();
-    }
-    
-    // Reset state
-    setCurrentState('disconnected');
-    setIsMatchConnected(false);
-    setSessionId(null);
-    setPartnerId('');
-    setIsSearching(false);
-    
-    // Navigate to home
-    navigate('/');
   };
 
   const toggleCamera = () => {
-    const newState = webRTCRef.current?.toggleVideo();
-    setIsCameraOn(newState || false);
+    try {
+      console.log('📹 CAMERA TOGGLE: Current state =', isCameraOn);
+      
+      if (!webRTCRef.current) {
+        console.error('❌ WebRTC reference not available');
+        return;
+      }
+      
+      const newState = webRTCRef.current?.toggleVideo();
+      setIsCameraOn(newState || false);
+      
+      console.log('✅ Camera toggled:', newState);
+    } catch (error) {
+      console.error('❌ Error toggling camera:', error);
+      addMessage('Failed to toggle camera. Please try again.', false);
+    }
   };
 
   const toggleMic = () => {
-    console.log('🎤 MIC TOGGLE: Current state =', isMicOn);
-    
-    // Check if we have a valid local stream
-    if (!localStreamRef.current) {
-      console.error('❌ No local stream available for mic toggle');
-      return;
-    }
-    
-    const audioTrack = localStreamRef.current.getAudioTracks()[0];
-    if (audioTrack && audioTrack.readyState === 'live') {
+    try {
+      console.log('🎤 MIC TOGGLE: Current state =', isMicOn);
+      
+      // Check if we have a valid local stream
+      if (!localStreamRef.current) {
+        console.error('❌ No local stream available for mic toggle');
+        addMessage('Microphone not available. Please refresh the page.', false);
+        return;
+      }
+      
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (!audioTrack) {
+        console.error('❌ No audio track found');
+        addMessage('Microphone not found. Please check permissions.', false);
+        return;
+      }
+      
+      if (audioTrack.readyState !== 'live') {
+        console.error('❌ Audio track not live:', audioTrack.readyState);
+        addMessage('Microphone is not active. Please refresh.', false);
+        return;
+      }
+      
       // Direct toggle based on UI state for consistency
       const newState = !isMicOn;
       audioTrack.enabled = newState;
       
       // Update WebRTC senders to propagate mic state
       if (webRTCRef.current) {
-        // Get peer connection and update audio senders
-        const pc = (webRTCRef.current as any).peerConnection;
-        if (pc) {
-          const senders = pc.getSenders();
-          senders.forEach((sender: RTCRtpSender) => {
-            if (sender.track?.kind === 'audio') {
-              sender.track.enabled = newState;
-              console.log('🔄 Updated audio sender:', sender.track.id, 'enabled:', newState);
-            }
-          });
+        try {
+          // Get peer connection and update audio senders
+          const pc = (webRTCRef.current as any).peerConnection;
+          if (pc && pc.connectionState === 'connected') {
+            const senders = pc.getSenders();
+            senders.forEach((sender: RTCRtpSender) => {
+              if (sender.track?.kind === 'audio') {
+                sender.track.enabled = newState;
+                console.log('🔄 Updated audio sender:', sender.track.id, 'enabled:', newState);
+              }
+            });
+          }
+        } catch (peerError) {
+          console.warn('⚠️ Could not update peer connection audio:', peerError);
+          // Continue anyway - local toggle still works
         }
       }
       
       // Update UI state
       setIsMicOn(newState);
       
-      console.log('✅ Mic toggle:', {
+      console.log('✅ Mic toggled successfully:', {
         newState,
         trackEnabled: audioTrack.enabled,
         trackId: audioTrack.id
       });
       
-    } else {
-      console.error('❌ Audio track not available:', {
-        trackExists: !!audioTrack,
-        readyState: audioTrack?.readyState
-      });
+    } catch (error) {
+      console.error('❌ Error toggling microphone:', error);
+      addMessage('Failed to toggle microphone. Please try again.', false);
     }
   };
 
   const switchCamera = async () => {
     console.log('📷 CAMERA SWITCH: Current facing mode =', facingMode);
     
+    // Prevent multiple simultaneous calls
+    if (!localStreamRef.current) {
+      console.warn('⚠️ No local stream available');
+      return;
+    }
+    
     try {
-      // Toggle facing mode
+      // Toggle facing mode - FIXED: Properly toggle between user and environment
       const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
-      setFacingMode(newFacingMode);
+      console.log('🔄 Switching from', facingMode, 'to', newFacingMode);
       
       // Stop current video track
-      if (localStreamRef.current) {
-        const videoTrack = localStreamRef.current.getVideoTracks()[0];
-        if (videoTrack) {
-          videoTrack.stop();
-          console.log('🛑 Stopped current video track');
-        }
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.stop();
+        console.log('🛑 Stopped current video track');
       }
       
-      // Get new stream with switched camera
+      // Get new stream with switched camera - FIXED: Consistent constraints
       const isMobile = windowWidth < 768;
       const constraints = {
         video: {
           width: { ideal: isMobile ? 480 : 640, max: isMobile ? 640 : 1280 },
           height: { ideal: isMobile ? 640 : 480, max: isMobile ? 720 : 720 },
-          facingMode: newFacingMode,
+          facingMode: { exact: newFacingMode }, // FIXED: Use exact mode
           frameRate: { ideal: 15, max: 30 }
         },
         audio: {
@@ -829,29 +878,36 @@ const VideoChat: React.FC = () => {
         }
       };
       
-      console.log('🎥 Requesting new stream with facingMode:', newFacingMode);
+      console.log('🎥 Requesting new stream with constraints:', constraints);
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('✅ Got new stream with facingMode:', newFacingMode);
       
       // Update local video
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = newStream;
-        await localVideoRef.current.play();
+        await localVideoRef.current.play().catch(err => {
+          console.warn('Video autoplay warning (non-critical):', err);
+        });
+        console.log('✅ Updated local video element');
       }
       
-      // Update stream reference
+      // Preserve audio track from old stream
       const oldAudioTrack = localStreamRef.current?.getAudioTracks()[0];
+      const newAudioTrack = newStream.getAudioTracks()[0];
+      
+      // Update stream reference BEFORE updating peer connection
       localStreamRef.current = newStream;
       
       // Apply mic state to audio track
-      const newAudioTrack = newStream.getAudioTracks()[0];
       if (newAudioTrack && oldAudioTrack) {
         newAudioTrack.enabled = oldAudioTrack.enabled;
+        console.log('✅ Preserved mic state:', newAudioTrack.enabled);
       }
       
       // Update WebRTC peer connection with new video track
       if (webRTCRef.current && isMatchConnected) {
         const pc = (webRTCRef.current as any).peerConnection;
-        if (pc) {
+        if (pc && pc.connectionState === 'connected') {
           const newVideoTrack = newStream.getVideoTracks()[0];
           const senders = pc.getSenders();
           const videoSender = senders.find((sender: RTCRtpSender) => sender.track?.kind === 'video');
@@ -859,42 +915,67 @@ const VideoChat: React.FC = () => {
           if (videoSender && newVideoTrack) {
             await videoSender.replaceTrack(newVideoTrack);
             console.log('✅ Replaced video track in peer connection');
+          } else {
+            console.warn('⚠️ Video sender not found in peer connection');
           }
+        } else {
+          console.warn('⚠️ Peer connection not in connected state:', pc?.connectionState);
         }
       }
       
-      console.log('✅ Camera switched to:', newFacingMode);
+      // FIXED: Update facing mode state AFTER successful switch
+      setFacingMode(newFacingMode);
+      console.log('✅ Camera switched successfully to:', newFacingMode);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Failed to switch camera:', error);
-      // Revert facing mode on error
-      setFacingMode(facingMode);
-      addMessage('Failed to switch camera. Please try again.', false);
+      
+      // Better error handling with user feedback
+      if (error.name === 'OverconstrainedError') {
+        console.error('Camera not available:', error.constraint);
+        addMessage('This device does not have the requested camera.', false);
+      } else if (error.name === 'NotAllowedError') {
+        addMessage('Camera permission denied. Please allow camera access.', false);
+      } else if (error.name === 'NotFoundError') {
+        addMessage('No camera found on this device.', false);
+      } else {
+        addMessage('Failed to switch camera. Please try again.', false);
+      }
+      
+      // DO NOT revert facing mode - keep the state consistent
+      console.log('⚠️ Keeping facing mode as:', facingMode);
     }
   };
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !isMatchConnected || !sessionId || !socket) {
-      console.warn('❌ Cannot send message:', {
-        hasInput: !!messageInput.trim(),
-        isMatchConnected,
-        hasSessionId: !!sessionId,
-        hasSocket: !!socket
+    try {
+      if (!messageInput.trim() || !isMatchConnected || !sessionId || !socket) {
+        console.warn('❌ Cannot send message:', {
+          hasInput: !!messageInput.trim(),
+          isMatchConnected,
+          hasSessionId: !!sessionId,
+          hasSocket: !!socket
+        });
+        return;
+      }
+      
+      const content = messageInput.trim();
+      addMessage(content, true);
+      
+      // Send message via socket
+      socket.emit('chat_message', {
+        sessionId,
+        content,
+        type: 'text'
       });
-      return;
+      
+      setMessageInput('');
+      console.log('✅ Message sent successfully');
+      
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      addMessage('Failed to send message. Please try again.', false);
     }
-    
-    const content = messageInput.trim();
-    addMessage(content, true);
-    
-    // Send message via socket
-    socket.emit('chat_message', {
-      sessionId,
-      content,
-      type: 'text'
-    });
-    
-    setMessageInput('');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -904,10 +985,17 @@ const VideoChat: React.FC = () => {
   };
 
   const handleReport = () => {
-    if (partnerId && sessionId) {
-      setShowReportModal(true);
-    } else {
-      alert('No active session to report');
+    try {
+      if (partnerId && sessionId) {
+        setShowReportModal(true);
+        console.log('📢 Report modal opened for partner:', partnerId);
+      } else {
+        console.warn('⚠️ No active session to report');
+        alert('No active session to report');
+      }
+    } catch (error) {
+      console.error('❌ Error in handleReport:', error);
+      alert('Failed to open report dialog. Please try again.');
     }
   };
 
@@ -999,21 +1087,24 @@ const VideoChat: React.FC = () => {
             )}
           </div>
 
-          {/* Local Video - Mobile vertical, PC horizontal */}
+          {/* Local Video - FIXED: Consistent aspect ratio across all devices */}
           <div className="absolute bottom-20 right-2 lg:bottom-4 lg:right-4 xl:bottom-6 xl:right-6">
             <div className={`bg-gray-800 rounded-lg border-2 border-white border-opacity-30 overflow-hidden shadow-2xl ${
-              windowWidth < 768 ? 'w-24 h-32' : 'w-40 h-32 sm:w-44 sm:h-36 md:w-48 md:h-36 lg:w-64 lg:h-48 xl:w-72 xl:h-54'
+              // FIXED: Maintain consistent portrait aspect ratio (3:4) on all devices
+              windowWidth < 768 ? 'w-24 h-32' : 'w-36 h-48 lg:w-48 lg:h-64 xl:w-56 xl:h-72'
             }`}>
               <video
                 ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
                 style={{
-                  transform: 'scaleX(-1)',
+                  // FIXED: Only mirror front camera (user), not back camera (environment)
+                  transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
                   width: '100%',
-                  height: '100%'
+                  height: '100%',
+                  objectFit: 'cover' // FIXED: Maintain aspect ratio without stretching
                 }}
               />
               {!isCameraOn && (
