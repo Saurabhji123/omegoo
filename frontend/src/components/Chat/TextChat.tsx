@@ -138,11 +138,19 @@ const TextChat: React.FC = () => {
     socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string; replyTo?: Message['replyTo'] }) => {
       try {
         console.log('📝 RECEIVED MESSAGE IN TEXTCHAT:', data);
+        console.log('🔍 Reply data received:', {
+          hasReplyTo: !!data.replyTo,
+          replyTo: data.replyTo,
+          messageContent: data.content
+        });
+        
         if (data.sessionId === sessionId) {
           if (!data.content || typeof data.content !== 'string') {
             console.error('Invalid message content received:', data);
             return;
           }
+          
+          console.log('✅ Adding message with reply:', data.replyTo);
           addMessage(data.content, false, data.replyTo);
           setPartnerTyping(false);
         }
@@ -403,6 +411,13 @@ const TextChat: React.FC = () => {
         isOwnMessage: replyingTo.isOwnMessage
       } : undefined;
       
+      console.log('📤 SENDING MESSAGE:', {
+        content,
+        hasReply: !!replyData,
+        replyData,
+        replyingTo
+      });
+      
       addMessage(content, true, replyData);
       
       // Send message to backend - matching AudioChat pattern
@@ -412,6 +427,8 @@ const TextChat: React.FC = () => {
         timestamp: Date.now(),
         ...(replyData && { replyTo: replyData })
       });
+      
+      console.log('✅ Message sent with reply data:', replyData);
       
       setMessageInput('');
       setIsTyping(false);
@@ -666,8 +683,12 @@ const TextChat: React.FC = () => {
                       {/* Desktop Reply Button - Shows on Hover (Left side for all messages) */}
                       {!isSystemMessage && isHovered && (
                         <button
-                          onClick={() => setReplyingTo(message)}
-                          className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('🔄 Reply button clicked for message:', message);
+                            setReplyingTo(message);
+                          }}
+                          className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 rounded-full bg-purple-500 bg-opacity-80 hover:bg-opacity-100 backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 z-10"
                           title="Reply to this message"
                         >
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -677,17 +698,19 @@ const TextChat: React.FC = () => {
                       )}
                       
                       <div
-                        className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm cursor-pointer ${
+                        className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
                           message.isOwnMessage
                             ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
                             : isSystemMessage
-                            ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full rounded-xl'
+                            ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full rounded-xl cursor-default'
                             : 'bg-white bg-opacity-10 text-white rounded-bl-md backdrop-blur-sm'
-                        } ${isHovered && !isSystemMessage ? 'ring-2 ring-purple-400 ring-opacity-50' : ''}`}
+                        } ${isHovered && !isSystemMessage ? 'ring-2 ring-purple-400 ring-opacity-50 scale-[1.02] transition-all duration-200' : 'transition-all duration-200'}`}
                         style={{ transform, transition }}
-                        onClick={() => {
-                          // Desktop click to reply
-                          if (!isSystemMessage && window.innerWidth >= 768) {
+                        onClick={(e) => {
+                          // Desktop click to reply (double-click or single click on desktop)
+                          if (!isSystemMessage) {
+                            console.log('💬 Message clicked for reply:', message);
+                            console.log('📱 Screen width:', window.innerWidth);
                             setReplyingTo(message);
                           }
                         }}
@@ -768,15 +791,15 @@ const TextChat: React.FC = () => {
                 );
               })}
               
-              {/* Typing indicator - WhatsApp style */}
+              {/* Typing indicator - WhatsApp style with continuous blinking */}
               {partnerTyping && (
                 <div className="flex justify-start mb-2 animate-fade-in">
                   <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md max-w-xs">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-                      <span className="text-xs text-gray-300 ml-2 animate-pulse">typing...</span>
+                    <div className="flex items-center space-x-1.5">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDuration: '1.4s', animationDelay: '0s' }}></div>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDuration: '1.4s', animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDuration: '1.4s', animationDelay: '0.4s' }}></div>
+                      <span className="text-xs text-gray-300 ml-2 animate-pulse" style={{ animationDuration: '1.5s' }}>typing...</span>
                     </div>
                   </div>
                 </div>
