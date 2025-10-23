@@ -42,6 +42,7 @@ const VideoChat: React.FC = () => {
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user'); // Track camera facing mode
+  const [isLocalMirrored, setIsLocalMirrored] = useState(true); // Track local video mirror state (for PC toggle)
   const [cameraBlocked, setCameraBlocked] = useState(false);
   // const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -703,6 +704,8 @@ const VideoChat: React.FC = () => {
     setIsSearching(true);
     setIsMicOn(true); // CRITICAL: Reset mic to ON for next match (AudioChat pattern)
     setIsCameraOn(true); // Reset camera to ON for next match
+    setFacingMode('user'); // Reset to front camera
+    setIsLocalMirrored(true); // Reset to mirrored for front camera
     console.log('🔄 State reset for new connection - Mic and Camera ON');
     
     // START NEW SEARCH (with delay if force cleanup)
@@ -844,6 +847,19 @@ const VideoChat: React.FC = () => {
   const switchCamera = async () => {
     console.log('📷 CAMERA SWITCH: Current facing mode =', facingMode);
     
+    const isMobile = windowWidth < 768;
+    
+    // PC/Desktop: Just toggle mirror effect, don't try to switch camera
+    if (!isMobile) {
+      console.log('💻 Desktop detected - toggling mirror effect');
+      setIsLocalMirrored(prev => !prev);
+      console.log('✅ Mirror toggled to:', !isLocalMirrored);
+      return;
+    }
+    
+    // Mobile: Switch between front and back camera
+    console.log('📱 Mobile detected - switching camera');
+    
     // Prevent multiple simultaneous calls
     if (!localStreamRef.current) {
       console.warn('⚠️ No local stream available');
@@ -863,11 +879,10 @@ const VideoChat: React.FC = () => {
       }
       
       // Get new stream with switched camera - FIXED: Consistent constraints
-      const isMobile = windowWidth < 768;
       const constraints = {
         video: {
-          width: { ideal: isMobile ? 480 : 640, max: isMobile ? 640 : 1280 },
-          height: { ideal: isMobile ? 640 : 480, max: isMobile ? 720 : 720 },
+          width: { ideal: 480, max: 640 },
+          height: { ideal: 640, max: 720 },
           facingMode: { exact: newFacingMode }, // FIXED: Use exact mode
           frameRate: { ideal: 15, max: 30 }
         },
@@ -925,6 +940,8 @@ const VideoChat: React.FC = () => {
       
       // FIXED: Update facing mode state AFTER successful switch
       setFacingMode(newFacingMode);
+      // Update mirror state based on camera (front = mirrored, back = normal)
+      setIsLocalMirrored(newFacingMode === 'user');
       console.log('✅ Camera switched successfully to:', newFacingMode);
       
     } catch (error: any) {
@@ -1055,7 +1072,12 @@ const VideoChat: React.FC = () => {
                   ref={remoteVideoRef}
                   autoPlay
                   playsInline
-                  className="w-full h-full object-cover lg:object-contain xl:object-contain"
+                  className="w-full h-full object-cover"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover' // FIXED: Consistent object-cover to prevent zoom issues
+                  }}
                 />
                 
                 {/* Omegoo Watermark - Floating with animation */}
@@ -1100,8 +1122,8 @@ const VideoChat: React.FC = () => {
                 muted
                 className="w-full h-full object-cover"
                 style={{
-                  // FIXED: Only mirror front camera (user), not back camera (environment)
-                  transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
+                  // FIXED: Use isLocalMirrored state for consistent mirror control
+                  transform: isLocalMirrored ? 'scaleX(-1)' : 'none',
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover' // FIXED: Maintain aspect ratio without stretching
