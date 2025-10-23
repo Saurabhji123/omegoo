@@ -1189,7 +1189,7 @@ const VideoChat: React.FC = () => {
             {!isMatchConnected ? (
               <button
                 onClick={() => startNewChat()}
-                className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 lg:px-8 lg:py-3 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 lg:px-8 lg:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-sm lg:text-base touch-manipulation"
                 disabled={isSearching}
               >
                 {isSearching ? 'Connecting...' : 'Find Someone'}
@@ -1198,7 +1198,7 @@ const VideoChat: React.FC = () => {
               <>
                 <button
                   onClick={nextMatch}
-                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 lg:px-6 lg:py-3 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 lg:px-6 lg:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-sm lg:text-base touch-manipulation"
                 >
                   Next Person
                 </button>
@@ -1272,7 +1272,7 @@ const VideoChat: React.FC = () => {
                     <div
                       className={`max-w-xs px-2 py-1 lg:px-3 lg:py-2 rounded-lg text-xs lg:text-sm ${
                         message.isOwnMessage
-                          ? 'bg-primary-600 text-white'
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
                           : message.content.includes('Connected!') || message.content.includes('ended') || message.content.includes('Error:')
                           ? 'bg-gray-600 text-gray-200 text-center'
                           : 'bg-gray-700 text-gray-200'
@@ -1281,7 +1281,7 @@ const VideoChat: React.FC = () => {
                       <p>{message.content}</p>
                       {!message.content.includes('Connected!') && !message.content.includes('ended') && !message.content.includes('Error:') && (
                         <p className={`text-xs mt-1 ${
-                          message.isOwnMessage ? 'text-primary-200' : 'text-gray-400'
+                          message.isOwnMessage ? 'text-purple-100' : 'text-gray-400'
                         }`}>
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>

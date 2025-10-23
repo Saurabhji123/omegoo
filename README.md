@@ -36,12 +36,12 @@
 <td width="50%">
 
 ### 🎯 Core Features
-- 🔒 **100% Anonymous** - No registration required
+- 🔒 **Secure Authentication** - Email/Google sign-in required
 - 💬 **Multi-Mode Chat** - Text, Voice & Video
 - ⚡ **Instant Matching** - Smart queue algorithm
 - 🌍 **Global Reach** - Connect with users worldwide
 - 📱 **PWA Support** - Install as mobile app
-- 🎨 **Modern UI** - Beautiful gradient theme
+- 🎨 **Modern UI** - Beautiful purple gradient theme
 
 </td>
 <td width="50%">
@@ -50,9 +50,9 @@
 - 🔞 **Age Verification** - 18+ mandatory
 - 🚫 **Skip & Report** - Moderation tools
 - 🔐 **Secure Sessions** - End-to-end encryption
-- 👁️ **Privacy First** - Minimal data collection
+- 👁️ **Privacy First** - Anonymous chat experience
 - ⚖️ **Legal Compliance** - GDPR & IT Rules 2021
-- 🎖️ **Verified Users** - Phone verification system
+- 🔑 **Authenticated Users** - Email/Google sign-in required
 
 </td>
 </tr>
@@ -64,21 +64,23 @@
 
 ```mermaid
 graph LR
-    A[Visit Website] --> B[Accept Terms]
-    B --> C[Choose Chat Mode]
-    C --> D[Get Matched]
-    D --> E[Start Chatting]
-    E --> F{Enjoy or Skip}
-    F -->|Next| D
-    F -->|Done| G[End Session]
+    A[Visit Website] --> B[Sign In/Register]
+    B --> C[Accept Terms]
+    C --> D[Choose Chat Mode]
+    D --> E[Get Matched]
+    E --> F[Start Chatting]
+    F --> G{Enjoy or Skip}
+    G -->|Next| E
+    G -->|Done| H[End Session]
 ```
 
 1. **📍 Visit** - Go to [omegoo.vercel.app](https://omegoo.vercel.app)
-2. **✅ Accept** - Agree to age verification and terms
-3. **🎯 Choose** - Select Text, Voice, or Video chat
-4. **🔄 Match** - Get paired with a random stranger
-5. **💬 Chat** - Enjoy anonymous conversation
-6. **⏭️ Skip** - Move to next person anytime
+2. **🔐 Sign In** - Register with Email or Google OAuth
+3. **✅ Accept** - Agree to age verification and terms
+4. **🎯 Choose** - Select Text, Voice, or Video chat
+5. **🔄 Match** - Get paired with a random stranger
+6. **💬 Chat** - Enjoy anonymous conversation
+7. **⏭️ Skip** - Move to next person anytime
 
 ---
 
@@ -203,23 +205,25 @@ ALLOWED_ORIGINS=https://omegoo.vercel.app
 ## 🎯 Features Showcase
 
 ### 🔐 Smart Authentication
-- **Guest Mode**: Start chatting instantly
-- **Google OAuth**: One-click sign-in
-- **Email/Password**: Traditional authentication
-- **Tiered System**: Guest → Verified → Premium
-
-### � Coin Economy
-- **Daily Coins**: 50 coins auto-reset at 12 AM
-- **Session Cost**: 1 coin per chat session
-- **Reward System**: Earn coins through activities
-- **Premium Features**: Unlock with subscription
+- **Email/Password**: Secure account creation
+- **Google OAuth**: Quick sign-in with Google
+- **JWT Tokens**: Session management & security
+- **Age Verification**: 18+ mandatory compliance
 
 ### 🎨 Modern UI/UX
-- **Gradient Theme**: Purple-blue aesthetic
-- **Dark Mode**: Eye-friendly interface
-- **Responsive Design**: Mobile, tablet, desktop
+- **Purple Gradient Theme**: Eye-catching modern design
+- **Dark Mode**: Comfortable viewing experience
+- **Responsive Design**: Seamless on mobile, tablet, desktop
 - **Smooth Animations**: Polished interactions
 - **Glass Morphism**: Modern frosted glass effects
+- **PWA Ready**: Install as native app
+
+### 🛡️ Privacy & Safety
+- **Anonymous Chat**: No personal info shared during chat
+- **Skip Feature**: Move to next person instantly
+- **Report System**: Flag inappropriate behavior
+- **Secure Sessions**: End-to-end encrypted connections
+- **Data Protection**: GDPR & IT Rules 2021 compliant
 
 ---
 
@@ -251,18 +255,31 @@ We welcome contributions! Here's how you can help:
 
 ---
 
-## � Roadmap
+## 🚀 Roadmap
 
+### ✅ Completed Features
 - [x] Text chat functionality
 - [x] Video chat with WebRTC
 - [x] Voice chat support
+- [x] Email authentication system
 - [x] Google OAuth integration
-- [x] Responsive design
+- [x] MongoDB integration
+- [x] Responsive PWA design
+- [x] Purple gradient theme
+- [x] Skip & report system
+- [x] Age verification
+
+### 🔜 Upcoming Features
+- [ ] Phone number verification
+- [ ] Coin economy system
+- [ ] Premium subscriptions
 - [ ] Group chat rooms
 - [ ] AI-powered moderation
-- [ ] Language translation
-- [ ] Virtual gifts system
-- [ ] Premium subscriptions
+- [ ] Real-time language translation
+- [ ] Virtual gifts & rewards
+- [ ] Advanced matching algorithm
+- [ ] User preferences & filters
+- [ ] Video chat recording (with consent)
 
 ---
 
