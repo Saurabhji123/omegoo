@@ -21,7 +21,7 @@ const PrivacyPolicy: React.FC = () => {
             Your privacy is our foundation. We believe in complete transparency about how we protect your data and ensure your anonymity.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6 mt-6">
-            <p className="text-sm text-primary-200">Last updated: October 12, 2025</p>
+            <p className="text-sm text-primary-200">Last updated: October 23, 2025</p>
             <div className="hidden sm:block w-1 h-1 bg-primary-200 rounded-full"></div>
             <p className="text-sm text-primary-200">Effective immediately</p>
           </div>
