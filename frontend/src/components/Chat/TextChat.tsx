@@ -49,6 +49,7 @@ const TextChat: React.FC = () => {
   const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
   const [swipingMessageId, setSwipingMessageId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState<number>(0);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   
   // Connection quality state (reserved for future implementation)
   // const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('good');
@@ -649,90 +650,118 @@ const TextChat: React.FC = () => {
               {/* Messages */}
               {messages.map((message) => {
                 const isSwiping = swipingMessageId === message.id;
+                const isHovered = hoveredMessageId === message.id;
                 const transform = isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)';
                 const transition = isSwiping ? 'none' : 'transform 0.3s ease-out';
+                const isSystemMessage = message.content.includes('Connected!') || message.content.includes('left the chat');
                 
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2 px-1 sm:px-0`}
+                    className={`flex ${message.isOwnMessage ? 'justify-end' : 'justify-start'} mb-1 sm:mb-2 px-1 sm:px-0 group`}
+                    onMouseEnter={() => !isSystemMessage && setHoveredMessageId(message.id)}
+                    onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    <div
-                      className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${
-                        message.isOwnMessage
-                          ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
-                          : message.content.includes('Connected!') || message.content.includes('left the chat')
-                          ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full rounded-xl'
-                          : 'bg-white bg-opacity-10 text-white rounded-bl-md backdrop-blur-sm'
-                      }`}
-                      style={{ transform, transition }}
-                      onTouchStart={(e) => {
-                        try {
-                          // Allow swipe on ALL messages except system messages
-                          if (!message.content.includes('Connected!') && !message.content.includes('left the chat')) {
-                            if (e.touches && e.touches[0]) {
-                              setSwipeStartX(e.touches[0].clientX);
-                              setSwipingMessageId(message.id);
-                            }
-                          }
-                        } catch (error) {
-                          console.error('Touch start error:', error);
-                        }
-                      }}
-                      onTouchMove={(e) => {
-                        try {
-                          if (swipeStartX !== null && swipingMessageId === message.id) {
-                            if (e.touches && e.touches[0]) {
-                              const currentX = e.touches[0].clientX;
-                              const diff = currentX - swipeStartX;
-                              // Only allow right swipe (positive offset)
-                              if (diff > 0) {
-                                setSwipeOffset(Math.min(diff, 100)); // Cap at 100px
-                              }
-                            }
-                          }
-                        } catch (error) {
-                          console.error('Touch move error:', error);
-                          // Reset swipe state on error
-                          setSwipeStartX(null);
-                          setSwipingMessageId(null);
-                          setSwipeOffset(0);
-                        }
-                      }}
-                      onTouchEnd={() => {
-                        try {
-                          if (swipeOffset > 60) { // Threshold: 60px
-                            setReplyingTo(message);
-                          }
-                        } catch (error) {
-                          console.error('Touch end error:', error);
-                        } finally {
-                          // Always reset swipe state with smooth animation
-                          setSwipeStartX(null);
-                          setSwipingMessageId(null);
-                          setSwipeOffset(0);
-                        }
-                      }}
-                    >
-                      {/* Reply context */}
-                      {message.replyTo && (
-                        <div className="mb-2 pb-2 border-l-4 border-purple-400 pl-2 bg-black bg-opacity-20 rounded p-1">
-                          <p className="text-xs opacity-70">
-                            {message.replyTo.isOwnMessage ? 'You' : 'Stranger'}
-                          </p>
-                          <p className="text-xs opacity-80 truncate">
-                            {message.replyTo.content.length > 50 
-                              ? message.replyTo.content.substring(0, 50) + '...' 
-                              : message.replyTo.content}
-                          </p>
-                        </div>
+                    <div className="relative flex items-center gap-2">
+                      {/* Desktop Reply Button - Shows on Hover (Left side for all messages) */}
+                      {!isSystemMessage && isHovered && (
+                        <button
+                          onClick={() => setReplyingTo(message)}
+                          className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100"
+                          title="Reply to this message"
+                        >
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                          </svg>
+                        </button>
                       )}
                       
-                      <p className="text-xs sm:text-sm leading-relaxed break-words">{message.content}</p>
-                      <div className={`text-xs mt-1 sm:mt-2 ${
-                        message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
-                      }`}>
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <div
+                        className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm cursor-pointer ${
+                          message.isOwnMessage
+                            ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
+                            : isSystemMessage
+                            ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full rounded-xl'
+                            : 'bg-white bg-opacity-10 text-white rounded-bl-md backdrop-blur-sm'
+                        } ${isHovered && !isSystemMessage ? 'ring-2 ring-purple-400 ring-opacity-50' : ''}`}
+                        style={{ transform, transition }}
+                        onClick={() => {
+                          // Desktop click to reply
+                          if (!isSystemMessage && window.innerWidth >= 768) {
+                            setReplyingTo(message);
+                          }
+                        }}
+                        onTouchStart={(e) => {
+                          try {
+                            // Mobile swipe to reply
+                            if (!isSystemMessage) {
+                              if (e.touches && e.touches[0]) {
+                                setSwipeStartX(e.touches[0].clientX);
+                                setSwipingMessageId(message.id);
+                              }
+                            }
+                          } catch (error) {
+                            console.error('Touch start error:', error);
+                          }
+                        }}
+                        onTouchMove={(e) => {
+                          try {
+                            if (swipeStartX !== null && swipingMessageId === message.id) {
+                              if (e.touches && e.touches[0]) {
+                                const currentX = e.touches[0].clientX;
+                                const diff = currentX - swipeStartX;
+                                // Only allow right swipe (positive offset)
+                                if (diff > 0) {
+                                  setSwipeOffset(Math.min(diff, 100)); // Cap at 100px
+                                }
+                              }
+                            }
+                          } catch (error) {
+                            console.error('Touch move error:', error);
+                            // Reset swipe state on error
+                            setSwipeStartX(null);
+                            setSwipingMessageId(null);
+                            setSwipeOffset(0);
+                          }
+                        }}
+                        onTouchEnd={() => {
+                          try {
+                            if (swipeOffset > 60) { // Threshold: 60px
+                              setReplyingTo(message);
+                            }
+                          } catch (error) {
+                            console.error('Touch end error:', error);
+                          } finally {
+                            // Always reset swipe state with smooth animation
+                            setSwipeStartX(null);
+                            setSwipingMessageId(null);
+                            setSwipeOffset(0);
+                          }
+                        }}
+                      >
+                        {/* Reply context - Shows which message this is replying to */}
+                        {message.replyTo && (
+                          <div className="mb-2 pb-2 border-l-4 border-purple-400 pl-2 bg-black bg-opacity-30 rounded p-2 cursor-pointer hover:bg-opacity-40 transition-all">
+                            <p className="text-xs font-semibold opacity-90 mb-1">
+                              <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                              </svg>
+                              {message.replyTo.isOwnMessage ? 'You' : 'Stranger'}
+                            </p>
+                            <p className="text-xs opacity-80 line-clamp-2">
+                              {message.replyTo.content.length > 100 
+                                ? message.replyTo.content.substring(0, 100) + '...' 
+                                : message.replyTo.content}
+                            </p>
+                          </div>
+                        )}
+                        
+                        <p className="text-xs sm:text-sm leading-relaxed break-words">{message.content}</p>
+                        <div className={`text-xs mt-1 sm:mt-2 flex items-center gap-1 ${
+                          message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
+                        }`}>
+                          <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
