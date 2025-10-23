@@ -30,6 +30,7 @@ const TextChat: React.FC = () => {
   const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
   const { updateUser, user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Core states - following AudioChat pattern
   const [isSearching, setIsSearching] = useState(false);
@@ -159,10 +160,15 @@ const TextChat: React.FC = () => {
       }
     });
 
-    socket.on('typing', (data: { isTyping: boolean }) => {
+    socket.on('typing', (data: { isTyping: boolean; sessionId?: string; userId?: string }) => {
       try {
+        console.log('⌨️ RECEIVED TYPING EVENT:', data);
+        console.log('📊 Current session:', sessionId);
+        console.log('🔄 Partner typing state will change to:', data.isTyping);
+        
         if (typeof data.isTyping === 'boolean') {
           setPartnerTyping(data.isTyping);
+          console.log('✅ Partner typing state updated:', data.isTyping);
         } else {
           console.warn('Invalid typing indicator data:', data);
         }
@@ -198,6 +204,11 @@ const TextChat: React.FC = () => {
 
     // Cleanup on unmount
     return () => {
+      // Clear typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
       socket?.off('match-found');
       socket?.off('searching');
       socket?.off('chat_message');
@@ -430,12 +441,19 @@ const TextChat: React.FC = () => {
       
       console.log('✅ Message sent with reply data:', replyData);
       
+      // Clear typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      
       setMessageInput('');
       setIsTyping(false);
       setReplyingTo(null); // Clear reply state
       
       // Stop typing indicator
       socket.emit('typing', { sessionId, isTyping: false });
+      console.log('📤 SENT typing=false after message sent');
     } catch (error) {
       console.error('❌ Error sending message:', error);
       // Show user-friendly error
@@ -445,20 +463,41 @@ const TextChat: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      setMessageInput(e.target.value);
+      const value = e.target.value;
+      setMessageInput(value);
       
-      if (!isTyping && e.target.value.length > 0) {
-        setIsTyping(true);
-        if (socket && sessionId) {
+      console.log('⌨️ Input changed:', { value, currentlyTyping: isTyping, hasSession: !!sessionId });
+      
+      if (!socket || !sessionId) {
+        console.warn('⚠️ No socket or session for typing indicator');
+        return;
+      }
+      
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Start typing indicator when user starts typing
+      if (value.length > 0) {
+        if (!isTyping) {
+          setIsTyping(true);
           socket.emit('typing', { sessionId, isTyping: true });
-          
-          // Stop typing after 2 seconds of no input
-          setTimeout(() => {
-            setIsTyping(false);
-            if (socket && sessionId) {
-              socket.emit('typing', { sessionId, isTyping: false });
-            }
-          }, 2000);
+          console.log('📤 SENT typing=true to backend');
+        }
+        
+        // Auto-stop typing after 2 seconds of no input
+        typingTimeoutRef.current = setTimeout(() => {
+          setIsTyping(false);
+          socket.emit('typing', { sessionId, isTyping: false });
+          console.log('📤 SENT typing=false to backend (timeout)');
+        }, 2000);
+      } else {
+        // Stop typing indicator when input is cleared
+        if (isTyping) {
+          setIsTyping(false);
+          socket.emit('typing', { sessionId, isTyping: false });
+          console.log('📤 SENT typing=false to backend (cleared input)');
         }
       }
     } catch (error) {

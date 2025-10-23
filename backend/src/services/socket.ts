@@ -577,11 +577,31 @@ export class SocketService {
   private static handleTyping(socket: AuthenticatedSocket, data: any) {
     const { sessionId, isTyping } = data;
     
-    // Forward to other user in session
-    socket.to(sessionId).emit('typing', {
-      userId: socket.userId,
-      isTyping
-    });
+    console.log(`⌨️ Typing event from ${socket.userId}:`, { sessionId, isTyping });
+    
+    // Find the active session
+    const session = this.activeSessions.get(sessionId);
+    if (!session) {
+      console.log(`❌ No active session found for typing indicator: ${sessionId}`);
+      return;
+    }
+
+    // Determine the partner (other user in the session)
+    const otherUserId = session.user1 === socket.userId ? session.user2 : session.user1;
+    const otherSocketId = this.connectedUsers.get(otherUserId);
+
+    console.log(`⌨️ Forwarding typing indicator to partner ${otherUserId} (socket: ${otherSocketId})`);
+
+    if (otherSocketId) {
+      this.io.to(otherSocketId).emit('typing', {
+        sessionId,
+        userId: socket.userId,
+        isTyping
+      });
+      console.log(`✅ Typing indicator forwarded: ${isTyping}`);
+    } else {
+      console.log(`❌ Partner ${otherUserId} not connected for typing indicator`);
+    }
   }
 
   private static handleWebRTCSignaling(socket: AuthenticatedSocket, event: string, data: any) {
