@@ -535,9 +535,9 @@ export class SocketService {
   }
 
   private static async handleChatMessage(socket: AuthenticatedSocket, data: any) {
-    const { sessionId, content, type } = data;
+    const { sessionId, content, type, replyTo } = data;
 
-    console.log(`💬 Chat message from ${socket.userId}:`, { sessionId, content, type });
+    console.log(`💬 Chat message from ${socket.userId}:`, { sessionId, content, type, replyTo });
     console.log(`🔍 Active sessions:`, Array.from(this.activeSessions.keys()));
     console.log(`🔍 Looking for session: ${sessionId}`);
 
@@ -554,6 +554,7 @@ export class SocketService {
     const otherSocketId = this.connectedUsers.get(otherUserId);
 
     console.log(`📤 Forwarding message to partner ${otherUserId} (socket: ${otherSocketId})`);
+    console.log(`📎 Reply context:`, replyTo);
 
     if (otherSocketId) {
       this.io.to(otherSocketId).emit('chat_message', {
@@ -561,9 +562,10 @@ export class SocketService {
         content,
         type,
         timestamp: Date.now(),
-        fromUserId: socket.userId
+        fromUserId: socket.userId,
+        ...(replyTo && { replyTo }) // Forward reply context if present
       });
-      console.log(`✅ Message forwarded successfully`);
+      console.log(`✅ Message forwarded successfully with reply context:`, !!replyTo);
     } else {
       console.log(`❌ Other user ${otherUserId} not connected`);
     }

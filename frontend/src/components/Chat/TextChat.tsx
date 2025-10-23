@@ -680,7 +680,8 @@ const TextChat: React.FC = () => {
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
                     <div className="relative flex items-center gap-2">
-                      {/* Desktop Reply Button - Shows on Hover (Left side for all messages) */}
+                      {/* Desktop Reply Button - Shows on Hover */}
+                      {/* Own messages: left side | Partner messages: right side */}
                       {!isSystemMessage && isHovered && (
                         <button
                           onClick={(e) => {
@@ -688,7 +689,7 @@ const TextChat: React.FC = () => {
                             console.log('🔄 Reply button clicked for message:', message);
                             setReplyingTo(message);
                           }}
-                          className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 rounded-full bg-purple-500 bg-opacity-80 hover:bg-opacity-100 backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 z-10"
+                          className={`absolute ${message.isOwnMessage ? '-left-10' : '-right-10'} top-1/2 -translate-y-1/2 p-2 rounded-full bg-purple-500 bg-opacity-80 hover:bg-opacity-100 backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 z-10`}
                           title="Reply to this message"
                         >
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -796,10 +797,19 @@ const TextChat: React.FC = () => {
                 <div className="flex justify-start mb-2 animate-fade-in">
                   <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md max-w-xs">
                     <div className="flex items-center space-x-1.5">
-                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDuration: '1.4s', animationDelay: '0s' }}></div>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDuration: '1.4s', animationDelay: '0.2s' }}></div>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDuration: '1.4s', animationDelay: '0.4s' }}></div>
-                      <span className="text-xs text-gray-300 ml-2 animate-pulse" style={{ animationDuration: '1.5s' }}>typing...</span>
+                      <style>{`
+                        @keyframes typing-dot {
+                          0%, 60%, 100% { transform: translateY(0); }
+                          30% { transform: translateY(-8px); }
+                        }
+                        .typing-dot-1 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0s; }
+                        .typing-dot-2 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0.2s; }
+                        .typing-dot-3 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0.4s; }
+                      `}</style>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-1"></div>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-2"></div>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-3"></div>
+                      <span className="text-xs text-gray-300 ml-2 animate-pulse">typing...</span>
                     </div>
                   </div>
                 </div>
