@@ -1198,6 +1198,296 @@ const PrivacyPolicy: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* COPYRIGHT & INTELLECTUAL PROPERTY PROTECTION */}
+            <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl shadow-2xl overflow-hidden">
+              <div className="bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 p-1">
+                <div className="bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-3xl p-6 sm:p-8">
+                  <div className="flex items-center mb-8">
+                    <div className="w-2 h-8 bg-gradient-to-b from-red-600 to-yellow-600 rounded-full mr-4"></div>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">9. Copyright & Intellectual Property Protection</h2>
+                  </div>
+
+                  {/* Strict Copyright Notice */}
+                  <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30 border-2 border-red-500 rounded-3xl p-8 mb-8">
+                    <div className="text-center mb-6">
+                      <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl">
+                        <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <h3 className="text-3xl font-extrabold text-red-800 dark:text-red-200 mb-3">
+                        © {new Date().getFullYear()} Omegoo - All Rights Reserved
+                      </h3>
+                      <p className="text-lg font-bold text-red-700 dark:text-red-300 mb-2">
+                        Protected Under International Copyright Laws
+                      </p>
+                      <p className="text-sm text-red-600 dark:text-red-400 max-w-3xl mx-auto">
+                        Omegoo.com and all associated intellectual property, including but not limited to source code, design, 
+                        branding, logo, features, and functionality are exclusively owned and copyrighted by Omegoo.
+                      </p>
+                    </div>
+
+                    {/* Critical Warning Box */}
+                    <div className="bg-red-600 text-white rounded-2xl p-6 shadow-xl">
+                      <div className="flex items-start mb-4">
+                        <svg className="w-8 h-8 mr-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        <div className="flex-1">
+                          <h4 className="text-xl font-bold mb-2">⚠️ STRICT COPYRIGHT ENFORCEMENT</h4>
+                          <p className="text-sm leading-relaxed">
+                            <strong>WARNING:</strong> Unauthorized copying, cloning, reverse engineering, redistribution, or any form of 
+                            intellectual property theft of Omegoo's platform, code, design, or features is <strong className="underline">STRICTLY PROHIBITED</strong> 
+                            and will result in immediate legal action without prior warning or negotiation.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* What is Protected */}
+                  <div className="grid lg:grid-cols-2 gap-6 mb-8">
+                    <div className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border border-orange-200 dark:border-orange-800 rounded-2xl p-6">
+                      <div className="flex items-center mb-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-xl flex items-center justify-center mr-4">
+                          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-orange-800 dark:text-orange-200">Protected Intellectual Property</h3>
+                      </div>
+                      <ul className="text-orange-700 dark:text-orange-300 text-sm space-y-2">
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Source Code:</strong> All backend and frontend code architecture</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Visual Design:</strong> UI/UX design, layout, color schemes, animations</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Brand Identity:</strong> Omegoo name, logo, trademarks, branding</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Unique Features:</strong> Matching algorithm, chat system, WebRTC implementation</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Technical Innovation:</strong> Privacy-first architecture, session management</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Content:</strong> All website text, documentation, and marketing materials</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6">
+                      <div className="flex items-center mb-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl flex items-center justify-center mr-4">
+                          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-red-800 dark:text-red-200">Prohibited Actions</h3>
+                      </div>
+                      <ul className="text-red-700 dark:text-red-300 text-sm space-y-2">
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Cloning/Copying:</strong> Creating similar platforms or derivative works</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Reverse Engineering:</strong> Decompiling, disassembling, or analyzing code</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Redistribution:</strong> Sharing, selling, or licensing our code/design</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Trademark Misuse:</strong> Using "Omegoo" name or logo without permission</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Commercial Exploitation:</strong> Monetizing any Omegoo assets</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          <span><strong>Unauthorized Attribution:</strong> Removing credits or claiming ownership</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* DMCA Protection */}
+                  <div className="bg-gradient-to-r from-red-900/40 to-orange-900/40 border-2 border-red-500 rounded-3xl p-8 mb-8">
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl animate-pulse">
+                        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <h3 className="text-3xl font-extrabold text-white mb-4">
+                        ⚖️ DMCA TAKEDOWN ENFORCEMENT
+                      </h3>
+                      <p className="text-lg font-bold text-red-200 mb-4">
+                        Zero Tolerance Policy for Copyright Infringement
+                      </p>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6">
+                        <h4 className="text-xl font-bold text-red-600 dark:text-red-400 mb-4">🛑 Immediate Legal Action</h4>
+                        <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-4">
+                          Omegoo actively monitors for copyright violations. Any unauthorized use of our intellectual property will result in:
+                        </p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-xl">
+                            <h5 className="font-bold text-red-800 dark:text-red-200 mb-2">📧 DMCA Takedown Notices</h5>
+                            <p className="text-red-700 dark:text-red-300 text-xs">
+                              Immediate filing of Digital Millennium Copyright Act (DMCA) takedown requests to hosting providers, 
+                              domain registrars, and search engines. Your website/service will be taken offline within 24-48 hours.
+                            </p>
+                          </div>
+                          <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-xl">
+                            <h5 className="font-bold text-red-800 dark:text-red-200 mb-2">⚖️ Civil Litigation</h5>
+                            <p className="text-red-700 dark:text-red-300 text-xs">
+                              Legal action seeking injunctive relief, statutory damages ($750-$150,000 per work infringed), 
+                              actual damages, attorney fees, and court costs under applicable copyright laws.
+                            </p>
+                          </div>
+                          <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-xl">
+                            <h5 className="font-bold text-red-800 dark:text-red-200 mb-2">🌐 Domain Seizure</h5>
+                            <p className="text-red-700 dark:text-red-300 text-xs">
+                              Pursuit of domain name suspension or transfer through ICANN procedures and legal channels. 
+                              Infringing domains will be permanently blacklisted.
+                            </p>
+                          </div>
+                          <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-xl">
+                            <h5 className="font-bold text-red-800 dark:text-red-200 mb-2">🔒 No Settlement Option</h5>
+                            <p className="text-red-700 dark:text-red-300 text-xs">
+                              <strong>CRITICAL:</strong> Once DMCA is filed, we will <strong className="underline">NOT</strong> withdraw 
+                              the complaint or accept settlements. Legal proceedings will continue to maximum penalties.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-yellow-900/40 border-2 border-yellow-500 rounded-2xl p-6">
+                        <div className="flex items-start">
+                          <svg className="w-8 h-8 text-yellow-400 mr-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          <div className="flex-1">
+                            <h4 className="text-xl font-bold text-yellow-300 mb-2">⚠️ FINAL WARNING</h4>
+                            <p className="text-yellow-200 text-sm leading-relaxed mb-3">
+                              <strong>READ THIS CAREFULLY:</strong> By accessing Omegoo, you acknowledge and agree that:
+                            </p>
+                            <ul className="text-yellow-200 text-xs space-y-2">
+                              <li className="flex items-start">
+                                <span className="mr-2">•</span>
+                                <span>You will <strong>NOT</strong> copy, clone, or recreate any aspect of Omegoo</span>
+                              </li>
+                              <li className="flex items-start">
+                                <span className="mr-2">•</span>
+                                <span>You understand that copyright infringement carries <strong>severe financial and legal consequences</strong></span>
+                              </li>
+                              <li className="flex items-start">
+                                <span className="mr-2">•</span>
+                                <span>DMCA takedown notices filed by Omegoo are <strong>IRREVERSIBLE and NON-NEGOTIABLE</strong></span>
+                              </li>
+                              <li className="flex items-start">
+                                <span className="mr-2">•</span>
+                                <span>We will pursue <strong>maximum legal penalties</strong> without mercy or compromise</span>
+                              </li>
+                              <li className="flex items-start">
+                                <span className="mr-2">•</span>
+                                <span>Your actions are monitored and <strong>violations will be prosecuted internationally</strong></span>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Legal Contact */}
+                  <div className="bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/50 dark:to-slate-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="text-xl font-bold text-white mb-4">📧 Copyright Infringement Reports</h4>
+                        <p className="text-gray-300 text-sm mb-3">
+                          If you believe someone is infringing on Omegoo's copyright:
+                        </p>
+                        <div className="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-4">
+                          <p className="text-blue-800 dark:text-blue-200 text-sm">
+                            <strong>Email:</strong> omegoochat@gmail.com<br />
+                            <strong>Subject:</strong> "Copyright Infringement Report"<br />
+                            <strong>Include:</strong> URL of infringing site, description of violation
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-bold text-white mb-4">🤝 Licensing Inquiries</h4>
+                        <p className="text-gray-300 text-sm mb-3">
+                          For authorized licensing or partnership opportunities only:
+                        </p>
+                        <div className="bg-green-100 dark:bg-green-900/30 rounded-lg p-4">
+                          <p className="text-green-800 dark:text-green-200 text-sm">
+                            <strong>Email:</strong> omegoochat@gmail.com<br />
+                            <strong>Subject:</strong> "Licensing Inquiry"<br />
+                            <strong>Note:</strong> We rarely grant licenses. Expect thorough vetting.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Final Warning Badge */}
+                  <div className="mt-8 text-center bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl p-6 shadow-2xl">
+                    <div className="flex items-center justify-center mb-3">
+                      <svg className="w-10 h-10 text-white mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <h3 className="text-2xl font-extrabold text-white">Protected by International Copyright Law</h3>
+                    </div>
+                    <p className="text-white text-sm max-w-3xl mx-auto leading-relaxed">
+                      <strong>© {new Date().getFullYear()} Omegoo.</strong> All intellectual property rights reserved worldwide. 
+                      Unauthorized use will be prosecuted to the fullest extent of the law under the Berne Convention, 
+                      WIPO Copyright Treaty, DMCA, and applicable international copyright statutes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

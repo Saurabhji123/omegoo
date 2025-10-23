@@ -284,6 +284,79 @@ This project is **proprietary** and all rights are reserved.
 
 ---
 
+## ⚖️ Copyright & Intellectual Property Protection
+
+### 🚨 STRICT COPYRIGHT NOTICE
+
+**Omegoo** and all associated intellectual property, including but not limited to source code, design, branding, logo, features, and functionality are **exclusively owned and copyrighted** by Omegoo.
+
+### 🛡️ Protected Intellectual Property
+
+✅ **Source Code** - All backend and frontend code architecture  
+✅ **Visual Design** - UI/UX design, layout, color schemes, animations  
+✅ **Brand Identity** - Omegoo name, logo, trademarks, branding  
+✅ **Unique Features** - Matching algorithm, chat system, WebRTC implementation  
+✅ **Technical Innovation** - Privacy-first architecture, session management  
+✅ **Content** - All website text, documentation, and marketing materials  
+
+### ❌ PROHIBITED ACTIONS
+
+The following actions are **STRICTLY PROHIBITED** and will result in immediate legal action:
+
+- 🚫 **Cloning/Copying** - Creating similar platforms or derivative works
+- 🚫 **Reverse Engineering** - Decompiling, disassembling, or analyzing code
+- 🚫 **Redistribution** - Sharing, selling, or licensing our code/design
+- 🚫 **Trademark Misuse** - Using "Omegoo" name or logo without permission
+- 🚫 **Commercial Exploitation** - Monetizing any Omegoo assets
+- 🚫 **Unauthorized Attribution** - Removing credits or claiming ownership
+
+### ⚠️ DMCA TAKEDOWN ENFORCEMENT
+
+**ZERO TOLERANCE POLICY** - Any unauthorized use of Omegoo's intellectual property will result in:
+
+1. **📧 Immediate DMCA Takedown Notices** (24-48 hours)
+2. **⚖️ Civil Litigation** - Statutory damages ($750-$150,000 per work)
+3. **🌐 Domain Seizure** - Permanent blacklisting of infringing domains
+4. **🔒 NO SETTLEMENT** - Once filed, DMCA will **NOT** be withdrawn
+
+### 🌍 International Protection
+
+This project is protected under:
+- 📜 **Berne Convention** for the Protection of Literary and Artistic Works
+- 📜 **WIPO Copyright Treaty** (WCT)
+- 📜 **Digital Millennium Copyright Act** (DMCA) - USA
+- 📜 **Copyright Directive** - European Union
+- 📜 **International Copyright Laws** - Worldwide enforcement
+
+### 📧 Legal Contact
+
+**Copyright Infringement Reports:**  
+📩 [omegoochat@gmail.com](mailto:omegoochat@gmail.com)  
+Subject: "Copyright Infringement Report"
+
+**Licensing Inquiries (Rarely Granted):**  
+📩 [omegoochat@gmail.com](mailto:omegoochat@gmail.com)  
+Subject: "Licensing Inquiry"
+
+---
+
+### ⚠️ FINAL WARNING
+
+**By cloning, forking, or accessing this repository, you acknowledge that:**
+
+1. You will **NOT** copy, clone, or recreate any aspect of Omegoo
+2. Unauthorized use will result in **severe financial and legal consequences**
+3. DMCA takedown notices are **IRREVERSIBLE and NON-NEGOTIABLE**
+4. We will pursue **maximum legal penalties** without mercy
+5. Your actions are **monitored and violations will be prosecuted internationally**
+
+---
+
+**© 2025 Omegoo. Protected by International Copyright Law.**  
+*Unauthorized use will be prosecuted to the fullest extent of the law.*
+
+---
+
 ## 🌟 Show Your Support
 
 If you like this project, please ⭐ star it on GitHub!

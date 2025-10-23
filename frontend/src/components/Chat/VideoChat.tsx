@@ -1044,7 +1044,7 @@ const VideoChat: React.FC = () => {
               socketConnected && isMatchConnected ? 'bg-green-400' : 
               socketConnected && isSearching ? 'bg-yellow-400' : 
               socketConnecting ? 'bg-orange-400' :
-              socketConnected ? 'bg-blue-400' : 'bg-red-400'
+              socketConnected ? 'bg-purple-400 animate-pulse' : 'bg-red-400'
             }`}></div>
             <span className="text-white text-xs lg:text-sm font-medium">
               {socketConnected && isMatchConnected ? 'Connected' : 
@@ -1097,7 +1097,7 @@ const VideoChat: React.FC = () => {
               <div className="w-full h-full flex items-center justify-center text-gray-500 p-4">
                 {isSearching ? (
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 lg:h-12 lg:w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 lg:h-12 lg:w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
                     <p className="text-sm lg:text-base">Looking for someone you can chat with...</p>
                   </div>
                 ) : (
@@ -1220,18 +1220,18 @@ const VideoChat: React.FC = () => {
             </button>
           </div>
 
-          {/* Quick Options - Stack on mobile */}
-          <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-4 space-y-2 sm:space-y-0 text-xs lg:text-sm">
+          {/* Quick Options - Enhanced with Purple Gradient Theme */}
+          <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-3 space-y-2 sm:space-y-0 text-xs lg:text-sm">
             <button 
               onClick={() => setShowTextChat(!showTextChat)}
-              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation flex items-center space-x-1"
+              className="group relative px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 touch-manipulation flex items-center justify-center space-x-2"
             >
               <ChatBubbleLeftRightIcon className="w-4 h-4" />
               <span>{showTextChat ? 'Hide Chat' : 'Show Chat'}</span>
             </button>
             <button 
               onClick={() => navigate('/chat/text')}
-              className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline font-medium touch-manipulation"
+              className="group relative px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 touch-manipulation"
             >
               Text Only Mode
             </button>
@@ -1304,12 +1304,12 @@ const VideoChat: React.FC = () => {
                 onKeyPress={handleKeyPress}
                 placeholder={socketConnected ? (isMatchConnected ? "Type a message..." : "Find someone to chat") : "Connecting to server..."}
                 disabled={!socketConnected || !isMatchConnected}
-                className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm touch-manipulation disabled:bg-gray-800 disabled:text-gray-500"
+                className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 focus:outline-none text-sm touch-manipulation disabled:bg-gray-800 disabled:text-gray-500 transition-all duration-300"
               />
               <button
                 onClick={sendMessage}
                 disabled={!messageInput.trim() || !socketConnected || !isMatchConnected}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors touch-manipulation"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-all duration-300 shadow-lg hover:shadow-purple-500/50 touch-manipulation"
               >
                 <PaperAirplaneIcon className="w-4 h-4" />
               </button>
