@@ -8,9 +8,16 @@ const OTPVerification: React.FC = () => {
   const location = useLocation();
   const { refreshUser } = useAuth();
   
+  console.log('🔍 ===== OTP VERIFICATION PAGE LOADED =====');
+  console.log('🔍 Location state:', location.state);
+  console.log('🔍 Has state?', location.state ? 'YES' : 'NO');
+  
   // Get token from location state (passed from registration)
   const token = location.state?.token;
   const email = location.state?.email;
+  
+  console.log('🔍 Token:', token ? token.substring(0, 30) + '...' : 'MISSING');
+  console.log('🔍 Email:', email || 'MISSING');
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(600); // 10 minutes in seconds
@@ -40,7 +47,10 @@ const OTPVerification: React.FC = () => {
   // Redirect if no token
   useEffect(() => {
     if (!token) {
+      console.log('❌ No token found, redirecting to login...');
       navigate('/login-register', { replace: true });
+    } else {
+      console.log('✅ Token found, staying on OTP page');
     }
   }, [token, navigate]);
 

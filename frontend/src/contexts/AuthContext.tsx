@@ -45,6 +45,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<{token: string; user: any; requiresOTP?: boolean; message?: string;} | undefined>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
@@ -208,6 +209,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Login with JWT token directly (used after OTP verification)
+  const loginWithToken = async (token: string) => {
+    try {
+      console.log('🎟️  Logging in with token...');
+      dispatch({ type: 'SET_LOADING', payload: true });
+      
+      // Set token in API service
+      apiService.setToken(token);
+      storageService.setToken(token);
+      dispatch({ type: 'SET_TOKEN', payload: token });
+      
+      // Fetch user data
+      const response = await authAPI.getCurrentUser();
+      dispatch({ type: 'SET_USER', payload: response.user });
+      storageService.setUser(response.user);
+      
+      console.log('✅ Token login successful:', { 
+        userId: response.user.id,
+        coins: response.user.coins 
+      });
+    } catch (error: any) {
+      console.error('❌ Token login failed:', error);
+      // Clear invalid token
+      storageService.removeToken();
+      apiService.setToken(null);
+      dispatch({ type: 'SET_TOKEN', payload: null });
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
   const register = async (email: string, username: string, password: string): Promise<{
     token: string;
     user: any;
@@ -333,6 +366,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const value: AuthContextType = {
     ...state,
     loginWithEmail,
+    loginWithToken,
     register,
     loginWithGoogle,
     logout,

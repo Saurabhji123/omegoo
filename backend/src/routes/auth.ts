@@ -328,19 +328,27 @@ router.post('/register', async (req, res) => {
 /**
  * Verify OTP
  * POST /api/auth/verify-otp
+ * Body: { email, otp }
  */
-router.post('/verify-otp', authMiddleware, async (req: AuthRequest, res) => {
+router.post('/verify-otp', async (req, res) => {
   try {
-    const { otp } = req.body;
-    const userId = req.userId!;
+    const { email, otp } = req.body;
 
     console.log('\n=== 📧 OTP VERIFICATION START ===');
-    console.log('🆔 User ID:', userId);
+    console.log('📧 Email:', email);
     console.log('🔢 OTP:', otp);
     console.log('⏰ Timestamp:', new Date().toISOString());
 
     // Validation
-    if (!otp || otp.length !== 6) {
+    if (!email || !otp) {
+      console.log('❌ FAILED: Missing email or OTP');
+      return res.status(400).json({
+        success: false,
+        error: 'Email and OTP are required'
+      });
+    }
+
+    if (otp.length !== 6) {
       console.log('❌ FAILED: Invalid OTP format');
       return res.status(400).json({
         success: false,
@@ -348,8 +356,8 @@ router.post('/verify-otp', authMiddleware, async (req: AuthRequest, res) => {
       });
     }
 
-    // Get user
-    const user = await DatabaseService.getUserById(userId);
+    // Get user by email
+    const user = await DatabaseService.getUserByEmail(email);
     if (!user) {
       console.log('❌ FAILED: User not found');
       return res.status(404).json({
@@ -374,7 +382,26 @@ router.post('/verify-otp', authMiddleware, async (req: AuthRequest, res) => {
     }
 
     // Check OTP expiry
-    if (!user.otpExpiresAt || new Date() > user.otpExpiresAt) {
+    if (!user.otpExpiresAt) {
+      console.log('❌ FAILED: No OTP expiry set');
+      return res.status(400).json({
+        success: false,
+        error: 'OTP has expired. Please request a new one.',
+        expired: true
+      });
+    }
+
+    const now = new Date();
+    const expiryDate = new Date(user.otpExpiresAt);
+    
+    console.log('🕐 OTP Expiry Check:', {
+      now: now.toISOString(),
+      expiry: expiryDate.toISOString(),
+      isExpired: now > expiryDate,
+      timeDiff: `${Math.round((expiryDate.getTime() - now.getTime()) / 1000)}s remaining`
+    });
+
+    if (now > expiryDate) {
       console.log('❌ FAILED: OTP expired');
       return res.status(400).json({
         success: false,
@@ -393,12 +420,28 @@ router.post('/verify-otp', authMiddleware, async (req: AuthRequest, res) => {
       });
     }
 
-    // ✅ Mark as verified
-    await DatabaseService.updateUser(userId, {
+    // ✅ Mark as verified and generate new token
+    await DatabaseService.updateUser(user.id, {
       isVerified: true,
       tier: 'verified', // Upgrade tier
       otp: undefined, // Clear OTP
       otpExpiresAt: undefined // Clear expiry
+    });
+
+    // Generate new JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: 'verified' },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '7d' }
+    );
+
+    // 🔒 Update session with new token
+    const userAgent = req.headers['user-agent'] || 'Unknown Device';
+    const deviceInfo = `${userAgent.substring(0, 50)} - ${new Date().toLocaleString()}`;
+
+    await DatabaseService.updateUser(user.id, {
+      activeDeviceToken: token,
+      lastLoginDevice: deviceInfo
     });
 
     console.log('🎉 OTP VERIFIED SUCCESSFULLY');
@@ -407,12 +450,14 @@ router.post('/verify-otp', authMiddleware, async (req: AuthRequest, res) => {
     res.json({
       success: true,
       message: 'Email verified successfully! Welcome to Omegoo 🎉',
+      token, // 🎟️ Send token for auto-login
       user: {
         id: user.id,
         email: user.email,
         username: user.username,
         isVerified: true,
-        tier: 'verified'
+        tier: 'verified',
+        coins: user.coins
       }
     });
   } catch (error: any) {
@@ -427,16 +472,24 @@ router.post('/verify-otp', authMiddleware, async (req: AuthRequest, res) => {
 /**
  * Resend OTP
  * POST /api/auth/resend-otp
+ * Body: { email }
  */
-router.post('/resend-otp', authMiddleware, async (req: AuthRequest, res) => {
+router.post('/resend-otp', async (req, res) => {
   try {
-    const userId = req.userId!;
+    const { email } = req.body;
 
     console.log('\n=== 📧 RESEND OTP START ===');
-    console.log('🆔 User ID:', userId);
+    console.log('📧 Email:', email);
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
 
     // Get user
-    const user = await DatabaseService.getUserById(userId);
+    const user = await DatabaseService.getUserByEmail(email);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -457,7 +510,7 @@ router.post('/resend-otp', authMiddleware, async (req: AuthRequest, res) => {
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Update user
-    await DatabaseService.updateUser(userId, {
+    await DatabaseService.updateUser(user.id, {
       otp,
       otpExpiresAt
     });
