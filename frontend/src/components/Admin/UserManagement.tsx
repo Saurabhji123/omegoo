@@ -235,19 +235,25 @@ const UserManagement: React.FC<UserManagementProps> = ({ token }) => {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 rounded-xl border border-white border-opacity-20">
           <div className="text-gray-300 text-sm">Total Users</div>
           <div className="text-2xl font-bold text-white">{users.length}</div>
         </div>
         <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 rounded-xl border border-white border-opacity-20">
-          <div className="text-gray-300 text-sm">Active Users</div>
+          <div className="text-gray-300 text-sm">✅ Verified</div>
           <div className="text-2xl font-bold text-green-400">
-            {users.filter(u => u.status === 'active').length}
+            {users.filter(u => u.isVerified).length}
           </div>
         </div>
         <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 rounded-xl border border-white border-opacity-20">
-          <div className="text-gray-300 text-sm">Banned Users</div>
+          <div className="text-gray-300 text-sm">❌ Unverified</div>
+          <div className="text-2xl font-bold text-red-400">
+            {users.filter(u => !u.isVerified).length}
+          </div>
+        </div>
+        <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 rounded-xl border border-white border-opacity-20">
+          <div className="text-gray-300 text-sm">Banned</div>
           <div className="text-2xl font-bold text-red-400">
             {users.filter(u => u.status === 'banned').length}
           </div>
@@ -268,6 +274,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ token }) => {
               <tr className="bg-white bg-opacity-10 border-b border-white border-opacity-10">
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">User</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Email</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-200">Verified</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Role</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Status</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-200">Reports</th>
@@ -299,6 +306,25 @@ const UserManagement: React.FC<UserManagementProps> = ({ token }) => {
                   {/* Email */}
                   <td className="px-6 py-4">
                     <div className="text-gray-300">{user.email || 'No email'}</div>
+                  </td>
+
+                  {/* Verification Status */}
+                  <td className="px-6 py-4 text-center">
+                    {user.isVerified ? (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-500 bg-opacity-20 text-green-300 border border-green-500 border-opacity-30">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-500 bg-opacity-20 text-red-300 border border-red-500 border-opacity-30">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Unverified
+                      </span>
+                    )}
                   </td>
 
                   {/* Role Dropdown */}

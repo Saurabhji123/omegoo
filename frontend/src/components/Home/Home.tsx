@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth as useAuthContext } from '../../contexts/AuthContext';
+import axios from 'axios';
 // import { useSocket } from '../../contexts/SocketContext';
+
+// Coin costs for each mode
+const COIN_COSTS = {
+  text: 10,
+  audio: 15,
+  video: 20
+};
 
 const Home: React.FC = () => {
   const [isMatching, setIsMatching] = useState(false);
-  const { user, loading } = useAuthContext(); // Removed unused 'updateUser'
+  const { user, loading, refreshUser } = useAuthContext();
   const navigate = useNavigate();
   const [, forceUpdate] = useState({});
+  const [showVerificationPopup, setShowVerificationPopup] = useState(false);
+  const [resendingOTP, setResendingOTP] = useState(false);
 
   // Listen for real-time stats updates
   useEffect(() => {
@@ -23,21 +33,28 @@ const Home: React.FC = () => {
     };
   }, []);
 
+  // 📧 Check if user needs email verification
+  useEffect(() => {
+    if (user && !user.isVerified && user.email) {
+      console.log('⚠️  User email not verified, showing popup');
+      setShowVerificationPopup(true);
+    }
+  }, [user]);
+
   // No redirect - allow browsing without login
-  // User will be prompted to login when clicking chat buttons
-
-  const COIN_COSTS = {
-    text: 1,
-    audio: 1,
-    video: 1
-  };
-
   const handleStartChat = (mode: 'text' | 'audio' | 'video') => {
     // Check if user is logged in
     if (!user) {
       // Redirect to login page with return URL
       console.log('🔒 User not logged in, redirecting to login...');
       navigate('/login', { state: { returnTo: '/', chatMode: mode } });
+      return;
+    }
+
+    // 📧 Check if user email is verified
+    if (!user.isVerified) {
+      console.log('⚠️  User email not verified, showing popup');
+      setShowVerificationPopup(true);
       return;
     }
 
@@ -286,6 +303,102 @@ const Home: React.FC = () => {
         </a>
         <p className="text-xs sm:text-sm text-gray-300 mt-2">Made with ❤️ by Saurabh Shukla</p>
       </div>
+
+      {/* 📧 Email Verification Popup */}
+      {showVerificationPopup && user && !user.isVerified && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 px-4">
+          <div className="bg-gradient-to-br from-purple-800 via-blue-800 to-indigo-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-2 border-white border-opacity-20 backdrop-blur-lg">
+            {/* Icon */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-500 bg-opacity-20 rounded-full mb-4 backdrop-blur-sm border-2 border-yellow-400 border-opacity-30">
+                <svg className="w-12 h-12 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                ⚠️ Email Verification Required
+              </h2>
+              <p className="text-gray-300 text-sm">
+                आपको सभी features use करने के लिए अपना email verify करना होगा
+              </p>
+            </div>
+
+            {/* Message */}
+            <div className="bg-yellow-500 bg-opacity-10 border border-yellow-500 border-opacity-30 rounded-xl p-4 mb-6">
+              <p className="text-white text-sm">
+                हमने आपके email <span className="font-semibold">{user.email}</span> पर एक verification code भेजा है। कृपया अपना email check करें।
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={async () => {
+                  const token = localStorage.getItem('auth_token');
+                  if (token) {
+                    navigate('/verify-otp', {
+                      state: {
+                        token,
+                        email: user.email
+                      }
+                    });
+                  }
+                }}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+              >
+                ✅ Verify Now
+              </button>
+
+              <button
+                onClick={async () => {
+                  setResendingOTP(true);
+                  try {
+                    const token = localStorage.getItem('auth_token');
+                    await axios.post(
+                      `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/resend-otp`,
+                      {},
+                      {
+                        headers: {
+                          'Authorization': `Bearer ${token}`
+                        }
+                      }
+                    );
+                    alert('✅ New OTP sent to your email!');
+                  } catch (error) {
+                    console.error('Resend OTP error:', error);
+                    alert('❌ Failed to resend OTP. Please try again.');
+                  } finally {
+                    setResendingOTP(false);
+                  }
+                }}
+                disabled={resendingOTP}
+                className="w-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white font-semibold py-3 rounded-xl transition-all border border-white border-opacity-20 disabled:opacity-50"
+              >
+                {resendingOTP ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Sending...
+                  </span>
+                ) : (
+                  '🔄 Resend OTP'
+                )}
+              </button>
+
+              <button
+                onClick={() => setShowVerificationPopup(false)}
+                className="w-full text-gray-300 hover:text-white font-medium py-2 transition-colors text-sm"
+              >
+                Remind me later
+              </button>
+            </div>
+
+            {/* Info */}
+            <p className="text-xs text-gray-400 text-center mt-4">
+              💡 Verification required to use Text, Audio, and Video chat
+            </p>
+          </div>
+        </div>
+      )}
 
     </div>
   );

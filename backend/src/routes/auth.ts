@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { DatabaseService, RedisService } from '../services/serviceFactory';
+import { generateOTP, sendOTPEmail, sendWelcomeEmail } from '../services/email';
 
 const router: Router = Router();
 
@@ -206,7 +207,8 @@ router.post('/register', async (req, res) => {
       console.log('=== REGISTRATION ATTEMPT END ===\n');
       return res.status(400).json({
         success: false,
-        error: 'Email already registered'
+        error: 'Email already registered. Please login instead.',
+        shouldLogin: true // Frontend will redirect to login
       });
     }
     console.log('✅ Email available for registration');
@@ -216,6 +218,12 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     console.log('✅ Password hashed successfully');
 
+    // 📧 Generate OTP for email verification
+    console.log('📧 Generating OTP...');
+    const otp = generateOTP();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    console.log('✅ OTP generated:', otp, '(expires at:', otpExpiresAt.toLocaleTimeString(), ')');
+
     // Create user
     console.log('💾 Creating user in database...');
     const user = await DatabaseService.createUser({
@@ -224,7 +232,9 @@ router.post('/register', async (req, res) => {
       passwordHash,
       tier: 'guest',
       status: 'active',
-      isVerified: false,
+      isVerified: false, // ❌ Not verified yet - needs OTP
+      otp, // 📧 Store OTP
+      otpExpiresAt, // 📧 Store expiry
       coins: 50, // Welcome bonus
       lastCoinClaim: new Date(), // Set initial claim date to prevent auto-reset
       totalChats: 0, // Initialize chat counters
@@ -237,8 +247,23 @@ router.post('/register', async (req, res) => {
       email: user.email, 
       username: user.username,
       coins: user.coins,
-      tier: user.tier 
+      tier: user.tier,
+      isVerified: user.isVerified 
     });
+
+    // 📧 Send OTP email
+    console.log('📧 Sending OTP email...');
+    const emailSent = await sendOTPEmail({ 
+      email, 
+      otp, 
+      name: username 
+    });
+
+    if (!emailSent) {
+      console.warn('⚠️  Failed to send OTP email, but user created');
+    } else {
+      console.log('✅ OTP email sent successfully');
+    }
 
     // Generate JWT token
     console.log('🎟️  Generating JWT token...');
@@ -266,23 +291,25 @@ router.post('/register', async (req, res) => {
 
     const responseData = {
       success: true,
-      message: 'Registration successful',
-      token,
+      message: 'Registration successful. Please verify your email with the OTP sent.',
+      requiresOTP: true, // 📧 Frontend will redirect to OTP page
+      token, // Token to pass to OTP verification
       user: {
         id: user.id,
         email: user.email,
         username: user.username,
         tier: user.tier,
         status: user.status,
-        isVerified: user.isVerified,
+        isVerified: user.isVerified, // false
         coins: user.coins
       }
     };
 
-    console.log('🎉 REGISTRATION SUCCESSFUL:', { 
+    console.log('🎉 REGISTRATION SUCCESSFUL (OTP sent):', { 
       userId: user.id,
       email: user.email,
-      username: user.username 
+      username: user.username,
+      otpSent: emailSent 
     });
     console.log('=== REGISTRATION ATTEMPT END ===\n');
 
@@ -294,6 +321,173 @@ router.post('/register', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Registration failed'
+    });
+  }
+});
+
+/**
+ * Verify OTP
+ * POST /api/auth/verify-otp
+ */
+router.post('/verify-otp', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { otp } = req.body;
+    const userId = req.userId!;
+
+    console.log('\n=== 📧 OTP VERIFICATION START ===');
+    console.log('🆔 User ID:', userId);
+    console.log('🔢 OTP:', otp);
+    console.log('⏰ Timestamp:', new Date().toISOString());
+
+    // Validation
+    if (!otp || otp.length !== 6) {
+      console.log('❌ FAILED: Invalid OTP format');
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid OTP format. Must be 6 digits.'
+      });
+    }
+
+    // Get user
+    const user = await DatabaseService.getUserById(userId);
+    if (!user) {
+      console.log('❌ FAILED: User not found');
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Check if already verified
+    if (user.isVerified) {
+      console.log('✅ User already verified');
+      return res.json({
+        success: true,
+        message: 'Email already verified',
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          isVerified: true
+        }
+      });
+    }
+
+    // Check OTP expiry
+    if (!user.otpExpiresAt || new Date() > user.otpExpiresAt) {
+      console.log('❌ FAILED: OTP expired');
+      return res.status(400).json({
+        success: false,
+        error: 'OTP has expired. Please request a new one.',
+        expired: true
+      });
+    }
+
+    // Verify OTP
+    if (user.otp !== otp) {
+      console.log('❌ FAILED: Invalid OTP');
+      console.log('Expected:', user.otp, 'Got:', otp);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid OTP. Please try again.'
+      });
+    }
+
+    // ✅ Mark as verified
+    await DatabaseService.updateUser(userId, {
+      isVerified: true,
+      tier: 'verified', // Upgrade tier
+      otp: undefined, // Clear OTP
+      otpExpiresAt: undefined // Clear expiry
+    });
+
+    console.log('🎉 OTP VERIFIED SUCCESSFULLY');
+    console.log('=== OTP VERIFICATION END ===\n');
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully! Welcome to Omegoo 🎉',
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        isVerified: true,
+        tier: 'verified'
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ OTP VERIFICATION ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Verification failed'
+    });
+  }
+});
+
+/**
+ * Resend OTP
+ * POST /api/auth/resend-otp
+ */
+router.post('/resend-otp', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.userId!;
+
+    console.log('\n=== 📧 RESEND OTP START ===');
+    console.log('🆔 User ID:', userId);
+
+    // Get user
+    const user = await DatabaseService.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Check if already verified
+    if (user.isVerified) {
+      return res.json({
+        success: true,
+        message: 'Email already verified'
+      });
+    }
+
+    // Generate new OTP
+    const otp = generateOTP();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Update user
+    await DatabaseService.updateUser(userId, {
+      otp,
+      otpExpiresAt
+    });
+
+    // Send email
+    const emailSent = await sendOTPEmail({
+      email: user.email!,
+      otp,
+      name: user.username
+    });
+
+    if (!emailSent) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send OTP email'
+      });
+    }
+
+    console.log('✅ OTP resent successfully');
+    console.log('=== RESEND OTP END ===\n');
+
+    res.json({
+      success: true,
+      message: 'OTP sent successfully to your email'
+    });
+  } catch (error: any) {
+    console.error('❌ RESEND OTP ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to resend OTP'
     });
   }
 });
@@ -524,9 +718,9 @@ router.post('/google', async (req, res) => {
         email,
         username: autoUsername, // Auto-generated username from email (before @)
         passwordHash: undefined, // No password for OAuth users
-        tier: 'guest',
+        tier: 'verified', // ✅ Google accounts are pre-verified → verified tier
         status: 'active',
-        isVerified: true, // Google accounts are pre-verified
+        isVerified: true, // ✅ Google accounts are pre-verified
         coins: 50,
         totalChats: 0,
         dailyChats: 0,
@@ -540,6 +734,19 @@ router.post('/google', async (req, res) => {
       });
       
       console.log('✅ Google OAuth user created:', { id: user.id, email: user.email, username: user.username });
+
+      // 📧 Send welcome email (no OTP needed for Google users)
+      console.log('📧 Sending welcome email to Google user...');
+      const emailSent = await sendWelcomeEmail({
+        email: user.email!,
+        name: user.username
+      });
+
+      if (emailSent) {
+        console.log('✅ Welcome email sent successfully');
+      } else {
+        console.warn('⚠️  Failed to send welcome email');
+      }
     } else {
       // Check if user is banned
       const banStatus = await DatabaseService.checkUserBanStatus(user.id);

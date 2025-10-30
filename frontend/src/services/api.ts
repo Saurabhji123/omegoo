@@ -103,7 +103,12 @@ export const authAPI = {
   },
 
   register: async (email: string, username: string, password: string) => {
-    return apiService.post<{ token: string; user: any }>('/api/auth/register', { email, username, password });
+    return apiService.post<{ 
+      token: string; 
+      user: any; 
+      requiresOTP?: boolean; 
+      message?: string;
+    }>('/api/auth/register', { email, username, password });
   },
 
   // Google OAuth

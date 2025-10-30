@@ -12,6 +12,8 @@ interface IUserDoc extends Document {
   phoneNumber?: string;
   phoneHash?: string;
   isVerified: boolean;
+  otp?: string; // 📧 OTP for email verification
+  otpExpiresAt?: Date; // 📧 OTP expiry time (10 minutes)
   tier: 'guest' | 'verified' | 'premium';
   status: 'active' | 'banned' | 'suspended';
   coins?: number;
@@ -119,6 +121,8 @@ const UserSchema = new Schema<IUserDoc>({
   phoneNumber: { type: String },
   phoneHash: { type: String },
   isVerified: { type: Boolean, default: false },
+  otp: { type: String }, // 📧 OTP for email verification
+  otpExpiresAt: { type: Date }, // 📧 OTP expiry time
   tier: { type: String, enum: ['guest', 'verified', 'premium'], default: 'guest' },
   status: { type: String, enum: ['active', 'banned', 'suspended'], default: 'active', index: true }, // 🔍 Index for status filtering
   coins: { type: Number, default: 0 },

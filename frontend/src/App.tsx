@@ -9,6 +9,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout/Layout';
 import AgeGate from './components/Auth/AgeGate';
 import LoginRegister from './components/Auth/LoginRegister';
+import OTPVerification from './components/Auth/OTPVerification';
 import PhoneVerification from './components/Auth/PhoneVerification';
 import Home from './components/Home/Home';
 import Chat from './components/Chat/Chat';
@@ -77,6 +78,9 @@ const AppRoutes: React.FC = () => {
       <Routes>
         {/* Login/Register route */}
         <Route path="/login" element={<LoginRegister />} />
+        
+        {/* OTP Verification route */}
+        <Route path="/verify-otp" element={<OTPVerification />} />
         
         {/* Static Pages - Public Access */}
         <Route path="/about" element={

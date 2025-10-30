@@ -30,18 +30,40 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
         console.log('🔐 Logging in...');
         await loginWithEmail(email, password);
         console.log('✅ Login successful, redirecting to home...');
+        
+        // Navigate to home page after successful login
+        navigate('/');
       } else {
         console.log('📝 Registering...');
-        await register(email, username, password);
-        console.log('✅ Registration successful, redirecting to home...');
+        const response = await register(email, username, password);
+        console.log('✅ Registration successful:', response);
+        
+        // 📧 Check if OTP verification required
+        if (response && 'requiresOTP' in response && response.requiresOTP && response.token) {
+          console.log('📧 OTP verification required, redirecting...');
+          // Navigate to OTP verification page with token and email
+          navigate('/verify-otp', {
+            state: {
+              token: response.token,
+              email: email
+            }
+          });
+          return; // Don't navigate to home yet
+        }
+        
+        // If no OTP required (shouldn't happen for email registration)
+        navigate('/');
       }
-      
-      // Navigate to home page after successful auth
-      navigate('/');
       
       if (onSuccess) onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please try again.');
+      // Check if error indicates user should login instead
+      if (err.message?.includes('already registered')) {
+        setError('Email already registered. Please login instead.');
+        setIsLogin(true); // Switch to login mode
+      } else {
+        setError(err.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

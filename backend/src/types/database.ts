@@ -14,6 +14,8 @@ export interface User {
   dailyChats?: number;
   lastCoinClaim?: Date;
   isVerified: boolean;
+  otp?: string; // 📧 OTP for email verification
+  otpExpiresAt?: Date; // 📧 OTP expiry time
   activeDeviceToken?: string; // Current active session token - only one device at a time
   lastLoginDevice?: string; // Device info for last login
   preferences: {

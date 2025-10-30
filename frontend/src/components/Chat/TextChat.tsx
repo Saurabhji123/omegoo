@@ -616,8 +616,8 @@ const TextChat: React.FC = () => {
           <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl flex flex-col bg-black bg-opacity-20 rounded-t-lg sm:rounded-t-xl backdrop-blur-sm border border-white border-opacity-20 mx-2 sm:mx-4" 
                style={{ height: 'calc(100vh - 140px)', minHeight: '500px', maxHeight: '800px' }}>
             
-            {/* Chat Header */}
-            <div className="p-3 sm:p-4 border-b border-white border-opacity-20">
+            {/* Chat Header - FIXED at top */}
+            <div className="p-3 sm:p-4 border-b border-white border-opacity-20 flex-shrink-0">
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold">Chat</h2>
@@ -690,8 +690,8 @@ const TextChat: React.FC = () => {
               </p>
             </div>
 
-            {/* Messages Area - Full Height */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 min-h-0">
+            {/* Messages Area - Scrollable Middle Section */}
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent">
               {/* Empty State */}
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full">
@@ -856,8 +856,8 @@ const TextChat: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input - WhatsApp Style */}
-            <div className="p-2 sm:p-3 lg:p-4 border-t border-white border-opacity-20 bg-black bg-opacity-30">
+            {/* Message Input - FIXED at bottom (WhatsApp Style) */}
+            <div className="p-2 sm:p-3 lg:p-4 border-t border-white border-opacity-20 bg-black bg-opacity-30 flex-shrink-0">
               {/* Reply Preview */}
               {replyingTo && (
                 <div className="mb-3 p-3 bg-purple-600 bg-opacity-20 border-l-4 border-purple-500 rounded-lg flex items-start justify-between animate-fade-in">

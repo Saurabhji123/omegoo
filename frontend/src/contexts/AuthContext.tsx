@@ -45,7 +45,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   loginWithEmail: (email: string, password: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<void>;
+  register: (email: string, username: string, password: string) => Promise<{token: string; user: any; requiresOTP?: boolean; message?: string;} | undefined>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
   verifyPhone: (phone: string, otp: string) => Promise<void>;
@@ -208,7 +208,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const register = async (email: string, username: string, password: string) => {
+  const register = async (email: string, username: string, password: string): Promise<{
+    token: string;
+    user: any;
+    requiresOTP?: boolean;
+    message?: string;
+  } | undefined> => {
     try {
       console.log('📝 Attempting registration:', { email, username });
       dispatch({ type: 'SET_LOADING', payload: true });
@@ -218,8 +223,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         hasToken: !!response.token, 
         hasUser: !!response.user,
         userId: response.user?.id,
-        coins: response.user?.coins
+        coins: response.user?.coins,
+        requiresOTP: response.requiresOTP
       });
+      
+      // 📧 If OTP required, return response without setting full auth
+      if (response.requiresOTP) {
+        console.log('📧 OTP verification required - returning response');
+        dispatch({ type: 'SET_LOADING', payload: false });
+        return response; // Return to caller for redirect
+      }
       
       // Set token in API service
       apiService.setToken(response.token);
@@ -231,6 +244,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       storageService.setUser(response.user);
       
       console.log('💾 Registration data saved to storage');
+      return response;
     } catch (error: any) {
       console.error('❌ Registration failed:', error);
       console.error('Error details:', error.message);
