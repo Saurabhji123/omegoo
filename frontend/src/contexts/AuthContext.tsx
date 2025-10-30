@@ -214,9 +214,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     requiresOTP?: boolean;
     message?: string;
   } | undefined> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
     try {
       console.log('📝 Attempting registration:', { email, username });
-      dispatch({ type: 'SET_LOADING', payload: true });
       const response = await authAPI.register(email, username, password);
       
       console.log('✅ Registration response received:', { 
@@ -224,17 +224,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         hasUser: !!response.user,
         userId: response.user?.id,
         coins: response.user?.coins,
-        requiresOTP: response.requiresOTP
+        requiresOTP: response.requiresOTP,
+        message: response.message
       });
       
       // 📧 If OTP required, return response without setting full auth
       if (response.requiresOTP) {
-        console.log('📧 OTP verification required - returning response');
-        dispatch({ type: 'SET_LOADING', payload: false });
+        console.log('📧 OTP verification required - returning response for redirect');
         return response; // Return to caller for redirect
       }
       
-      // Set token in API service
+      // Only set auth state if no OTP required (Google OAuth)
+      console.log('✅ No OTP required - setting auth state');
       apiService.setToken(response.token);
       
       dispatch({ type: 'SET_TOKEN', payload: response.token });
