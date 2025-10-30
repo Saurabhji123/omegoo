@@ -182,22 +182,6 @@ export const sendOTPEmail = async ({ email, otp, name }: SendOTPEmailParams): Pr
     return false;
   }
 };
-        </html>
-      `,
-    });
-
-    if (error) {
-      console.error('❌ Error sending OTP email:', error);
-      return false;
-    }
-
-    console.log('✅ OTP email sent successfully:', data);
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to send OTP email:', error);
-    return false;
-  }
-};
 
 /**
  * Send welcome email for Google OAuth users (no OTP needed)

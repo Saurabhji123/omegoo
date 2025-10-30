@@ -31,6 +31,7 @@ const TextChat: React.FC = () => {
   const { updateUser, user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   
   // Core states - following AudioChat pattern
   const [isSearching, setIsSearching] = useState(false);
@@ -461,7 +462,7 @@ const TextChat: React.FC = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     try {
       const value = e.target.value;
       setMessageInput(value);
@@ -884,20 +885,41 @@ const TextChat: React.FC = () => {
               
               <div className="flex items-end gap-2 sm:gap-3">
                 <div className="flex-1 relative">
-                  <input
-                    type="text"
+                  <textarea
+                    ref={(el) => {
+                      inputRef.current = el;
+                      if (el) {
+                        // Auto-resize textarea based on content
+                        el.style.height = 'auto';
+                        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+                      }
+                    }}
+                    rows={1}
                     value={messageInput}
                     onChange={handleInputChange}
                     onKeyPress={handleKeyPress}
+                    onFocus={() => {
+                      // Scroll input into view on mobile when keyboard opens
+                      setTimeout(() => {
+                        inputRef.current?.scrollIntoView({ 
+                          behavior: 'smooth', 
+                          block: 'center' 
+                        });
+                      }, 300); // Wait for keyboard animation
+                    }}
                     placeholder="Type a message..."
                     disabled={!isMatchConnected}
-                    className="w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200"
+                    className="w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200 overflow-y-auto max-h-[120px]"
+                    style={{
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'rgba(147, 51, 234, 0.6) transparent'
+                    }}
                   />
                 </div>
                 <button
                   onClick={sendMessage}
                   disabled={!messageInput.trim() || !isMatchConnected}
-                  className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg ${
+                  className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg flex-shrink-0 ${
                     messageInput.trim() && isMatchConnected
                       ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:shadow-purple-500/25 transform hover:scale-105'
                       : 'bg-gray-600 text-gray-400 cursor-not-allowed'
