@@ -35,12 +35,19 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
         navigate('/');
       } else {
         console.log('📝 Registering...');
+        console.log('📝 Registration data:', { email, username });
         const response = await register(email, username, password);
         console.log('✅ Registration successful:', response);
+        console.log('✅ Response type:', typeof response);
+        console.log('✅ Has requiresOTP?', response?.requiresOTP);
+        console.log('✅ Has token?', response?.token);
         
         // 📧 Check if OTP verification required
         if (response && 'requiresOTP' in response && response.requiresOTP && response.token) {
-          console.log('📧 OTP verification required, redirecting...');
+          console.log('📧 OTP verification required, redirecting to /verify-otp...');
+          console.log('📧 Token to pass:', response.token.substring(0, 20) + '...');
+          console.log('📧 Email to pass:', email);
+          
           // Navigate to OTP verification page with token and email
           navigate('/verify-otp', {
             state: {
@@ -48,9 +55,11 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               email: email
             }
           });
+          console.log('✅ Navigation complete');
           return; // Don't navigate to home yet
         }
         
+        console.log('⚠️  No OTP required - redirecting to home');
         // If no OTP required (shouldn't happen for email registration)
         navigate('/');
       }
