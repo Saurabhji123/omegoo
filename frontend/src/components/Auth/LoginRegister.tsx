@@ -40,42 +40,27 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
         const response = await register(email, username, password);
         
         console.log('✅ ===== REGISTRATION RESPONSE =====');
-        console.log('Response object:', response);
+        console.log('Full response object:', response);
         console.log('Response type:', typeof response);
         console.log('Response is null?', response === null);
         console.log('Response is undefined?', response === undefined);
-        console.log('Has requiresOTP property?', response && 'requiresOTP' in response);
-        console.log('requiresOTP value:', response?.requiresOTP);
-        console.log('Has token?', response?.token ? 'YES' : 'NO');
-        console.log('Token:', response?.token?.substring(0, 30) + '...');
-        console.log('Has user?', response?.user ? 'YES' : 'NO');
-        console.log('Message:', response?.message);
         
-        // 📧 Check if OTP verification required
-        if (response && response.requiresOTP === true) {
-          console.log('📧 ===== OTP VERIFICATION REQUIRED =====');
-          console.log('📧 Will redirect to /verify-otp');
-          console.log('📧 Token to pass:', response.token?.substring(0, 20) + '...');
-          console.log('📧 Email to pass:', email);
-          console.log('📧 Username to pass:', username);
-          
-          // Navigate to OTP verification page with email and username
-          console.log('📧 Calling navigate...');
-          navigate('/verify-otp', {
-            state: {
-              email: email,
-              username: username
-            }
-          });
-          console.log('✅ ===== NAVIGATION TO /verify-otp COMPLETE =====');
-          return; // Don't navigate to home yet
-        }
+        // ALWAYS redirect to OTP page for email registration
+        console.log('📧 ===== EMAIL REGISTRATION - REDIRECTING TO OTP =====');
+        console.log('📧 Will redirect to /verify-otp');
+        console.log('📧 Email to pass:', email);
+        console.log('📧 Username to pass:', username);
         
-        console.log('⚠️  ===== NO OTP REQUIRED =====');
-        console.log('⚠️  This should NOT happen for email registration');
-        console.log('⚠️  Redirecting to home');
-        // If no OTP required (shouldn't happen for email registration)
-        navigate('/');
+        // Navigate to OTP verification page with email and username
+        console.log('📧 Calling navigate...');
+        navigate('/verify-otp', {
+          state: {
+            email: email,
+            username: username
+          }
+        });
+        console.log('✅ ===== NAVIGATION TO /verify-otp COMPLETE =====');
+        return; // Don't continue execution
       }
       
       if (onSuccess) onSuccess();

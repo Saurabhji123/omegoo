@@ -263,23 +263,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('message:', response.message);
       console.log('=================================================');
       
-      // 📧 If OTP required, return response without setting full auth
-      if (response.requiresOTP) {
-        console.log('📧 OTP verification required - returning response for redirect');
-        return response; // Return to caller for redirect
-      }
-      
-      // Only set auth state if no OTP required (Google OAuth)
-      console.log('✅ No OTP required - setting auth state');
-      apiService.setToken(response.token);
-      
-      dispatch({ type: 'SET_TOKEN', payload: response.token });
-      dispatch({ type: 'SET_USER', payload: response.user });
-      
-      storageService.setToken(response.token);
-      storageService.setUser(response.user);
-      
-      console.log('💾 Registration data saved to storage');
+      // 📧 For email registration, ALWAYS return without setting auth
+      // Frontend will handle OTP verification flow
+      console.log('📧 Email registration - returning response WITHOUT setting auth state');
       return response;
     } catch (error: any) {
       console.error('❌ Registration failed:', error);
