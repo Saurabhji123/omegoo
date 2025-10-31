@@ -174,6 +174,21 @@ router.post('/register', async (req, res) => {
     }
     console.log('✅ Email format valid');
 
+    // 📧 RESEND RESTRICTION: Only allow verified domain emails
+    // Resend requires domain verification to send emails to other addresses
+    const allowedEmail = 'omegoochat@gmail.com';
+    if (email !== allowedEmail) {
+      console.log('❌ FAILED: Email not allowed (Resend domain not verified)');
+      console.log(`Attempted email: ${email}`);
+      console.log(`Allowed email: ${allowedEmail}`);
+      console.log('=== REGISTRATION ATTEMPT END ===\n');
+      return res.status(400).json({
+        success: false,
+        error: `Currently, only ${allowedEmail} can register. Domain verification pending for other emails.`
+      });
+    }
+    console.log('✅ Email allowed for registration');
+
     // Password validation (min 6 characters)
     console.log('✅ Validating password...');
     if (password.length < 6) {
@@ -265,51 +280,34 @@ router.post('/register', async (req, res) => {
       console.log('✅ OTP email sent successfully');
     }
 
-    // Generate JWT token
-    console.log('🎟️  Generating JWT token...');
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.tier },
-      process.env.JWT_SECRET as string,
-      { expiresIn: '7d' }
-    );
-    console.log('✅ Token generated:', token.substring(0, 20) + '...');
+    // ❌ NO TOKEN GENERATION for unverified users!
+    // Token will be generated after OTP verification
 
-    // 🔒 Save token for single-device session
-    const userAgent = req.headers['user-agent'] || 'Unknown Device';
-    const deviceInfo = `${userAgent.substring(0, 50)} - ${new Date().toLocaleString()}`;
-
-    console.log('💾 Saving initial session...');
-    console.log('🔒 activeDeviceToken:', token.substring(0, 20) + '...');
-    console.log('📱 Device info:', deviceInfo);
-
-    await DatabaseService.updateUser(user.id, {
-      activeDeviceToken: token,
-      lastLoginDevice: deviceInfo
-    });
-
-    console.log('✅ Session saved successfully');
-
+    // 📧 DON'T send token for unverified users - they need to verify OTP first!
     const responseData = {
       success: true,
       message: 'Registration successful. Please verify your email with the OTP sent.',
       requiresOTP: true, // 📧 Frontend will redirect to OTP page
-      token, // Token to pass to OTP verification
+      email: user.email, // Send email for OTP verification
+      username: user.username, // Send username for display
       user: {
         id: user.id,
         email: user.email,
         username: user.username,
         tier: user.tier,
         status: user.status,
-        isVerified: user.isVerified, // false
+        isVerified: false, // ❌ Not verified yet
         coins: user.coins
       }
+      // ❌ NO TOKEN - User must verify OTP first!
     };
 
-    console.log('🎉 REGISTRATION SUCCESSFUL (OTP sent):', { 
+    console.log('🎉 REGISTRATION SUCCESSFUL (OTP sent, no token):', { 
       userId: user.id,
       email: user.email,
       username: user.username,
-      otpSent: emailSent 
+      otpSent: emailSent,
+      tokenProvided: false // ❌ No token until OTP verified
     });
     console.log('=== REGISTRATION ATTEMPT END ===\n');
 
