@@ -13,7 +13,7 @@ const COIN_COSTS = {
 
 const Home: React.FC = () => {
   const [isMatching, setIsMatching] = useState(false);
-  const { user, loading, refreshUser } = useAuthContext();
+  const { user, loading } = useAuthContext();
   const navigate = useNavigate();
   const [, forceUpdate] = useState({});
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);

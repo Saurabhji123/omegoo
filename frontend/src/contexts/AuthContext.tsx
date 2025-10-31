@@ -252,14 +252,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('📝 Attempting registration:', { email, username });
       const response = await authAPI.register(email, username, password);
       
-      console.log('✅ Registration response received:', { 
-        hasToken: !!response.token, 
-        hasUser: !!response.user,
-        userId: response.user?.id,
-        coins: response.user?.coins,
-        requiresOTP: response.requiresOTP,
-        message: response.message
-      });
+      console.log('✅ ===== AUTH CONTEXT REGISTRATION RESPONSE =====');
+      console.log('Full response object:', response);
+      console.log('Response keys:', Object.keys(response || {}));
+      console.log('requiresOTP type:', typeof response?.requiresOTP);
+      console.log('requiresOTP value:', response?.requiresOTP);
+      console.log('requiresOTP === true:', response?.requiresOTP === true);
+      console.log('hasToken:', !!response.token);
+      console.log('hasUser:', !!response.user);
+      console.log('message:', response.message);
+      console.log('=================================================');
       
       // 📧 If OTP required, return response without setting full auth
       if (response.requiresOTP) {
