@@ -1,12 +1,16 @@
 import { Resend } from 'resend';
 
 // Initialize Resend with API key from environment variable
-if (!process.env.RESEND_API_KEY) {
-  console.error('❌ RESEND_API_KEY is not set in environment variables!');
-  throw new Error('Missing RESEND_API_KEY in environment configuration');
-}
+// IMPORTANT: Do NOT throw at module load time — this breaks server startup on Render if the key isn't set.
+// Instead, degrade gracefully and no-op the email functions while logging clear warnings.
+const HAS_RESEND_KEY = !!process.env.RESEND_API_KEY;
+let resend: Resend | null = null;
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+if (HAS_RESEND_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY);
+} else {
+  console.warn('⚠️ RESEND_API_KEY is not set. Email sending is disabled. Set RESEND_API_KEY in your environment to enable emails.');
+}
 
 interface SendOTPEmailParams {
   email: string;
@@ -31,6 +35,11 @@ export const generateOTP = (): string => {
  */
 export const sendOTPEmail = async ({ email, otp, name }: SendOTPEmailParams): Promise<boolean> => {
   try {
+    if (!resend) {
+      // Graceful degradation: don't fail server logic, just log and report false
+      console.warn(`⚠️ Skipping OTP email (RESEND_API_KEY missing). Intended recipient: ${email}, OTP: ${otp}`);
+      return false;
+    }
     console.log('📧 Sending OTP email to:', email);
     console.log('📧 OTP:', otp);
     console.log('📧 Name:', name);
@@ -158,6 +167,10 @@ export const sendOTPEmail = async ({ email, otp, name }: SendOTPEmailParams): Pr
  */
 export const sendWelcomeEmail = async ({ email, name }: SendWelcomeEmailParams): Promise<boolean> => {
   try {
+    if (!resend) {
+      console.warn(`⚠️ Skipping welcome email (RESEND_API_KEY missing). Intended recipient: ${email}`);
+      return false;
+    }
     const { data, error } = await resend.emails.send({
       from: 'Omegoo <onboarding@resend.dev>',
       to: [email],

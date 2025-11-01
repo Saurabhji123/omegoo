@@ -104,10 +104,14 @@ export const authAPI = {
 
   register: async (email: string, username: string, password: string) => {
     return apiService.post<{ 
-      token: string; 
-      user: any; 
+      token?: string; 
+      user?: any; 
       requiresOTP?: boolean; 
       message?: string;
+      email?: string;
+      username?: string;
+      pending?: boolean;
+      otpExpiresInSeconds?: number;
     }>('/api/auth/register', { email, username, password });
   },
 

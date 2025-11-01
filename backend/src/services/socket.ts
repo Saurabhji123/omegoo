@@ -12,7 +12,7 @@ export class SocketService {
   private static io: SocketIOServer;
   private static connectedUsers = new Map<string, string>(); // userId -> socketId
   private static waitingQueue: string[] = []; // For in-memory queue management
-  private static activeSessions = new Map<string, { user1: string, user2: string }>(); // sessionId -> users
+  private static activeSessions = new Map<string, { user1: string; user2: string; mode: string }>(); // sessionId -> users + mode
   private static disconnectionTimers = new Map<string, NodeJS.Timeout>(); // userId -> timer for delayed cleanup
 
   static initialize(io: SocketIOServer) {
@@ -160,7 +160,7 @@ export class SocketService {
               if (partnerSocket) {
                 console.log(`📢 Immediately notifying partner ${partnerId} about disconnect`);
                 partnerSocket.emit('user_disconnected', { userId: socket.userId });
-                partnerSocket.emit('session_ended', { reason: 'Partner disconnected' });
+                partnerSocket.emit('session_ended', { reason: 'partner_left' });
                 console.log(`✅ Partner ${partnerId} notified successfully`);
               } else {
                 console.log(`⚠️ Partner socket not found in io.sockets.sockets`);
@@ -430,9 +430,10 @@ export class SocketService {
       // Track active session for chat message routing
       this.activeSessions.set(session.id, {
         user1: socket.userId!,
-        user2: match.userId
+        user2: match.userId,
+        mode
       });
-      console.log(`🔗 Tracked session ${session.id} between ${socket.userId} and ${match.userId}`);
+      console.log(`🔗 Tracked session ${session.id} between ${socket.userId} and ${match.userId} (${mode})`);
 
       // Notify both users with UPDATED coin counts and chat stats
       console.log(`📤 Sending match-found to ${socket.userId} (initiator) with coins: ${user1UpdatedCoins}`);
@@ -573,8 +574,37 @@ export class SocketService {
         mode: matchRequest.mode
       });
 
-      // Notify both users + send stats updates
-      socket.emit('match_found', session);
+      // Track active session for routing
+      this.activeSessions.set(session.id, {
+        user1: socket.userId!,
+        user2: match.userId,
+        mode: matchRequest.mode
+      });
+
+      // Common payloads for both users
+      const initiatorPayload = {
+        sessionId: session.id,
+        matchUserId: match.userId,
+        isInitiator: true,
+        mode: matchRequest.mode,
+        coins: user1UpdatedCoins,
+        totalChats: user1TotalChats,
+        dailyChats: user1DailyChats
+      };
+
+      const partnerPayload = {
+        sessionId: session.id,
+        matchUserId: socket.userId!,
+        isInitiator: false,
+        mode: matchRequest.mode,
+        coins: user2UpdatedCoins,
+        totalChats: user2TotalChats,
+        dailyChats: user2DailyChats
+      };
+
+      // Notify both users with modern + legacy events
+      socket.emit('match-found', initiatorPayload);
+      socket.emit('match_found', { ...session, ...initiatorPayload } as any);
       socket.emit('stats-update', {
         coins: user1UpdatedCoins,
         totalChats: user1TotalChats,
@@ -583,7 +613,8 @@ export class SocketService {
 
       const matchSocketId = this.connectedUsers.get(match.userId);
       if (matchSocketId) {
-        this.io.to(matchSocketId).emit('match_found', session);
+        this.io.to(matchSocketId).emit('match-found', partnerPayload);
+        this.io.to(matchSocketId).emit('match_found', { ...session, ...partnerPayload } as any);
         this.io.to(matchSocketId).emit('stats-update', {
           coins: user2UpdatedCoins,
           totalChats: user2TotalChats,

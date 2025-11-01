@@ -95,7 +95,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined'));
 
 // Health check endpoint with enhanced monitoring
-app.get('/health', (req, res) => {
+const healthHandler = (req: express.Request, res: express.Response) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
@@ -104,7 +104,10 @@ app.get('/health', (req, res) => {
     connections: SocketService.getConnectedUserCount(),
     version: '1.0.0'
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 // Keepalive endpoint to prevent cold starts
 app.get('/keepalive', (req, res) => {

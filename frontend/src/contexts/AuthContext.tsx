@@ -46,7 +46,7 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   loginWithToken: (token: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<{token: string; user: any; requiresOTP?: boolean; message?: string;} | undefined>;
+  register: (email: string, username: string, password: string) => Promise<{token?: string; user?: any; requiresOTP?: boolean; message?: string; email?: string; username?: string; pending?: boolean; otpExpiresInSeconds?: number;} | undefined>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
   verifyPhone: (phone: string, otp: string) => Promise<void>;
@@ -242,10 +242,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const register = async (email: string, username: string, password: string): Promise<{
-    token: string;
-    user: any;
+    token?: string;
+    user?: any;
     requiresOTP?: boolean;
     message?: string;
+    email?: string;
+    username?: string;
+    pending?: boolean;
+    otpExpiresInSeconds?: number;
   } | undefined> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {

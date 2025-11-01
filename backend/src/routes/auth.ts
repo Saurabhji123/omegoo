@@ -81,6 +81,9 @@ const hashPhone = (phone: string): string => {
   return crypto.createHash('sha256').update(phone + 'phone_salt').digest('hex');
 };
 
+const getPendingRegistrationKey = (email: string) => `pending_registration:${email.trim().toLowerCase()}`;
+const PENDING_REGISTRATION_TTL_SECONDS = 15 * 60; // 15 minutes to complete OTP verification
+
 /**
  * Helper function to check and reset daily coins automatically
  * Resets coins to 50 at 12 AM every day
@@ -161,10 +164,12 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Email validation
     console.log('✅ Validating email format...');
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       console.log('❌ FAILED: Invalid email format');
       console.log('=== REGISTRATION ATTEMPT END ===\n');
       return res.status(400).json({
@@ -200,20 +205,25 @@ router.post('/register', async (req, res) => {
 
     // Check if user already exists
     console.log('🔍 Checking if email already registered...');
-    const existingUser = await DatabaseService.getUserByEmail(email);
+    const existingUser = await DatabaseService.getUserByEmail(normalizedEmail);
     if (existingUser) {
-      console.log('❌ FAILED: Email already registered:', email);
-      console.log('Existing user ID:', existingUser.id);
-      console.log('=== REGISTRATION ATTEMPT END ===\n');
-      return res.status(400).json({
-        success: false,
-        error: 'Email already registered. Please login instead.',
-        shouldLogin: true // Frontend will redirect to login
-      });
-    }
-    console.log('✅ Email available for registration');
+      if (existingUser.isVerified) {
+        console.log('❌ FAILED: Email already registered (verified account):', normalizedEmail);
+        console.log('Existing user ID:', existingUser.id);
+        console.log('=== REGISTRATION ATTEMPT END ===\n');
+        return res.status(400).json({
+          success: false,
+          error: 'Email already registered. Please login instead.',
+          shouldLogin: true
+        });
+      }
 
-    // Hash password
+      console.log('🧹 Legacy unverified user found. Removing stale database record before pending registration.');
+      await DatabaseService.deleteUser(existingUser.id);
+    }
+    console.log('✅ No verified user found for this email. Proceeding with pending registration.');
+
+    // Hash password for storage (kept in Redis until verification succeeds)
     console.log('🔐 Hashing password...');
     const passwordHash = await bcrypt.hash(password, 10);
     console.log('✅ Password hashed successfully');
@@ -224,75 +234,61 @@ router.post('/register', async (req, res) => {
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     console.log('✅ OTP generated:', otp, '(expires at:', otpExpiresAt.toLocaleTimeString(), ')');
 
-    // Create user
-    console.log('💾 Creating user in database...');
-    const user = await DatabaseService.createUser({
-      email,
+    const pendingKey = getPendingRegistrationKey(normalizedEmail);
+    const deviceId = `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    const pendingRegistration = {
+      email: normalizedEmail,
       username,
       passwordHash,
-      tier: 'guest',
-      status: 'active',
-      isVerified: false, // ❌ Not verified yet - needs OTP
-      otp, // 📧 Store OTP
-      otpExpiresAt, // 📧 Store expiry
-      coins: 50, // Welcome bonus
-      lastCoinClaim: new Date(), // Set initial claim date to prevent auto-reset
-      totalChats: 0, // Initialize chat counters
-      dailyChats: 0,
-      deviceId: `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    });
+      otp,
+      otpExpiresAt: otpExpiresAt.toISOString(),
+      deviceId,
+      coins: 50,
+      createdAt: new Date().toISOString()
+    };
 
-    console.log('✅ User created successfully:', { 
-      id: user.id, 
-      email: user.email, 
-      username: user.username,
-      coins: user.coins,
-      tier: user.tier,
-      isVerified: user.isVerified 
+    console.log('💾 Storing pending registration in Redis:', {
+      key: pendingKey,
+      email: normalizedEmail,
+      username,
+      expiresInSeconds: PENDING_REGISTRATION_TTL_SECONDS
     });
+    await RedisService.set(pendingKey, pendingRegistration, PENDING_REGISTRATION_TTL_SECONDS);
+
+    // Reset OTP attempts for this email (fresh registration)
+    await RedisService.del(`otp_email_attempts:${normalizedEmail}`);
+    await RedisService.del(`otp_email_lock:${normalizedEmail}`);
 
     // 📧 Send OTP email
     console.log('📧 Sending OTP email...');
     const emailSent = await sendOTPEmail({ 
-      email, 
+      email: normalizedEmail, 
       otp, 
       name: username 
     });
 
     if (!emailSent) {
-      console.warn('⚠️  Failed to send OTP email, but user created');
+      console.warn('⚠️  Failed to send OTP email (pending registration stored).');
     } else {
       console.log('✅ OTP email sent successfully');
     }
 
-    // ❌ NO TOKEN GENERATION for unverified users!
-    // Token will be generated after OTP verification
-
-    // 📧 DON'T send token for unverified users - they need to verify OTP first!
     const responseData = {
       success: true,
       message: 'Registration successful. Please verify your email with the OTP sent.',
-      requiresOTP: true, // 📧 Frontend will redirect to OTP page
-      email: user.email, // Send email for OTP verification
-      username: user.username, // Send username for display
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        tier: user.tier,
-        status: user.status,
-        isVerified: false, // ❌ Not verified yet
-        coins: user.coins
-      }
-      // ❌ NO TOKEN - User must verify OTP first!
+      requiresOTP: true,
+      email: normalizedEmail,
+      username,
+      pending: true,
+      otpExpiresInSeconds: 10 * 60
     };
 
-    console.log('🎉 REGISTRATION SUCCESSFUL (OTP sent, no token):', { 
-      userId: user.id,
-      email: user.email,
-      username: user.username,
-      otpSent: emailSent,
-      tokenProvided: false // ❌ No token until OTP verified
+    console.log('🎉 REGISTRATION PENDING (OTP sent, user not yet persisted):', {
+      email: normalizedEmail,
+      username,
+      tokenProvided: false,
+      pendingStorageKey: pendingKey
     });
     console.log('=== REGISTRATION ATTEMPT END ===\n');
 
@@ -339,8 +335,10 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Brute-force protection: check lock status (10 min lock after too many attempts)
-    const lockKey = `otp_email_lock:${email}`;
+    const lockKey = `otp_email_lock:${normalizedEmail}`;
     const isLocked = await RedisService.get(lockKey);
     if (isLocked) {
       return res.status(429).json({
@@ -350,17 +348,113 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
 
-    // Get user by email
-    const user = await DatabaseService.getUserByEmail(email);
+    const pendingKey = getPendingRegistrationKey(normalizedEmail);
+    const pendingRegistration = await RedisService.get(pendingKey);
+    const attemptsKey = `otp_email_attempts:${normalizedEmail}`;
+
+    const handleFailedAttempt = async () => {
+      const attemptsData = (await RedisService.get(attemptsKey)) || { count: 0 };
+      attemptsData.count += 1;
+      await RedisService.set(attemptsKey, attemptsData, 600);
+      if (attemptsData.count >= 5) {
+        await RedisService.set(lockKey, { locked: true }, 600);
+      }
+    };
+
+    // First, handle pending registrations stored in Redis
+    if (pendingRegistration) {
+      const now = new Date();
+      const expiryDate = pendingRegistration.otpExpiresAt ? new Date(pendingRegistration.otpExpiresAt) : null;
+      if (expiryDate && now > expiryDate) {
+        console.log('❌ FAILED: Pending registration OTP expired');
+        await RedisService.del(pendingKey);
+        await RedisService.del(attemptsKey);
+        return res.status(400).json({
+          success: false,
+          error: 'OTP has expired. Please register again to get a new code.',
+          expired: true
+        });
+      }
+
+      if (pendingRegistration.otp !== otp) {
+        console.log('❌ FAILED: Invalid OTP for pending registration');
+        await handleFailedAttempt();
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid OTP. Please try again.'
+        });
+      }
+
+      // OTP matches – create the user now
+      console.log('✅ OTP matches pending registration. Creating verified user...');
+
+      const createdUser = await DatabaseService.createUser({
+        email: normalizedEmail,
+        username: pendingRegistration.username,
+        passwordHash: pendingRegistration.passwordHash,
+        tier: 'verified',
+        status: 'active',
+        isVerified: true,
+        coins: pendingRegistration.coins ?? 50,
+        lastCoinClaim: new Date(),
+        totalChats: 0,
+        dailyChats: 0,
+        deviceId: pendingRegistration.deviceId || `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      });
+
+      console.log('✅ User persisted after OTP verification:', {
+        id: createdUser.id,
+        email: createdUser.email,
+        username: createdUser.username
+      });
+
+      const token = jwt.sign(
+        { userId: createdUser.id, email: createdUser.email, role: 'verified' },
+        process.env.JWT_SECRET as string,
+        { expiresIn: '7d' }
+      );
+
+      const userAgent = req.headers['user-agent'] || 'Unknown Device';
+      const deviceInfo = `${userAgent.substring(0, 50)} - ${new Date().toLocaleString()}`;
+
+      await DatabaseService.updateUser(createdUser.id, {
+        activeDeviceToken: token,
+        lastLoginDevice: deviceInfo
+      });
+
+      // Clean up Redis state
+      await RedisService.del(pendingKey);
+      await RedisService.del(attemptsKey);
+      await RedisService.del(lockKey);
+
+      console.log('🎉 OTP VERIFIED & USER CREATED (pending flow)');
+      console.log('=== OTP VERIFICATION END ===\n');
+
+      return res.json({
+        success: true,
+        message: 'Email verified successfully! Welcome to Omegoo 🎉',
+        token,
+        user: {
+          id: createdUser.id,
+          email: createdUser.email,
+          username: createdUser.username,
+          isVerified: true,
+          tier: 'verified',
+          coins: createdUser.coins
+        }
+      });
+    }
+
+    // Fallback: legacy users stored in database with OTP fields
+    const user = await DatabaseService.getUserByEmail(normalizedEmail);
     if (!user) {
-      console.log('❌ FAILED: User not found');
+      console.log('❌ FAILED: User not found (no pending registration either)');
       return res.status(404).json({
         success: false,
         error: 'User not found'
       });
     }
 
-    // Check if already verified
     if (user.isVerified) {
       console.log('✅ User already verified');
       return res.json({
@@ -375,7 +469,6 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
 
-    // Check OTP expiry (with legacy fallback)
     let isExpired = false;
     let expiryDebug: any = null;
     const now = new Date();
@@ -389,7 +482,6 @@ router.post('/verify-otp', async (req, res) => {
         timeDiff: `${Math.round((expiryDate.getTime() - now.getTime()) / 1000)}s remaining`
       };
     } else {
-      // Legacy/migration fallback: allow verification if OTP matches even when expiry missing
       console.warn('⚠️ No OTP expiry set on user (legacy). Allowing verification if OTP matches.');
     }
     if (expiryDebug) console.log('🕐 OTP Expiry Check:', expiryDebug);
@@ -402,43 +494,32 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
 
-    // Verify OTP (with attempts tracking)
     if (user.otp !== otp) {
       console.log('❌ FAILED: Invalid OTP');
       console.log('Expected:', user.otp, 'Got:', otp);
-      const attemptsKey = `otp_email_attempts:${email}`;
-      const attemptsData = (await RedisService.get(attemptsKey)) || { count: 0 };
-      attemptsData.count += 1;
-      await RedisService.set(attemptsKey, attemptsData, 600); // keep attempts for 10 minutes
-      if (attemptsData.count >= 5) {
-        await RedisService.set(lockKey, { locked: true }, 600); // 10 minutes lock
-      }
+      await handleFailedAttempt();
       return res.status(400).json({
         success: false,
         error: 'Invalid OTP. Please try again.'
       });
     }
 
-    // ✅ Mark as verified and generate new token
     await DatabaseService.updateUser(user.id, {
       isVerified: true,
-      tier: 'verified', // Upgrade tier
-      otp: undefined, // Clear OTP
-      otpExpiresAt: undefined // Clear expiry
+      tier: 'verified',
+      otp: undefined,
+      otpExpiresAt: undefined
     });
 
-    // Clear attempts/lock on success
-    await RedisService.del(`otp_email_attempts:${email}`);
+    await RedisService.del(attemptsKey);
     await RedisService.del(lockKey);
 
-    // Generate new JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: 'verified' },
       process.env.JWT_SECRET as string,
       { expiresIn: '7d' }
     );
 
-    // 🔒 Update session with new token
     const userAgent = req.headers['user-agent'] || 'Unknown Device';
     const deviceInfo = `${userAgent.substring(0, 50)} - ${new Date().toLocaleString()}`;
 
@@ -447,13 +528,13 @@ router.post('/verify-otp', async (req, res) => {
       lastLoginDevice: deviceInfo
     });
 
-    console.log('🎉 OTP VERIFIED SUCCESSFULLY');
+    console.log('🎉 OTP VERIFIED SUCCESSFULLY (legacy user)');
     console.log('=== OTP VERIFICATION END ===\n');
 
     res.json({
       success: true,
       message: 'Email verified successfully! Welcome to Omegoo 🎉',
-      token, // 🎟️ Send token for auto-login
+      token,
       user: {
         id: user.id,
         email: user.email,
@@ -491,25 +572,12 @@ router.post('/resend-otp', async (req, res) => {
       });
     }
 
-    // Get user
-    const user = await DatabaseService.getUserByEmail(email);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
-
-    // Check if already verified
-    if (user.isVerified) {
-      return res.json({
-        success: true,
-        message: 'Email already verified'
-      });
-    }
+    const normalizedEmail = email.trim().toLowerCase();
+    const pendingKey = getPendingRegistrationKey(normalizedEmail);
+    const pendingRegistration = await RedisService.get(pendingKey);
 
     // Cooldown: allow once every 60s per email
-    const cooldownKey = `otp_email_resend_cd:${email}`;
+    const cooldownKey = `otp_email_resend_cd:${normalizedEmail}`;
     const onCooldown = await RedisService.get(cooldownKey);
     if (onCooldown) {
       return res.status(429).json({
@@ -519,17 +587,66 @@ router.post('/resend-otp', async (req, res) => {
       });
     }
 
-    // Generate new OTP
-    const otp = generateOTP();
-    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    if (pendingRegistration) {
+      const otp = generateOTP();
+      const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Update user
+      const updatedPending = {
+        ...pendingRegistration,
+        otp,
+        otpExpiresAt: otpExpiresAt.toISOString()
+      };
+
+      await RedisService.set(pendingKey, updatedPending, PENDING_REGISTRATION_TTL_SECONDS);
+
+      const emailSent = await sendOTPEmail({
+        email: normalizedEmail,
+        otp,
+        name: pendingRegistration.username
+      });
+
+      if (!emailSent) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to send OTP email'
+        });
+      }
+
+      await RedisService.set(cooldownKey, { at: Date.now() }, 60);
+
+      console.log('✅ OTP resent successfully for pending registration');
+      console.log('=== RESEND OTP END ===\n');
+
+      return res.json({
+        success: true,
+        message: 'OTP sent successfully to your email'
+      });
+    }
+
+    // Get user from database (legacy flow)
+    const user = await DatabaseService.getUserByEmail(normalizedEmail);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    if (user.isVerified) {
+      return res.json({
+        success: true,
+        message: 'Email already verified'
+      });
+    }
+
+    const otp = generateOTP();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
     await DatabaseService.updateUser(user.id, {
       otp,
       otpExpiresAt
     });
 
-    // Send email
     const emailSent = await sendOTPEmail({
       email: user.email!,
       otp,
@@ -543,10 +660,9 @@ router.post('/resend-otp', async (req, res) => {
       });
     }
 
-  // Set cooldown after successful send
-  await RedisService.set(cooldownKey, { at: Date.now() }, 60);
+    await RedisService.set(cooldownKey, { at: Date.now() }, 60);
 
-  console.log('✅ OTP resent successfully');
+    console.log('✅ OTP resent successfully (legacy user)');
     console.log('=== RESEND OTP END ===\n');
 
     res.json({
@@ -586,9 +702,11 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Find user by email
     console.log('🔍 Looking up user in database...');
-    const user = await DatabaseService.getUserByEmail(email);
+    const user = await DatabaseService.getUserByEmail(normalizedEmail);
     
     if (!user) {
       console.log('❌ FAILED: User not found for email:', email);
