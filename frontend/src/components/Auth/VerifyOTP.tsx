@@ -117,13 +117,9 @@ const VerifyOTP: React.FC = () => {
       const response = await authAPI.verifyEmailOTP(email, otpToVerify);
 
       if (response.success) {
-        // Login user with token
+        // Login user with token and immediately move to home screen.
         await loginWithToken(response.token);
-        
-        // Show success and redirect to Home (root)
-        setTimeout(() => {
-          navigate('/');
-        }, 500);
+        navigate('/', { replace: true });
       }
     } catch (err: any) {
       console.error('❌ OTP verification failed:', err);
