@@ -504,6 +504,68 @@ export class SocketService {
     const match = await DevRedisService.findMatch(matchRequest);
 
     if (match) {
+      // Coin deduction logic (same as handleFindMatch)
+      const COIN_COST = 1;
+      let user1UpdatedCoins = 0;
+      let user2UpdatedCoins = 0;
+      let user1TotalChats = 0;
+      let user2TotalChats = 0;
+      let user1DailyChats = 0;
+      let user2DailyChats = 0;
+
+      try {
+        const user1 = await DatabaseService.getUserById(socket.userId!);
+        const user2 = await DatabaseService.getUserById(match.userId);
+
+        if (!user1 || !user2) {
+          console.log('⚠️ Guest users detected - creating session without coin deduction (dev mode)');
+          user1UpdatedCoins = 50;
+          user2UpdatedCoins = 50;
+        } else {
+          const user1Coins = user1.coins || 0;
+          const user2Coins = user2.coins || 0;
+
+          if (user1Coins < COIN_COST) {
+            socket.emit('insufficient-coins', {
+              required: COIN_COST,
+              current: user1Coins,
+              message: 'Not enough coins to start chat. Wait till 12 AM for daily reset!'
+            });
+            // Put partner back in queue
+            await DevRedisService.addToMatchQueue(match);
+            return;
+          }
+
+          if (user2Coins < COIN_COST) {
+            await DevRedisService.addToMatchQueue(matchRequest);
+            socket.emit('match-retry', { message: 'Match found but partner has insufficient coins. Searching again...' });
+            return;
+          }
+
+          user1UpdatedCoins = user1Coins - COIN_COST;
+          user2UpdatedCoins = user2Coins - COIN_COST;
+          user1TotalChats = (user1.totalChats || 0) + 1;
+          user2TotalChats = (user2.totalChats || 0) + 1;
+          user1DailyChats = (user1.dailyChats || 0) + 1;
+          user2DailyChats = (user2.dailyChats || 0) + 1;
+
+          await DatabaseService.updateUser(socket.userId!, {
+            coins: user1UpdatedCoins,
+            totalChats: user1TotalChats,
+            dailyChats: user1DailyChats
+          });
+          await DatabaseService.updateUser(match.userId, {
+            coins: user2UpdatedCoins,
+            totalChats: user2TotalChats,
+            dailyChats: user2DailyChats
+          });
+        }
+      } catch (err) {
+        console.error('❌ Error during coin deduction (startMatching):', err);
+        socket.emit('error', { message: 'Failed to process coin payment' });
+        return;
+      }
+
       // Create chat session
       const session = await DatabaseService.createChatSession({
         user1Id: socket.userId!,
@@ -511,12 +573,22 @@ export class SocketService {
         mode: matchRequest.mode
       });
 
-      // Notify both users
+      // Notify both users + send stats updates
       socket.emit('match_found', session);
-      
+      socket.emit('stats-update', {
+        coins: user1UpdatedCoins,
+        totalChats: user1TotalChats,
+        dailyChats: user1DailyChats
+      });
+
       const matchSocketId = this.connectedUsers.get(match.userId);
       if (matchSocketId) {
         this.io.to(matchSocketId).emit('match_found', session);
+        this.io.to(matchSocketId).emit('stats-update', {
+          coins: user2UpdatedCoins,
+          totalChats: user2TotalChats,
+          dailyChats: user2DailyChats
+        });
       }
     } else {
       // Add to queue

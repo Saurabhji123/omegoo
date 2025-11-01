@@ -659,6 +659,20 @@ router.post('/login', async (req, res) => {
     }
     console.log('✅ User not banned');
 
+    // Require email verification before issuing token
+    if (!user.isVerified) {
+      console.log('❌ FAILED: Email not verified. Blocking login until OTP verified.');
+      console.log('=== LOGIN ATTEMPT END ===\n');
+      return res.status(403).json({
+        success: false,
+        error: 'Please verify your email to continue',
+        code: 'EMAIL_NOT_VERIFIED',
+        requiresOTP: true,
+        email: user.email,
+        username: user.username
+      });
+    }
+
     // Check and auto-reset daily coins if needed
     console.log('🪙 Checking daily coin reset...');
     const updatedUser = await checkAndResetDailyCoins(user.id);
