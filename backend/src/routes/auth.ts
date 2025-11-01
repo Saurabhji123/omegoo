@@ -90,47 +90,19 @@ const PENDING_REGISTRATION_TTL_SECONDS = 15 * 60; // 15 minutes to complete OTP 
  */
 const checkAndResetDailyCoins = async (userId: string) => {
   try {
-    const user = await DatabaseService.getUserById(userId);
-    if (!user) return user;
-
-    const now = new Date();
-    const lastReset = user.lastCoinClaim ? new Date(user.lastCoinClaim) : null;
-
-    // MIGRATION: If user doesn't have lastCoinClaim, set it to today without resetting coins
-    if (!lastReset) {
-      console.log('🔧 Migration: Setting lastCoinClaim for existing user:', userId);
-      await DatabaseService.updateUser(userId, {
-        lastCoinClaim: now,
-        totalChats: user.totalChats || 0,
-        dailyChats: user.dailyChats || 0
+    const updatedUser = await DatabaseService.resetDailyCoinsIfNeeded(userId);
+    if (updatedUser && updatedUser.lastCoinClaim) {
+      const nowString = new Date(updatedUser.lastCoinClaim).toDateString();
+      console.log('🔄 Daily coin check:', {
+        userId,
+        coins: updatedUser.coins,
+        lastCoinClaim: nowString,
+        dailyChats: updatedUser.dailyChats
       });
-      return await DatabaseService.getUserById(userId);
+      return updatedUser;
     }
 
-    // Check if it's a new day (date changed at 12 AM)
-    const isNewDay = lastReset.toDateString() !== now.toDateString();
-
-    if (isNewDay) {
-      // Automatic reset: Set coins to 50 regardless of current balance
-      const DAILY_COINS = 50;
-      
-      await DatabaseService.updateUser(userId, {
-        coins: DAILY_COINS,
-        lastCoinClaim: now,
-        dailyChats: 0 // Reset daily chats counter (keep totalChats unchanged)
-      });
-
-      console.log('🔄 Auto-reset daily coins:', { 
-        userId, 
-        newCoins: DAILY_COINS,
-        date: now.toDateString()
-      });
-
-      // Return updated user data
-      return await DatabaseService.getUserById(userId);
-    }
-
-    return user;
+    return await DatabaseService.getUserById(userId);
   } catch (error) {
     console.error('❌ Auto-reset coins error:', error);
     return null;

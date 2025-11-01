@@ -11,6 +11,9 @@ interface User {
   tier: string;
   status: string;
   coins: number;
+  totalChats?: number;
+  dailyChats?: number;
+  lastCoinClaim?: Date;
   reportCount?: number;
   isOnline?: boolean;
   isVerified: boolean;
@@ -35,6 +38,7 @@ export class DatabaseService {
   private static users: Map<string, User> = new Map();
   private static sessions: Map<string, ChatSession> = new Map();
   private static bans: Map<string, any> = new Map();
+  private static deletedUsers: Map<string, any> = new Map();
 
   static async initialize() {
     console.log('✅ Development database initialized (in-memory)');
@@ -46,6 +50,9 @@ export class DatabaseService {
       tier: 'guest',
       status: 'active',
       coins: 100,
+      totalChats: 0,
+      dailyChats: 0,
+      lastCoinClaim: new Date(),
       isVerified: false,
       preferences: { language: 'en', interests: [] },
       subscription: { type: 'none' },
@@ -94,7 +101,10 @@ export class DatabaseService {
       phoneHash: userData.phoneHash,
       tier: userData.tier || 'guest',
       status: userData.status || 'active',
-      coins: userData.coins || 100,
+      coins: userData.coins ?? 50,
+      totalChats: userData.totalChats ?? 0,
+      dailyChats: userData.dailyChats ?? 0,
+      lastCoinClaim: userData.lastCoinClaim ?? new Date(),
       isVerified: userData.isVerified || false,
       preferences: userData.preferences || { 
         language: 'en', 
@@ -115,9 +125,136 @@ export class DatabaseService {
     const user = this.users.get(userId);
     if (!user) return null;
 
-    const updatedUser = { ...user, ...updates, updated_at: new Date() };
+    const updatedUser = { ...user, ...updates, updatedAt: new Date() } as User;
     this.users.set(userId, updatedUser);
     return updatedUser;
+  }
+
+  private static ensureDailyReset(user: User): User {
+    const now = new Date();
+    const lastClaim = user.lastCoinClaim ? new Date(user.lastCoinClaim) : null;
+    if (!lastClaim) {
+      const migratedUser: User = {
+        ...user,
+        lastCoinClaim: now,
+        dailyChats: user.dailyChats ?? 0,
+        totalChats: user.totalChats ?? 0,
+        updatedAt: now
+      };
+      this.users.set(migratedUser.id, migratedUser);
+      return migratedUser;
+    }
+
+    if (lastClaim.toDateString() === now.toDateString()) {
+      return user;
+    }
+
+    const resetUser: User = {
+      ...user,
+      coins: 50,
+      dailyChats: 0,
+      lastCoinClaim: now,
+      updatedAt: now
+    };
+    this.users.set(resetUser.id, resetUser);
+    return resetUser;
+  }
+
+  static async resetDailyCoinsIfNeeded(userId: string): Promise<User | null> {
+    const user = this.users.get(userId);
+    if (!user) return null;
+    const updated = this.ensureDailyReset(user);
+    return { ...updated };
+  }
+
+  static async spendCoinsForMatch(
+    userId: string,
+    cost: number
+  ): Promise<{
+    success: boolean;
+    user?: User;
+    previous?: { coins: number; totalChats: number; dailyChats: number; lastCoinClaim?: Date };
+    reason?: 'NOT_FOUND' | 'INSUFFICIENT_COINS';
+  }> {
+    const user = this.users.get(userId);
+    if (!user) {
+      return { success: false, reason: 'NOT_FOUND' };
+    }
+
+    const normalized = this.ensureDailyReset(user);
+    const availableCoins = normalized.coins ?? 0;
+    if (availableCoins < cost) {
+      return { success: false, reason: 'INSUFFICIENT_COINS' };
+    }
+
+    const previous = {
+      coins: normalized.coins ?? 0,
+      totalChats: normalized.totalChats ?? 0,
+      dailyChats: normalized.dailyChats ?? 0,
+      lastCoinClaim: normalized.lastCoinClaim
+    };
+
+    const updatedUser: User = {
+      ...normalized,
+      coins: previous.coins - cost,
+      totalChats: previous.totalChats + 1,
+      dailyChats: previous.dailyChats + 1,
+      updatedAt: new Date(),
+      lastActiveAt: new Date()
+    };
+
+    this.users.set(userId, updatedUser);
+    return { success: true, user: { ...updatedUser }, previous };
+  }
+
+  static async refundMatchSpend(
+    userId: string,
+    previous: { coins: number; totalChats: number; dailyChats: number; lastCoinClaim?: Date }
+  ): Promise<User | null> {
+    const user = this.users.get(userId);
+    if (!user) return null;
+
+    const refunded: User = {
+      ...user,
+      coins: previous.coins,
+      totalChats: Math.max(previous.totalChats, 0),
+      dailyChats: Math.max(previous.dailyChats, 0),
+      lastCoinClaim: previous.lastCoinClaim || user.lastCoinClaim,
+      updatedAt: new Date()
+    };
+
+    this.users.set(userId, refunded);
+    return { ...refunded };
+  }
+
+  static async archiveAndDeleteUser(
+    userId: string,
+    metadata?: { reason?: string; deletedBy?: string }
+  ): Promise<{ success: boolean; archived?: any; error?: string }> {
+    const user = this.users.get(userId);
+    if (!user) {
+      return { success: false, error: 'USER_NOT_FOUND' };
+    }
+
+    const archived = {
+      userId,
+      reason: metadata?.reason || 'user_request',
+      deletedBy: metadata?.deletedBy || userId,
+      deletedAt: new Date(),
+      originalData: { ...user }
+    };
+
+    this.deletedUsers.set(userId, archived);
+    this.users.delete(userId);
+
+    // Remove any active sessions involving this user
+    for (const [sessionId, session] of this.sessions.entries()) {
+      if (session.user1Id === userId || session.user2Id === userId) {
+        this.sessions.delete(sessionId);
+      }
+    }
+
+    return { success: true, archived };
   }
 
   // Ban checking

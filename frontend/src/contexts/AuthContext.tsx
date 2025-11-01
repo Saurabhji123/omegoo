@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import apiService, { authAPI } from '../services/api';
+import apiService, { authAPI, userAPI } from '../services/api';
 import { storageService } from '../services/storage';
 
 // Define types locally to avoid import issues
@@ -49,6 +49,7 @@ interface AuthContextType extends AuthState {
   register: (email: string, username: string, password: string) => Promise<{token?: string; user?: any; requiresOTP?: boolean; message?: string; email?: string; username?: string; pending?: boolean; otpExpiresInSeconds?: number;} | undefined>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
+  deleteAccount: () => Promise<void>;
   verifyPhone: (phone: string, otp: string) => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
   refreshUser: () => Promise<void>;
@@ -302,8 +303,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     console.log('👋 Logging out user');
     storageService.removeToken();
+    storageService.removeUser();
     apiService.setToken(null);
     dispatch({ type: 'LOGOUT' });
+  };
+
+  const deleteAccount = async () => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      await userAPI.deleteAccount();
+      storageService.clearAll();
+      apiService.setToken(null);
+      dispatch({ type: 'LOGOUT' });
+    } catch (error) {
+      console.error('❌ Delete account failed:', error);
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
   const verifyPhone = async (phone: string, otp: string) => {
@@ -362,6 +379,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     register,
     loginWithGoogle,
     logout,
+    deleteAccount,
     verifyPhone,
     updateUser,
     refreshUser,

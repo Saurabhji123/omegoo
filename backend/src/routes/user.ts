@@ -208,4 +208,43 @@ router.get('/coins', authMiddleware, async (req: AuthRequest, res: Response) => 
   }
 });
 
+/**
+ * Delete Account
+ * DELETE /api/user/account
+ */
+router.delete('/account', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated'
+      });
+    }
+
+    const result = await DatabaseService.archiveAndDeleteUser(userId, {
+      reason: 'user_request',
+      deletedBy: userId
+    });
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error || 'Failed to delete account'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    console.error('❌ Delete account error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete account'
+    });
+  }
+});
+
 export default router;

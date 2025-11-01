@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Profile: React.FC = () => {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const [, forceUpdate] = useState({});
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -22,6 +22,8 @@ const Profile: React.FC = () => {
   });
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch fresh user data when profile loads
   useEffect(() => {
@@ -90,6 +92,30 @@ const Profile: React.FC = () => {
       }, 2000);
     } catch (error: any) {
       setPasswordError(error.message || 'Failed to change password. Please try again.');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (isDeleting) {
+      return;
+    }
+
+    setDeleteError('');
+    const confirmed = window.confirm('This action permanently deletes your account and all associated data. Do you want to continue?');
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await deleteAccount();
+      alert('Your account has been deleted successfully.');
+      navigate('/login', { replace: true });
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.error || 'Failed to delete account. Please try again.';
+      setDeleteError(typeof errorMessage === 'string' ? errorMessage : 'Failed to delete account. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -332,10 +358,21 @@ const Profile: React.FC = () => {
             <div className="text-xs sm:text-sm text-gray-300">Manage your privacy preferences</div>
           </button>
 
-          <button className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors text-red-400">
+          <button
+            onClick={handleDeleteAccount}
+            disabled={isDeleting}
+            className={`w-full text-left p-3 rounded-lg transition-colors text-red-400 ${isDeleting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-white hover:bg-opacity-10'}`}
+          >
             <div className="font-medium text-sm sm:text-base">Delete Account</div>
-            <div className="text-xs sm:text-sm">Permanently remove your account</div>
+            <div className="text-xs sm:text-sm">
+              {isDeleting ? 'Deleting account...' : 'Permanently remove your account'}
+            </div>
           </button>
+          {deleteError && (
+            <div className="text-xs sm:text-sm text-red-300 mt-1">
+              {deleteError}
+            </div>
+          )}
         </div>
       </div>
 

@@ -109,6 +109,14 @@ interface IAdminDoc extends Document {
   updatedAt: Date;
 }
 
+interface IDeletedAccountDoc extends Document {
+  userId: string;
+  reason: string;
+  deletedBy?: string;
+  deletedAt: Date;
+  originalData: any;
+}
+
 /* -------------------------
    Schemas
    ------------------------- */
@@ -218,6 +226,14 @@ const AdminSchema = new Schema<IAdminDoc>({
   updatedAt: { type: Date, default: Date.now }
 });
 
+const DeletedAccountSchema = new Schema<IDeletedAccountDoc>({
+  userId: { type: String, required: true, index: true },
+  reason: { type: String, default: 'user_request' },
+  deletedBy: { type: String },
+  deletedAt: { type: Date, default: Date.now },
+  originalData: { type: Schema.Types.Mixed, required: true }
+});
+
 // Indexes for better query performance
 BanHistorySchema.index({ userId: 1, isActive: 1 });
 BanHistorySchema.index({ expiresAt: 1 });
@@ -235,6 +251,7 @@ const MessageModel: Model<IMessageDoc> = mongoose.model<IMessageDoc>('Message', 
 const ChatRoomModel: Model<IChatRoomDoc> = mongoose.model<IChatRoomDoc>('ChatRoom', ChatRoomSchema);
 const BanHistoryModel: Model<IBanHistoryDoc> = mongoose.model<IBanHistoryDoc>('BanHistory', BanHistorySchema);
 const AdminModel: Model<IAdminDoc> = mongoose.model<IAdminDoc>('Admin', AdminSchema);
+const DeletedAccountModel: Model<IDeletedAccountDoc> = mongoose.model<IDeletedAccountDoc>('DeletedAccount', DeletedAccountSchema);
 
 /* -------------------------
    DatabaseService
@@ -246,6 +263,7 @@ export class DatabaseService {
   private static chatSessions = new Map<string, any>();
   private static messages = new Map<string, any[]>(); // roomId => messages
   private static chatRooms = new Map<string, any>();
+  private static deletedAccounts = new Map<string, any>();
 
   /* ---------- Connection ---------- */
   static async initialize(): Promise<void> {
@@ -364,6 +382,62 @@ export class DatabaseService {
       updatedAt: mongoUser.updatedAt,
       lastActiveAt: mongoUser.lastActiveAt || mongoUser.updatedAt
     };
+  }
+
+  private static isNewDay(lastClaim: Date | null, now: Date): boolean {
+    if (!lastClaim) return true;
+    return lastClaim.toDateString() !== now.toDateString();
+  }
+
+  private static async ensureDailyReset(user: any): Promise<any> {
+    if (!user) return null;
+
+    const now = new Date();
+    const lastClaim = user.lastCoinClaim ? new Date(user.lastCoinClaim) : null;
+    const userId = user.id || user._id?.toString();
+    if (!userId) {
+      return user;
+    }
+
+    if (!lastClaim) {
+      const migrationUpdates = {
+        lastCoinClaim: now,
+        dailyChats: user.dailyChats ?? 0,
+        totalChats: user.totalChats ?? 0,
+        updatedAt: now
+      };
+
+      if (this.isConnected) {
+        await UserModel.updateOne({ id: userId }, { $set: migrationUpdates });
+      } else if (this.users.has(userId)) {
+        const stored = this.users.get(userId);
+        Object.assign(stored, migrationUpdates);
+        this.users.set(userId, stored);
+      }
+
+      return { ...user, ...migrationUpdates };
+    }
+
+    if (!this.isNewDay(lastClaim, now)) {
+      return user;
+    }
+
+    const updates = {
+      coins: 50,
+      dailyChats: 0,
+      lastCoinClaim: now,
+      updatedAt: now
+    };
+
+    if (this.isConnected) {
+      await UserModel.updateOne({ id: userId }, { $set: updates });
+    } else if (this.users.has(userId)) {
+      const stored = this.users.get(userId);
+      Object.assign(stored, updates);
+      this.users.set(userId, stored);
+    }
+
+    return { ...user, ...updates };
   }
 
   /* ---------- User operations ---------- */
@@ -525,6 +599,215 @@ export class DatabaseService {
     user.updatedAt = new Date();
     this.users.set(id, user);
     return user;
+  }
+
+  static async resetDailyCoinsIfNeeded(userId: string): Promise<any | null> {
+    if (this.isConnected) {
+      try {
+        const userDoc = await UserModel.findOne({ id: userId }).lean();
+        if (!userDoc) return null;
+        const normalized = await this.ensureDailyReset(userDoc);
+        return this.mongoUserToUser(normalized);
+      } catch (error) {
+        console.error('MongoDB resetDailyCoinsIfNeeded failed:', error);
+      }
+    }
+
+    const user = this.users.get(userId);
+    if (!user) return null;
+    const normalized = await this.ensureDailyReset(user);
+    return normalized;
+  }
+
+  static async spendCoinsForMatch(
+    userId: string,
+    cost: number
+  ): Promise<{
+    success: boolean;
+    user?: any;
+    previous?: { coins: number; totalChats: number; dailyChats: number; lastCoinClaim?: Date };
+    reason?: 'NOT_FOUND' | 'INSUFFICIENT_COINS';
+  }> {
+    if (this.isConnected) {
+      try {
+        let userDoc = await UserModel.findOne({ id: userId }).lean();
+        if (!userDoc) {
+          return { success: false, reason: 'NOT_FOUND' };
+        }
+
+        userDoc = await this.ensureDailyReset(userDoc);
+        if (!userDoc) {
+          return { success: false, reason: 'NOT_FOUND' };
+        }
+        const availableCoins = userDoc.coins ?? 0;
+        if (availableCoins < cost) {
+          return { success: false, reason: 'INSUFFICIENT_COINS' };
+        }
+
+        const previous = {
+          coins: availableCoins,
+          totalChats: userDoc.totalChats ?? 0,
+          dailyChats: userDoc.dailyChats ?? 0,
+          lastCoinClaim: userDoc.lastCoinClaim
+        };
+
+        const updatedDoc = await UserModel.findOneAndUpdate(
+          { id: userId, coins: { $gte: cost } },
+          {
+            $inc: { coins: -cost, totalChats: 1, dailyChats: 1 },
+            $set: { updatedAt: new Date(), lastActiveAt: new Date() }
+          },
+          { new: true }
+        ).lean();
+
+        if (!updatedDoc) {
+          return { success: false, reason: 'INSUFFICIENT_COINS' };
+        }
+
+        return { success: true, user: this.mongoUserToUser(updatedDoc), previous };
+      } catch (error) {
+        console.error('MongoDB spendCoinsForMatch failed:', error);
+        return { success: false, reason: 'INSUFFICIENT_COINS' };
+      }
+    }
+
+    const fallbackUser = this.users.get(userId);
+    if (!fallbackUser) {
+      return { success: false, reason: 'NOT_FOUND' };
+    }
+
+    const normalized = await this.ensureDailyReset(fallbackUser);
+    if (!normalized) {
+      return { success: false, reason: 'NOT_FOUND' };
+    }
+    const availableCoins = normalized.coins ?? 0;
+    if (availableCoins < cost) {
+      return { success: false, reason: 'INSUFFICIENT_COINS' };
+    }
+
+    const previous = {
+      coins: availableCoins,
+      totalChats: normalized.totalChats ?? 0,
+      dailyChats: normalized.dailyChats ?? 0,
+      lastCoinClaim: normalized.lastCoinClaim
+    };
+
+    const updated = {
+      ...normalized,
+      coins: availableCoins - cost,
+      totalChats: previous.totalChats + 1,
+      dailyChats: previous.dailyChats + 1,
+      updatedAt: new Date(),
+      lastActiveAt: new Date()
+    };
+
+    this.users.set(userId, updated);
+    return { success: true, user: updated, previous };
+  }
+
+  static async refundMatchSpend(
+    userId: string,
+    previous: { coins: number; totalChats: number; dailyChats: number; lastCoinClaim?: Date }
+  ): Promise<any | null> {
+    if (this.isConnected) {
+      try {
+        const update: any = {
+          coins: previous.coins,
+          totalChats: Math.max(previous.totalChats, 0),
+          dailyChats: Math.max(previous.dailyChats, 0),
+          updatedAt: new Date()
+        };
+
+        if (previous.lastCoinClaim) {
+          update.lastCoinClaim = previous.lastCoinClaim;
+        }
+
+        const userDoc = await UserModel.findOneAndUpdate(
+          { id: userId },
+          { $set: update },
+          { new: true }
+        ).lean();
+
+        return this.mongoUserToUser(userDoc);
+      } catch (error) {
+        console.error('MongoDB refundMatchSpend failed:', error);
+        return null;
+      }
+    }
+
+    const user = this.users.get(userId);
+    if (!user) return null;
+
+    const refunded = {
+      ...user,
+      coins: previous.coins,
+      totalChats: Math.max(previous.totalChats, 0),
+      dailyChats: Math.max(previous.dailyChats, 0),
+      lastCoinClaim: previous.lastCoinClaim ?? user.lastCoinClaim,
+      updatedAt: new Date()
+    };
+
+    this.users.set(userId, refunded);
+    return refunded;
+  }
+
+  static async archiveAndDeleteUser(
+    userId: string,
+    metadata?: { reason?: string; deletedBy?: string }
+  ): Promise<{ success: boolean; archived?: any; error?: string }> {
+    if (this.isConnected) {
+      try {
+        const userDoc = await UserModel.findOne({ id: userId });
+        if (!userDoc) {
+          return { success: false, error: 'USER_NOT_FOUND' };
+        }
+
+        const archivedDoc = new DeletedAccountModel({
+          userId: userDoc.id,
+          reason: metadata?.reason || 'user_request',
+          deletedBy: metadata?.deletedBy || userId,
+          deletedAt: new Date(),
+          originalData: userDoc.toObject()
+        });
+
+        await archivedDoc.save();
+        await UserModel.deleteOne({ id: userId });
+        await ChatSessionModel.updateMany(
+          { $or: [{ user1Id: userId }, { user2Id: userId }], status: { $ne: 'ended' } },
+          { $set: { status: 'ended', endedAt: new Date() } }
+        );
+
+        return { success: true, archived: archivedDoc.toObject() };
+      } catch (error) {
+        console.error('MongoDB archiveAndDeleteUser failed:', error);
+        return { success: false, error: 'DELETE_FAILED' };
+      }
+    }
+
+    const user = this.users.get(userId);
+    if (!user) {
+      return { success: false, error: 'USER_NOT_FOUND' };
+    }
+
+    const archived = {
+      userId,
+      reason: metadata?.reason || 'user_request',
+      deletedBy: metadata?.deletedBy || userId,
+      deletedAt: new Date(),
+      originalData: { ...user }
+    };
+
+    this.deletedAccounts.set(userId, archived);
+    this.users.delete(userId);
+
+    // Remove any active sessions referencing this user in fallback mode
+    for (const [sessionId, session] of this.chatSessions.entries()) {
+      if (session.user1Id === userId || session.user2Id === userId) {
+        this.chatSessions.delete(sessionId);
+      }
+    }
+
+    return { success: true, archived };
   }
 
   static async checkUserBanned(deviceId: string): Promise<boolean> {
