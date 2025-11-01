@@ -174,21 +174,6 @@ router.post('/register', async (req, res) => {
     }
     console.log('✅ Email format valid');
 
-    // 📧 RESEND RESTRICTION: Only allow verified domain emails
-    // Resend requires domain verification to send emails to other addresses
-    const allowedEmail = 'omegoochat@gmail.com';
-    if (email !== allowedEmail) {
-      console.log('❌ FAILED: Email not allowed (Resend domain not verified)');
-      console.log(`Attempted email: ${email}`);
-      console.log(`Allowed email: ${allowedEmail}`);
-      console.log('=== REGISTRATION ATTEMPT END ===\n');
-      return res.status(400).json({
-        success: false,
-        error: `Currently, only ${allowedEmail} can register. Domain verification pending for other emails.`
-      });
-    }
-    console.log('✅ Email allowed for registration');
-
     // Password validation (min 6 characters)
     console.log('✅ Validating password...');
     if (password.length < 6) {
@@ -379,27 +364,25 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
 
-    // Check OTP expiry
-    if (!user.otpExpiresAt) {
-      console.log('❌ FAILED: No OTP expiry set');
-      return res.status(400).json({
-        success: false,
-        error: 'OTP has expired. Please request a new one.',
-        expired: true
-      });
-    }
-
+    // Check OTP expiry (with legacy fallback)
+    let isExpired = false;
+    let expiryDebug: any = null;
     const now = new Date();
-    const expiryDate = new Date(user.otpExpiresAt);
-    
-    console.log('🕐 OTP Expiry Check:', {
-      now: now.toISOString(),
-      expiry: expiryDate.toISOString(),
-      isExpired: now > expiryDate,
-      timeDiff: `${Math.round((expiryDate.getTime() - now.getTime()) / 1000)}s remaining`
-    });
-
-    if (now > expiryDate) {
+    if (user.otpExpiresAt) {
+      const expiryDate = new Date(user.otpExpiresAt);
+      isExpired = now > expiryDate;
+      expiryDebug = {
+        now: now.toISOString(),
+        expiry: expiryDate.toISOString(),
+        isExpired,
+        timeDiff: `${Math.round((expiryDate.getTime() - now.getTime()) / 1000)}s remaining`
+      };
+    } else {
+      // Legacy/migration fallback: allow verification if OTP matches even when expiry missing
+      console.warn('⚠️ No OTP expiry set on user (legacy). Allowing verification if OTP matches.');
+    }
+    if (expiryDebug) console.log('🕐 OTP Expiry Check:', expiryDebug);
+    if (isExpired) {
       console.log('❌ FAILED: OTP expired');
       return res.status(400).json({
         success: false,

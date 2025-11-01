@@ -125,9 +125,9 @@ const VerifyOTP: React.FC = () => {
         // Login user with token
         await loginWithToken(response.data.token);
         
-        // Show success and redirect
+        // Show success and redirect to Home (root)
         setTimeout(() => {
-          navigate('/home');
+          navigate('/');
         }, 500);
       }
     } catch (err: any) {

@@ -44,7 +44,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiresVerification
   }
 
   if (requiresVerification && user.tier === 'guest') {
-    return <Navigate to="/verify" replace />;
+    // Redirect unverified users to Home; Home component will show verification popup
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -140,26 +141,26 @@ const AppRoutes: React.FC = () => {
         
         {/* Chat routes */}
         <Route path="/chat" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresVerification>
             <Chat />
           </ProtectedRoute>
         } />
         
         {/* Chat routes - Protected (Login required) */}
         <Route path="/chat/text" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresVerification>
             <TextChat />
           </ProtectedRoute>
         } />
         
         <Route path="/chat/audio" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresVerification>
             <AudioChat />
           </ProtectedRoute>
         } />
         
         <Route path="/chat/video" element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresVerification>
             <VideoChat />
           </ProtectedRoute>
         } />

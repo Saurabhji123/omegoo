@@ -349,8 +349,13 @@ export class DatabaseService {
       coins: mongoUser.coins,
       totalChats: mongoUser.totalChats || 0,
       dailyChats: mongoUser.dailyChats || 0,
-      lastCoinClaim: mongoUser.lastCoinClaim,
+  lastCoinClaim: mongoUser.lastCoinClaim,
       isVerified: mongoUser.isVerified,
+  // Session & verification related fields (kept optional in returned shape)
+  activeDeviceToken: (mongoUser as any).activeDeviceToken || null,
+  lastLoginDevice: (mongoUser as any).lastLoginDevice || null,
+  otp: (mongoUser as any).otp,
+  otpExpiresAt: (mongoUser as any).otpExpiresAt,
       preferences: mongoUser.preferences,
       subscription: mongoUser.subscription,
       isOnline: mongoUser.isOnline,
@@ -380,6 +385,12 @@ export class DatabaseService {
           totalChats: userData.totalChats ?? 0,
           dailyChats: userData.dailyChats ?? 0,
           lastCoinClaim: userData.lastCoinClaim ?? new Date(),
+          // Store OTP fields when provided (email verification flow)
+          otp: (userData as any).otp,
+          otpExpiresAt: (userData as any).otpExpiresAt,
+          // Session fields (optional on creation)
+          activeDeviceToken: (userData as any).activeDeviceToken || null,
+          lastLoginDevice: (userData as any).lastLoginDevice || null,
           preferences: userData.preferences ?? {},
           subscription: userData.subscription ?? {},
           createdAt: new Date(),
