@@ -339,6 +339,17 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
 
+    // Brute-force protection: check lock status (10 min lock after too many attempts)
+    const lockKey = `otp_email_lock:${email}`;
+    const isLocked = await RedisService.get(lockKey);
+    if (isLocked) {
+      return res.status(429).json({
+        success: false,
+        error: 'Too many attempts. Please try again later.',
+        code: 'OTP_LOCKED'
+      });
+    }
+
     // Get user by email
     const user = await DatabaseService.getUserByEmail(email);
     if (!user) {
@@ -391,10 +402,17 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
 
-    // Verify OTP
+    // Verify OTP (with attempts tracking)
     if (user.otp !== otp) {
       console.log('❌ FAILED: Invalid OTP');
       console.log('Expected:', user.otp, 'Got:', otp);
+      const attemptsKey = `otp_email_attempts:${email}`;
+      const attemptsData = (await RedisService.get(attemptsKey)) || { count: 0 };
+      attemptsData.count += 1;
+      await RedisService.set(attemptsKey, attemptsData, 600); // keep attempts for 10 minutes
+      if (attemptsData.count >= 5) {
+        await RedisService.set(lockKey, { locked: true }, 600); // 10 minutes lock
+      }
       return res.status(400).json({
         success: false,
         error: 'Invalid OTP. Please try again.'
@@ -408,6 +426,10 @@ router.post('/verify-otp', async (req, res) => {
       otp: undefined, // Clear OTP
       otpExpiresAt: undefined // Clear expiry
     });
+
+    // Clear attempts/lock on success
+    await RedisService.del(`otp_email_attempts:${email}`);
+    await RedisService.del(lockKey);
 
     // Generate new JWT token
     const token = jwt.sign(
@@ -486,6 +508,17 @@ router.post('/resend-otp', async (req, res) => {
       });
     }
 
+    // Cooldown: allow once every 60s per email
+    const cooldownKey = `otp_email_resend_cd:${email}`;
+    const onCooldown = await RedisService.get(cooldownKey);
+    if (onCooldown) {
+      return res.status(429).json({
+        success: false,
+        error: 'Please wait before requesting a new code.',
+        code: 'RESEND_COOLDOWN'
+      });
+    }
+
     // Generate new OTP
     const otp = generateOTP();
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -510,7 +543,10 @@ router.post('/resend-otp', async (req, res) => {
       });
     }
 
-    console.log('✅ OTP resent successfully');
+  // Set cooldown after successful send
+  await RedisService.set(cooldownKey, { at: Date.now() }, 60);
+
+  console.log('✅ OTP resent successfully');
     console.log('=== RESEND OTP END ===\n');
 
     res.json({

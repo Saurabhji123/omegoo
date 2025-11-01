@@ -21,7 +21,7 @@ import reportsRoutes from './routes/reports';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
-import { authenticateToken } from './middleware/auth';
+import { authenticateToken, requireVerification } from './middleware/auth';
 
 // Import services (AFTER dotenv.config)
 import { SocketService } from './services/socket';
@@ -156,7 +156,8 @@ app.use('/api/auth/register', authLimiter); // 🔒 Rate limit register endpoint
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportsRoutes); // Public reports endpoint
 app.use('/api/user', authenticateToken, userRoutes);
-app.use('/api/chat', authenticateToken, chatRoutes);
+// Chat APIs require both authentication and verified accounts
+app.use('/api/chat', authenticateToken, requireVerification, chatRoutes);
 app.use('/api/moderation', authenticateToken, moderationRoutes);
 app.use('/api/payment', authenticateToken, paymentRoutes);
 app.use('/api/admin', adminRoutes); // Admin routes handle their own authentication

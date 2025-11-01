@@ -59,7 +59,7 @@ export const authenticateToken = async (
 
     req.user = {
       id: user.id,
-      deviceId: user.device_id,
+      deviceId: (user as any).deviceId || (user as any).device_id || '',
       tier: user.tier,
       status: user.status
     };
