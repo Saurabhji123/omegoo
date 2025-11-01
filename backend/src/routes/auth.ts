@@ -445,7 +445,8 @@ router.post('/verify-otp', async (req, res) => {
           username: createdUser.username,
           isVerified: true,
           tier: 'verified',
-          coins: createdUser.coins
+          coins: createdUser.coins,
+          hasPassword: !!createdUser.passwordHash
         }
       });
     }
@@ -549,7 +550,8 @@ router.post('/verify-otp', async (req, res) => {
         username: user.username,
         isVerified: true,
         tier: 'verified',
-        coins: user.coins
+        coins: user.coins,
+        hasPassword: !!user.passwordHash
       }
     });
   } catch (error: any) {
@@ -855,6 +857,7 @@ router.post('/login', async (req, res) => {
         status: finalUser.status,
         isVerified: finalUser.isVerified,
         coins: finalUser.coins,
+        hasPassword: !!finalUser.passwordHash,
         preferences: finalUser.preferences || {},
         subscription: finalUser.subscription || { type: 'none' }
       }
@@ -1017,6 +1020,7 @@ router.post('/google', async (req, res) => {
         status: user.status,
         isVerified: user.isVerified,
         coins: user.coins,
+        hasPassword: !!user.passwordHash,
         preferences: user.preferences || {},
         subscription: user.subscription || { type: 'none' }
       }
@@ -1151,7 +1155,8 @@ router.post('/verify-phone', async (req, res) => {
         tier: user.tier,
         status: user.status,
         isVerified: user.isVerified,
-        coins: (user.coins || 0) + 10
+        coins: (user.coins || 0) + 10,
+        hasPassword: !!user.passwordHash
       }
     });
   } catch (error) {
@@ -1210,6 +1215,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
         status: user.status,
         coins: user.coins,
         isVerified: user.isVerified,
+        hasPassword: !!user.passwordHash,
         totalChats: user.totalChats || 0,
         dailyChats: user.dailyChats || 0,
         lastCoinClaim: user.lastCoinClaim,

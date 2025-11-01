@@ -221,11 +221,6 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                   required
                 />
               </div>
-              {!isLogin && (
-                <p className="mt-2 text-xs sm:text-sm text-yellow-300 bg-yellow-900 bg-opacity-30 border border-yellow-500 border-opacity-50 rounded-lg p-2">
-                  ⚠️ Currently, only <span className="font-semibold">omegoochat@gmail.com</span> can register (domain verification pending)
-                </p>
-              )}
             </div>
 
             {/* Password */}

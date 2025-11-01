@@ -6,9 +6,9 @@ import axios from 'axios';
 
 // Coin costs for each mode
 const COIN_COSTS = {
-  text: 10,
-  audio: 15,
-  video: 20
+  text: 1,
+  audio: 2,
+  video: 3
 };
 
 const Home: React.FC = () => {

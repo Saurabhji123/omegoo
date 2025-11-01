@@ -57,6 +57,11 @@ const Profile: React.FC = () => {
     setPasswordSuccess(false);
 
     // Validation
+    if (user?.hasPassword && !passwordData.currentPassword) {
+      setPasswordError('Please enter your current password');
+      return;
+    }
+
     if (passwordData.newPassword.length < 6) {
       setPasswordError('Password must be at least 6 characters');
       return;
@@ -69,16 +74,16 @@ const Profile: React.FC = () => {
 
     try {
       // Call API to change password
-      const currentPwd = user?.passwordHash ? passwordData.currentPassword : undefined;
-      
+      const currentPwd = user?.hasPassword ? passwordData.currentPassword : undefined;
+
       await authAPI.changePassword(currentPwd, passwordData.newPassword);
-      
+
       setPasswordSuccess(true);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      
-      // Refresh user data to get updated passwordHash status
+
+      // Refresh user data to get updated password metadata
       await refreshUser();
-      
+
       setTimeout(() => {
         setShowPasswordModal(false);
         setPasswordSuccess(false);
@@ -295,7 +300,7 @@ const Profile: React.FC = () => {
                   Change Password
                 </div>
                 <div className="text-xs sm:text-sm text-gray-300">
-                  {user?.passwordHash ? 'Update your password' : 'Set a password (OAuth user)'}
+                  {user?.hasPassword ? 'Update your password' : 'Set a password (OAuth user)'}
                 </div>
               </div>
               <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -353,7 +358,7 @@ const Profile: React.FC = () => {
             )}
 
             <div className="space-y-4">
-              {user?.passwordHash && (
+              {user?.hasPassword && (
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Current Password

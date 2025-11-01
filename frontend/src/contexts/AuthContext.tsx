@@ -9,7 +9,7 @@ export interface User {
   email?: string;
   username?: string;
   phoneHash?: string;
-  passwordHash?: string;
+  hasPassword?: boolean;
   tier: 'guest' | 'verified' | 'premium';
   status: 'active' | 'banned' | 'suspended';
   coins: number;

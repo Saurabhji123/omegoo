@@ -202,7 +202,7 @@ const VerifyOTP: React.FC = () => {
                 value={digit}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 transition-all duration-200 ${
+                className={`w-12 h-14 text-center text-2xl font-bold text-black rounded-xl border-2 transition-all duration-200 ${
                   digit
                     ? 'border-purple-500 bg-purple-50'
                     : 'border-gray-300 bg-white'
