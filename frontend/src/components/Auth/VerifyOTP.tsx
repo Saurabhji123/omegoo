@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+import { authAPI } from '../../services/api';
 
 interface LocationState {
   email: string;
@@ -116,14 +114,11 @@ const VerifyOTP: React.FC = () => {
     setError('');
 
     try {
-      const response = await axios.post(`${API_URL}/api/auth/verify-otp`, {
-        email,
-        otp: otpToVerify,
-      });
+      const response = await authAPI.verifyEmailOTP(email, otpToVerify);
 
-      if (response.data.success) {
+      if (response.success) {
         // Login user with token
-        await loginWithToken(response.data.token);
+        await loginWithToken(response.token);
         
         // Show success and redirect to Home (root)
         setTimeout(() => {
@@ -133,7 +128,8 @@ const VerifyOTP: React.FC = () => {
     } catch (err: any) {
       console.error('❌ OTP verification failed:', err);
       setError(
-        err.response?.data?.message || 
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
         'OTP verification failed. कृपया फिर से try करें।'
       );
       setOtp(['', '', '', '', '', '']);
@@ -151,7 +147,7 @@ const VerifyOTP: React.FC = () => {
     setError('');
 
     try {
-      await axios.post(`${API_URL}/api/auth/resend-otp`, { email });
+  await authAPI.resendEmailOTP(email);
       
       setResendCooldown(60); // 60 seconds cooldown
       setTimer(600); // Reset timer to 10 minutes
@@ -159,7 +155,11 @@ const VerifyOTP: React.FC = () => {
       inputRefs.current[0]?.focus();
     } catch (err: any) {
       console.error('❌ Resend OTP failed:', err);
-      setError(err.response?.data?.message || 'Failed to resend OTP');
+      setError(
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Failed to resend OTP'
+      );
     } finally {
       setResendLoading(false);
     }

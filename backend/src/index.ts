@@ -28,6 +28,7 @@ import { SocketService } from './services/socket';
 import { ServiceFactory } from './services/serviceFactory';
 
 const app: express.Application = express();
+app.set('trust proxy', 1);
 const server = createServer(app);
 const io = new SocketIOServer(server, {
   cors: {

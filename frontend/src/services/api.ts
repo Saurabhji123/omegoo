@@ -115,6 +115,20 @@ export const authAPI = {
     }>('/api/auth/register', { email, username, password });
   },
 
+  verifyEmailOTP: async (email: string, otp: string) => {
+    return apiService.post<{ success: boolean; token: string; user: any; message?: string }>(
+      '/api/auth/verify-otp',
+      { email, otp }
+    );
+  },
+
+  resendEmailOTP: async (email: string) => {
+    return apiService.post<{ success: boolean; message: string }>(
+      '/api/auth/resend-otp',
+      { email }
+    );
+  },
+
   // Google OAuth
   loginWithGoogle: async (idToken: string) => {
     return apiService.post<{ token: string; user: any }>('/api/auth/google', { idToken });

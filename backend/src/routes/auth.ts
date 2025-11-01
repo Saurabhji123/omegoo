@@ -323,7 +323,8 @@ router.post('/verify-otp', async (req, res) => {
       console.log('❌ FAILED: Missing email or OTP');
       return res.status(400).json({
         success: false,
-        error: 'Email and OTP are required'
+        error: 'Email and OTP are required',
+        message: 'Email and OTP are required'
       });
     }
 
@@ -331,7 +332,8 @@ router.post('/verify-otp', async (req, res) => {
       console.log('❌ FAILED: Invalid OTP format');
       return res.status(400).json({
         success: false,
-        error: 'Invalid OTP format. Must be 6 digits.'
+        error: 'Invalid OTP format. Must be 6 digits.',
+        message: 'Invalid OTP format. Must be 6 digits.'
       });
     }
 
@@ -344,7 +346,8 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(429).json({
         success: false,
         error: 'Too many attempts. Please try again later.',
-        code: 'OTP_LOCKED'
+        code: 'OTP_LOCKED',
+        message: 'Too many attempts. Please try again later.'
       });
     }
 
@@ -372,6 +375,7 @@ router.post('/verify-otp', async (req, res) => {
         return res.status(400).json({
           success: false,
           error: 'OTP has expired. Please register again to get a new code.',
+          message: 'OTP has expired. Please register again to get a new code.',
           expired: true
         });
       }
@@ -381,7 +385,8 @@ router.post('/verify-otp', async (req, res) => {
         await handleFailedAttempt();
         return res.status(400).json({
           success: false,
-          error: 'Invalid OTP. Please try again.'
+          error: 'Invalid OTP. Please try again.',
+          message: 'Invalid OTP. Please try again.'
         });
       }
 
@@ -451,7 +456,8 @@ router.post('/verify-otp', async (req, res) => {
       console.log('❌ FAILED: User not found (no pending registration either)');
       return res.status(404).json({
         success: false,
-        error: 'User not found'
+        error: 'User not found',
+        message: 'User not found'
       });
     }
 
@@ -490,6 +496,7 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'OTP has expired. Please request a new one.',
+        message: 'OTP has expired. Please request a new one.',
         expired: true
       });
     }
@@ -500,7 +507,8 @@ router.post('/verify-otp', async (req, res) => {
       await handleFailedAttempt();
       return res.status(400).json({
         success: false,
-        error: 'Invalid OTP. Please try again.'
+        error: 'Invalid OTP. Please try again.',
+        message: 'Invalid OTP. Please try again.'
       });
     }
 
@@ -568,7 +576,8 @@ router.post('/resend-otp', async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        error: 'Email is required'
+        error: 'Email is required',
+        message: 'Email is required'
       });
     }
 
@@ -583,7 +592,8 @@ router.post('/resend-otp', async (req, res) => {
       return res.status(429).json({
         success: false,
         error: 'Please wait before requesting a new code.',
-        code: 'RESEND_COOLDOWN'
+        code: 'RESEND_COOLDOWN',
+        message: 'Please wait before requesting a new code.'
       });
     }
 
@@ -608,7 +618,8 @@ router.post('/resend-otp', async (req, res) => {
       if (!emailSent) {
         return res.status(500).json({
           success: false,
-          error: 'Failed to send OTP email'
+          error: 'Failed to send OTP email',
+          message: 'Failed to send OTP email'
         });
       }
 
@@ -628,7 +639,8 @@ router.post('/resend-otp', async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'User not found'
+        error: 'User not found',
+        message: 'User not found'
       });
     }
 
@@ -656,7 +668,8 @@ router.post('/resend-otp', async (req, res) => {
     if (!emailSent) {
       return res.status(500).json({
         success: false,
-        error: 'Failed to send OTP email'
+        error: 'Failed to send OTP email',
+        message: 'Failed to send OTP email'
       });
     }
 
