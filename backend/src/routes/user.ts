@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { DatabaseService } from '../services/serviceFactory';
+import { DatabaseService, RedisService } from '../services/serviceFactory';
 
 const router: Router = Router();
 
@@ -231,6 +231,15 @@ router.delete('/account', authMiddleware, async (req: AuthRequest, res: Response
       return res.status(400).json({
         success: false,
         error: result.error || 'Failed to delete account'
+      });
+    }
+
+    try {
+      await RedisService.deleteUserSession(userId);
+    } catch (cleanupError) {
+      console.warn('⚠️ Failed to cleanup Redis session for deleted user:', {
+        userId,
+        error: cleanupError
       });
     }
 

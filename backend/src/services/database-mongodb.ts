@@ -232,7 +232,13 @@ const DeletedAccountSchema = new Schema<IDeletedAccountDoc>({
   deletedBy: { type: String },
   deletedAt: { type: Date, default: Date.now },
   originalData: { type: Schema.Types.Mixed, required: true }
+}, {
+  collection: 'deleted_accounts',
+  versionKey: false
 });
+
+DeletedAccountSchema.index({ userId: 1 }, { unique: false });
+DeletedAccountSchema.index({ deletedAt: 1 });
 
 // Indexes for better query performance
 BanHistorySchema.index({ userId: 1, isActive: 1 });
@@ -756,31 +762,49 @@ export class DatabaseService {
     metadata?: { reason?: string; deletedBy?: string }
   ): Promise<{ success: boolean; archived?: any; error?: string }> {
     if (this.isConnected) {
-      try {
-        const userDoc = await UserModel.findOne({ id: userId });
-        if (!userDoc) {
-          return { success: false, error: 'USER_NOT_FOUND' };
-        }
+      const session = await mongoose.startSession();
+      let archivedPayload: any;
 
-        const archivedDoc = new DeletedAccountModel({
-          userId: userDoc.id,
-          reason: metadata?.reason || 'user_request',
-          deletedBy: metadata?.deletedBy || userId,
-          deletedAt: new Date(),
-          originalData: userDoc.toObject()
+      try {
+        await session.withTransaction(async () => {
+          const userDoc = await UserModel.findOne({ id: userId }).session(session);
+          if (!userDoc) {
+            throw new Error('USER_NOT_FOUND');
+          }
+
+          const archivePayload = {
+            userId: userDoc.id,
+            reason: metadata?.reason || 'user_request',
+            deletedBy: metadata?.deletedBy || userId,
+            deletedAt: new Date(),
+            originalData: userDoc.toObject()
+          };
+
+          const [archivedDoc] = await DeletedAccountModel.create([archivePayload], { session });
+          archivedPayload = archivedDoc.toObject();
+
+          await UserModel.deleteOne({ id: userId }).session(session);
+          await ChatSessionModel.updateMany(
+            { $or: [{ user1Id: userId }, { user2Id: userId }], status: { $ne: 'ended' } },
+            { $set: { status: 'ended', endedAt: new Date() } },
+            { session }
+          );
         });
 
-        await archivedDoc.save();
-        await UserModel.deleteOne({ id: userId });
-        await ChatSessionModel.updateMany(
-          { $or: [{ user1Id: userId }, { user2Id: userId }], status: { $ne: 'ended' } },
-          { $set: { status: 'ended', endedAt: new Date() } }
-        );
+        if (archivedPayload) {
+          this.deletedAccounts.set(userId, archivedPayload);
+        }
+        this.users.delete(userId);
 
-        return { success: true, archived: archivedDoc.toObject() };
-      } catch (error) {
+        return { success: true, archived: archivedPayload };
+      } catch (error: any) {
+        if (error?.message === 'USER_NOT_FOUND') {
+          return { success: false, error: 'USER_NOT_FOUND' };
+        }
         console.error('MongoDB archiveAndDeleteUser failed:', error);
         return { success: false, error: 'DELETE_FAILED' };
+      } finally {
+        await session.endSession();
       }
     }
 
@@ -1678,4 +1702,3 @@ export class DatabaseService {
     );
   }
 }
-
