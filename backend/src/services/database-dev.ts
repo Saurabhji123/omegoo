@@ -230,48 +230,50 @@ export class DatabaseService {
 
   static async archiveAndDeleteUser(
     userId: string,
-    metadata?: {
+    metadata: {
       reason?: string;
       deletedBy?: string;
       context?: 'user' | 'admin' | 'system';
       adminId?: string;
       adminUsername?: string;
-    }
+    } = {}
   ): Promise<{ success: boolean; archived?: any; error?: string }> {
-    const context = metadata?.context
-      ?? (metadata?.deletedBy === 'system'
-        ? 'system'
-        : metadata?.deletedBy && metadata.deletedBy !== userId
-          ? 'admin'
-          : 'user');
-
     const user = this.users.get(userId);
     if (!user) {
       return { success: false, error: 'USER_NOT_FOUND' };
     }
 
-  const baseArchived: any = {
+    const inferredContext: 'user' | 'admin' | 'system' = metadata.context
+      ?? (metadata.deletedBy === 'system'
+        ? 'system'
+        : metadata.deletedBy && metadata.deletedBy !== userId
+          ? 'admin'
+          : 'user');
+
+    const archivedBase = {
       userId,
-      reason: metadata?.reason || 'user_request',
-      deletedBy: metadata?.deletedBy || userId,
+      reason: metadata.reason || 'user_request',
+      deletedBy: metadata.deletedBy || userId,
       deletedAt: new Date(),
       originalData: { ...user }
     };
 
-    let archivedRecord: any = baseArchived;
-    if (context === 'admin') {
-      archivedRecord = {
-        ...baseArchived,
-        adminId: metadata?.adminId || metadata?.deletedBy,
-        adminUsername: metadata?.adminUsername
-      };
+    const archivedRecord = inferredContext === 'admin'
+      ? {
+          ...archivedBase,
+          adminId: metadata.adminId || metadata.deletedBy,
+          adminUsername: metadata.adminUsername || null
+        }
+      : archivedBase;
+
+    if (inferredContext === 'admin') {
       this.adminDeletedUsers.set(userId, archivedRecord);
     } else {
       this.deletedUsers.set(userId, archivedRecord);
     }
+
     this.users.delete(userId);
 
-    // Remove any active sessions involving this user
     for (const [sessionId, session] of this.sessions.entries()) {
       if (session.user1Id === userId || session.user2Id === userId) {
         this.sessions.delete(sessionId);

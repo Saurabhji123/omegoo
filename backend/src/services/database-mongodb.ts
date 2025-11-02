@@ -787,79 +787,84 @@ export class DatabaseService {
 
   static async archiveAndDeleteUser(
     userId: string,
-    metadata?: {
+    metadata: {
       reason?: string;
       deletedBy?: string;
       context?: 'user' | 'admin' | 'system';
       adminId?: string;
       adminUsername?: string;
-    }
+    } = {}
   ): Promise<{ success: boolean; archived?: any; error?: string }> {
-    const context = metadata?.context
-      ?? (metadata?.deletedBy === 'system'
+    const inferredContext: 'user' | 'admin' | 'system' = metadata.context
+      ?? (metadata.deletedBy === 'system'
         ? 'system'
-        : metadata?.deletedBy && metadata.deletedBy !== userId
+        : metadata.deletedBy && metadata.deletedBy !== userId
           ? 'admin'
           : 'user');
 
+    console.log('🗑️ archiveAndDeleteUser invoked:', {
+      userId,
+      context: inferredContext,
+      reason: metadata.reason,
+      deletedBy: metadata.deletedBy,
+      hasAdminMeta: !!(metadata.adminId || metadata.adminUsername)
+    });
+
     if (this.isConnected) {
-      const session = await mongoose.startSession();
-      let archivedPayload: any;
-
       try {
-        await session.withTransaction(async () => {
-          const userDoc = await UserModel.findOne({ id: userId }).session(session);
-          if (!userDoc) {
-            throw new Error('USER_NOT_FOUND');
-          }
+        const lookup: any[] = [{ id: userId }];
+        if (mongoose.Types.ObjectId.isValid(userId)) {
+          lookup.push({ _id: new mongoose.Types.ObjectId(userId) });
+        }
 
-          const archivePayload: any = {
-            userId: userDoc.id,
-            reason: metadata?.reason || 'user_request',
-            deletedBy: metadata?.deletedBy || userId,
-            deletedAt: new Date(),
-            originalData: userDoc.toObject()
-          };
+        const userDoc = await UserModel.findOne({ $or: lookup }).lean();
+        if (!userDoc) {
+          console.warn('⚠️ archiveAndDeleteUser: user not found in MongoDB', { userId });
+          return { success: false, error: 'USER_NOT_FOUND' };
+        }
 
-          if (context === 'admin') {
-            const adminArchivePayload = {
-              ...archivePayload,
-              adminId: metadata?.adminId || metadata?.deletedBy,
-              adminUsername: metadata?.adminUsername
-            };
-            const [archivedDoc] = await AdminDeletedAccountModel.create([adminArchivePayload], { session });
-            archivedPayload = archivedDoc.toObject();
-          } else {
-            const [archivedDoc] = await DeletedAccountModel.create([archivePayload], { session });
-            archivedPayload = archivedDoc.toObject();
-          }
+        const archiveBase: any = {
+          userId: userDoc.id || userDoc._id?.toString(),
+          reason: metadata.reason || 'user_request',
+          deletedBy: metadata.deletedBy || userId,
+          deletedAt: new Date(),
+          originalData: userDoc
+        };
 
-          await UserModel.deleteOne({ id: userId }).session(session);
-          await ChatSessionModel.updateMany(
-            { $or: [{ user1Id: userId }, { user2Id: userId }], status: { $ne: 'ended' } },
-            { $set: { status: 'ended', endedAt: new Date() } },
-            { session }
-          );
-        });
+        let archivedDoc: any;
+        if (inferredContext === 'admin') {
+          archivedDoc = await AdminDeletedAccountModel.create({
+            ...archiveBase,
+            adminId: metadata.adminId || metadata.deletedBy,
+            adminUsername: metadata.adminUsername || null
+          });
+        } else {
+          archivedDoc = await DeletedAccountModel.create(archiveBase);
+        }
+
+        await UserModel.deleteOne({ $or: lookup });
+        await ChatSessionModel.updateMany(
+          { $or: [{ user1Id: userId }, { user2Id: userId }], status: { $ne: 'ended' } },
+          { $set: { status: 'ended', endedAt: new Date() } }
+        );
+
+        const archivedPayload = archivedDoc?.toObject?.() ?? archivedDoc;
 
         if (archivedPayload) {
-          if (context === 'admin') {
+          if (inferredContext === 'admin') {
             this.adminDeletedAccounts.set(userId, archivedPayload);
           } else {
             this.deletedAccounts.set(userId, archivedPayload);
           }
         }
+
         this.users.delete(userId);
 
+        console.log('✅ archiveAndDeleteUser success', { userId, context: inferredContext });
         return { success: true, archived: archivedPayload };
-      } catch (error: any) {
-        if (error?.message === 'USER_NOT_FOUND') {
-          return { success: false, error: 'USER_NOT_FOUND' };
-        }
+      } catch (error) {
         console.error('MongoDB archiveAndDeleteUser failed:', error);
         return { success: false, error: 'DELETE_FAILED' };
-      } finally {
-        await session.endSession();
       }
     }
 
@@ -868,7 +873,7 @@ export class DatabaseService {
       return { success: false, error: 'USER_NOT_FOUND' };
     }
 
-  const archived: any = {
+    const archivedBase: any = {
       userId,
       reason: metadata?.reason || 'user_request',
       deletedBy: metadata?.deletedBy || userId,
@@ -876,26 +881,27 @@ export class DatabaseService {
       originalData: { ...user }
     };
 
-    let archivedResult = archived;
-    if (context === 'admin') {
+    let archivedResult: any = archivedBase;
+    if (inferredContext === 'admin') {
       archivedResult = {
-        ...archived,
+        ...archivedBase,
         adminId: metadata?.adminId || metadata?.deletedBy,
-        adminUsername: metadata?.adminUsername
+        adminUsername: metadata?.adminUsername || null
       };
       this.adminDeletedAccounts.set(userId, archivedResult);
     } else {
       this.deletedAccounts.set(userId, archivedResult);
     }
+
     this.users.delete(userId);
 
-    // Remove any active sessions referencing this user in fallback mode
     for (const [sessionId, session] of this.chatSessions.entries()) {
       if (session.user1Id === userId || session.user2Id === userId) {
         this.chatSessions.delete(sessionId);
       }
     }
 
+    console.log('✅ archiveAndDeleteUser success (in-memory fallback)', { userId, context: inferredContext });
     return { success: true, archived: archivedResult };
   }
 
