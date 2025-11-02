@@ -419,6 +419,15 @@ const TextChat: React.FC = () => {
     }
   };
 
+  const adjustInputHeight = useCallback(() => {
+    if (!inputRef.current) {
+      return;
+    }
+    const element = inputRef.current;
+    element.style.height = 'auto';
+    element.style.height = Math.min(element.scrollHeight, 140) + 'px';
+  }, []);
+
   const sendMessage = () => {
     try {
       if (!messageInput.trim() || !isMatchConnected || !sessionId) {
@@ -469,9 +478,12 @@ const TextChat: React.FC = () => {
         typingTimeoutRef.current = null;
       }
       
-      setMessageInput('');
+  setMessageInput('');
       setIsTyping(false);
       setReplyingTo(null); // Clear reply state
+
+  // Reset height after clearing input
+  requestAnimationFrame(() => adjustInputHeight());
       
       // Stop typing indicator
       socket.emit('typing', { sessionId, isTyping: false });
@@ -487,6 +499,7 @@ const TextChat: React.FC = () => {
     try {
       const value = e.target.value;
       setMessageInput(value);
+      adjustInputHeight();
       
       console.log('⌨️ Input changed:', { value, currentlyTyping: isTyping, hasSession: !!sessionId });
       
@@ -527,8 +540,9 @@ const TextChat: React.FC = () => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       sendMessage();
     }
   };
@@ -567,7 +581,19 @@ const TextChat: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex flex-col">
+    <>
+      <style>
+        {`
+          .textchat-input {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .textchat-input::-webkit-scrollbar {
+            display: none;
+          }
+        `}
+      </style>
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex flex-col">
       {/* Enhanced Header with AudioChat styling */}
       <div className="bg-black bg-opacity-20 p-4 flex justify-between items-center border-b border-white border-opacity-20">
         <div className="flex items-center gap-4 flex-wrap">
@@ -918,15 +944,13 @@ const TextChat: React.FC = () => {
                     ref={(el) => {
                       inputRef.current = el;
                       if (el) {
-                        // Auto-resize textarea based on content
-                        el.style.height = 'auto';
-                        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+                        adjustInputHeight();
                       }
                     }}
                     rows={1}
                     value={messageInput}
                     onChange={handleInputChange}
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyDown}
                     onFocus={() => {
                       // Scroll input into view on mobile when keyboard opens
                       setTimeout(() => {
@@ -938,11 +962,8 @@ const TextChat: React.FC = () => {
                     }}
                     placeholder="Type a message..."
                     disabled={!isMatchConnected}
-                    className="w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200 overflow-y-auto max-h-[120px]"
-                    style={{
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: 'rgba(147, 51, 234, 0.6) transparent'
-                    }}
+                    className="textchat-input w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200 overflow-y-auto max-h-[140px]"
+                    style={{ scrollbarWidth: 'none' }}
                   />
                 </div>
                 <button
@@ -1019,6 +1040,7 @@ const TextChat: React.FC = () => {
         />
       )}
     </div>
+    </>
   );
 };
 
