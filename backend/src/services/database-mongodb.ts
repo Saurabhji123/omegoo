@@ -126,6 +126,25 @@ interface IAdminDeletedAccountDoc extends Document {
   adminId?: string;
   adminUsername?: string;
 }
+
+interface IReportedChatMessage {
+  senderId: string;
+  content: string;
+  type?: string;
+  timestamp: Date;
+  replyTo?: any;
+}
+
+interface IReportedChatTranscriptDoc extends Document {
+  sessionId: string;
+  reporterUserId: string;
+  reporterEmail?: string;
+  reportedUserId: string;
+  reportedEmail?: string;
+  mode?: string;
+  messages: IReportedChatMessage[];
+  createdAt: Date;
+}
 /* -------------------------
    Schemas
    ------------------------- */
@@ -267,6 +286,29 @@ AdminDeletedAccountSchema.index({ adminId: 1 });
 AdminDeletedAccountSchema.index({ deletedAt: 1 });
 const AdminDeletedAccountModel: Model<IAdminDeletedAccountDoc> = mongoose.model<IAdminDeletedAccountDoc>('AdminDeletedAccount', AdminDeletedAccountSchema);
 
+const ReportedChatTranscriptSchema = new Schema<IReportedChatTranscriptDoc>({
+  sessionId: { type: String, required: true, index: true },
+  reporterUserId: { type: String, required: true, index: true },
+  reporterEmail: { type: String },
+  reportedUserId: { type: String, required: true, index: true },
+  reportedEmail: { type: String },
+  mode: { type: String },
+  messages: [{
+    senderId: { type: String, required: true },
+    content: { type: String, required: true },
+    type: { type: String, default: 'text' },
+    timestamp: { type: Date, required: true },
+    replyTo: { type: Schema.Types.Mixed }
+  }],
+  createdAt: { type: Date, default: Date.now }
+}, {
+  collection: 'reported_chat_transcripts',
+  versionKey: false
+});
+
+ReportedChatTranscriptSchema.index({ createdAt: 1 });
+const ReportedChatTranscriptModel: Model<IReportedChatTranscriptDoc> = mongoose.model<IReportedChatTranscriptDoc>('ReportedChatTranscript', ReportedChatTranscriptSchema);
+
 // Indexes for better query performance
 BanHistorySchema.index({ userId: 1, isActive: 1 });
 BanHistorySchema.index({ expiresAt: 1 });
@@ -298,6 +340,7 @@ export class DatabaseService {
   private static chatRooms = new Map<string, any>();
   private static deletedAccounts = new Map<string, any>();
   private static adminDeletedAccounts = new Map<string, any>();
+  private static reportedChatTranscripts = new Map<string, any>();
 
   /* ---------- Connection ---------- */
   static async initialize(): Promise<void> {
@@ -354,6 +397,7 @@ export class DatabaseService {
       await UserModel.collection.createIndex({ phoneHash: 1 }, { sparse: true });
       await UserModel.collection.createIndex({ status: 1 });
       await UserModel.collection.createIndex({ isOnline: 1 });
+      await ReportedChatTranscriptModel.collection.createIndex({ sessionId: 1, createdAt: -1 });
       console.log('✅ MongoDB indexes created');
     } catch (error) {
       console.error('⚠️ Index creation failed:', error);
@@ -1272,6 +1316,59 @@ export class DatabaseService {
       console.error('MongoDB autoBanUserByReports failed:', err);
       return null;
     }
+  }
+  
+  static async saveReportedChatTranscript(data: {
+    sessionId: string;
+    reporterUserId: string;
+    reporterEmail?: string | null;
+    reportedUserId: string;
+    reportedEmail?: string | null;
+    mode?: string;
+    messages: Array<{ senderId: string; content: string; type?: string; timestamp: number | Date; replyTo?: any }>;
+  }): Promise<any | null> {
+    const normalizedMessages = (data.messages || []).map((msg) => ({
+      senderId: msg.senderId,
+      content: msg.content,
+      type: msg.type || 'text',
+      timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
+      ...(msg.replyTo ? { replyTo: msg.replyTo } : {})
+    }));
+
+    const payload = {
+      sessionId: data.sessionId,
+      reporterUserId: data.reporterUserId,
+      reporterEmail: data.reporterEmail || null,
+      reportedUserId: data.reportedUserId,
+      reportedEmail: data.reportedEmail || null,
+      mode: data.mode,
+      messages: normalizedMessages,
+      createdAt: new Date()
+    };
+
+    if (this.isConnected) {
+      try {
+        const doc = await ReportedChatTranscriptModel.create(payload);
+        const stored = doc?.toObject?.() ?? doc;
+        this.reportedChatTranscripts.set(`${payload.sessionId}:${payload.createdAt.getTime()}`, stored);
+        console.log('🗄️ Reported chat transcript saved (MongoDB)', {
+          sessionId: payload.sessionId,
+          messages: normalizedMessages.length
+        });
+        return stored;
+      } catch (error) {
+        console.error('❌ Failed to save reported chat transcript (MongoDB):', error);
+        return null;
+      }
+    }
+
+    const key = `${payload.sessionId}:${Date.now()}`;
+    this.reportedChatTranscripts.set(key, payload);
+    console.log('🗄️ Reported chat transcript stored in-memory fallback', {
+      sessionId: payload.sessionId,
+      messages: normalizedMessages.length
+    });
+    return payload;
   }
 
   /**

@@ -26,12 +26,21 @@ interface AuthenticatedSocket extends Socket {
   user?: any;
 }
 
+interface BufferedChatMessage {
+  senderId: string;
+  content: string;
+  type?: string;
+  timestamp: number;
+  replyTo?: any;
+}
+
 export class SocketService {
   private static io: SocketIOServer;
   private static connectedUsers = new Map<string, string>(); // userId -> socketId
   private static waitingQueue: string[] = []; // For in-memory queue management
   private static activeSessions = new Map<string, { user1: string; user2: string; mode: string }>(); // sessionId -> users + mode
   private static disconnectionTimers = new Map<string, NodeJS.Timeout>(); // userId -> timer for delayed cleanup
+  private static chatTranscripts = new Map<string, BufferedChatMessage[]>();
 
   static initialize(io: SocketIOServer) {
     this.io = io;
@@ -202,6 +211,7 @@ export class SocketService {
               if (session.user1 === socket.userId || session.user2 === socket.userId) {
                 console.log(`🗑️ Removing session ${sessionId} due to user disconnect`);
                 this.activeSessions.delete(sessionId);
+                this.chatTranscripts.delete(sessionId);
               }
             }
             
@@ -500,6 +510,7 @@ export class SocketService {
         user2: match.userId,
         mode: sessionMode
       });
+      this.chatTranscripts.set(session.id, []);
       console.log(`🔗 Tracked session ${session.id} between ${socket.userId} and ${match.userId} (${sessionMode})`);
 
       console.log(`📤 Sending match-found to ${socket.userId} (initiator) with coins: ${user1Stats.coins}`);
@@ -714,6 +725,7 @@ export class SocketService {
         user2: match.userId,
         mode: sessionMode
       });
+      this.chatTranscripts.set(session.id, []);
 
       const initiatorPayload = {
         sessionId: session.id,
@@ -804,8 +816,17 @@ export class SocketService {
       console.log(`❌ Other user ${otherUserId} not connected`);
     }
 
-    // Store message (if needed for evidence)
-    // await this.storeMessage(sessionId, socket.userId!, content);
+    const transcript = this.chatTranscripts.get(sessionId) || [];
+    transcript.push({
+      senderId: socket.userId!,
+      content,
+      type,
+      timestamp: Date.now(),
+      ...(replyTo ? { replyTo } : {})
+    });
+    if (!this.chatTranscripts.has(sessionId)) {
+      this.chatTranscripts.set(sessionId, transcript);
+    }
   }
 
   private static handleTyping(socket: AuthenticatedSocket, data: any) {
@@ -890,6 +911,13 @@ export class SocketService {
       confidenceScore: 0
     });
 
+    await SocketService.captureReportedSession(
+      sessionId,
+      socket.userId!,
+      reportedUserId,
+      session.mode || (this.activeSessions.get(sessionId)?.mode)
+    );
+
     // End session immediately
     await DatabaseService.endChatSession(sessionId);
     
@@ -928,12 +956,50 @@ export class SocketService {
       this.activeSessions.delete(sessionId);
       console.log(`🗑️ Removed session ${sessionId} from active sessions`);
     }
+
+    this.chatTranscripts.delete(sessionId);
   }
 
   // Utility methods
   private static async getSessionById(sessionId: string) {
     // Use getChatSession instead of raw SQL query (works with both MongoDB and PostgreSQL)
     return await DatabaseService.getChatSession(sessionId);
+  }
+
+  static async captureReportedSession(
+    sessionId: string,
+    reporterUserId: string,
+    reportedUserId: string,
+    mode?: string | null
+  ) {
+    try {
+      const bufferedMessages = this.chatTranscripts.get(sessionId) || [];
+      const reporter = reporterUserId ? await DatabaseService.getUserById(reporterUserId) : null;
+      const reported = reportedUserId ? await DatabaseService.getUserById(reportedUserId) : null;
+
+      await DatabaseService.saveReportedChatTranscript({
+        sessionId,
+        reporterUserId,
+        reporterEmail: reporter?.email || null,
+        reportedUserId,
+        reportedEmail: reported?.email || null,
+        mode: mode || this.activeSessions.get(sessionId)?.mode,
+        messages: bufferedMessages.map((msg) => ({
+          senderId: msg.senderId,
+          content: msg.content,
+          type: msg.type,
+          timestamp: msg.timestamp,
+          ...(msg.replyTo ? { replyTo: msg.replyTo } : {})
+        }))
+      });
+    } catch (error) {
+      console.error('❌ Failed to persist reported chat transcript:', {
+        sessionId,
+        error
+      });
+    } finally {
+      this.chatTranscripts.delete(sessionId);
+    }
   }
 
   static async sendModerationWarning(userId: string, message: string) {

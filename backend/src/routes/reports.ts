@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { DatabaseService } from '../services/serviceFactory';
+import { SocketService } from '../services/socket';
 
 const router: Router = Router();
 
@@ -33,6 +34,15 @@ router.post('/create', async (req: Request, res: Response) => {
     const newReportCount = await DatabaseService.incrementUserReportCount(reportedUserId);
     
     console.log(`📊 User ${reportedUserId} reported. Total reports: ${newReportCount}`);
+
+    if (sessionId && sessionId !== 'unknown') {
+      await SocketService.captureReportedSession(
+        sessionId,
+        reporterUserId,
+        reportedUserId,
+        chatMode
+      );
+    }
 
     res.json({
       success: true,

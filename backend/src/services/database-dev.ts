@@ -40,6 +40,7 @@ export class DatabaseService {
   private static bans: Map<string, any> = new Map();
   private static deletedUsers: Map<string, any> = new Map();
   private static adminDeletedUsers: Map<string, any> = new Map();
+  private static reportedChatTranscripts: Map<string, any> = new Map();
 
   static async initialize() {
     console.log('✅ Development database initialized (in-memory)');
@@ -611,5 +612,42 @@ export class DatabaseService {
       return newCount;
     }
     return 0;
+  }
+
+  static async saveReportedChatTranscript(data: {
+    sessionId: string;
+    reporterUserId: string;
+    reporterEmail?: string | null;
+    reportedUserId: string;
+    reportedEmail?: string | null;
+    mode?: string;
+    messages: Array<{ senderId: string; content: string; type?: string; timestamp: number | Date; replyTo?: any }>;
+  }): Promise<any> {
+    const normalizedMessages = (data.messages || []).map((msg) => ({
+      senderId: msg.senderId,
+      content: msg.content,
+      type: msg.type || 'text',
+      timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
+      ...(msg.replyTo ? { replyTo: msg.replyTo } : {})
+    }));
+
+    const payload = {
+      sessionId: data.sessionId,
+      reporterUserId: data.reporterUserId,
+      reporterEmail: data.reporterEmail || null,
+      reportedUserId: data.reportedUserId,
+      reportedEmail: data.reportedEmail || null,
+      mode: data.mode,
+      messages: normalizedMessages,
+      createdAt: new Date()
+    };
+
+    const key = `${payload.sessionId}:${payload.createdAt.getTime()}`;
+    this.reportedChatTranscripts.set(key, payload);
+    console.log('🗄️ Reported chat transcript stored (dev)', {
+      sessionId: payload.sessionId,
+      messages: normalizedMessages.length
+    });
+    return payload;
   }
 }

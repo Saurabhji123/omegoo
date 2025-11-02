@@ -84,6 +84,29 @@ const hashPhone = (phone: string): string => {
 const getPendingRegistrationKey = (email: string) => `pending_registration:${email.trim().toLowerCase()}`;
 const PENDING_REGISTRATION_TTL_SECONDS = 15 * 60; // 15 minutes to complete OTP verification
 
+const TRUSTED_EMAIL_PROVIDERS = new Set([
+  'gmail.com',
+  'googlemail.com',
+  'outlook.com',
+  'hotmail.com',
+  'live.com',
+  'msn.com',
+  'yahoo.com',
+  'yahoo.co.in',
+  'icloud.com',
+  'me.com',
+  'mac.com',
+  'aol.com',
+  'zoho.com',
+  'zohomail.com',
+  'protonmail.com',
+  'proton.me',
+  'gmx.com',
+  'gmx.de',
+  'yandex.com',
+  'yandex.ru'
+]);
+
 /**
  * Helper function to check and reset daily coins automatically
  * Resets coins to 50 at 12 AM every day
@@ -150,6 +173,18 @@ router.post('/register', async (req, res) => {
       });
     }
     console.log('✅ Email format valid');
+
+    const emailDomain = normalizedEmail.split('@')[1];
+    if (!TRUSTED_EMAIL_PROVIDERS.has(emailDomain)) {
+      console.log('❌ FAILED: Unsupported email domain', emailDomain);
+      console.log('=== REGISTRATION ATTEMPT END ===\n');
+      return res.status(400).json({
+        success: false,
+        error: 'Please use a trusted email provider such as Gmail or Zoho.',
+        code: 'UNSUPPORTED_EMAIL_DOMAIN'
+      });
+    }
+    console.log('✅ Email domain allowed:', emailDomain);
 
     // Password validation (min 6 characters)
     console.log('✅ Validating password...');
