@@ -753,7 +753,7 @@ const TextChat: React.FC = () => {
             </div>
 
             {/* Messages Area - Scrollable Middle Section */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-3 sm:space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-8 sm:pb-10">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-3 sm:space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-10 sm:pb-12">
               {/* Empty State */}
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full">
@@ -800,14 +800,24 @@ const TextChat: React.FC = () => {
                       )}
                       
                       <div
-                        className={`max-w-[96%] sm:max-w-[90%] lg:max-w-[85%] xl:max-w-[80%] px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
+                        className={`${!isSystemMessage ? (message.isOwnMessage ? 'ml-5 sm:ml-12' : 'mr-5 sm:mr-12') : ''} px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
                           message.isOwnMessage
                             ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
                             : isSystemMessage
                             ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full rounded-xl cursor-default'
                             : 'bg-white bg-opacity-10 text-white rounded-bl-md backdrop-blur-sm'
                         } ${isHovered && !isSystemMessage ? 'ring-2 ring-purple-400 ring-opacity-50 scale-[1.02] transition-all duration-200' : 'transition-all duration-200'}`}
-                        style={{ transform, transition }}
+                        style={{
+                          transform,
+                          transition,
+                          ...(isSystemMessage
+                            ? {}
+                            : {
+                                maxWidth: 'calc(100% - 40px)',
+                                width: 'fit-content',
+                                minWidth: 'min(240px, calc(100% - 40px))'
+                              })
+                        }}
                         onClick={(e) => {
                           // Desktop click to reply (double-click or single click on desktop)
                           if (!isSystemMessage) {
@@ -895,7 +905,7 @@ const TextChat: React.FC = () => {
               
               {/* Typing indicator - WhatsApp style with continuous blinking */}
               {partnerTyping && (
-                <div className="flex justify-start mb-8 sm:mb-10 animate-fade-in">
+                <div className="flex justify-start mb-10 sm:mb-12 animate-fade-in">
                   <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md">
                     <div className="flex items-center space-x-1.5">
                       <style>{`
@@ -969,7 +979,7 @@ const TextChat: React.FC = () => {
                     placeholder="Type a message..."
                     disabled={!isMatchConnected}
                     className="textchat-input w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200 overflow-y-auto max-h-[140px] min-h-[44px]"
-                    style={{ scrollbarWidth: 'none' }}
+                    style={{ scrollbarWidth: 'none', overflowX: 'hidden' }}
                   />
                 </div>
                 <button
