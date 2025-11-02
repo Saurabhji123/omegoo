@@ -800,7 +800,7 @@ const TextChat: React.FC = () => {
                       )}
                       
                       <div
-                        className={`max-w-[85%] sm:max-w-[75%] lg:max-w-[65%] px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
+                        className={`max-w-[96%] sm:max-w-[90%] lg:max-w-[85%] xl:max-w-[80%] px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
                           message.isOwnMessage
                             ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
                             : isSystemMessage
