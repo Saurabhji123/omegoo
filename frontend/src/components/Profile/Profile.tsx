@@ -24,12 +24,10 @@ const Profile: React.FC = () => {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [identityForm, setIdentityForm] = useState({
-    gender: (user?.gender as 'male' | 'female' | 'others') || 'others',
-    genderPreference: (user?.preferences?.genderPreference as 'any' | 'male' | 'female') || 'any'
-  });
-  const [identitySaving, setIdentitySaving] = useState(false);
-  const [identityMessage, setIdentityMessage] = useState('');
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [genderSelection, setGenderSelection] = useState<'male' | 'female' | 'others' | null>(null);
+  const [genderSaving, setGenderSaving] = useState(false);
+  const [genderError, setGenderError] = useState('');
 
   // Fetch fresh user data when profile loads
   useEffect(() => {
@@ -54,11 +52,17 @@ const Profile: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setIdentityForm({
-      gender: (user?.gender as 'male' | 'female' | 'others') || 'others',
-      genderPreference: (user?.preferences?.genderPreference as 'any' | 'male' | 'female') || 'any'
-    });
-  }, [user?.gender, user?.preferences?.genderPreference]);
+    if (
+      user?.gender === 'others' &&
+      user?.preferences?.authProvider === 'google' &&
+      !user?.preferences?.genderConfirmed
+    ) {
+  setGenderSelection(null);
+      setShowGenderModal(true);
+    } else {
+      setShowGenderModal(false);
+    }
+  }, [user?.gender, user?.preferences?.authProvider, user?.preferences?.genderConfirmed]);
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -157,35 +161,22 @@ const Profile: React.FC = () => {
     return value.charAt(0).toUpperCase() + value.slice(1);
   };
 
-  const identityDirty =
-    identityForm.gender !== ((user?.gender as 'male' | 'female' | 'others') || 'others') ||
-    identityForm.genderPreference !== ((user?.preferences?.genderPreference as 'any' | 'male' | 'female') || 'any');
-
-  const handleIdentityChange = (key: 'gender' | 'genderPreference', value: 'male' | 'female' | 'others' | 'any') => {
-    setIdentityForm(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const handleIdentitySave = async () => {
-    if (!identityDirty || identitySaving) return;
+  const handleGenderConfirm = async () => {
+    if (!genderSelection) {
+      setGenderError('Please select your gender');
+      return;
+    }
     try {
-      setIdentitySaving(true);
-      setIdentityMessage('');
-      await userAPI.updatePreferences({
-        gender: identityForm.gender,
-        genderPreference: identityForm.genderPreference
-      });
+      setGenderSaving(true);
+      setGenderError('');
+  await userAPI.confirmGender({ gender: genderSelection });
       await refreshUser();
-      setIdentityMessage('Identity preferences updated successfully.');
-      setTimeout(() => setIdentityMessage(''), 4000);
+      setShowGenderModal(false);
     } catch (error: any) {
-      console.error('Failed to update identity preferences:', error);
-      setIdentityMessage(error?.message || 'Failed to update identity preferences.');
-      setTimeout(() => setIdentityMessage(''), 5000);
+      console.error('Failed to confirm gender:', error);
+      setGenderError(error?.message || 'Failed to confirm gender. Please try again.');
     } finally {
-      setIdentitySaving(false);
+      setGenderSaving(false);
     }
   };
 
@@ -317,55 +308,44 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Identity & Matching Preferences */}
-      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Identity & Matching</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Your Gender</label>
-            <select
-              value={identityForm.gender}
-              onChange={(event) => handleIdentityChange('gender', event.target.value as 'male' | 'female' | 'others')}
-              className="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="male" className="bg-purple-900">Male</option>
-              <option value="female" className="bg-purple-900">Female</option>
-              <option value="others" className="bg-purple-900">Other</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Match With</label>
-            <select
-              value={identityForm.genderPreference}
-              onChange={(event) => handleIdentityChange('genderPreference', event.target.value as 'any' | 'male' | 'female')}
-              className="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="any" className="bg-purple-900">Anyone</option>
-              <option value="male" className="bg-purple-900">Men</option>
-              <option value="female" className="bg-purple-900">Women</option>
-            </select>
+      {/* Gender confirmation modal for Google users */}
+      {showGenderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 px-4">
+          <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 rounded-2xl shadow-2xl border border-white border-opacity-20 max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Confirm Your Gender</h3>
+            <p className="text-sm text-gray-200 mb-4">
+              Please select your gender to continue. This choice helps us match you better and can’t be changed later.
+            </p>
+            <div className="space-y-3">
+              {genderError && (
+                <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-200 px-3 py-2 rounded-lg text-sm">
+                  {genderError}
+                </div>
+              )}
+              <select
+                value={genderSelection ?? ''}
+                onChange={(event) => {
+                  setGenderError('');
+                  setGenderSelection(event.target.value as 'male' | 'female' | 'others');
+                }}
+                className="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="" disabled className="bg-purple-900">Select your gender</option>
+                <option value="male" className="bg-purple-900">Male</option>
+                <option value="female" className="bg-purple-900">Female</option>
+                <option value="others" className="bg-purple-900">Other</option>
+              </select>
+              <button
+                onClick={handleGenderConfirm}
+                disabled={genderSaving}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 rounded-lg transition"
+              >
+                {genderSaving ? 'Saving...' : 'Confirm Gender'}
+              </button>
+            </div>
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-3 flex-wrap">
-          <button
-            onClick={handleIdentitySave}
-            disabled={!identityDirty || identitySaving}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              identityDirty && !identitySaving
-                ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
-                : 'bg-gray-600 bg-opacity-70 text-gray-300 cursor-not-allowed'
-            }`}
-          >
-            {identitySaving ? 'Saving...' : 'Save Changes'}
-          </button>
-          {identityMessage && (
-            <span className={`text-sm ${identityMessage.toLowerCase().includes('fail') ? 'text-red-300' : 'text-green-300'}`}>
-              {identityMessage}
-            </span>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Statistics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">

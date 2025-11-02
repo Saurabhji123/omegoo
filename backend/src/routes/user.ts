@@ -54,7 +54,7 @@ router.put('/preferences', authMiddleware, async (req: AuthRequest, res: Respons
       });
     }
 
-  const { settings, videoQuality, matchingMode, interests, ageRange, genderPreference, gender } = req.body;
+  const { settings, videoQuality, matchingMode, interests, ageRange, genderPreference } = req.body;
 
     // Get current user
     const user = await DatabaseService.getUserById(userId);
@@ -63,19 +63,6 @@ router.put('/preferences', authMiddleware, async (req: AuthRequest, res: Respons
         success: false,
         error: 'User not found'
       });
-    }
-
-    let normalizedGender: 'male' | 'female' | 'others' | undefined;
-    if (typeof gender === 'string' && gender.trim().length > 0) {
-      const value = gender.trim().toLowerCase();
-      const validGenders = new Set(['male', 'female', 'others']);
-      if (!validGenders.has(value)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid gender selection'
-        });
-      }
-      normalizedGender = value as 'male' | 'female' | 'others';
     }
 
     let normalizedGenderPreference: 'any' | 'male' | 'female' | undefined;
@@ -104,25 +91,91 @@ router.put('/preferences', authMiddleware, async (req: AuthRequest, res: Respons
 
     // Update user preferences
     await DatabaseService.updateUser(userId, {
-      preferences: updatedPreferences,
-      ...(normalizedGender && { gender: normalizedGender })
+      preferences: updatedPreferences
     });
 
     console.log('✅ User preferences updated:', userId);
 
-    const refreshedUser = await DatabaseService.getUserById(userId);
-
     res.json({
       success: true,
       message: 'Preferences updated successfully',
-      preferences: updatedPreferences,
-      gender: refreshedUser?.gender || normalizedGender || user.gender
+      preferences: updatedPreferences
     });
   } catch (error) {
     console.error('❌ Update preferences error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to update preferences'
+    });
+  }
+});
+
+/**
+ * Confirm gender for Google-authenticated users (one-time)
+ * POST /api/user/gender-confirm
+ */
+router.post('/gender-confirm', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated'
+      });
+    }
+
+    const { gender } = req.body as { gender?: string };
+    if (typeof gender !== 'string' || !gender.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Gender is required'
+      });
+    }
+
+    const normalizedGender = gender.trim().toLowerCase();
+    const validGenders = new Set(['male', 'female', 'others']);
+    if (!validGenders.has(normalizedGender)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid gender selection'
+      });
+    }
+
+    const user = await DatabaseService.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    if (user.gender && user.gender !== 'others') {
+      return res.status(409).json({
+        success: false,
+        error: 'Gender already confirmed'
+      });
+    }
+
+    await DatabaseService.updateUser(userId, {
+      gender: normalizedGender as 'male' | 'female' | 'others',
+      preferences: {
+        ...(user.preferences || {}),
+        genderConfirmed: true,
+      },
+    });
+
+    const updatedUser = await DatabaseService.getUserById(userId);
+
+    res.json({
+      success: true,
+      message: 'Gender confirmed successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('❌ Gender confirm error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to confirm gender'
     });
   }
 });

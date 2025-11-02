@@ -168,6 +168,10 @@ export const userAPI = {
     return apiService.put<any>('/api/user/preferences', preferences);
   },
 
+  confirmGender: async (payload: { gender: 'male' | 'female' | 'others' }) => {
+    return apiService.post<any>('/api/user/gender-confirm', payload);
+  },
+
   getCoins: async () => {
     return apiService.get<{ coins: number }>('/api/user/coins');
   },
