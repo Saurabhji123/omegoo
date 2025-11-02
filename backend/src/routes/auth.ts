@@ -191,7 +191,11 @@ router.post('/register', async (req, res) => {
       }
 
       console.log('🧹 Legacy unverified user found. Removing stale database record before pending registration.');
-      await DatabaseService.deleteUser(existingUser.id);
+      await DatabaseService.deleteUser(existingUser.id, {
+        reason: 'pending_registration_cleanup',
+        deletedBy: 'system',
+        context: 'system'
+      });
     }
     console.log('✅ No verified user found for this email. Proceeding with pending registration.');
 

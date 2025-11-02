@@ -39,6 +39,7 @@ export class DatabaseService {
   private static sessions: Map<string, ChatSession> = new Map();
   private static bans: Map<string, any> = new Map();
   private static deletedUsers: Map<string, any> = new Map();
+  private static adminDeletedUsers: Map<string, any> = new Map();
 
   static async initialize() {
     console.log('✅ Development database initialized (in-memory)');
@@ -229,14 +230,27 @@ export class DatabaseService {
 
   static async archiveAndDeleteUser(
     userId: string,
-    metadata?: { reason?: string; deletedBy?: string }
+    metadata?: {
+      reason?: string;
+      deletedBy?: string;
+      context?: 'user' | 'admin' | 'system';
+      adminId?: string;
+      adminUsername?: string;
+    }
   ): Promise<{ success: boolean; archived?: any; error?: string }> {
+    const context = metadata?.context
+      ?? (metadata?.deletedBy === 'system'
+        ? 'system'
+        : metadata?.deletedBy && metadata.deletedBy !== userId
+          ? 'admin'
+          : 'user');
+
     const user = this.users.get(userId);
     if (!user) {
       return { success: false, error: 'USER_NOT_FOUND' };
     }
 
-    const archived = {
+  const baseArchived: any = {
       userId,
       reason: metadata?.reason || 'user_request',
       deletedBy: metadata?.deletedBy || userId,
@@ -244,7 +258,17 @@ export class DatabaseService {
       originalData: { ...user }
     };
 
-    this.deletedUsers.set(userId, archived);
+    let archivedRecord: any = baseArchived;
+    if (context === 'admin') {
+      archivedRecord = {
+        ...baseArchived,
+        adminId: metadata?.adminId || metadata?.deletedBy,
+        adminUsername: metadata?.adminUsername
+      };
+      this.adminDeletedUsers.set(userId, archivedRecord);
+    } else {
+      this.deletedUsers.set(userId, archivedRecord);
+    }
     this.users.delete(userId);
 
     // Remove any active sessions involving this user
@@ -254,7 +278,7 @@ export class DatabaseService {
       }
     }
 
-    return { success: true, archived };
+    return { success: true, archived: archivedRecord };
   }
 
   // Ban checking
@@ -537,8 +561,24 @@ export class DatabaseService {
     return false;
   }
 
-  static async deleteUser(userId: string): Promise<boolean> {
-    return this.users.delete(userId);
+  static async deleteUser(
+    userId: string,
+    metadata: {
+      reason?: string;
+      deletedBy?: string;
+      context?: 'user' | 'admin' | 'system';
+      adminId?: string;
+      adminUsername?: string;
+    } = {}
+  ): Promise<boolean> {
+    const result = await this.archiveAndDeleteUser(userId, {
+      reason: metadata.reason,
+      deletedBy: metadata.deletedBy,
+      context: metadata.context ?? 'admin',
+      adminId: metadata.adminId,
+      adminUsername: metadata.adminUsername
+    });
+    return !!result.success;
   }
 
   static async searchUsers(query: string): Promise<any[]> {

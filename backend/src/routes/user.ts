@@ -224,7 +224,8 @@ router.delete('/account', authMiddleware, async (req: AuthRequest, res: Response
 
     const result = await DatabaseService.archiveAndDeleteUser(userId, {
       reason: 'user_request',
-      deletedBy: userId
+      deletedBy: userId,
+      context: 'user'
     });
 
     if (!result.success) {

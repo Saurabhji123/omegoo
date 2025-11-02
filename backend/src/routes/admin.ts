@@ -583,7 +583,13 @@ router.delete('/users/:userId', authenticateAdmin, requirePermission('manage_use
   try {
     const { userId } = req.params;
 
-    const success = await DatabaseService.deleteUser(userId);
+    const success = await DatabaseService.deleteUser(userId, {
+      reason: 'admin_delete',
+      deletedBy: req.admin?.adminId || req.admin?.username || 'admin_panel',
+      context: 'admin',
+      adminId: req.admin?.adminId,
+      adminUsername: req.admin?.username
+    });
 
     if (success) {
       res.json({

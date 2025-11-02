@@ -117,6 +117,15 @@ interface IDeletedAccountDoc extends Document {
   originalData: any;
 }
 
+interface IAdminDeletedAccountDoc extends Document {
+  userId: string;
+  reason: string;
+  deletedBy?: string;
+  deletedAt: Date;
+  originalData: any;
+  adminId?: string;
+  adminUsername?: string;
+}
 /* -------------------------
    Schemas
    ------------------------- */
@@ -240,6 +249,24 @@ const DeletedAccountSchema = new Schema<IDeletedAccountDoc>({
 DeletedAccountSchema.index({ userId: 1 }, { unique: false });
 DeletedAccountSchema.index({ deletedAt: 1 });
 
+const AdminDeletedAccountSchema = new Schema<IAdminDeletedAccountDoc>({
+  userId: { type: String, required: true, index: true },
+  reason: { type: String, default: 'admin_delete' },
+  deletedBy: { type: String },
+  adminId: { type: String },
+  adminUsername: { type: String },
+  deletedAt: { type: Date, default: Date.now },
+  originalData: { type: Schema.Types.Mixed, required: true }
+}, {
+  collection: 'admin_deleted_accounts',
+  versionKey: false
+});
+
+AdminDeletedAccountSchema.index({ userId: 1 }, { unique: false });
+AdminDeletedAccountSchema.index({ adminId: 1 });
+AdminDeletedAccountSchema.index({ deletedAt: 1 });
+const AdminDeletedAccountModel: Model<IAdminDeletedAccountDoc> = mongoose.model<IAdminDeletedAccountDoc>('AdminDeletedAccount', AdminDeletedAccountSchema);
+
 // Indexes for better query performance
 BanHistorySchema.index({ userId: 1, isActive: 1 });
 BanHistorySchema.index({ expiresAt: 1 });
@@ -270,6 +297,7 @@ export class DatabaseService {
   private static messages = new Map<string, any[]>(); // roomId => messages
   private static chatRooms = new Map<string, any>();
   private static deletedAccounts = new Map<string, any>();
+  private static adminDeletedAccounts = new Map<string, any>();
 
   /* ---------- Connection ---------- */
   static async initialize(): Promise<void> {
@@ -759,8 +787,21 @@ export class DatabaseService {
 
   static async archiveAndDeleteUser(
     userId: string,
-    metadata?: { reason?: string; deletedBy?: string }
+    metadata?: {
+      reason?: string;
+      deletedBy?: string;
+      context?: 'user' | 'admin' | 'system';
+      adminId?: string;
+      adminUsername?: string;
+    }
   ): Promise<{ success: boolean; archived?: any; error?: string }> {
+    const context = metadata?.context
+      ?? (metadata?.deletedBy === 'system'
+        ? 'system'
+        : metadata?.deletedBy && metadata.deletedBy !== userId
+          ? 'admin'
+          : 'user');
+
     if (this.isConnected) {
       const session = await mongoose.startSession();
       let archivedPayload: any;
@@ -772,7 +813,7 @@ export class DatabaseService {
             throw new Error('USER_NOT_FOUND');
           }
 
-          const archivePayload = {
+          const archivePayload: any = {
             userId: userDoc.id,
             reason: metadata?.reason || 'user_request',
             deletedBy: metadata?.deletedBy || userId,
@@ -780,8 +821,18 @@ export class DatabaseService {
             originalData: userDoc.toObject()
           };
 
-          const [archivedDoc] = await DeletedAccountModel.create([archivePayload], { session });
-          archivedPayload = archivedDoc.toObject();
+          if (context === 'admin') {
+            const adminArchivePayload = {
+              ...archivePayload,
+              adminId: metadata?.adminId || metadata?.deletedBy,
+              adminUsername: metadata?.adminUsername
+            };
+            const [archivedDoc] = await AdminDeletedAccountModel.create([adminArchivePayload], { session });
+            archivedPayload = archivedDoc.toObject();
+          } else {
+            const [archivedDoc] = await DeletedAccountModel.create([archivePayload], { session });
+            archivedPayload = archivedDoc.toObject();
+          }
 
           await UserModel.deleteOne({ id: userId }).session(session);
           await ChatSessionModel.updateMany(
@@ -792,7 +843,11 @@ export class DatabaseService {
         });
 
         if (archivedPayload) {
-          this.deletedAccounts.set(userId, archivedPayload);
+          if (context === 'admin') {
+            this.adminDeletedAccounts.set(userId, archivedPayload);
+          } else {
+            this.deletedAccounts.set(userId, archivedPayload);
+          }
         }
         this.users.delete(userId);
 
@@ -813,7 +868,7 @@ export class DatabaseService {
       return { success: false, error: 'USER_NOT_FOUND' };
     }
 
-    const archived = {
+  const archived: any = {
       userId,
       reason: metadata?.reason || 'user_request',
       deletedBy: metadata?.deletedBy || userId,
@@ -821,7 +876,17 @@ export class DatabaseService {
       originalData: { ...user }
     };
 
-    this.deletedAccounts.set(userId, archived);
+    let archivedResult = archived;
+    if (context === 'admin') {
+      archivedResult = {
+        ...archived,
+        adminId: metadata?.adminId || metadata?.deletedBy,
+        adminUsername: metadata?.adminUsername
+      };
+      this.adminDeletedAccounts.set(userId, archivedResult);
+    } else {
+      this.deletedAccounts.set(userId, archivedResult);
+    }
     this.users.delete(userId);
 
     // Remove any active sessions referencing this user in fallback mode
@@ -831,7 +896,7 @@ export class DatabaseService {
       }
     }
 
-    return { success: true, archived };
+    return { success: true, archived: archivedResult };
   }
 
   static async checkUserBanned(deviceId: string): Promise<boolean> {
@@ -1595,16 +1660,25 @@ export class DatabaseService {
   /**
    * Delete user permanently
    */
-  static async deleteUser(userId: string): Promise<boolean> {
-    if (this.isConnected) {
-      try {
-        const result = await UserModel.deleteOne({ id: userId });
-        return result.deletedCount > 0;
-      } catch (err) {
-        console.error('MongoDB deleteUser failed:', err);
-      }
-    }
-    return this.users.delete(userId);
+  static async deleteUser(
+    userId: string,
+    metadata: {
+      reason?: string;
+      deletedBy?: string;
+      context?: 'user' | 'admin' | 'system';
+      adminId?: string;
+      adminUsername?: string;
+    } = {}
+  ): Promise<boolean> {
+    const result = await this.archiveAndDeleteUser(userId, {
+      reason: metadata.reason ?? 'system_delete',
+      deletedBy: metadata.deletedBy,
+      context: metadata.context ?? 'admin',
+      adminId: metadata.adminId,
+      adminUsername: metadata.adminUsername
+    });
+
+    return !!result.success;
   }
 
   /**
