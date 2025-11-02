@@ -243,6 +243,12 @@ const TextChat: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if (partnerTyping) {
+      scrollToBottom();
+    }
+  }, [partnerTyping]);
+
   // Multi-device protection on component mount (like AudioChat)
   useEffect(() => {
     const activeSession = localStorage.getItem('omegoo_text_session');
@@ -747,7 +753,7 @@ const TextChat: React.FC = () => {
             </div>
 
             {/* Messages Area - Scrollable Middle Section */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-3 sm:space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-6 sm:pb-8">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-3 sm:space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-8 sm:pb-10">
               {/* Empty State */}
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full">
@@ -794,7 +800,7 @@ const TextChat: React.FC = () => {
                       )}
                       
                       <div
-                        className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
+                        className={`max-w-[85%] sm:max-w-[75%] lg:max-w-[65%] px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
                           message.isOwnMessage
                             ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
                             : isSystemMessage
@@ -889,7 +895,7 @@ const TextChat: React.FC = () => {
               
               {/* Typing indicator - WhatsApp style with continuous blinking */}
               {partnerTyping && (
-                <div className="flex justify-start mb-6 sm:mb-8 animate-fade-in">
+                <div className="flex justify-start mb-8 sm:mb-10 animate-fade-in">
                   <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md">
                     <div className="flex items-center space-x-1.5">
                       <style>{`
