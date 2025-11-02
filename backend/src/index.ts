@@ -10,6 +10,8 @@ import rateLimit from 'express-rate-limit';
 // Load environment variables FIRST before any other imports
 dotenv.config();
 
+import './utils/logger';
+
 // Import routes
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
