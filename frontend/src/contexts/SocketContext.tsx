@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useReducer, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { debugLog, debugWarn } from '../utils/debugLogger';
 
-// Define types locally to avoid import issues
 interface WSMessage {
   type: string;
   payload: any;
@@ -35,14 +35,16 @@ interface SocketContextType extends SocketState {
   reportUser: (reason: string, description: string) => void;
 }
 
-type SocketAction = 
+type SocketAction =
   | { type: 'SET_SOCKET'; payload: Socket | null }
   | { type: 'SET_CONNECTED'; payload: boolean }
   | { type: 'SET_CONNECTING'; payload: boolean }
   | { type: 'SET_SESSION'; payload: ChatSession | null }
   | { type: 'SET_MATCHING_STATUS'; payload: 'idle' | 'searching' | 'matched' }
   | { type: 'ADD_MODERATION_WARNING'; payload: string }
-  | { type: 'CLEAR_MODERATION_WARNINGS' };const initialState: SocketState = {
+  | { type: 'CLEAR_MODERATION_WARNINGS' };
+
+const initialState: SocketState = {
   socket: null,
   connected: false,
   connecting: false,
@@ -51,7 +53,7 @@ type SocketAction =
   moderationWarnings: []
 };
 
-const socketReducer = (state: SocketState, action: SocketAction): SocketState => {
+function socketReducer(state: SocketState, action: SocketAction): SocketState {
   switch (action.type) {
     case 'SET_SOCKET':
       return { ...state, socket: action.payload };
@@ -64,111 +66,93 @@ const socketReducer = (state: SocketState, action: SocketAction): SocketState =>
     case 'SET_MATCHING_STATUS':
       return { ...state, matchingStatus: action.payload };
     case 'ADD_MODERATION_WARNING':
-      return {
-        ...state,
-        moderationWarnings: [...state.moderationWarnings, action.payload]
-      };
+      return { ...state, moderationWarnings: [...state.moderationWarnings, action.payload] };
     case 'CLEAR_MODERATION_WARNINGS':
       return { ...state, moderationWarnings: [] };
     default:
       return state;
   }
-};
+}
 
 const SocketContext = createContext<SocketContextType | null>(null);
-
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(socketReducer, initialState);
-  const { token } = useAuth(); // Removed unused 'user'
+  const { token } = useAuth();
 
   useEffect(() => {
-    // Connect when component mounts or when token changes (user logs in/out)
-    if (token) {
-      console.log('🔐 User logged in, connecting socket with real token');
-      connect();
-    } else {
-      console.log('👤 No token, connecting as guest');
-      connect();
-    }
+    debugLog('Socket effect triggered', { hasToken: !!token });
+    connect();
 
     return () => {
       if (state.socket) {
+        debugLog('Cleaning up socket connection');
         state.socket.disconnect();
+        dispatch({ type: 'SET_SOCKET', payload: null });
+        dispatch({ type: 'SET_CONNECTED', payload: false });
+        dispatch({ type: 'SET_CONNECTING', payload: false });
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]); // Re-connect when token changes (login/logout)
+  }, [token]);
 
-  const connect = () => {
+  function connect() {
     if (state.socket && state.socket.connected) {
-      console.log('🔌 Socket already connected/connecting, skipping');
+      debugLog('Socket already active, skipping new connection');
       return;
     }
 
-    // Disconnect old socket if exists
     if (state.socket) {
       state.socket.disconnect();
     }
 
-    // Set connecting state
     dispatch({ type: 'SET_CONNECTING', payload: true });
 
-    // Always use production URL for deployed app, localhost only for dev
-    // FORCE USE RENDER BACKEND FOR DEVELOPMENT TOO (LOCAL BACKEND NOT RUNNING)
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const backendUrl = 'https://omegoo-api-clean.onrender.com'; // Always use Render backend
-    console.log('🔗 Connecting to backend:', backendUrl);
-    console.log('🌍 Current location:', {
+    const isLocalhost =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const backendUrl = 'https://omegoo-api-clean.onrender.com';
+
+    debugLog('Preparing socket connection', {
+      backendUrl,
       hostname: window.location.hostname,
-      isLocalhost: isLocalhost,
-      nodeEnv: process.env.NODE_ENV
+      isLocalhost,
+      nodeEnv: process.env.NODE_ENV,
+      hasToken: !!token
     });
 
-    console.log('🚀 Creating socket connection with config:', {
-      url: backendUrl,
-      token: token || 'guest'
-    });
-
-    // Test backend connectivity and wake up if needed
     const wakeBackend = async () => {
       try {
-        console.log('🔄 Waking up backend...');
+        debugLog('Waking backend');
         const response = await fetch(`${backendUrl}/keepalive`);
-        const data = await response.json();
-        console.log('✅ Backend awake:', data);
+        await response.json();
+        debugLog('Backend keepalive response received');
         return true;
       } catch (err) {
-        console.error('❌ Backend wake-up failed:', err);
+        debugWarn('Backend wake-up failed', { message: (err as Error)?.message });
         return false;
       }
     };
 
-    // Try to wake backend first, then test connection
     wakeBackend().then((awake) => {
-      if (awake) {
-        console.log('🚀 Backend is ready, proceeding with socket connection');
-      } else {
-        console.log('⏳ Backend might be cold starting, socket will retry...');
-      }
+      debugLog('Backend wake result', { awake });
     });
 
     const socket = io(backendUrl, {
       auth: {
-        token: token || 'dev-guest-token'  // Use REAL JWT token from AuthContext
+        token: token || 'dev-guest-token'
       },
       transports: ['polling', 'websocket'],
       timeout: 15000,
-      forceNew: false,  // Allow connection reuse
+      forceNew: false,
       reconnection: true,
-      reconnectionAttempts: 3,  // Reduced attempts
-      reconnectionDelay: 1000,  // Faster reconnection
+      reconnectionAttempts: 3,
+      reconnectionDelay: 1000,
       reconnectionDelayMax: 5000
     });
 
-    console.log('🚀 Socket instance created, waiting for connection...');
+    debugLog('Socket instance created, waiting for connection');
 
     socket.on('connect', () => {
-      console.log('✅ Socket connected successfully!', {
+      debugLog('Socket connected', {
         id: socket.id,
         transport: socket.io.engine.transport.name
       });
@@ -177,137 +161,147 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
 
     socket.on('disconnect', (reason) => {
-      console.log('❌ Socket disconnected:', reason);
+      debugWarn('Socket disconnected', { reason });
       dispatch({ type: 'SET_CONNECTED', payload: false });
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
     });
 
     socket.on('connect_error', (error) => {
-      console.error('🚨 Socket connection error:', error.message);
-      console.error('Backend URL:', backendUrl);
-      console.error('Error type:', (error as any).type);
-      console.error('Error description:', (error as any).description);
-      console.error('Error context:', (error as any).context);
-      console.error('Full error object:', error);
+      console.error('Socket connection error');
+      debugWarn('Socket connection error details', {
+        message: error.message,
+        backendUrl,
+        type: (error as any).type,
+        description: (error as any).description,
+        context: (error as any).context
+      });
       dispatch({ type: 'SET_CONNECTED', payload: false });
       dispatch({ type: 'SET_CONNECTING', payload: false });
     });
 
     socket.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`🔄 Reconnection attempt ${attemptNumber}`);
+      debugLog('Socket reconnection attempt', { attemptNumber });
     });
 
     socket.on('reconnect_failed', () => {
-      console.error('❌ Reconnection failed after all attempts');
+      console.error('Socket reconnection failed');
       dispatch({ type: 'SET_CONNECTED', payload: false });
     });
 
-    // Updated event names to match backend
     socket.on('match-found', (session: ChatSession) => {
-      console.log('Match found:', session);
+      debugLog('Match found', { sessionId: session?.id, mode: session?.mode });
       dispatch({ type: 'SET_SESSION', payload: session });
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'matched' });
     });
 
     socket.on('match_found', (session: ChatSession) => {
-      console.log('Match found (legacy):', session);
+      debugLog('Match found (legacy event)', { sessionId: session?.id, mode: session?.mode });
       dispatch({ type: 'SET_SESSION', payload: session });
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'matched' });
     });
 
     socket.on('match_cancelled', () => {
-      console.log('Match cancelled');
+      debugWarn('Match cancelled by server');
       dispatch({ type: 'SET_SESSION', payload: null });
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
     });
 
-    socket.on('session_ended', () => {
-      console.log('Session ended');
+    socket.on('session_ended', (data: { reason?: string }) => {
+      debugLog('Session ended by server', { reason: data.reason });
       dispatch({ type: 'SET_SESSION', payload: null });
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
     });
 
-    socket.on('moderation_warning', (warning: string) => {
-      console.log('Moderation warning:', warning);
-      dispatch({ type: 'ADD_MODERATION_WARNING', payload: warning });
-      
-      // Auto-clear warning after 5 seconds
+    socket.on('moderation_warning', (warning: string | { message: string }) => {
+      const message = typeof warning === 'string' ? warning : warning.message;
+      debugWarn('Moderation warning received', { message });
+      dispatch({ type: 'ADD_MODERATION_WARNING', payload: message });
+
       setTimeout(() => {
         dispatch({ type: 'CLEAR_MODERATION_WARNINGS' });
       }, 5000);
     });
 
     socket.on('user_banned', () => {
-      console.log('User banned');
-      // Handle ban - redirect to banned page or logout
+      debugWarn('User banned by server');
       window.location.href = '/banned';
     });
 
-    // Insufficient coins event
     socket.on('insufficient-coins', (data: { required: number; current: number; message: string }) => {
-      console.log('❌ Insufficient coins:', data);
-      alert(`Not enough coins! You need ${data.required} coins but have ${data.current} coins. Get more coins tomorrow!`);
+      debugWarn('Insufficient coins notice', { required: data.required, current: data.current });
+      alert(
+        `Not enough coins! You need ${data.required} coins but have ${data.current} coins. Get more coins tomorrow!`
+      );
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
     });
 
-    // NEW: Listen for stats updates and sync with AuthContext
     socket.on('stats-update', (data: { coins: number; totalChats: number; dailyChats: number }) => {
-      console.log('📊 STATS UPDATE RECEIVED:', data);
-      // Trigger a custom event that AuthContext or components can listen to
+      debugLog('Stats update received', { coins: data.coins, totalChats: data.totalChats });
       window.dispatchEvent(new CustomEvent('user-stats-update', { detail: data }));
     });
 
-    // Match retry event (when partner has insufficient coins)
     socket.on('match-retry', (data: { message: string }) => {
-      console.log('🔄 Match retry:', data);
+      debugWarn('Match retry requested', { message: data.message });
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'searching' });
-      // Automatically retry matching
+
       setTimeout(() => {
-        if (state.socket && state.socket.connected) {
-          console.log('🔄 Retrying match...');
-          state.socket.emit('find_match', { mode: 'video' });
-        }
+        debugLog('Emitting match retry request');
+        socket.emit('find_match', { mode: 'video' });
       }, 1000);
     });
 
     dispatch({ type: 'SET_SOCKET', payload: socket });
-  };
+  }
 
   const disconnect = () => {
     if (state.socket) {
+      debugLog('Manual socket disconnect requested');
       state.socket.disconnect();
       dispatch({ type: 'SET_SOCKET', payload: null });
       dispatch({ type: 'SET_CONNECTED', payload: false });
+      dispatch({ type: 'SET_CONNECTING', payload: false });
     }
   };
 
   const sendMessage = (message: WSMessage) => {
     if (state.socket && state.connected) {
+      debugLog('Sending socket message', { type: message.type });
       state.socket.emit('message', message);
+    } else {
+      debugWarn('Cannot send message while socket disconnected', { type: message.type });
     }
   };
 
   const startMatching = (preferences?: any) => {
     if (state.socket && state.connected) {
+      debugLog('Starting match request', { preferences });
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'searching' });
       state.socket.emit('find_match', preferences || { mode: 'video' });
+    } else {
+      debugWarn('Cannot start matching while socket disconnected');
     }
   };
 
   const stopMatching = () => {
     if (state.socket && state.connected) {
+      debugLog('Stopping match request');
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
       state.socket.emit('stop_matching');
+    } else {
+      debugWarn('Cannot stop matching while socket disconnected');
     }
   };
 
   const reportUser = (reason: string, description: string) => {
     if (state.socket && state.connected && state.currentSession) {
+      debugLog('Reporting user', { sessionId: state.currentSession.id, reason });
       state.socket.emit('report_user', {
         sessionId: state.currentSession.id,
         reason,
         description
       });
+    } else {
+      debugWarn('Cannot report user without active session');
     }
   };
 

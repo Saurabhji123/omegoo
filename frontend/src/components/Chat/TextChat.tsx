@@ -13,6 +13,18 @@ import {
 } from '@heroicons/react/24/outline';
 import ReportModal from './ReportModal';
 
+const enableDebugLogs = process.env.REACT_APP_TEXTCHAT_DEBUG === 'true';
+const debugLog = (...args: any[]) => {
+  if (enableDebugLogs) {
+    console.log(...args);
+  }
+};
+const debugWarn = (...args: any[]) => {
+  if (enableDebugLogs) {
+    console.warn(...args);
+  }
+};
+
 interface Message {
   id: string;
   content: string;
@@ -92,8 +104,8 @@ const TextChat: React.FC = () => {
       dailyChats?: number;
     }) => {
       try {
-        console.log('💬 Text chat match found:', data);
-        console.log('📊 Match data received:', {
+  debugLog('💬 Text chat match found:', data);
+  debugLog('📊 Match data received:', {
           coins: data.coins,
           totalChats: data.totalChats,
           dailyChats: data.dailyChats,
@@ -102,7 +114,7 @@ const TextChat: React.FC = () => {
         
         // Update user coins and chat counts from backend response
         if (data.coins !== undefined) {
-          console.log('🔄 CALLING updateUser with:', { 
+          debugLog('🔄 CALLING updateUser with:', { 
             coins: data.coins,
             totalChats: data.totalChats || 0,
             dailyChats: data.dailyChats || 0
@@ -114,9 +126,9 @@ const TextChat: React.FC = () => {
             dailyChats: data.dailyChats || 0
           });
           
-          console.log(`✅ updateUser CALLED - New values: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
+          debugLog(`✅ updateUser CALLED - New values: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
         } else {
-          console.warn('⚠️ No coins data in match-found event!');
+          debugWarn('⚠️ No coins data in match-found event!');
         }
         
         setSessionId(data.sessionId);
@@ -133,14 +145,14 @@ const TextChat: React.FC = () => {
     });
 
     socket.on('searching', (data: { position: number; totalWaiting: number }) => {
-      console.log('🔍 Searching for text chat partner:', data);
+  debugLog('🔍 Searching for text chat partner:', data);
       setIsSearching(true);
     });
 
     socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string; replyTo?: Message['replyTo'] }) => {
       try {
-        console.log('📝 RECEIVED MESSAGE IN TEXTCHAT:', data);
-        console.log('🔍 Reply data received:', {
+  debugLog('📝 RECEIVED MESSAGE IN TEXTCHAT:', data);
+  debugLog('🔍 Reply data received:', {
           hasReplyTo: !!data.replyTo,
           replyTo: data.replyTo,
           messageContent: data.content
@@ -152,7 +164,7 @@ const TextChat: React.FC = () => {
             return;
           }
           
-          console.log('✅ Adding message with reply:', data.replyTo);
+          debugLog('✅ Adding message with reply:', data.replyTo);
           addMessage(data.content, false, data.replyTo);
           setPartnerTyping(false);
         }
@@ -163,15 +175,15 @@ const TextChat: React.FC = () => {
 
     socket.on('typing', (data: { isTyping: boolean; sessionId?: string; userId?: string }) => {
       try {
-        console.log('⌨️ RECEIVED TYPING EVENT:', data);
-        console.log('📊 Current session:', sessionId);
-        console.log('🔄 Partner typing state will change to:', data.isTyping);
+  debugLog('⌨️ RECEIVED TYPING EVENT:', data);
+  debugLog('📊 Current session:', sessionId);
+  debugLog('🔄 Partner typing state will change to:', data.isTyping);
         
         if (typeof data.isTyping === 'boolean') {
           setPartnerTyping(data.isTyping);
-          console.log('✅ Partner typing state updated:', data.isTyping);
+          debugLog('✅ Partner typing state updated:', data.isTyping);
         } else {
-          console.warn('Invalid typing indicator data:', data);
+          debugWarn('Invalid typing indicator data:', data);
         }
       } catch (error) {
         console.error('❌ Error handling typing event:', error);
@@ -180,7 +192,7 @@ const TextChat: React.FC = () => {
 
     socket.on('session_ended', (data: { reason?: string }) => {
       try {
-        console.log('❌ Text chat session ended:', data);
+  debugLog('❌ Text chat session ended:', data);
         setIsMatchConnected(false);
         setSessionId(null);
         
@@ -233,9 +245,9 @@ const TextChat: React.FC = () => {
       // Clear old sessions (older than 10 minutes)
       if (sessionAge > 10 * 60 * 1000) {
         localStorage.removeItem('omegoo_text_session');
-        console.log('🗑️ Cleared expired text session tracking');
+  debugLog('🗑️ Cleared expired text session tracking');
       } else {
-        console.log('⚠️ Detected recent text session from another tab/device');
+  debugWarn('⚠️ Detected recent text session from another tab/device');
       }
     }
   }, []);
@@ -289,7 +301,7 @@ const TextChat: React.FC = () => {
           
           // If session is less than 5 minutes old, warn user
           if (sessionAge < 5 * 60 * 1000) {
-            console.log('⚠️ Active text session detected in another tab/device');
+            debugWarn('⚠️ Active text session detected in another tab/device');
             const shouldContinue = window.confirm(
               'You seem to have an active text chat in another tab or device. Continue anyway? This will end your previous session.'
             );
@@ -311,13 +323,13 @@ const TextChat: React.FC = () => {
           userId: socket.id
         }));
       } catch (storageError) {
-        console.warn('Failed to store session in localStorage:', storageError);
+  debugWarn('Failed to store session in localStorage:', storageError);
         // Continue anyway
       }
 
       // INSTANT DISCONNECT: End current session first if exists
       if (sessionId && isMatchConnected) {
-        console.log('🔚 Ending current text session immediately:', sessionId);
+  debugLog('🔚 Ending current text session immediately:', sessionId);
         socket.emit('end_session', { 
           sessionId: sessionId,
           duration: Date.now() 
@@ -337,14 +349,14 @@ const TextChat: React.FC = () => {
       setMessages([]);
       setPartnerTyping(false);
       setReplyingTo(null); // Clear reply state
-      console.log('🔄 State reset for new text chat connection');
+  debugLog('🔄 State reset for new text chat connection');
       
       // START NEW SEARCH
       setTimeout(() => {
         if (socket) {
-          console.log('🔍 Starting search for new text chat partner');
+          debugLog('🔍 Starting search for new text chat partner');
           socket.emit('find_match', { mode: 'text' });
-          console.log('✅ New text chat partner search started');
+          debugLog('✅ New text chat partner search started');
         }
       }, 100);
     } catch (error) {
@@ -355,14 +367,14 @@ const TextChat: React.FC = () => {
   };
 
   const nextMatch = () => {
-    console.log('🔄 Next Person clicked - starting fresh text chat');
+  debugLog('🔄 Next Person clicked - starting fresh text chat');
     startNewChat(true);
   };
 
   const handleReport = () => {
     try {
       if (!partnerId || !sessionId) {
-        console.warn('Cannot report: missing partner or session', {
+  debugWarn('Cannot report: missing partner or session', {
           hasPartnerId: !!partnerId,
           hasSessionId: !!sessionId
         });
@@ -387,7 +399,7 @@ const TextChat: React.FC = () => {
       try {
         localStorage.removeItem('omegoo_text_session');
       } catch (storageError) {
-        console.warn('Failed to clear session from localStorage:', storageError);
+  debugWarn('Failed to clear session from localStorage:', storageError);
       }
       
       navigate('/');
