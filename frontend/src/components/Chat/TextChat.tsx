@@ -747,7 +747,7 @@ const TextChat: React.FC = () => {
             </div>
 
             {/* Messages Area - Scrollable Middle Section */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-6 sm:pb-8">
               {/* Empty State */}
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full">
@@ -875,7 +875,7 @@ const TextChat: React.FC = () => {
                           </div>
                         )}
                         
-                        <p className="text-xs sm:text-sm leading-relaxed break-words">{message.content}</p>
+                        <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{message.content}</p>
                         <div className={`text-xs mt-1 sm:mt-2 flex items-center gap-1 ${
                           message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
                         }`}>
@@ -889,7 +889,7 @@ const TextChat: React.FC = () => {
               
               {/* Typing indicator - WhatsApp style with continuous blinking */}
               {partnerTyping && (
-                <div className="flex justify-start mb-2 animate-fade-in">
+                <div className="flex justify-start mb-4 sm:mb-6 animate-fade-in">
                   <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md">
                     <div className="flex items-center space-x-1.5">
                       <style>{`
@@ -938,7 +938,7 @@ const TextChat: React.FC = () => {
                 </div>
               )}
               
-              <div className="flex items-end gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex-1 relative">
                   <textarea
                     ref={(el) => {
@@ -962,14 +962,14 @@ const TextChat: React.FC = () => {
                     }}
                     placeholder="Type a message..."
                     disabled={!isMatchConnected}
-                    className="textchat-input w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200 overflow-y-auto max-h-[140px]"
+                    className="textchat-input w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200 overflow-y-auto max-h-[140px] min-h-[44px]"
                     style={{ scrollbarWidth: 'none' }}
                   />
                 </div>
                 <button
                   onClick={sendMessage}
                   disabled={!messageInput.trim() || !isMatchConnected}
-                  className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg flex-shrink-0 ${
+                  className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg flex-shrink-0 flex items-center justify-center ${
                     messageInput.trim() && isMatchConnected
                       ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:shadow-purple-500/25 transform hover:scale-105'
                       : 'bg-gray-600 text-gray-400 cursor-not-allowed'
