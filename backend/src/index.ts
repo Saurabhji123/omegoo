@@ -81,6 +81,14 @@ app.use(cors({
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    const path = req.path || '';
+    if (path.startsWith('/api/admin')) return true;
+    if (req.method === 'DELETE' && path === '/api/user/account') return true;
+    return false;
+  },
   message: {
     error: 'Too many requests from this IP, please try again later.'
   }
@@ -157,6 +165,20 @@ const authLimiter = rateLimit({
 // API routes
 app.use('/api/auth/login', authLimiter); // 🔒 Rate limit login endpoint
 app.use('/api/auth/register', authLimiter); // 🔒 Rate limit register endpoint
+
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: {
+    success: false,
+    error: 'Admin requests limited. Please wait a moment and retry.'
+  }
+});
+
+app.use('/api/admin', adminLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportsRoutes); // Public reports endpoint
 app.use('/api/user', authenticateToken, userRoutes);
