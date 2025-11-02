@@ -18,6 +18,10 @@ const Settings: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [identitySaving, setIdentitySaving] = useState(false);
+  const [identityMessage, setIdentityMessage] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | 'others'>((user?.gender as 'male' | 'female' | 'others') || 'others');
+  const [genderPreference, setGenderPreference] = useState<'any' | 'male' | 'female'>((user?.preferences?.genderPreference as 'any' | 'male' | 'female') || 'any');
   
   // Settings state - initialized from user preferences
   const [settings, setSettings] = useState({
@@ -57,6 +61,12 @@ const Settings: React.FC = () => {
         matchingMode: user.preferences.matchingMode || 'video',
       }));
     }
+    if (user?.gender) {
+      setGender((user.gender as 'male' | 'female' | 'others') || 'others');
+    }
+    if (user?.preferences?.genderPreference) {
+      setGenderPreference((user.preferences.genderPreference as 'any' | 'male' | 'female') || 'any');
+    }
   }, [user]);
 
   const updateSetting = async (key: string, value: any) => {
@@ -87,6 +97,33 @@ const Settings: React.FC = () => {
       setTimeout(() => setSaveMessage(''), 3000);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const identityDirty =
+    gender !== ((user?.gender as 'male' | 'female' | 'others') || 'others') ||
+    genderPreference !== ((user?.preferences?.genderPreference as 'any' | 'male' | 'female') || 'any');
+
+  const handleIdentitySave = async () => {
+    if (!identityDirty || identitySaving) {
+      return;
+    }
+    try {
+      setIdentitySaving(true);
+      setIdentityMessage('');
+      await userAPI.updatePreferences({
+        gender,
+        genderPreference,
+      });
+      await refreshUser();
+      setIdentityMessage('Gender preferences updated successfully.');
+      setTimeout(() => setIdentityMessage(''), 4000);
+    } catch (error: any) {
+      console.error('Failed to update gender preferences:', error);
+      setIdentityMessage(error?.message || 'Failed to update gender preferences.');
+      setTimeout(() => setIdentityMessage(''), 5000);
+    } finally {
+      setIdentitySaving(false);
     }
   };
 
@@ -280,6 +317,52 @@ const Settings: React.FC = () => {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Your Gender</label>
+              <select
+                value={gender}
+                onChange={(event) => setGender(event.target.value as 'male' | 'female' | 'others')}
+                className="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="male" className="bg-purple-900">Male</option>
+                <option value="female" className="bg-purple-900">Female</option>
+                <option value="others" className="bg-purple-900">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Match With</label>
+              <select
+                value={genderPreference}
+                onChange={(event) => setGenderPreference(event.target.value as 'any' | 'male' | 'female')}
+                className="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="any" className="bg-purple-900">Anyone</option>
+                <option value="male" className="bg-purple-900">Men</option>
+                <option value="female" className="bg-purple-900">Women</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleIdentitySave}
+              disabled={!identityDirty || identitySaving}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                identityDirty && !identitySaving
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                  : 'bg-gray-600 bg-opacity-70 text-gray-300 cursor-not-allowed'
+              }`}
+            >
+              {identitySaving ? 'Saving...' : 'Save Gender Preferences'}
+            </button>
+            {identityMessage && (
+              <span className={`text-sm ${identityMessage.toLowerCase().includes('fail') ? 'text-red-300' : 'text-green-300'}`}>
+                {identityMessage}
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -14,6 +14,7 @@ export interface User {
   status: 'active' | 'banned' | 'suspended';
   coins: number;
   isVerified: boolean;
+  gender?: 'male' | 'female' | 'others';
   totalChats?: number;
   dailyChats?: number;
   lastCoinClaim?: Date;
@@ -46,7 +47,21 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   loginWithToken: (token: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<{token?: string; user?: any; requiresOTP?: boolean; message?: string; email?: string; username?: string; pending?: boolean; otpExpiresInSeconds?: number;} | undefined>;
+  register: (
+    email: string,
+    username: string,
+    password: string,
+    gender: 'male' | 'female' | 'others'
+  ) => Promise<{
+    token?: string;
+    user?: any;
+    requiresOTP?: boolean;
+    message?: string;
+    email?: string;
+    username?: string;
+    pending?: boolean;
+    otpExpiresInSeconds?: number;
+  } | undefined>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
   deleteAccount: () => Promise<void>;
@@ -242,7 +257,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const register = async (email: string, username: string, password: string): Promise<{
+  const register = async (
+    email: string,
+    username: string,
+    password: string,
+    gender: 'male' | 'female' | 'others'
+  ): Promise<{
     token?: string;
     user?: any;
     requiresOTP?: boolean;
@@ -255,7 +275,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       console.log('📝 Attempting registration:', { email, username });
-      const response = await authAPI.register(email, username, password);
+      const response = await authAPI.register(email, username, password, gender);
       
       console.log('✅ ===== AUTH CONTEXT REGISTRATION RESPONSE =====');
       console.log('Full response object:', response);

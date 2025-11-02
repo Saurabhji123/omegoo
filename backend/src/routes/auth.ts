@@ -140,7 +140,7 @@ const checkAndResetDailyCoins = async (userId: string) => {
  */
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, username } = req.body;
+    const { email, password, username, gender } = req.body;
 
     console.log('\n=== 📝 REGISTRATION ATTEMPT START ===');
     console.log('📧 Email:', email);
@@ -158,6 +158,19 @@ router.post('/register', async (req, res) => {
         error: 'Email, username, and password are required'
       });
     }
+
+    const normalizedGender = typeof gender === 'string' ? gender.trim().toLowerCase() : '';
+    const validGenders = new Set(['male', 'female', 'others']);
+    console.log('✅ Validating gender selection...');
+    if (!normalizedGender || !validGenders.has(normalizedGender)) {
+      console.log('❌ FAILED: Invalid or missing gender selection');
+      console.log('=== REGISTRATION ATTEMPT END ===\n');
+      return res.status(400).json({
+        success: false,
+        error: 'Please select a valid gender option'
+      });
+    }
+    console.log('✅ Gender selection valid:', normalizedGender);
 
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -256,7 +269,8 @@ router.post('/register', async (req, res) => {
       otpExpiresAt: otpExpiresAt.toISOString(),
       deviceId,
       coins: 50,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      gender: normalizedGender
     };
 
     console.log('💾 Storing pending registration in Redis:', {
@@ -415,7 +429,8 @@ router.post('/verify-otp', async (req, res) => {
         lastCoinClaim: new Date(),
         totalChats: 0,
         dailyChats: 0,
-        deviceId: pendingRegistration.deviceId || `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        deviceId: pendingRegistration.deviceId || `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        gender: pendingRegistration.gender || 'others'
       });
 
       console.log('✅ User persisted after OTP verification:', {
@@ -457,7 +472,8 @@ router.post('/verify-otp', async (req, res) => {
           isVerified: true,
           tier: 'verified',
           coins: createdUser.coins,
-          hasPassword: !!createdUser.passwordHash
+          hasPassword: !!createdUser.passwordHash,
+          gender: createdUser.gender || 'others'
         }
       });
     }
@@ -562,7 +578,8 @@ router.post('/verify-otp', async (req, res) => {
         isVerified: true,
         tier: 'verified',
         coins: user.coins,
-        hasPassword: !!user.passwordHash
+        hasPassword: !!user.passwordHash,
+        gender: user.gender || 'others'
       }
     });
   } catch (error: any) {
@@ -869,6 +886,7 @@ router.post('/login', async (req, res) => {
         isVerified: finalUser.isVerified,
         coins: finalUser.coins,
         hasPassword: !!finalUser.passwordHash,
+        gender: finalUser.gender || 'others',
         preferences: finalUser.preferences || {},
         subscription: finalUser.subscription || { type: 'none' }
       }
@@ -955,6 +973,7 @@ router.post('/google', async (req, res) => {
         dailyChats: 0,
         lastCoinClaim: new Date(),
         deviceId: `google-${googleId || Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        gender: 'others',
         preferences: {
           avatar: picture,
           authProvider: 'google',
@@ -1032,6 +1051,7 @@ router.post('/google', async (req, res) => {
         isVerified: user.isVerified,
         coins: user.coins,
         hasPassword: !!user.passwordHash,
+        gender: user.gender || 'others',
         preferences: user.preferences || {},
         subscription: user.subscription || { type: 'none' }
       }
@@ -1167,7 +1187,8 @@ router.post('/verify-phone', async (req, res) => {
         status: user.status,
         isVerified: user.isVerified,
         coins: (user.coins || 0) + 10,
-        hasPassword: !!user.passwordHash
+        hasPassword: !!user.passwordHash,
+        gender: user.gender || 'others'
       }
     });
   } catch (error) {
@@ -1222,10 +1243,11 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
         deviceId: user.deviceId,
         email: user.email,
         username: user.username,
-        tier: user.tier,
-        status: user.status,
-        coins: user.coins,
-        isVerified: user.isVerified,
+    tier: user.tier,
+    status: user.status,
+    coins: user.coins,
+    isVerified: user.isVerified,
+    gender: user.gender || 'others',
         hasPassword: !!user.passwordHash,
         totalChats: user.totalChats || 0,
         dailyChats: user.dailyChats || 0,

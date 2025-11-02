@@ -1,9 +1,20 @@
 import Redis from 'ioredis';
 
+type GenderValue = 'male' | 'female' | 'others';
+
+type MatchPreferences = {
+  language?: string;
+  interests?: string[];
+  ageRange?: [number, number];
+  genderPreference?: 'any' | 'male' | 'female';
+  [key: string]: any;
+};
+
 interface MatchRequest {
   userId: string;
   mode: string;
-  preferences: any;
+  preferences: MatchPreferences;
+  userGender?: GenderValue;
   timestamp: number;
 }
 
@@ -53,7 +64,7 @@ export class RedisService {
       if (otherRequest.userId === request.userId) continue;
       
       // Check compatibility (simple version)
-      const compatibility = this.calculateCompatibility(request, otherRequest);
+  const compatibility = this.calculateCompatibility(request, otherRequest);
       if (compatibility > 0.5) {
         // Remove the matched user from queue
         await this.redis.zrem(key, member);
@@ -65,6 +76,10 @@ export class RedisService {
   }
 
   private static calculateCompatibility(req1: MatchRequest, req2: MatchRequest): number {
+    if (!this.isGenderCompatible(req1, req2)) {
+      return 0;
+    }
+
     let score = 0.5; // Base compatibility
     
     // Language preference
@@ -83,6 +98,18 @@ export class RedisService {
     }
     
     return Math.min(score, 1);
+  }
+
+  private static isGenderCompatible(req1: MatchRequest, req2: MatchRequest): boolean {
+    const req1Preference = req1.preferences?.genderPreference || 'any';
+    const req2Preference = req2.preferences?.genderPreference || 'any';
+    const req1Gender = req1.userGender;
+    const req2Gender = req2.userGender;
+
+    const req1AcceptsReq2 = req1Preference === 'any' || (req2Gender !== undefined && req2Gender === req1Preference);
+    const req2AcceptsReq1 = req2Preference === 'any' || (req1Gender !== undefined && req1Gender === req2Preference);
+
+    return req1AcceptsReq2 && req2AcceptsReq1;
   }
 
   // Rate limiting

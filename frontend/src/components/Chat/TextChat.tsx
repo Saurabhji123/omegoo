@@ -39,7 +39,7 @@ interface Message {
 
 const TextChat: React.FC = () => {
   const navigate = useNavigate();
-  const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
+  const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -67,6 +67,14 @@ const TextChat: React.FC = () => {
   
   // Connection quality state (reserved for future implementation)
   // const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('good');
+  const textOnlineCount = modeUserCounts.text;
+
+  useEffect(() => {
+    setActiveMode('text');
+    return () => {
+      setActiveMode(null);
+    };
+  }, [setActiveMode]);
 
   // Add message helper function
   const addMessage = useCallback((content: string, isOwnMessage: boolean, replyTo?: Message['replyTo']) => {
@@ -401,6 +409,7 @@ const TextChat: React.FC = () => {
       } catch (storageError) {
   debugWarn('Failed to clear session from localStorage:', storageError);
       }
+      setActiveMode(null);
       
       navigate('/');
     } catch (error) {
@@ -561,7 +570,7 @@ const TextChat: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex flex-col">
       {/* Enhanced Header with AudioChat styling */}
       <div className="bg-black bg-opacity-20 p-4 flex justify-between items-center border-b border-white border-opacity-20">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <ChatBubbleLeftRightIcon className="w-6 h-6 sm:w-8 sm:h-8" />
             <span className="hidden sm:inline">Text Chat</span>
@@ -578,6 +587,14 @@ const TextChat: React.FC = () => {
             <span className="text-xs text-gray-300 hidden sm:block">
               {isMatchConnected ? 'Connected' : isSearching ? 'Searching...' : 'Disconnected'}
             </span>
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-xs text-blue-100 animate-pulse">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            {textOnlineCount} online
           </div>
         </div>
         

@@ -17,7 +17,7 @@ import ReportModal from './ReportModal';
 
 const AudioChat: React.FC = () => {
   const navigate = useNavigate();
-  const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
+  const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const localAudioRef = useRef<HTMLAudioElement>(null);
@@ -40,6 +40,14 @@ const AudioChat: React.FC = () => {
   const [micLevel, setMicLevel] = useState(0); // Audio level 0-100
   const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('excellent');
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const audioOnlineCount = modeUserCounts.audio;
+
+  useEffect(() => {
+    setActiveMode('audio');
+    return () => {
+      setActiveMode(null);
+    };
+  }, [setActiveMode]);
 
   // Debug mic state changes
   useEffect(() => {
@@ -612,6 +620,7 @@ const AudioChat: React.FC = () => {
     
     // Clear multi-device session tracking on exit
     localStorage.removeItem('omegoo_audio_session');
+    setActiveMode(null);
     
     navigate('/');
   };
@@ -733,7 +742,7 @@ const AudioChat: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex flex-col">
       {/* Enhanced Header with status moved to side */}
       <div className="bg-black bg-opacity-20 p-4 flex justify-between items-center border-b border-white border-opacity-20">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <MicrophoneIcon className="w-6 h-6 sm:w-8 sm:h-8" />
             <span className="hidden sm:inline">Voice Chat</span>
@@ -755,6 +764,14 @@ const AudioChat: React.FC = () => {
               <span className="sm:hidden">ON</span>
             </span>
           )}
+
+          <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-green-500/20 border border-green-400/30 text-xs text-green-100 animate-pulse">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            {audioOnlineCount} online
+          </div>
         </div>
         
         <button

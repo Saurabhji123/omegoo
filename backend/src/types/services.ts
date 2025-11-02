@@ -8,6 +8,7 @@ export interface User {
   status: 'active' | 'banned' | 'suspended';
   coins: number;
   isVerified: boolean;
+  gender?: 'male' | 'female' | 'others';
   preferences: {
     language: string;
     interests: string[];

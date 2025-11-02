@@ -21,6 +21,15 @@ const normalizeMode = (mode?: string): ChatMode => {
 
 const getCoinCostForMode = (mode?: string): number => CHAT_MODE_COSTS[normalizeMode(mode)];
 
+const parseModeStrict = (mode?: string | null): ChatMode | null => {
+  if (!mode) {
+    return null;
+  }
+
+  const normalized = mode.toLowerCase();
+  return VALID_CHAT_MODES.includes(normalized as ChatMode) ? (normalized as ChatMode) : null;
+};
+
 interface AuthenticatedSocket extends Socket {
   userId?: string;
   user?: any;
@@ -41,6 +50,12 @@ export class SocketService {
   private static activeSessions = new Map<string, { user1: string; user2: string; mode: string }>(); // sessionId -> users + mode
   private static disconnectionTimers = new Map<string, NodeJS.Timeout>(); // userId -> timer for delayed cleanup
   private static chatTranscripts = new Map<string, BufferedChatMessage[]>();
+  private static modePresence: Record<ChatMode, Set<string>> = {
+    text: new Set(),
+    audio: new Set(),
+    video: new Set()
+  };
+  private static userActiveMode = new Map<string, ChatMode>();
 
   static initialize(io: SocketIOServer) {
     this.io = io;
@@ -91,6 +106,7 @@ export class SocketService {
         status: 'active',
         isVerified: false,
         coins: 0,
+        gender: 'others',
         preferences: {
           language: 'en',
           interests: [],
@@ -163,6 +179,7 @@ export class SocketService {
       console.log(`✅ User ${socket.userId} marked as online in database`);
 
       this.setupSocketHandlers(socket);
+      this.emitModeCounts(socket.id);
       
       // Start queue cleanup if this is the first connection
       if (this.connectedUsers.size === 1) {
@@ -170,6 +187,7 @@ export class SocketService {
       }
 
       socket.on('disconnect', async () => {
+        this.updateUserModePresence(socket.userId, null);
         console.log(`🔌 User ${socket.userId} disconnected`);
         console.log(`📊 Active sessions before cleanup:`, Array.from(this.activeSessions.entries()));
         
@@ -250,7 +268,86 @@ export class SocketService {
     });
   }
 
+  private static getModeCountsSnapshot() {
+    return {
+      text: this.modePresence.text.size,
+      audio: this.modePresence.audio.size,
+      video: this.modePresence.video.size
+    };
+  }
+
+  private static emitModeCounts(targetSocketId?: string) {
+    if (!this.io) {
+      return;
+    }
+
+    const payload = this.getModeCountsSnapshot();
+    if (targetSocketId) {
+      this.io.to(targetSocketId).emit('mode-user-counts', payload);
+    } else {
+      this.io.emit('mode-user-counts', payload);
+    }
+  }
+
+  private static updateUserModePresence(userId: string | undefined, mode: ChatMode | null) {
+    if (!userId) {
+      return;
+    }
+
+    const previousMode = this.userActiveMode.get(userId) ?? null;
+    const nextMode = mode ?? null;
+
+    if (previousMode === nextMode) {
+      return;
+    }
+
+    if (previousMode) {
+      this.modePresence[previousMode].delete(userId);
+    }
+
+    if (nextMode) {
+      this.modePresence[nextMode].add(userId);
+      this.userActiveMode.set(userId, nextMode);
+    } else {
+      this.userActiveMode.delete(userId);
+    }
+
+    console.log('📈 Mode presence updated', {
+      userId,
+      previousMode,
+      nextMode,
+      counts: this.getModeCountsSnapshot()
+    });
+
+    this.emitModeCounts();
+  }
+
   private static setupSocketHandlers(socket: AuthenticatedSocket) {
+    socket.on('mode-presence-update', (payload: { mode?: string | null } | null) => {
+      try {
+        if (!socket.userId) {
+          return;
+        }
+
+        const rawMode = payload?.mode;
+        let targetMode: ChatMode | null = null;
+
+        if (typeof rawMode === 'string') {
+          if (rawMode === 'idle' || rawMode === 'none') {
+            targetMode = null;
+          } else {
+            targetMode = parseModeStrict(rawMode);
+          }
+        } else if (rawMode === null || rawMode === undefined) {
+          targetMode = null;
+        }
+
+        this.updateUserModePresence(socket.userId, targetMode);
+      } catch (error) {
+        console.error('⚠️ Failed to update mode presence:', error instanceof Error ? error.message : error);
+      }
+    });
+
     // Omegle-style matching handlers
     socket.on('find_match', async (data) => {
       try {
@@ -351,6 +448,8 @@ export class SocketService {
     const mode = normalizeMode(data?.mode);
     const coinCost = getCoinCostForMode(mode);
 
+    this.updateUserModePresence(socket.userId, mode);
+
     let requestingUser: any = null;
     try {
       requestingUser = await DatabaseService.resetDailyCoinsIfNeeded(socket.userId!);
@@ -372,10 +471,19 @@ export class SocketService {
       return;
     }
 
+    const storedPreferences = requestingUser?.preferences || socket.user?.preferences || {};
+    const effectivePreferences = {
+      ...storedPreferences,
+      genderPreference: storedPreferences.genderPreference || 'any',
+      interests: Array.isArray(storedPreferences.interests) ? storedPreferences.interests : []
+    };
+    const userGender = (requestingUser?.gender || (socket.user as any)?.gender || 'others') as 'male' | 'female' | 'others';
+
     const matchRequest = {
       userId: socket.userId!,
       mode,
-      preferences: {},
+      preferences: effectivePreferences,
+      userGender,
       timestamp: Date.now()
     };
 
@@ -573,6 +681,8 @@ export class SocketService {
     const mode = normalizeMode(preferences.mode);
     const coinCost = getCoinCostForMode(mode);
 
+    this.updateUserModePresence(socket.userId, mode);
+
     let requestingUser: any = null;
     try {
       requestingUser = await DatabaseService.resetDailyCoinsIfNeeded(socket.userId!);
@@ -593,10 +703,25 @@ export class SocketService {
       return;
     }
 
+    const storedPreferences = requestingUser?.preferences || socket.user?.preferences || {};
+    const requestedPreferences = preferences || {};
+    const effectivePreferences = {
+      ...storedPreferences,
+      ...requestedPreferences,
+      genderPreference: requestedPreferences.genderPreference || storedPreferences.genderPreference || 'any',
+      interests: Array.isArray(requestedPreferences.interests)
+        ? requestedPreferences.interests
+        : Array.isArray(storedPreferences.interests)
+        ? storedPreferences.interests
+        : [],
+    };
+    const userGender = (requestingUser?.gender || (socket.user as any)?.gender || 'others') as 'male' | 'female' | 'others';
+
     const matchRequest = {
       userId: socket.userId!,
       mode,
-      preferences,
+      preferences: effectivePreferences,
+      userGender,
       timestamp: Date.now()
     };
 
@@ -776,6 +901,7 @@ export class SocketService {
     await DevRedisService.removeFromMatchQueue(socket.userId!, 'text');
     await DevRedisService.removeFromMatchQueue(socket.userId!, 'audio');
     await DevRedisService.removeFromMatchQueue(socket.userId!, 'video');
+    this.updateUserModePresence(socket.userId, null);
     
     socket.emit('matching_stopped');
   }

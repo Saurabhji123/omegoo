@@ -102,7 +102,7 @@ export const authAPI = {
     return apiService.post<{ token: string; user: any }>('/api/auth/login', { email, password });
   },
 
-  register: async (email: string, username: string, password: string) => {
+  register: async (email: string, username: string, password: string, gender: 'male' | 'female' | 'others') => {
     return apiService.post<{ 
       token?: string; 
       user?: any; 
@@ -112,7 +112,7 @@ export const authAPI = {
       username?: string;
       pending?: boolean;
       otpExpiresInSeconds?: number;
-    }>('/api/auth/register', { email, username, password });
+    }>('/api/auth/register', { email, username, password, gender });
   },
 
   verifyEmailOTP: async (email: string, otp: string) => {

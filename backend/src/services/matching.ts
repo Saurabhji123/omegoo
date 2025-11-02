@@ -8,6 +8,8 @@ enum ChatMode {
   VIDEO = 'video'
 }
 
+type GenderValue = 'male' | 'female' | 'others';
+
 interface User {
   id: string;
   device_id: string;
@@ -19,12 +21,14 @@ interface User {
     ageRange?: [number, number];
     genderPreference?: string;
   };
+  gender?: GenderValue;
 }
 
 interface MatchRequest {
   userId: string;
   mode: string;
   preferences: any;
+  userGender?: GenderValue;
   timestamp: number;
 }
 
@@ -43,6 +47,7 @@ export class MatchingService {
         ageRange: preferences.ageRange,
         genderPreference: preferences.genderPreference || 'any'
       },
+      userGender: user.gender,
       timestamp: Date.now()
     };
 
@@ -66,6 +71,7 @@ export class MatchingService {
       userId,
       mode,
       preferences,
+      userGender: preferences?.userGender,
       timestamp: Date.now()
     };
 

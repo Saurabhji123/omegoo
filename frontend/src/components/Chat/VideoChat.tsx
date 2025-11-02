@@ -23,7 +23,7 @@ interface Message {
 
 const VideoChat: React.FC = () => {
   const navigate = useNavigate();
-  const { socket, connected: socketConnected, connecting: socketConnecting } = useSocket();
+  const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -53,6 +53,14 @@ const VideoChat: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [showReportModal, setShowReportModal] = useState(false);
+  const videoOnlineCount = modeUserCounts.video;
+
+  useEffect(() => {
+    setActiveMode('video');
+    return () => {
+      setActiveMode(null);
+    };
+  }, [setActiveMode]);
 
   // Sync refs with state values to avoid stale closures
   useEffect(() => {
@@ -753,11 +761,13 @@ const VideoChat: React.FC = () => {
       
       console.log('✅ Exit chat cleanup completed');
       
+      setActiveMode(null);
       // Navigate to home
       navigate('/');
     } catch (error) {
       console.error('❌ Error in exitChat:', error);
       // Still try to navigate even if cleanup fails
+      setActiveMode(null);
       navigate('/');
     }
   };
@@ -1022,7 +1032,7 @@ const VideoChat: React.FC = () => {
       <div className="flex-1 flex flex-col min-h-0">
         {/* Enhanced Header with logo - matching AudioChat theme */}
         <div className="bg-black bg-opacity-20 p-4 flex justify-between items-center border-b border-white border-opacity-20">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <img 
                 src="/logo512.png" 
@@ -1035,8 +1045,13 @@ const VideoChat: React.FC = () => {
                 <span className="sm:hidden">Video</span>
               </h1>
             </div>
-            
-
+            <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-xs text-purple-100 animate-pulse">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              {videoOnlineCount} online
+            </div>
           </div>
 
           <div className="flex items-center space-x-2 lg:space-x-3">

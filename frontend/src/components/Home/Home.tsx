@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth as useAuthContext } from '../../contexts/AuthContext';
 import axios from 'axios';
-// import { useSocket } from '../../contexts/SocketContext';
+import { useSocket } from '../../contexts/SocketContext';
 
 // Coin costs for each mode
 const COIN_COSTS = {
@@ -14,6 +14,7 @@ const COIN_COSTS = {
 const Home: React.FC = () => {
   const [isMatching, setIsMatching] = useState(false);
   const { user, loading } = useAuthContext();
+  const { modeUserCounts } = useSocket();
   const navigate = useNavigate();
   const [, forceUpdate] = useState({});
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);
@@ -227,6 +228,15 @@ const Home: React.FC = () => {
               💰 {COIN_COSTS.text} coins per session
             </p>
           )}
+          <div className="mt-4 flex justify-center">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-100 text-xs sm:text-sm font-semibold animate-pulse">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              {modeUserCounts.text} online now
+            </span>
+          </div>
         </div>
 
         {/* Audio Chat */}
@@ -256,6 +266,15 @@ const Home: React.FC = () => {
               💰 {COIN_COSTS.audio} coins per session
             </p>
           )}
+          <div className="mt-4 flex justify-center">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/40 text-green-100 text-xs sm:text-sm font-semibold animate-pulse">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              {modeUserCounts.audio} online now
+            </span>
+          </div>
         </div>
 
         {/* Video Chat */}
@@ -285,6 +304,15 @@ const Home: React.FC = () => {
               💰 {COIN_COSTS.video} coins per session
             </p>
           )}
+          <div className="mt-4 flex justify-center">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-100 text-xs sm:text-sm font-semibold animate-pulse">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              {modeUserCounts.video} online now
+            </span>
+          </div>
         </div>
       </div>
 

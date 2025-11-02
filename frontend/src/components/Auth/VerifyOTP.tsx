@@ -6,6 +6,7 @@ import { authAPI } from '../../services/api';
 interface LocationState {
   email: string;
   username: string;
+  gender?: 'male' | 'female' | 'others';
 }
 
 const VerifyOTP: React.FC = () => {

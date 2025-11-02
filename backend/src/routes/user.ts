@@ -54,7 +54,7 @@ router.put('/preferences', authMiddleware, async (req: AuthRequest, res: Respons
       });
     }
 
-    const { settings, videoQuality, matchingMode, interests, ageRange, genderPreference } = req.body;
+  const { settings, videoQuality, matchingMode, interests, ageRange, genderPreference, gender } = req.body;
 
     // Get current user
     const user = await DatabaseService.getUserById(userId);
@@ -65,6 +65,32 @@ router.put('/preferences', authMiddleware, async (req: AuthRequest, res: Respons
       });
     }
 
+    let normalizedGender: 'male' | 'female' | 'others' | undefined;
+    if (typeof gender === 'string' && gender.trim().length > 0) {
+      const value = gender.trim().toLowerCase();
+      const validGenders = new Set(['male', 'female', 'others']);
+      if (!validGenders.has(value)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid gender selection'
+        });
+      }
+      normalizedGender = value as 'male' | 'female' | 'others';
+    }
+
+    let normalizedGenderPreference: 'any' | 'male' | 'female' | undefined;
+    if (typeof genderPreference === 'string' && genderPreference.trim().length > 0) {
+      const value = genderPreference.trim().toLowerCase();
+      const validPreferences = new Set(['any', 'male', 'female']);
+      if (!validPreferences.has(value)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid gender preference selection'
+        });
+      }
+      normalizedGenderPreference = value as 'any' | 'male' | 'female';
+    }
+
     // Merge with existing preferences
     const updatedPreferences = {
       ...user.preferences,
@@ -73,20 +99,24 @@ router.put('/preferences', authMiddleware, async (req: AuthRequest, res: Respons
       matchingMode: matchingMode || user.preferences.matchingMode,
       interests: interests || user.preferences.interests || [],
       ageRange: ageRange || user.preferences.ageRange,
-      genderPreference: genderPreference || user.preferences.genderPreference || 'any',
+      genderPreference: normalizedGenderPreference || user.preferences.genderPreference || 'any',
     };
 
     // Update user preferences
     await DatabaseService.updateUser(userId, {
-      preferences: updatedPreferences
+      preferences: updatedPreferences,
+      ...(normalizedGender && { gender: normalizedGender })
     });
 
     console.log('✅ User preferences updated:', userId);
 
+    const refreshedUser = await DatabaseService.getUserById(userId);
+
     res.json({
       success: true,
       message: 'Preferences updated successfully',
-      preferences: updatedPreferences
+      preferences: updatedPreferences,
+      gender: refreshedUser?.gender || normalizedGender || user.gender
     });
   } catch (error) {
     console.error('❌ Update preferences error:', error);

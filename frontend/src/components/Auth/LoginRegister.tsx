@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '../../contexts/AuthContext';
-import { LockClosedIcon, EnvelopeIcon, UserIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { LockClosedIcon, EnvelopeIcon, UserIcon, EyeIcon, EyeSlashIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
 interface LoginRegisterProps {
   onSuccess?: () => void;
@@ -16,6 +16,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | 'others' | ''>('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -34,10 +35,16 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
         // Navigate to home page after successful login
         navigate('/');
       } else {
+        if (!gender) {
+          setError('Please select your gender');
+          setLoading(false);
+          return;
+        }
+
         console.log('📝 ===== REGISTRATION START =====');
-        console.log('📝 Registration data:', { email, username });
+        console.log('📝 Registration data:', { email, username, gender });
         
-        const response = await register(email, username, password);
+        const response = await register(email, username, password, gender);
         
         console.log('✅ ===== REGISTRATION RESPONSE =====');
         console.log('Full response object:', response);
@@ -56,7 +63,8 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
         navigate('/verify-otp', {
           state: {
             email: email,
-            username: username
+            username: username,
+            gender: gender
           }
         });
         console.log('✅ ===== NAVIGATION TO /verify-otp COMPLETE =====');
@@ -201,6 +209,33 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                     placeholder="Choose a username"
                     required={!isLogin}
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Gender (Register only) */}
+            {!isLogin && (
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
+                  Gender
+                </label>
+                <div className="relative">
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value as 'male' | 'female' | 'others' | '')}
+                    className="w-full appearance-none pl-3 sm:pl-4 pr-8 sm:pr-10 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required={!isLogin}
+                  >
+                    <option value="" disabled className="bg-gray-900 text-purple-300">
+                      Select your gender
+                    </option>
+                    <option value="male" className="bg-gray-900 text-white">Male</option>
+                    <option value="female" className="bg-gray-900 text-white">Female</option>
+                    <option value="others" className="bg-gray-900 text-white">Others</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-purple-200">
+                    <ChevronDownIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
                 </div>
               </div>
             )}

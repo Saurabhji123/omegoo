@@ -21,6 +21,7 @@ interface IUserDoc extends Document {
   dailyChats?: number;
   lastCoinClaim?: Date;
   reportCount?: number;
+  gender?: 'male' | 'female' | 'others';
   preferences?: any;
   subscription?: any;
   isOnline?: boolean;
@@ -166,6 +167,7 @@ const UserSchema = new Schema<IUserDoc>({
   dailyChats: { type: Number, default: 0 },
   lastCoinClaim: { type: Date },
   reportCount: { type: Number, default: 0 },
+  gender: { type: String, enum: ['male', 'female', 'others'], default: 'others' },
   preferences: { type: Schema.Types.Mixed, default: {} },
   subscription: { type: Schema.Types.Mixed, default: {} },
   isOnline: { type: Boolean, default: false, index: true }, // 🔍 Index for active users query
@@ -418,6 +420,7 @@ export class DatabaseService {
       isVerified: false,
       preferences: { language: 'en', interests: [], genderPreference: 'any' },
       subscription: { type: 'none' },
+      gender: 'others',
       createdAt: new Date(),
       updatedAt: new Date(),
       lastActiveAt: new Date()
@@ -445,13 +448,14 @@ export class DatabaseService {
       coins: mongoUser.coins,
       totalChats: mongoUser.totalChats || 0,
       dailyChats: mongoUser.dailyChats || 0,
-  lastCoinClaim: mongoUser.lastCoinClaim,
+      lastCoinClaim: mongoUser.lastCoinClaim,
       isVerified: mongoUser.isVerified,
-  // Session & verification related fields (kept optional in returned shape)
-  activeDeviceToken: (mongoUser as any).activeDeviceToken || null,
-  lastLoginDevice: (mongoUser as any).lastLoginDevice || null,
-  otp: (mongoUser as any).otp,
-  otpExpiresAt: (mongoUser as any).otpExpiresAt,
+      gender: (mongoUser as any).gender || 'others',
+      // Session & verification related fields (kept optional in returned shape)
+      activeDeviceToken: (mongoUser as any).activeDeviceToken || null,
+      lastLoginDevice: (mongoUser as any).lastLoginDevice || null,
+      otp: (mongoUser as any).otp,
+      otpExpiresAt: (mongoUser as any).otpExpiresAt,
       preferences: mongoUser.preferences,
       subscription: mongoUser.subscription,
       isOnline: mongoUser.isOnline,
@@ -537,6 +541,7 @@ export class DatabaseService {
           totalChats: userData.totalChats ?? 0,
           dailyChats: userData.dailyChats ?? 0,
           lastCoinClaim: userData.lastCoinClaim ?? new Date(),
+          gender: userData.gender ?? 'others',
           // Store OTP fields when provided (email verification flow)
           otp: (userData as any).otp,
           otpExpiresAt: (userData as any).otpExpiresAt,
@@ -574,6 +579,7 @@ export class DatabaseService {
       totalChats: userData.totalChats ?? 0,
       dailyChats: userData.dailyChats ?? 0,
       lastCoinClaim: userData.lastCoinClaim ?? new Date(),
+      gender: userData.gender ?? 'others',
       preferences: userData.preferences ?? {},
       subscription: userData.subscription ?? {},
       createdAt: new Date(),

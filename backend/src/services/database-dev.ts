@@ -17,6 +17,7 @@ interface User {
   reportCount?: number;
   isOnline?: boolean;
   isVerified: boolean;
+  gender?: 'male' | 'female' | 'others';
   preferences: any;
   subscription: any;
   createdAt: Date;
@@ -56,6 +57,7 @@ export class DatabaseService {
       dailyChats: 0,
       lastCoinClaim: new Date(),
       isVerified: false,
+      gender: 'others',
       preferences: { language: 'en', interests: [] },
       subscription: { type: 'none' },
       createdAt: new Date(),
@@ -108,6 +110,7 @@ export class DatabaseService {
       dailyChats: userData.dailyChats ?? 0,
       lastCoinClaim: userData.lastCoinClaim ?? new Date(),
       isVerified: userData.isVerified || false,
+      gender: userData.gender || 'others',
       preferences: userData.preferences || { 
         language: 'en', 
         interests: [],

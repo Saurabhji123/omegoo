@@ -1,7 +1,15 @@
-import React, { createContext, useContext, useEffect, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useReducer, useCallback, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { debugLog, debugWarn } from '../utils/debugLogger';
+
+export type ChatMode = 'text' | 'audio' | 'video';
+
+interface ModeUserCounts {
+  text: number;
+  audio: number;
+  video: number;
+}
 
 interface WSMessage {
   type: string;
@@ -12,7 +20,7 @@ interface ChatSession {
   id: string;
   user1Id: string;
   user2Id: string;
-  mode: string;
+  mode: ChatMode;
   status: string;
   startedAt: Date;
 }
@@ -24,6 +32,8 @@ interface SocketState {
   currentSession: ChatSession | null;
   matchingStatus: 'idle' | 'searching' | 'matched';
   moderationWarnings: string[];
+  modeUserCounts: ModeUserCounts;
+  activeMode: ChatMode | null;
 }
 
 interface SocketContextType extends SocketState {
@@ -33,6 +43,7 @@ interface SocketContextType extends SocketState {
   startMatching: (preferences?: any) => void;
   stopMatching: () => void;
   reportUser: (reason: string, description: string) => void;
+  setActiveMode: (mode: ChatMode | null) => void;
 }
 
 type SocketAction =
@@ -42,7 +53,9 @@ type SocketAction =
   | { type: 'SET_SESSION'; payload: ChatSession | null }
   | { type: 'SET_MATCHING_STATUS'; payload: 'idle' | 'searching' | 'matched' }
   | { type: 'ADD_MODERATION_WARNING'; payload: string }
-  | { type: 'CLEAR_MODERATION_WARNINGS' };
+  | { type: 'CLEAR_MODERATION_WARNINGS' }
+  | { type: 'SET_MODE_USER_COUNTS'; payload: ModeUserCounts }
+  | { type: 'SET_ACTIVE_MODE'; payload: ChatMode | null };
 
 const initialState: SocketState = {
   socket: null,
@@ -50,7 +63,13 @@ const initialState: SocketState = {
   connecting: false,
   currentSession: null,
   matchingStatus: 'idle',
-  moderationWarnings: []
+  moderationWarnings: [],
+  modeUserCounts: {
+    text: 0,
+    audio: 0,
+    video: 0
+  },
+  activeMode: null
 };
 
 function socketReducer(state: SocketState, action: SocketAction): SocketState {
@@ -69,6 +88,13 @@ function socketReducer(state: SocketState, action: SocketAction): SocketState {
       return { ...state, moderationWarnings: [...state.moderationWarnings, action.payload] };
     case 'CLEAR_MODERATION_WARNINGS':
       return { ...state, moderationWarnings: [] };
+    case 'SET_MODE_USER_COUNTS':
+      return { ...state, modeUserCounts: action.payload };
+    case 'SET_ACTIVE_MODE':
+      if (state.activeMode === action.payload) {
+        return state;
+      }
+      return { ...state, activeMode: action.payload };
     default:
       return state;
   }
@@ -94,6 +120,10 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  const setActiveMode = useCallback((mode: ChatMode | null) => {
+    dispatch({ type: 'SET_ACTIVE_MODE', payload: mode });
+  }, []);
 
   function connect() {
     if (state.socket && state.socket.connected) {
@@ -250,16 +280,36 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }, 1000);
     });
 
+    socket.on('mode-user-counts', (counts: ModeUserCounts) => {
+      dispatch({ type: 'SET_MODE_USER_COUNTS', payload: counts });
+    });
+
     dispatch({ type: 'SET_SOCKET', payload: socket });
   }
+
+  useEffect(() => {
+    if (!state.socket || !state.connected) {
+      return;
+    }
+
+    state.socket.emit('mode-presence-update', { mode: state.activeMode ?? null });
+  }, [state.socket, state.connected, state.activeMode]);
 
   const disconnect = () => {
     if (state.socket) {
       debugLog('Manual socket disconnect requested');
+      try {
+        state.socket.emit('mode-presence-update', { mode: null });
+      } catch (error) {
+        debugWarn('Failed to emit mode presence before disconnect', {
+          message: (error as Error)?.message
+        });
+      }
       state.socket.disconnect();
       dispatch({ type: 'SET_SOCKET', payload: null });
       dispatch({ type: 'SET_CONNECTED', payload: false });
       dispatch({ type: 'SET_CONNECTING', payload: false });
+      setActiveMode(null);
     }
   };
 
@@ -275,8 +325,14 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const startMatching = (preferences?: any) => {
     if (state.socket && state.connected) {
       debugLog('Starting match request', { preferences });
+      const maybeMode = typeof preferences?.mode === 'string' ? preferences.mode.toLowerCase() : undefined;
+      const requestedMode: ChatMode = (maybeMode === 'text' || maybeMode === 'audio' || maybeMode === 'video')
+        ? (maybeMode as ChatMode)
+        : 'video';
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'searching' });
-      state.socket.emit('find_match', preferences || { mode: 'video' });
+      dispatch({ type: 'SET_ACTIVE_MODE', payload: requestedMode });
+      const payload = preferences ? { ...preferences, mode: requestedMode } : { mode: requestedMode };
+      state.socket.emit('find_match', payload);
     } else {
       debugWarn('Cannot start matching while socket disconnected');
     }
@@ -286,6 +342,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (state.socket && state.connected) {
       debugLog('Stopping match request');
       dispatch({ type: 'SET_MATCHING_STATUS', payload: 'idle' });
+      dispatch({ type: 'SET_ACTIVE_MODE', payload: null });
       state.socket.emit('stop_matching');
     } else {
       debugWarn('Cannot stop matching while socket disconnected');
@@ -312,7 +369,8 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     sendMessage,
     startMatching,
     stopMatching,
-    reportUser
+    reportUser,
+    setActiveMode
   };
 
   return (
