@@ -747,7 +747,7 @@ const TextChat: React.FC = () => {
             </div>
 
             {/* Messages Area - Scrollable Middle Section */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-6 sm:pb-8">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-3 sm:space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-6 sm:pb-8">
               {/* Empty State */}
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full">
@@ -875,7 +875,7 @@ const TextChat: React.FC = () => {
                           </div>
                         )}
                         
-                        <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{message.content}</p>
+                        <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-line">{message.content}</p>
                         <div className={`text-xs mt-1 sm:mt-2 flex items-center gap-1 ${
                           message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
                         }`}>
@@ -889,7 +889,7 @@ const TextChat: React.FC = () => {
               
               {/* Typing indicator - WhatsApp style with continuous blinking */}
               {partnerTyping && (
-                <div className="flex justify-start mb-4 sm:mb-6 animate-fade-in">
+                <div className="flex justify-start mb-6 sm:mb-8 animate-fade-in">
                   <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md">
                     <div className="flex items-center space-x-1.5">
                       <style>{`
