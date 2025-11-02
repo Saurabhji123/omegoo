@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { DatabaseService } from '../services/database';
+import { DatabaseService as SelectedDatabaseService } from '../services/serviceFactory';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -30,7 +30,7 @@ export const authenticateToken = async (
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
     
     // Get user from database
-    const user = await DatabaseService.getUserById(decoded.userId);
+  const user = await SelectedDatabaseService.getUserById(decoded.userId);
     
     if (!user) {
       return res.status(401).json({
@@ -95,7 +95,7 @@ export const requireAdmin = async (
   next: NextFunction
 ) => {
   try {
-    const user = await DatabaseService.getUserById(req.user!.id);
+  const user = await SelectedDatabaseService.getUserById(req.user!.id);
     
     if (!user?.is_admin) {
       return res.status(403).json({
