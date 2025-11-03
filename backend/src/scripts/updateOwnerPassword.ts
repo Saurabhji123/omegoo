@@ -1,6 +1,6 @@
 /**
  * Update Owner Admin Password
- * Updates the password for saurabhshukla1966@gmail.com to @SAurabh$133
+ * Updates the owner admin password using environment configuration
  */
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
@@ -32,8 +32,22 @@ async function updateOwnerPassword() {
     await mongoose.connect(mongoUri);
     console.log('✅ Connected\n');
 
-    const ownerEmail = 'saurabhshukla1966@gmail.com';
-  const newPassword = '@SAurabh$133';
+    const ownerEmailRaw = process.env.OWNER_ADMIN_EMAIL?.trim();
+    if (!ownerEmailRaw) {
+      console.error('❌ OWNER_ADMIN_EMAIL must be set before running this script.');
+      await mongoose.disconnect();
+      return;
+    }
+
+    const ownerEmail = ownerEmailRaw.toLowerCase();
+    const newPasswordHashFromEnv = process.env.OWNER_ADMIN_PASSWORD_HASH?.trim();
+    const newPasswordFromEnv = process.env.OWNER_ADMIN_PASSWORD?.trim();
+
+    if (!newPasswordHashFromEnv && !newPasswordFromEnv) {
+      console.error('❌ OWNER_ADMIN_PASSWORD or OWNER_ADMIN_PASSWORD_HASH must be set before running this script.');
+      await mongoose.disconnect();
+      return;
+    }
 
     // Find owner admin
     const admin = await AdminModel.findOne({ email: ownerEmail });
@@ -45,13 +59,15 @@ async function updateOwnerPassword() {
       return;
     }
 
-    console.log('✅ Owner admin found');
-    console.log(`📧 Email: ${admin.email}`);
-    console.log(`👤 Username: ${admin.username}\n`);
+  console.log('✅ Owner admin found');
+  console.log('📧 Email: [HIDDEN - matches OWNER_ADMIN_EMAIL env value]');
+  console.log('👤 Username: [HIDDEN - stored in database]\n');
 
     // Hash new password
-    console.log('🔒 Hashing new password...');
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    console.log('🔒 Preparing new password hash...');
+    const passwordHash = newPasswordHashFromEnv
+      ? newPasswordHashFromEnv
+      : await bcrypt.hash(newPasswordFromEnv!, 12);
 
     // Update password
     await AdminModel.updateOne(
@@ -66,12 +82,12 @@ async function updateOwnerPassword() {
     );
 
     console.log('✅ Password updated successfully!\n');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📧 Email: saurabhshukla1966@gmail.com');
-  console.log('🔑 New Password: @SAurabh$133');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📧 Email: [HIDDEN - matches OWNER_ADMIN_EMAIL env value]');
+    console.log('🔑 New password applied from environment (value hidden)');
     console.log('👑 Role: super_admin (Owner)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('\n🎉 You can now login at: https://omegoo.vercel.app/omegoo-admin\n');
+  console.log('\n🎉 You can now login at: https://omegoo.chat/omegoo-admin\n');
 
     await mongoose.disconnect();
     console.log('👋 Disconnected from MongoDB');

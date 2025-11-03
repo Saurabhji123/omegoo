@@ -107,12 +107,12 @@ async function createAdmin() {
           console.log('\n✅ Admin created successfully!');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log(`👤 Username: ${username}`);
-          console.log(`📧 Email: ${email}`);
-          console.log(`🔑 Password: ${password}`);
+          console.log('📧 Email: [HIDDEN - provided during script run]');
+          console.log('🔑 Password: [HIDDEN - use OWNER_ADMIN_PASSWORD env value]');
           console.log(`👑 Role: super_admin (Owner)`);
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('\n🎉 You can now login to the admin panel!');
-          console.log(`🔗 Admin Panel: https://omegoo.vercel.app/omegoo-admin`);
+          console.log('🔗 Admin Panel: https://omegoo.chat/omegoo-admin');
 
           await mongoose.disconnect();
           process.exit(0);

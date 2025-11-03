@@ -22,6 +22,23 @@ const AdminSchema = new mongoose.Schema({
 
 const AdminModel = mongoose.model('Admin', AdminSchema);
 
+const maskEmail = (value?: string | null) => {
+  if (!value) {
+    return 'N/A';
+  }
+
+  const [localPart, domain] = value.split('@');
+  if (!domain) {
+    return '***';
+  }
+
+  if (localPart.length <= 2) {
+    return `${localPart.charAt(0)}***@${domain}`;
+  }
+
+  return `${localPart.slice(0, 2)}***@${domain}`;
+};
+
 async function checkAdmin() {
   try {
     const mongoUri = process.env.MONGODB_URI || '';
@@ -54,8 +71,8 @@ async function checkAdmin() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     allAdmins.forEach((admin, index) => {
-      console.log(`${index + 1}. Admin Details:`);
-      console.log(`   📧 Email: ${admin.email}`);
+  console.log(`${index + 1}. Admin Details:`);
+  console.log(`   📧 Email: ${maskEmail(admin.email)}`);
       console.log(`   👤 Username: ${admin.username}`);
       console.log(`   🔑 Role: ${admin.role}`);
       console.log(`   🛡️  Owner: ${admin.isOwner ? 'YES ✅' : 'NO ❌'}`);
@@ -68,15 +85,20 @@ async function checkAdmin() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     // Check specific email
-    const targetEmail = 'saurabhshukla1966@gmail.com';
-    const specificAdmin = await AdminModel.findOne({ email: targetEmail });
+    const targetEmailRaw = process.env.OWNER_ADMIN_EMAIL?.trim();
+    if (targetEmailRaw) {
+      const targetEmail = targetEmailRaw.toLowerCase();
+      const specificAdmin = await AdminModel.findOne({ email: targetEmail });
 
-    if (specificAdmin) {
-      console.log(`✅ Admin with email '${targetEmail}' EXISTS!`);
-      console.log('   Can login with EMAIL or USERNAME\n');
+      if (specificAdmin) {
+        console.log('✅ Admin for OWNER_ADMIN_EMAIL env value exists!');
+        console.log('   Login with configured credentials.\n');
+      } else {
+        console.log('❌ Admin for OWNER_ADMIN_EMAIL env value not found!');
+        console.log('💡 Create using: npm run admin:create\n');
+      }
     } else {
-      console.log(`❌ Admin with email '${targetEmail}' NOT FOUND!`);
-      console.log('💡 Create using: npm run admin:create\n');
+      console.log('ℹ️ OWNER_ADMIN_EMAIL env not set. Skipping owner admin lookup.\n');
     }
 
     await mongoose.disconnect();

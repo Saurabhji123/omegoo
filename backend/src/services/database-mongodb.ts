@@ -1502,12 +1502,10 @@ export class DatabaseService {
     }
 
     try {
-  const fallbackEmail = 'saurabhshukla1966@gmail.com';
-  const fallbackPassword = '@SAurabh$133';
       const configuredEmailRaw = process.env.OWNER_ADMIN_EMAIL || process.env.DEV_ADMIN_EMAIL;
-      const email = (configuredEmailRaw || fallbackEmail).trim().toLowerCase();
+      const email = (configuredEmailRaw || '').trim().toLowerCase();
       if (!email) {
-        console.warn('⚠️ OWNER_ADMIN_EMAIL missing and fallback email empty. Skipping owner admin seed.');
+        console.warn('⚠️ OWNER_ADMIN_EMAIL not configured. Skipping owner admin seed.');
         return;
       }
 
@@ -1527,19 +1525,13 @@ export class DatabaseService {
           };
         }
 
-        const plainCandidate = (process.env.OWNER_ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD || fallbackPassword || '').trim();
-        const source = (process.env.OWNER_ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD) ? 'env-password' : 'fallback';
-
-        if (!plainCandidate) {
-          console.warn('⚠️ OWNER_ADMIN_PASSWORD/OWNER_ADMIN_PASSWORD_HASH not set. Using fallback dev owner credentials. Configure secure values in production.');
-        }
-
+        const plainCandidate = (process.env.OWNER_ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD || '').trim();
         if (!plainCandidate) {
           return null;
         }
 
         return {
-          source: source as 'env-password' | 'fallback',
+          source: 'env-password' as const,
           plain: plainCandidate
         };
       };
@@ -1556,7 +1548,10 @@ export class DatabaseService {
           return { needsUpdate: false, nextHash: currentHash, source: desired.source };
         }
 
-        const plain = desired.plain ?? fallbackPassword;
+        const plain = desired.plain;
+        if (!plain) {
+          return { needsUpdate: false, nextHash: currentHash ?? null, source: desired.source };
+        }
 
         if (currentHash && currentHash.startsWith('$2')) {
           const matches = await bcrypt.compare(plain, currentHash);
@@ -1644,9 +1639,7 @@ export class DatabaseService {
       await AdminModel.create(adminData);
       console.log('👑 Seeded owner admin account:', username);
 
-      if (desiredPassword?.source === 'fallback') {
-        console.warn('⚠️ Owner admin seeded using fallback credentials. Update OWNER_ADMIN_PASSWORD_HASH immediately.');
-      }
+      // No warning needed; password must come via environment.
     } catch (error) {
       console.error('⚠️ Failed to seed owner admin account:', error);
     }

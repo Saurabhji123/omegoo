@@ -96,25 +96,22 @@ export class DatabaseService {
     const configuredPasswordHash = process.env.DEV_ADMIN_PASSWORD_HASH;
     const configuredPassword = process.env.DEV_ADMIN_PASSWORD;
 
-  const fallbackEmail = 'saurabhshukla1966@gmail.com';
-  const fallbackPassword = '@SAurabh$133';
-
-  const email = (configuredEmail || fallbackEmail).trim().toLowerCase();
-  const username = (configuredUsername || email).trim();
+    const resolvedEmail = (configuredEmail || 'owner@local.test').trim().toLowerCase();
+    const username = (configuredUsername || resolvedEmail).trim();
 
     let passwordHash = configuredPasswordHash?.trim();
     if (!passwordHash) {
-      const passwordToHash = configuredPassword || fallbackPassword;
+      const passwordToHash = configuredPassword || 'dev-admin-password';
       if (!configuredPassword && !configuredPasswordHash) {
-        console.warn('⚠️ DEV_ADMIN_PASSWORD/DEV_ADMIN_PASSWORD_HASH not set. Using fallback dev owner credentials. Configure secure values in production.');
+        console.warn('⚠️ DEV_ADMIN_PASSWORD/DEV_ADMIN_PASSWORD_HASH not set. Using non-secure development default password. Set DEV_ADMIN_PASSWORD for your environment.');
       }
       passwordHash = await bcrypt.hash(passwordToHash, 12);
     }
 
     const admin: Admin = {
       id: `admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      username,
-      email,
+    username,
+    email: resolvedEmail,
       passwordHash,
       role: 'super_admin',
       permissions: [

@@ -730,7 +730,7 @@ const TextChat: React.FC = () => {
             </div>
 
             {/* Messages Area - Scrollable Middle Section */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-3 sm:space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-10 sm:pb-12">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-10 sm:pb-12">
               {/* Empty State */}
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full">
@@ -777,7 +777,7 @@ const TextChat: React.FC = () => {
                       )}
                       
                       <div
-                        className={`${!isSystemMessage ? (message.isOwnMessage ? 'ml-5 sm:ml-12' : 'mr-5 sm:mr-12') : ''} px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
+                        className={`${!isSystemMessage ? (message.isOwnMessage ? 'ml-5 sm:ml-12' : 'mr-5 sm:mr-12') : ''} px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
                           message.isOwnMessage
                             ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
                             : isSystemMessage
@@ -790,11 +790,12 @@ const TextChat: React.FC = () => {
                           ...(isSystemMessage
                             ? {}
                             : {
-                                maxWidth: '80%',
-                                width: 'auto',
+                                maxWidth: 'min(320px, 85%)',
+                                width: 'fit-content',
                                 minWidth: '0',
-                                wordBreak: 'break-word',
-                                whiteSpace: 'pre-wrap'
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'normal',
+                                overflowWrap: 'break-word'
                               })
                         }}
                         onClick={(e) => {
@@ -870,7 +871,7 @@ const TextChat: React.FC = () => {
                           </div>
                         )}
                         
-                        <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{message.content}</p>
+                        <p className="text-xs sm:text-sm leading-5 whitespace-pre-wrap">{message.content}</p>
                         <div className={`text-xs mt-1 sm:mt-2 flex items-center gap-1 ${
                           message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
                         }`}>

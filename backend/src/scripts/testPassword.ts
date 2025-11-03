@@ -27,8 +27,21 @@ async function testPassword() {
     await mongoose.connect(mongoUri);
     console.log('✅ Connected\n');
 
-    const email = 'saurabhshukla1966@gmail.com';
-  const testPassword = '@SAurabh$133';
+    const emailRaw = process.env.OWNER_ADMIN_EMAIL?.trim();
+    if (!emailRaw) {
+      console.error('❌ OWNER_ADMIN_EMAIL must be set to run this test.');
+      await mongoose.disconnect();
+      return;
+    }
+
+    const email = emailRaw.toLowerCase();
+    const testPassword = process.env.OWNER_ADMIN_PASSWORD?.trim();
+
+    if (!testPassword) {
+      console.error('❌ OWNER_ADMIN_PASSWORD must be set to run this test.');
+      await mongoose.disconnect();
+      return;
+    }
 
     const admin = await AdminModel.findOne({ email });
 
@@ -38,13 +51,13 @@ async function testPassword() {
       return;
     }
 
-    console.log('✅ Admin found in database');
-    console.log(`📧 Email: ${admin.email}`);
-    console.log(`👤 Username: ${admin.username}`);
-    console.log(`🔒 Password Hash: ${admin.passwordHash}\n`);
+  console.log('✅ Admin found in database');
+  console.log('📧 Email: [HIDDEN - matches OWNER_ADMIN_EMAIL env value]');
+  console.log('👤 Username: [HIDDEN - stored in database]');
+  console.log('🔒 Password hash: [HIDDEN]\n');
 
     // Test password
-    console.log(`🧪 Testing password: "${testPassword}"`);
+  console.log('🧪 Testing password using environment value (hidden)');
     const isValid = await bcrypt.compare(testPassword, admin.passwordHash || '');
 
     if (isValid) {
@@ -52,10 +65,10 @@ async function testPassword() {
     } else {
       console.log('❌ PASSWORD DOES NOT MATCH! ⚠️');
       console.log('💡 Need to reset password\n');
-      
-      // Show what the correct hash should be
-  const newHash = await bcrypt.hash('@SAurabh$133', 12);
-  console.log('🔧 Creating new hash for password "@SAurabh$133"...');
+
+      // Show what the correct hash should be using provided env password
+      const newHash = await bcrypt.hash(testPassword, 12);
+      console.log('🔧 Creating new hash from provided environment password...');
       console.log(`📝 New Hash: ${newHash}\n`);
     }
 

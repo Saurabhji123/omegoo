@@ -36,7 +36,6 @@ const io = new SocketIOServer(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
       ? [
-          'https://omegoo.vercel.app',
           'https://www.omegoo.chat',
           'https://omegoo.chat'
         ]
@@ -69,7 +68,6 @@ app.use(helmet({
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
       ? [
-          'https://omegoo.vercel.app',
           'https://www.omegoo.chat',
           'https://omegoo.chat',
           'https://saurabhji123.github.io', 

@@ -40,19 +40,33 @@ async function createOwnerAdmin() {
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
 
-    // Owner admin details - ACTUAL OWNER CREDENTIALS
-    const ownerEmail = 'saurabhshukla1966@gmail.com';
-    const ownerUsername = ownerEmail;
-  const ownerPassword = '@SAurabh$133';
+    // Owner admin details - must come from environment variables
+    const ownerEmailRaw = process.env.OWNER_ADMIN_EMAIL?.trim();
+    if (!ownerEmailRaw) {
+      console.error('❌ OWNER_ADMIN_EMAIL must be set before running this script.');
+      await mongoose.disconnect();
+      process.exit(1);
+    }
+
+    const ownerEmail = ownerEmailRaw.toLowerCase();
+    const ownerUsername = process.env.OWNER_ADMIN_USERNAME?.trim() || ownerEmail;
+    const ownerPasswordHashFromEnv = process.env.OWNER_ADMIN_PASSWORD_HASH?.trim();
+    const ownerPasswordFromEnv = process.env.OWNER_ADMIN_PASSWORD?.trim();
+
+    if (!ownerPasswordHashFromEnv && !ownerPasswordFromEnv) {
+      console.error('❌ OWNER_ADMIN_PASSWORD or OWNER_ADMIN_PASSWORD_HASH must be set before running this script.');
+      await mongoose.disconnect();
+      process.exit(1);
+    }
 
     // Check if owner already exists
     const existingOwner = await AdminModel.findOne({ email: ownerEmail });
     
     if (existingOwner) {
-      console.log('⚠️  Owner admin already exists!');
-      console.log('📧 Email:', existingOwner.email);
-      console.log('👤 Username:', existingOwner.username);
-      console.log('🔑 Role:', existingOwner.role);
+  console.log('⚠️  Owner admin already exists!');
+  console.log('📧 Email: [HIDDEN - matches OWNER_ADMIN_EMAIL env value]');
+  console.log('👤 Username: [HIDDEN - stored in database]');
+  console.log('🔑 Role:', existingOwner.role);
       console.log('🛡️  Owner:', existingOwner.isOwner);
       
       // Update to ensure isOwner is true
@@ -71,9 +85,13 @@ async function createOwnerAdmin() {
       return;
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(ownerPassword, 12);
-    console.log('🔒 Password hashed');
+    // Hash password if needed
+    const passwordHash = ownerPasswordHashFromEnv
+      ? ownerPasswordHashFromEnv
+      : await bcrypt.hash(ownerPasswordFromEnv!, 12);
+    if (!ownerPasswordHashFromEnv) {
+      console.log('🔒 Password hashed from plain environment value');
+    }
 
     // Generate unique ID
     const adminId = `admin-${Date.now()}-owner`;
@@ -105,9 +123,9 @@ async function createOwnerAdmin() {
 
     console.log('✅ Owner Admin Created Successfully!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📧 Email: [HIDDEN]');
-    console.log('👤 Username: [HIDDEN]');
-    console.log('🔑 Password: [HIDDEN]');
+    console.log('📧 Email: [HIDDEN - matches OWNER_ADMIN_EMAIL env value]');
+    console.log('👤 Username: [HIDDEN - stored in database]');
+    console.log('🔑 Password: [HIDDEN - sourced from environment]');
     console.log('🛡️  Role: OWNER (Super Admin)');
     console.log('⚠️  THIS ADMIN CANNOT BE DELETED BY ANYONE');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
