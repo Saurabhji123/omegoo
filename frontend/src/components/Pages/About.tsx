@@ -28,9 +28,11 @@ const About: React.FC = () => {
           <div className="ml-6">
             <h2 className="text-2xl font-bold text-white mb-4">Our Mission</h2>
             <p className="text-gray-300 text-lg leading-relaxed">
-              Omegoo bridges cultures and connects hearts across the globe. We believe that meaningful conversations 
-              can happen between strangers, breaking down barriers and building understanding. Our platform provides 
-              a safe, anonymous space where people can meet, chat, and learn from each other without judgment.
+              Omegoo bridges cultures and connects hearts across the globe. We believe that meaningful conversations
+              can happen between strangers, breaking down barriers and building understanding. Our platform provides
+              a safe, anonymous space where people can meet, chat, and learn from each other without judgment. From
+              Indian universities and IIT hostels to international coworking hubs, Omegoo empowers people to share
+              stories, discover opportunities, and build supportive communities.
             </p>
           </div>
         </div>
@@ -116,6 +118,40 @@ const About: React.FC = () => {
         </div>
       </div>
 
+      {/* Content Clusters for SEO */}
+      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-8 mb-8">
+        <h2 className="text-2xl font-bold text-white mb-6 text-center">Focus areas that make Omegoo unique</h2>
+        <div className="space-y-6 text-gray-300">
+          <div>
+            <h3 className="text-xl font-semibold text-white mb-2">Coin-powered trust and moderation</h3>
+            <p>
+              Omegoo introduced a daily coin reward to reinforce positive behavior. Each user receives 50 coins that
+              reset at midnight (IST) so they can access text, voice, and video rooms while discouraging spam. The
+              system is tightly integrated with AI-powered moderation, giving us strong rankings for terms like
+              "safe random video chat" and "college chat app with coins".
+            </p>
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-white mb-2">Indian campus roots, global scale</h3>
+            <p>
+              The earliest Omegoo community grew across IITs, NITs, and private colleges in India. Today we support
+              thousands of matches in the US, UK, Canada, Australia, and Southeast Asia. This combination of local and
+              global coverage ensures search queries such as "IIT random chat" and "international student chat app"
+              lead to Omegoo.
+            </p>
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-white mb-2">Privacy-first design</h3>
+            <p>
+              No one wants their personal data exposed, especially when meeting strangers online. Omegoo collects only
+              essential information, encrypts every session, and never sells data. Safety guidelines are transparent,
+              making the platform trustworthy for keyword searches like "anonymous chat without signup" and "secure
+              stranger video call".
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Team Vision */}
       <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-8">
         <h2 className="text-2xl font-bold text-white mb-6 text-center">
@@ -123,9 +159,11 @@ const About: React.FC = () => {
         </h2>
         <div className="prose prose-lg max-w-none text-gray-300">
           <p className="text-center leading-relaxed">
-            We envision a world where distance and differences don't divide us, but curiosity and kindness unite us. 
-            Omegoo is more than just a chat platform—it's a bridge between cultures, a space for learning, 
-            and a community where everyone is welcome to share their story.
+            We envision a world where distance and differences don't divide us, but curiosity and kindness unite us.
+            Omegoo is more than just a chat platform—it's a bridge between cultures, a space for learning,
+            and a community where everyone is welcome to share their story. We work closely with student clubs,
+            alumni associations, and global creators to host themed rooms that help us rank for long-tail search
+            terms like "engineering student meet app", "study abroad chat", and "talk to strangers online India".
           </p>
           <div className="text-center mt-8">
             <div className="inline-flex items-center space-x-4 text-sm text-gray-400">

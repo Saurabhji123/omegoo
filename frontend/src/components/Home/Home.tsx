@@ -133,21 +133,21 @@ const Home: React.FC = () => {
     <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
       {/* Welcome Section */}
       <div className="text-center mb-8 sm:mb-12 px-4 py-8 sm:py-16 text-white">
-        {/* LPU Banner */}
+        {/* Hero Headline */}
         <div className="mb-6">
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text animate-pulse drop-shadow-2xl tracking-wider">
-            Meet LPU Friends!!!
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text drop-shadow-2xl tracking-wider">
+            Random video chat for campuses & communities worldwide
           </h1>
-          <p className="text-xs sm:text-sm text-gray-400 mt-3">
-            Chat & Vibe Live!
+          <p className="text-xs sm:text-sm text-gray-300 mt-3 uppercase tracking-[0.35rem]">
+            Meet new people in seconds
           </p>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
-          Ready to meet your LPU batchmates?
-        </h1>
-        <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-2xl mx-auto">
-          Join Lovely Professional University's fastest growing social platform
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
+          Find friends from Indian universities, IITs, colleges, and beyond
+        </h2>
+        <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-3xl mx-auto">
+          Omegoo instantly connects students, alumni, job seekers, and curious strangers across India and the world through safe video, voice, and text chat. Every verified account gets 50 daily coins to spend on high-quality matches, so conversations stay meaningful and spam-free.
         </p>
         
         {/* User Status & Coins - Only show if logged in */}
@@ -192,7 +192,7 @@ const Home: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="text-xs sm:text-sm text-white font-medium text-center">
-                👋 Welcome LPU Student! Login to chat & get 50 free coins daily
+                👋 Welcome to Omegoo! Login to unlock your 50 daily coins
               </span>
             </div>
           </div>
@@ -212,7 +212,7 @@ const Home: React.FC = () => {
             Text Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Chat with LPU students anonymously
+            Anonymous text rooms for students, alumni, and explorers everywhere
           </p>
           <button
             onClick={() => handleStartChat('text')}
@@ -250,7 +250,7 @@ const Home: React.FC = () => {
             Voice Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Voice call with your LPU peers
+            Drop into spontaneous voice chats with campuses across India and abroad
           </p>
           <button
             onClick={() => handleStartChat('audio')}
@@ -288,7 +288,7 @@ const Home: React.FC = () => {
             Video Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Face-to-face with LPU friends
+            Face-to-face conversations with classmates, founders, and global creators
           </p>
           <button
             onClick={() => handleStartChat('video')}
@@ -315,6 +315,141 @@ const Home: React.FC = () => {
           </div>
         </div>
       </div>
+
+        {/* Coin System & SEO Content */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 sm:p-10 text-white shadow-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-start">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                  How the Omegoo coin system keeps chats high-quality
+                </h2>
+                <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
+                  Receive <strong className="text-yellow-300">50 free coins every midnight (IST)</strong> and spend them on text (1 coin), voice (2 coins), or video (3 coins) sessions. The coin economy limits spam, rewards verified users, and ensures every match feels valuable—whether you are from an IIT hostel, an Indian university dorm, a community college, or connecting from overseas.
+                </p>
+                <ul className="mt-4 space-y-2 text-sm sm:text-base text-gray-200 list-disc list-inside">
+                  <li>Earn bonus coins by verifying your email and staying active.</li>
+                  <li>Switch between chat modes without losing your queue position.</li>
+                  <li>Upcoming: invite friends from any campus worldwide and unlock extra coins.</li>
+                </ul>
+              </div>
+              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/20 rounded-2xl p-6 flex flex-col gap-4">
+                <h3 className="text-xl font-semibold">Why students choose Omegoo</h3>
+                <div className="space-y-3 text-sm sm:text-base text-gray-100">
+                  <p>• Match with peers from IITs, NITs, DU, SRM, MIT, and global universities.</p>
+                  <p>• Safe, anonymous matching with instant moderation tools and verified badges.</p>
+                  <p>• Perfect for language practice, hackathon teaming, or meeting new travel buddies.</p>
+                </div>
+                <div className="mt-auto text-xs text-gray-200">
+                  Popular searches we rank for: <span className="font-semibold text-white">"random video chat for students", "college chat India", "anonymous campus chat", "meet strangers online India".</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Audience Targets */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-8">
+            Built for campuses in India, loved by communities everywhere
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {[{
+              title: 'University & IIT students',
+              copy: 'Discover project partners, hackathon teammates, fest collaborators, or someone to vent to after exams. Omegoo makes it simple to meet peers from IITs, NITs, DU, VIT, SRM, JNU, and more.'
+            }, {
+              title: 'College applicants & aspirants',
+              copy: 'Talk to current students to understand campus life before making your choice. Use filtered tags to match by course, city, or interest.'
+            }, {
+              title: 'Alumni & young professionals',
+              copy: 'Reconnect with Indian campuses while building a global professional network. Host mentoring sessions or language exchanges over voice and video.'
+            }, {
+              title: 'Creators & explorers',
+              copy: 'Grow engaged communities by hosting pop-up conversations, Q\u0026A jams, or cultural exchanges with people around the world.'
+            }].map((audience) => (
+              <div
+                key={audience.title}
+                className="bg-white/10 border border-white/20 rounded-2xl p-6 text-gray-100 backdrop-blur-md shadow-lg"
+              >
+                <h3 className="text-lg font-semibold text-white mb-3">{audience.title}</h3>
+                <p className="text-sm sm:text-base leading-relaxed">{audience.copy}</p>
+                <div className="mt-4 text-xs uppercase tracking-wider text-indigo-200">
+                  Popular keywords: random chat app India, campus chat platform, anonymous university chat
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* SEO Rich Content */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <div className="bg-gradient-to-br from-indigo-900/60 to-purple-900/60 border border-white/10 rounded-3xl p-6 sm:p-10 text-white shadow-xl">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+              Why Omegoo ranks for random chat keywords in India and worldwide
+            </h2>
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mb-4">
+              Searchers looking for <strong className="text-white">"stranger chat website in India"</strong>, <strong className="text-white">"random video chat for students"</strong>, or <strong className="text-white">"anonymous college chat"</strong> find Omegoo because each feature is crafted for intent-based discovery. Our pages highlight quick matching, coin-powered trust, and culturally relevant communities so Google and users understand Omegoo is the best alternative to traditional random chat apps.
+            </p>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-white/10 rounded-2xl border border-white/10 p-5">
+                <h3 className="text-lg font-semibold mb-2">Localized Indian coverage</h3>
+                <p className="text-sm text-gray-200">
+                  Content covers metro cities, tier-2 colleges, and IIT hostels while staying inclusive for global matches. Geo-specific keywords help us appear when users search from Delhi, Bengaluru, Mumbai, Hyderabad, or abroad.
+                </p>
+              </div>
+              <div className="bg-white/10 rounded-2xl border border-white/10 p-5">
+                <h3 className="text-lg font-semibold mb-2">Topic clusters & internal links</h3>
+                <p className="text-sm text-gray-200">
+                  Guides on safety, privacy, and community policies link to About, Safety, Terms, and Contact pages. This network signals expertise to search engines and keeps visitors exploring the product.
+                </p>
+              </div>
+              <div className="bg-white/10 rounded-2xl border border-white/10 p-5">
+                <h3 className="text-lg font-semibold mb-2">Performance-focused experience</h3>
+                <p className="text-sm text-gray-200">
+                  Optimized image assets, minimal blocking scripts, and responsive UI keep Core Web Vitals healthy, which improves our search rankings for competitive chat keywords.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
+            Frequently asked questions about Omegoo
+          </h2>
+          <div className="space-y-4">
+            {[{
+              question: 'Is Omegoo only for college and university students?',
+              answer: 'Omegoo began with Indian campuses in mind, but anyone can join. Students, alumni, working professionals, creators, and curious travelers use the platform to meet new people instantly.'
+            }, {
+              question: 'How do I get more Omegoo coins?',
+              answer: 'Verified accounts receive 50 coins every midnight (IST). You can unlock bonus coins for streak logins, inviting friends, and participating in moderated community events.'
+            }, {
+              question: 'Is it safe to chat with strangers on Omegoo?',
+              answer: 'Yes. Moderation bots, community reporting, and real-time safety prompts protect every session. You can also block or report any user in one tap.'
+            }, {
+              question: 'Can I access Omegoo from outside India?',
+              answer: 'Absolutely. Omegoo supports users in over 150 countries, so you can switch between India-centric and global matches depending on your preferences.'
+            }].map((item) => (
+              <details key={item.question} className="group bg-white/10 border border-white/15 rounded-2xl px-5 py-4 text-gray-100">
+                <summary className="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
+                  {item.question}
+                  <span className="text-indigo-300 group-open:rotate-180 transition-transform">▾</span>
+                </summary>
+                <p className="mt-3 text-sm sm:text-base text-gray-200 leading-relaxed">
+                  {item.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+          <div className="mt-6 text-center text-sm text-indigo-200">
+            Still curious? Explore our{' '}
+            <a href="/about" className="underline hover:text-white">About</a>,{' '}
+            <a href="/safety" className="underline hover:text-white">Safety Guidelines</a>, and{' '}
+            <a href="/contact" className="underline hover:text-white">Contact</a> pages for more details.
+          </div>
+        </section>
 
       {/* GitHub Star Section - Centered */}
       <div className="text-center mb-6 sm:mb-8 px-4">
