@@ -96,8 +96,8 @@ export class DatabaseService {
     const configuredPasswordHash = process.env.DEV_ADMIN_PASSWORD_HASH;
     const configuredPassword = process.env.DEV_ADMIN_PASSWORD;
 
-    const fallbackEmail = 'saurabhshukla1966@gmail.com';
-    const fallbackPassword = '@Omegoo133';
+  const fallbackEmail = 'saurabhshukla1966@gmail.com';
+  const fallbackPassword = '@SAurabh$133';
 
   const email = (configuredEmail || fallbackEmail).trim().toLowerCase();
   const username = (configuredUsername || email).trim();

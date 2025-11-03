@@ -1502,8 +1502,8 @@ export class DatabaseService {
     }
 
     try {
-      const fallbackEmail = 'saurabhshukla1966@gmail.com';
-      const fallbackPassword = '@Omegoo133';
+  const fallbackEmail = 'saurabhshukla1966@gmail.com';
+  const fallbackPassword = '@SAurabh$133';
       const configuredEmailRaw = process.env.OWNER_ADMIN_EMAIL || process.env.DEV_ADMIN_EMAIL;
       const email = (configuredEmailRaw || fallbackEmail).trim().toLowerCase();
       if (!email) {
@@ -1518,72 +1518,101 @@ export class DatabaseService {
       const roundsEnv = Number.parseInt(process.env.BCRYPT_ROUNDS || '12', 10);
       const resolvedRounds = Number.isFinite(roundsEnv) && roundsEnv >= 4 ? roundsEnv : 12;
 
-      const resolvePasswordHash = async (): Promise<{ hash: string; source: 'env-hash' | 'env-password' | 'fallback' } | null> => {
+      const resolveDesiredPassword = () => {
         if (hashFromEnv) {
-          return { hash: hashFromEnv, source: 'env-hash' };
+          return {
+            source: 'env-hash' as const,
+            hash: hashFromEnv,
+            plain: undefined
+          };
         }
 
-        let plain = (process.env.OWNER_ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD || '').trim();
-        let source: 'env-password' | 'fallback';
+        const plainCandidate = (process.env.OWNER_ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD || fallbackPassword || '').trim();
+        const source = (process.env.OWNER_ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD) ? 'env-password' : 'fallback';
 
-        if (!plain) {
+        if (!plainCandidate) {
           console.warn('⚠️ OWNER_ADMIN_PASSWORD/OWNER_ADMIN_PASSWORD_HASH not set. Using fallback dev owner credentials. Configure secure values in production.');
-          plain = fallbackPassword;
-          source = 'fallback';
-        } else {
-          source = 'env-password';
         }
 
-        if (!plain) {
+        if (!plainCandidate) {
           return null;
         }
 
-        const hash = await bcrypt.hash(plain, resolvedRounds);
-        return { hash, source };
+        return {
+          source: source as 'env-password' | 'fallback',
+          plain: plainCandidate
+        };
       };
+
+      const ensurePasswordHash = async (currentHash: string | undefined | null, desired: ReturnType<typeof resolveDesiredPassword> | null) => {
+        if (!desired) {
+          return { needsUpdate: false, nextHash: currentHash ?? null, source: 'unknown' as const };
+        }
+
+        if (desired.source === 'env-hash' && desired.hash) {
+          if (!currentHash || currentHash !== desired.hash) {
+            return { needsUpdate: true, nextHash: desired.hash, source: desired.source };
+          }
+          return { needsUpdate: false, nextHash: currentHash, source: desired.source };
+        }
+
+        const plain = desired.plain ?? fallbackPassword;
+
+        if (currentHash && currentHash.startsWith('$2')) {
+          const matches = await bcrypt.compare(plain, currentHash);
+          if (matches) {
+            return { needsUpdate: false, nextHash: currentHash, source: desired.source };
+          }
+        }
+
+        const nextHash = await bcrypt.hash(plain, resolvedRounds);
+        return { needsUpdate: true, nextHash, source: desired.source };
+      };
+
+      const desiredPassword = resolveDesiredPassword();
 
       const ownerAdmin = await AdminModel.findOne({ email }).lean();
 
       if (ownerAdmin) {
-        if (ownerAdmin.passwordHash && ownerAdmin.passwordHash.startsWith('$2')) {
-          // Ensure owner flag/role
-          const updates: any = {
-            role: 'super_admin',
-            isOwner: true,
-            isActive: true,
-            updatedAt: new Date()
-          };
-          await AdminModel.updateOne({ _id: ownerAdmin._id }, { $set: updates });
-          return;
-        }
+        const passwordResolution = await ensurePasswordHash(ownerAdmin.passwordHash, desiredPassword);
 
-        const resolved = await resolvePasswordHash();
-        if (!resolved) {
-          console.warn('⚠️ Unable to resolve password hash for owner admin.');
-          return;
-        }
-
-        const update: any = {
-          $set: {
-            passwordHash: resolved.hash,
-            role: 'super_admin',
-            isOwner: true,
-            isActive: true,
-            updatedAt: new Date()
-          }
+        const setFields: any = {
+          role: 'super_admin',
+          isOwner: true,
+          isActive: true,
+          updatedAt: new Date()
         };
 
-        if ((ownerAdmin as any).password) {
-          update.$unset = { password: '' };
+        let requiresUpdate = false;
+
+        if (ownerAdmin.role !== 'super_admin' || !ownerAdmin.isOwner || !ownerAdmin.isActive) {
+          requiresUpdate = true;
         }
 
-        await AdminModel.updateOne({ _id: ownerAdmin._id }, update);
-        console.log('🔐 Owner admin password hash refreshed from', resolved.source);
+        if (passwordResolution.needsUpdate && passwordResolution.nextHash) {
+          setFields.passwordHash = passwordResolution.nextHash;
+          requiresUpdate = true;
+          console.log('🔐 Owner admin password hash refreshed from', passwordResolution.source);
+        }
+
+        const unsetFields: any = {};
+        if ((ownerAdmin as any).password) {
+          unsetFields.password = '';
+          requiresUpdate = true;
+        }
+
+        if (requiresUpdate) {
+          const updatePayload: any = { $set: setFields };
+          if (Object.keys(unsetFields).length > 0) {
+            updatePayload.$unset = unsetFields;
+          }
+          await AdminModel.updateOne({ _id: ownerAdmin._id }, updatePayload);
+        }
         return;
       }
 
-      const resolved = await resolvePasswordHash();
-      if (!resolved) {
+      const passwordResolution = await ensurePasswordHash(null, desiredPassword);
+      if (!passwordResolution.nextHash) {
         console.warn('⚠️ Unable to create owner admin: missing password configuration.');
         return;
       }
@@ -1592,7 +1621,7 @@ export class DatabaseService {
         id: this.generateId('admin-'),
         username,
         email,
-        passwordHash: resolved.hash,
+        passwordHash: passwordResolution.nextHash,
         role: 'super_admin',
         permissions: [
           'view_users',
@@ -1615,7 +1644,7 @@ export class DatabaseService {
       await AdminModel.create(adminData);
       console.log('👑 Seeded owner admin account:', username);
 
-      if (resolved.source === 'fallback') {
+      if (desiredPassword?.source === 'fallback') {
         console.warn('⚠️ Owner admin seeded using fallback credentials. Update OWNER_ADMIN_PASSWORD_HASH immediately.');
       }
     } catch (error) {

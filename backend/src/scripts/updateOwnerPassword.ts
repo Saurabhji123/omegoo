@@ -1,6 +1,6 @@
 /**
  * Update Owner Admin Password
- * Updates the password for saurabhshukla1966@gmail.com to @Omegoo133
+ * Updates the password for saurabhshukla1966@gmail.com to @SAurabh$133
  */
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
@@ -33,7 +33,7 @@ async function updateOwnerPassword() {
     console.log('✅ Connected\n');
 
     const ownerEmail = 'saurabhshukla1966@gmail.com';
-    const newPassword = '@Omegoo133';
+  const newPassword = '@SAurabh$133';
 
     // Find owner admin
     const admin = await AdminModel.findOne({ email: ownerEmail });
@@ -68,7 +68,7 @@ async function updateOwnerPassword() {
     console.log('✅ Password updated successfully!\n');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📧 Email: saurabhshukla1966@gmail.com');
-    console.log('🔑 New Password: @Omegoo133');
+  console.log('🔑 New Password: @SAurabh$133');
     console.log('👑 Role: super_admin (Owner)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('\n🎉 You can now login at: https://omegoo.vercel.app/omegoo-admin\n');

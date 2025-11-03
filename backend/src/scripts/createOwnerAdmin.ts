@@ -43,7 +43,7 @@ async function createOwnerAdmin() {
     // Owner admin details - ACTUAL OWNER CREDENTIALS
     const ownerEmail = 'saurabhshukla1966@gmail.com';
     const ownerUsername = ownerEmail;
-    const ownerPassword = '@Omegoo133';
+  const ownerPassword = '@SAurabh$133';
 
     // Check if owner already exists
     const existingOwner = await AdminModel.findOne({ email: ownerEmail });

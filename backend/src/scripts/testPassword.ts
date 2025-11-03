@@ -28,7 +28,7 @@ async function testPassword() {
     console.log('✅ Connected\n');
 
     const email = 'saurabhshukla1966@gmail.com';
-    const testPassword = '@Omegoo133';
+  const testPassword = '@SAurabh$133';
 
     const admin = await AdminModel.findOne({ email });
 
@@ -54,8 +54,8 @@ async function testPassword() {
       console.log('💡 Need to reset password\n');
       
       // Show what the correct hash should be
-      const newHash = await bcrypt.hash('@Omegoo133', 12);
-      console.log('🔧 Creating new hash for password "@Omegoo133"...');
+  const newHash = await bcrypt.hash('@SAurabh$133', 12);
+  console.log('🔧 Creating new hash for password "@SAurabh$133"...');
       console.log(`📝 New Hash: ${newHash}\n`);
     }
 

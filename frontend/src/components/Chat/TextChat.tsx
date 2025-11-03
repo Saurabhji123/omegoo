@@ -563,29 +563,6 @@ const TextChat: React.FC = () => {
   //   }
   // };
 
-  // Loading states (like AudioChat)
-  if (socketConnecting) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <div className="text-xl">Connecting to server...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!socketConnected) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4">
-        <div className="text-white text-center">
-          <div className="text-xl mb-4">Connection Error</div>
-          <div className="text-gray-300">Please check your internet connection and refresh.</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <style>
@@ -813,9 +790,11 @@ const TextChat: React.FC = () => {
                           ...(isSystemMessage
                             ? {}
                             : {
-                                maxWidth: 'calc(100% - 40px)',
-                                width: 'fit-content',
-                                minWidth: 'min(240px, calc(100% - 40px))'
+                                maxWidth: '80%',
+                                width: 'auto',
+                                minWidth: '0',
+                                wordBreak: 'break-word',
+                                whiteSpace: 'pre-wrap'
                               })
                         }}
                         onClick={(e) => {
@@ -891,7 +870,7 @@ const TextChat: React.FC = () => {
                           </div>
                         )}
                         
-                        <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-line">{message.content}</p>
+                        <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{message.content}</p>
                         <div className={`text-xs mt-1 sm:mt-2 flex items-center gap-1 ${
                           message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
                         }`}>
