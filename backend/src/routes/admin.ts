@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { DatabaseService } from '../services/serviceFactory';
 import { authenticateAdmin, requirePermission } from '../middleware/adminAuth';
 
@@ -47,18 +47,82 @@ router.post('/login', async (req: Request, res: Response) => {
     
     console.log('✅ Admin found:', admin.email, 'Role:', admin.role, 'isOwner:', admin.isOwner);
 
-    // Verify password
-    console.log('🔒 Verifying password...');
-    const isValidPassword = await bcrypt.compare(password, admin.passwordHash);
+    // Normalize admin identifier for downstream updates
+    const adminId = String(admin.id || admin._id || '').trim();
+    if (!adminId) {
+      console.error('❌ Admin record missing identifier.');
+      return res.status(500).json({
+        success: false,
+        error: 'Admin configuration error'
+      });
+    }
 
-    if (!isValidPassword) {
+    const storedHash = typeof admin.passwordHash === 'string' ? admin.passwordHash.trim() : undefined;
+    const legacyPassword = typeof (admin as any).password === 'string' ? String((admin as any).password) : undefined;
+    const bcryptRounds = Number.parseInt(process.env.BCRYPT_ROUNDS || '12', 10);
+    const resolvedRounds = Number.isFinite(bcryptRounds) && bcryptRounds >= 4 ? bcryptRounds : 12;
+
+    const attemptCompare = async (hash: string): Promise<boolean> => {
+      try {
+        return await bcrypt.compare(password, hash);
+      } catch (err) {
+        console.error('❌ Bcrypt comparison failed:', err);
+        return false;
+      }
+    };
+
+    let isValidPassword = false;
+    let needsUpgrade = false;
+
+    console.log('🔒 Verifying password...');
+
+    if (storedHash && storedHash.startsWith('$2')) {
+      isValidPassword = await attemptCompare(storedHash);
+    }
+
+    if (!isValidPassword && storedHash && !storedHash.startsWith('$2')) {
+      if (storedHash === password) {
+        isValidPassword = true;
+        needsUpgrade = true;
+      }
+    }
+
+    if (!isValidPassword && !storedHash && legacyPassword) {
+      if (legacyPassword === password) {
+        isValidPassword = true;
+        needsUpgrade = true;
+      }
+    }
+
+    if (!isValidPassword && storedHash && storedHash.startsWith('$2')) {
       console.log('❌ Password verification failed!');
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
       });
     }
-    
+
+    if (!isValidPassword) {
+      console.log('❌ Password verification failed (legacy credentials not matched)!');
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+
+    if (needsUpgrade) {
+      try {
+        const newHash = await bcrypt.hash(password, resolvedRounds);
+        await DatabaseService.updateAdminPassword(adminId, newHash, {
+          removeLegacyPassword: true
+        });
+        admin.passwordHash = newHash;
+        console.log('🔐 Upgraded legacy admin password hash.');
+      } catch (upgradeError) {
+        console.error('⚠️ Failed to upgrade legacy admin password hash:', upgradeError);
+      }
+    }
+
     console.log('✅ Password verified successfully!');
 
     // Generate JWT token
@@ -68,7 +132,7 @@ router.post('/login', async (req: Request, res: Response) => {
     // @ts-expect-error - JWT typing issue with environment variables
     const token: string = jwt.sign(
       {
-        adminId: String(admin.id),
+        adminId,
         username: String(admin.username),
         role: String(admin.role),
         permissions: admin.permissions
@@ -78,13 +142,13 @@ router.post('/login', async (req: Request, res: Response) => {
     );
 
     // Update last login
-    await DatabaseService.updateAdminLastLogin(admin.id);
+    await DatabaseService.updateAdminLastLogin(adminId);
 
     res.json({
       success: true,
       token,
       admin: {
-        id: admin.id,
+        id: admin.id || adminId,
         username: admin.username,
         email: admin.email,
         role: admin.role,

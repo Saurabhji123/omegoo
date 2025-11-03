@@ -353,6 +353,10 @@ export class DatabaseService {
     console.warn('⚠️ updateAdminLastLogin called on PostgreSQL - use MongoDB for admin system');
   }
 
+  static async updateAdminPassword(adminId: string, passwordHash: string): Promise<void> {
+    console.warn('⚠️ updateAdminPassword called on PostgreSQL - use MongoDB for admin system');
+  }
+
   static async getAllAdmins(): Promise<any[]> {
     console.warn('⚠️ getAllAdmins called on PostgreSQL - use MongoDB for admin system');
     return [];

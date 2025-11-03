@@ -35,6 +35,20 @@ interface ChatSession {
   updatedAt: Date;
 }
 
+interface Admin {
+  id: string;
+  username: string;
+  email: string;
+  passwordHash: string;
+  role: 'super_admin' | 'admin' | 'moderator';
+  permissions: string[];
+  isActive: boolean;
+  isOwner: boolean;
+  lastLoginAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export class DatabaseService {
   private static users: Map<string, User> = new Map();
   private static sessions: Map<string, ChatSession> = new Map();
@@ -42,6 +56,7 @@ export class DatabaseService {
   private static deletedUsers: Map<string, any> = new Map();
   private static adminDeletedUsers: Map<string, any> = new Map();
   private static reportedChatTranscripts: Map<string, any> = new Map();
+  private static admins: Map<string, Admin> = new Map();
 
   static async initialize() {
     console.log('✅ Development database initialized (in-memory)');
@@ -66,6 +81,62 @@ export class DatabaseService {
     };
     
     this.users.set(testUser.id, testUser);
+
+    await this.seedDefaultAdmin();
+  }
+
+  private static async seedDefaultAdmin(): Promise<void> {
+    const existingAdmins = Array.from(this.admins.values());
+    if (existingAdmins.length > 0) {
+      return;
+    }
+
+    const configuredEmail = process.env.DEV_ADMIN_EMAIL || process.env.OWNER_ADMIN_EMAIL;
+    const configuredUsername = process.env.DEV_ADMIN_USERNAME;
+    const configuredPasswordHash = process.env.DEV_ADMIN_PASSWORD_HASH;
+    const configuredPassword = process.env.DEV_ADMIN_PASSWORD;
+
+    const fallbackEmail = 'saurabhshukla1966@gmail.com';
+    const fallbackPassword = '@Omegoo133';
+
+  const email = (configuredEmail || fallbackEmail).trim().toLowerCase();
+  const username = (configuredUsername || email).trim();
+
+    let passwordHash = configuredPasswordHash?.trim();
+    if (!passwordHash) {
+      const passwordToHash = configuredPassword || fallbackPassword;
+      if (!configuredPassword && !configuredPasswordHash) {
+        console.warn('⚠️ DEV_ADMIN_PASSWORD/DEV_ADMIN_PASSWORD_HASH not set. Using fallback dev owner credentials. Configure secure values in production.');
+      }
+      passwordHash = await bcrypt.hash(passwordToHash, 12);
+    }
+
+    const admin: Admin = {
+      id: `admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      username,
+      email,
+      passwordHash,
+      role: 'super_admin',
+      permissions: [
+        'view_users',
+        'ban_users',
+        'unban_users',
+        'view_reports',
+        'resolve_reports',
+        'manage_reports',
+        'manage_users',
+        'view_analytics',
+        'manage_admins',
+        'manage_settings'
+      ],
+      isActive: true,
+      isOwner: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    this.admins.set(admin.id, admin);
+    console.log('👑 Seeded development owner admin account');
   }
 
   static async close() {
@@ -525,31 +596,112 @@ export class DatabaseService {
     };
   }
 
-  static async createAdmin(adminData: any): Promise<any | null> {
-    console.log('👤 Admin created (dev):', adminData.username);
+  private static cloneAdmin(admin: Admin): Admin {
     return {
-      id: `admin-${Date.now()}`,
-      ...adminData,
-      createdAt: new Date()
+      ...admin,
+      permissions: [...admin.permissions],
+      createdAt: new Date(admin.createdAt),
+      updatedAt: new Date(admin.updatedAt),
+      ...(admin.lastLoginAt ? { lastLoginAt: new Date(admin.lastLoginAt) } : {})
     };
   }
 
+  static async createAdmin(adminData: any): Promise<any | null> {
+    const normalizedEmail = adminData.email?.trim().toLowerCase();
+    if (!normalizedEmail) {
+      return null;
+    }
+
+    const existing = await this.findAdminByEmail(normalizedEmail);
+    if (existing) {
+      return null;
+    }
+
+    const usernameDisplay = adminData.username?.trim() || normalizedEmail;
+
+    const admin: Admin = {
+      id: adminData.id || `admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      username: usernameDisplay,
+      email: normalizedEmail,
+      passwordHash: adminData.passwordHash,
+      role: adminData.role || 'admin',
+      permissions: adminData.permissions || ['view_users', 'view_reports'],
+      isActive: adminData.isActive !== false,
+      isOwner: !!adminData.isOwner,
+      lastLoginAt: adminData.lastLoginAt ? new Date(adminData.lastLoginAt) : undefined,
+      createdAt: adminData.createdAt ? new Date(adminData.createdAt) : new Date(),
+      updatedAt: new Date()
+    };
+
+    this.admins.set(admin.id, admin);
+    return this.cloneAdmin(admin);
+  }
+
+  static async updateAdminPassword(
+    adminId: string,
+    passwordHash: string,
+    options?: { removeLegacyPassword?: boolean }
+  ): Promise<void> {
+    if (!adminId) {
+      return;
+    }
+
+    for (const [storedId, admin] of this.admins.entries()) {
+      if (storedId === adminId || admin.id === adminId || admin.email === adminId) {
+        const updated: Admin = {
+          ...admin,
+          passwordHash,
+          updatedAt: new Date()
+        };
+
+        if (options?.removeLegacyPassword) {
+          delete (updated as any).password;
+        }
+
+        this.admins.set(storedId, updated);
+        return;
+      }
+    }
+  }
+
   static async findAdminByUsername(username: string): Promise<any | null> {
-    // Mock: return null in dev (admins require MongoDB)
-    console.log('🔍 Admin lookup (dev):', username);
+    if (!username) {
+      return null;
+    }
+    const search = username.trim().toLowerCase();
+    for (const admin of this.admins.values()) {
+      if (admin.username.toLowerCase() === search) {
+        return this.cloneAdmin(admin);
+      }
+    }
     return null;
   }
 
   static async findAdminByEmail(email: string): Promise<any | null> {
+    if (!email) {
+      return null;
+    }
+    const search = email.trim().toLowerCase();
+    for (const admin of this.admins.values()) {
+      if (admin.email.toLowerCase() === search) {
+        return this.cloneAdmin(admin);
+      }
+    }
     return null;
   }
 
   static async updateAdminLastLogin(adminId: string): Promise<void> {
-    console.log('📝 Admin login tracked (dev):', adminId);
+    const admin = this.admins.get(adminId);
+    if (!admin) {
+      return;
+    }
+    admin.lastLoginAt = new Date();
+    admin.updatedAt = new Date();
+    this.admins.set(adminId, admin);
   }
 
   static async getAllAdmins(): Promise<any[]> {
-    return [];
+    return Array.from(this.admins.values()).map((admin) => this.cloneAdmin(admin));
   }
 
   static async getAllUsers(): Promise<any[]> {

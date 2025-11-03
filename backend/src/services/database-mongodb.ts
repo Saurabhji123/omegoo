@@ -1,5 +1,6 @@
 // database.service.ts
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import bcrypt from 'bcryptjs';
 /* -------------------------
    Interfaces (Mongoose docs)
    ------------------------- */
@@ -373,6 +374,7 @@ export class DatabaseService {
       console.log(`🔗 Database: ${mongoose.connection.name}`);
       console.log(`🚀 Connection pool: min=10, max=100 (optimized for high traffic)`);
       await this.createIndexes();
+    await this.seedOwnerAdmin();
     } catch (error) {
       console.error('❌ MongoDB connection failed, falling back to in-memory:', error);
       this.isConnected = false;
@@ -1494,6 +1496,133 @@ export class DatabaseService {
 
   /* ---------- Admin Operations ---------- */
 
+  private static async seedOwnerAdmin(): Promise<void> {
+    if (!this.isConnected) {
+      return;
+    }
+
+    try {
+      const fallbackEmail = 'saurabhshukla1966@gmail.com';
+      const fallbackPassword = '@Omegoo133';
+      const configuredEmailRaw = process.env.OWNER_ADMIN_EMAIL || process.env.DEV_ADMIN_EMAIL;
+      const email = (configuredEmailRaw || fallbackEmail).trim().toLowerCase();
+      if (!email) {
+        console.warn('⚠️ OWNER_ADMIN_EMAIL missing and fallback email empty. Skipping owner admin seed.');
+        return;
+      }
+
+      const configuredUsername = process.env.OWNER_ADMIN_USERNAME || process.env.DEV_ADMIN_USERNAME;
+      const username = (configuredUsername || email).trim();
+
+      const hashFromEnv = (process.env.OWNER_ADMIN_PASSWORD_HASH || process.env.DEV_ADMIN_PASSWORD_HASH || '').trim();
+      const roundsEnv = Number.parseInt(process.env.BCRYPT_ROUNDS || '12', 10);
+      const resolvedRounds = Number.isFinite(roundsEnv) && roundsEnv >= 4 ? roundsEnv : 12;
+
+      const resolvePasswordHash = async (): Promise<{ hash: string; source: 'env-hash' | 'env-password' | 'fallback' } | null> => {
+        if (hashFromEnv) {
+          return { hash: hashFromEnv, source: 'env-hash' };
+        }
+
+        let plain = (process.env.OWNER_ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD || '').trim();
+        let source: 'env-password' | 'fallback';
+
+        if (!plain) {
+          console.warn('⚠️ OWNER_ADMIN_PASSWORD/OWNER_ADMIN_PASSWORD_HASH not set. Using fallback dev owner credentials. Configure secure values in production.');
+          plain = fallbackPassword;
+          source = 'fallback';
+        } else {
+          source = 'env-password';
+        }
+
+        if (!plain) {
+          return null;
+        }
+
+        const hash = await bcrypt.hash(plain, resolvedRounds);
+        return { hash, source };
+      };
+
+      const ownerAdmin = await AdminModel.findOne({ email }).lean();
+
+      if (ownerAdmin) {
+        if (ownerAdmin.passwordHash && ownerAdmin.passwordHash.startsWith('$2')) {
+          // Ensure owner flag/role
+          const updates: any = {
+            role: 'super_admin',
+            isOwner: true,
+            isActive: true,
+            updatedAt: new Date()
+          };
+          await AdminModel.updateOne({ _id: ownerAdmin._id }, { $set: updates });
+          return;
+        }
+
+        const resolved = await resolvePasswordHash();
+        if (!resolved) {
+          console.warn('⚠️ Unable to resolve password hash for owner admin.');
+          return;
+        }
+
+        const update: any = {
+          $set: {
+            passwordHash: resolved.hash,
+            role: 'super_admin',
+            isOwner: true,
+            isActive: true,
+            updatedAt: new Date()
+          }
+        };
+
+        if ((ownerAdmin as any).password) {
+          update.$unset = { password: '' };
+        }
+
+        await AdminModel.updateOne({ _id: ownerAdmin._id }, update);
+        console.log('🔐 Owner admin password hash refreshed from', resolved.source);
+        return;
+      }
+
+      const resolved = await resolvePasswordHash();
+      if (!resolved) {
+        console.warn('⚠️ Unable to create owner admin: missing password configuration.');
+        return;
+      }
+
+      const adminData = {
+        id: this.generateId('admin-'),
+        username,
+        email,
+        passwordHash: resolved.hash,
+        role: 'super_admin',
+        permissions: [
+          'view_users',
+          'ban_users',
+          'unban_users',
+          'view_reports',
+          'resolve_reports',
+          'manage_reports',
+          'manage_users',
+          'view_analytics',
+          'manage_admins',
+          'manage_settings'
+        ],
+        isActive: true,
+        isOwner: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await AdminModel.create(adminData);
+      console.log('👑 Seeded owner admin account:', username);
+
+      if (resolved.source === 'fallback') {
+        console.warn('⚠️ Owner admin seeded using fallback credentials. Update OWNER_ADMIN_PASSWORD_HASH immediately.');
+      }
+    } catch (error) {
+      console.error('⚠️ Failed to seed owner admin account:', error);
+    }
+  }
+
   /**
    * Create admin user
    */
@@ -1524,6 +1653,38 @@ export class DatabaseService {
     } catch (err) {
       console.error('MongoDB createAdmin failed:', err);
       return null;
+    }
+  }
+
+  static async updateAdminPassword(
+    adminId: string,
+    passwordHash: string,
+    options?: { removeLegacyPassword?: boolean }
+  ): Promise<void> {
+    if (!this.isConnected || !adminId) {
+      return;
+    }
+
+    try {
+      const matchers: any[] = [{ id: adminId }];
+      if (mongoose.Types.ObjectId.isValid(adminId)) {
+        matchers.push({ _id: new mongoose.Types.ObjectId(adminId) });
+      }
+
+      const update: any = {
+        $set: {
+          passwordHash,
+          updatedAt: new Date()
+        }
+      };
+
+      if (options?.removeLegacyPassword) {
+        update.$unset = { password: '' };
+      }
+
+      await AdminModel.updateOne({ $or: matchers }, update);
+    } catch (err) {
+      console.error('MongoDB updateAdminPassword failed:', err);
     }
   }
 
@@ -1561,8 +1722,13 @@ export class DatabaseService {
   static async updateAdminLastLogin(adminId: string): Promise<void> {
     if (this.isConnected) {
       try {
+        const matchers: any[] = [{ id: adminId }];
+        if (mongoose.Types.ObjectId.isValid(adminId)) {
+          matchers.push({ _id: new mongoose.Types.ObjectId(adminId) });
+        }
+
         await AdminModel.updateOne(
-          { id: adminId },
+          { $or: matchers },
           { lastLoginAt: new Date(), updatedAt: new Date() }
         );
       } catch (err) {

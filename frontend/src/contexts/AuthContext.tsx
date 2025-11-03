@@ -118,6 +118,11 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const [isInitializing, setIsInitializing] = React.useState(false);
+  const userRef = React.useRef<User | null>(null);
+
+  useEffect(() => {
+    userRef.current = state.user;
+  }, [state.user]);
 
   useEffect(() => {
     if (!isInitializing) {
@@ -128,14 +133,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const handleStatsUpdate = (event: any) => {
       const stats = event.detail;
       console.log('🔔 AuthContext received stats update:', stats);
-      dispatch({ 
-        type: 'UPDATE_USER', 
-        payload: {
-          coins: stats.coins,
-          totalChats: stats.totalChats,
-          dailyChats: stats.dailyChats
+      const payload = {
+        coins: stats.coins,
+        totalChats: stats.totalChats,
+        dailyChats: stats.dailyChats
+      };
+      dispatch({ type: 'UPDATE_USER', payload });
+
+      if (userRef.current) {
+        const mergedUser = { ...userRef.current, ...payload };
+        userRef.current = mergedUser;
+        storageService.setUser(mergedUser);
+      } else {
+        const storedUser = storageService.getUser();
+        if (storedUser) {
+          const mergedUser = { ...storedUser, ...payload };
+          storageService.setUser(mergedUser);
         }
-      });
+      }
     };
     
     window.addEventListener('user-stats-update', handleStatsUpdate);
@@ -175,6 +190,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           // Fetch current user data from backend
           const response = await authAPI.getCurrentUser();
           dispatch({ type: 'SET_USER', payload: response.user });
+          storageService.setUser(response.user);
+          userRef.current = response.user;
           console.log('✅ User data loaded:', { userId: response.user.id, coins: response.user.coins });
         } catch (error) {
           console.error('❌ Failed to fetch user data, clearing auth:', error);
@@ -214,6 +231,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       storageService.setToken(response.token);
       storageService.setUser(response.user);
+      userRef.current = response.user;
       
       console.log('💾 Login data saved to storage');
     } catch (error: any) {
@@ -240,6 +258,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await authAPI.getCurrentUser();
       dispatch({ type: 'SET_USER', payload: response.user });
       storageService.setUser(response.user);
+      userRef.current = response.user;
       
       console.log('✅ Token login successful:', { 
         userId: response.user.id,
@@ -312,6 +331,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       apiService.setToken(response.token);
       storageService.setToken(response.token);
       storageService.setUser(response.user);
+      userRef.current = response.user;
     } catch (error) {
       console.error('Google login failed:', error);
       throw error;
@@ -325,6 +345,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     storageService.removeToken();
     storageService.removeUser();
     apiService.setToken(null);
+    userRef.current = null;
     dispatch({ type: 'LOGOUT' });
   };
 
@@ -334,6 +355,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await userAPI.deleteAccount();
       storageService.clearAll();
       apiService.setToken(null);
+  userRef.current = null;
       dispatch({ type: 'LOGOUT' });
     } catch (error) {
       console.error('❌ Delete account failed:', error);
@@ -348,6 +370,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       dispatch({ type: 'SET_LOADING', payload: true });
       const user = await authAPI.verifyPhone({ phone, otp });
       dispatch({ type: 'UPDATE_USER', payload: user });
+      if (userRef.current) {
+        const mergedUser = { ...userRef.current, ...user };
+        userRef.current = mergedUser;
+        storageService.setUser(mergedUser);
+      } else {
+        const storedUser = storageService.getUser();
+        if (storedUser) {
+          const mergedUser = { ...storedUser, ...user };
+          storageService.setUser(mergedUser);
+          userRef.current = mergedUser;
+        }
+      }
     } catch (error) {
       console.error('Phone verification failed:', error);
       throw error;
@@ -358,7 +392,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateUser = (updates: Partial<User>) => {
     console.log('🔄 updateUser function called with:', updates);
+    const mergedUser = userRef.current ? { ...userRef.current, ...updates } : null;
     dispatch({ type: 'UPDATE_USER', payload: updates });
+    if (mergedUser) {
+      userRef.current = mergedUser;
+      storageService.setUser(mergedUser);
+    } else {
+      const storedUser = storageService.getUser();
+      if (storedUser) {
+        const updatedUser = { ...storedUser, ...updates };
+        storageService.setUser(updatedUser);
+        userRef.current = updatedUser;
+      }
+    }
     console.log('✅ UPDATE_USER action dispatched');
   };
 
@@ -381,6 +427,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           dailyChats: response.user.dailyChats
         });
         dispatch({ type: 'SET_USER', payload: response.user });
+        storageService.setUser(response.user);
+        userRef.current = response.user;
       }
     } catch (error) {
       console.error('❌ Failed to refresh user data:', error);

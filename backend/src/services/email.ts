@@ -1,292 +1,269 @@
 import { Resend } from 'resend';
 
-// Initialize Resend with API key from environment variable
-// IMPORTANT: Do NOT throw at module load time — this breaks server startup on Render if the key isn't set.
-// Instead, degrade gracefully and no-op the email functions while logging clear warnings.
-const HAS_RESEND_KEY = !!process.env.RESEND_API_KEY;
-let resend: Resend | null = null;
+// Lazy init keeps local boot resilient when email credentials are missing.
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const resendClient = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
-if (HAS_RESEND_KEY) {
-  resend = new Resend(process.env.RESEND_API_KEY);
-} else {
-  console.warn('⚠️ RESEND_API_KEY is not set. Email sending is disabled. Set RESEND_API_KEY in your environment to enable emails.');
+if (!resendClient) {
+  console.warn('⚠️ RESEND_API_KEY missing. Email sending disabled.');
 }
 
-interface SendOTPEmailParams {
+interface SendPayload {
+  to: string[];
+  subject: string;
+  html: string;
+}
+
+interface SendResult {
+  success: boolean;
+  data?: unknown;
+}
+
+const buildDisplayAddress = (raw: string | undefined, fallback: string): string => {
+  const value = (raw || '').trim();
+  if (!value) {
+    return `Omegoo <${fallback}>`;
+  }
+  if (value.includes('<') && value.includes('>')) {
+    return value;
+  }
+  return `Omegoo <${value}>`;
+};
+
+const PRIMARY_SENDER = buildDisplayAddress(process.env.RESEND_FROM_EMAIL, 'no-reply@omegoo.chat');
+const FALLBACK_SENDER = buildDisplayAddress(process.env.RESEND_FALLBACK_FROM_EMAIL, 'onboarding@resend.dev');
+const PLATFORM_URL = process.env.OMEGOO_APP_URL || 'https://omegoo.chat';
+
+const resolveSenders = (): string[] => {
+  if (PRIMARY_SENDER === FALLBACK_SENDER) {
+    return [PRIMARY_SENDER];
+  }
+  return [PRIMARY_SENDER, FALLBACK_SENDER];
+};
+
+const sendWithFallback = async ({ to, subject, html }: SendPayload): Promise<SendResult> => {
+  if (!resendClient) {
+    return { success: false };
+  }
+
+  const senders = resolveSenders();
+
+  for (let idx = 0; idx < senders.length; idx += 1) {
+    const from = senders[idx];
+    try {
+      const response = await resendClient.emails.send({ from, to, subject, html });
+
+      if (response.error) {
+        console.error(`❌ Resend rejected email from ${from}`, response.error);
+        if (idx === senders.length - 1) {
+          return { success: false };
+        }
+        console.warn('⚠️ Trying fallback sender.');
+        continue;
+      }
+
+      if (idx > 0) {
+        console.warn(`⚠️ Email delivered using fallback sender ${from}.`);
+      }
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error(`❌ Error sending email from ${from}`, error);
+      if (idx === senders.length - 1) {
+        return { success: false };
+      }
+      console.warn('⚠️ Trying fallback sender after error.');
+    }
+  }
+
+  return { success: false };
+};
+
+const escapeHtml = (value?: string | null): string => {
+  if (!value) {
+    return '';
+  }
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+interface SendOTPArgs {
   email: string;
   otp: string;
   name?: string;
 }
 
-interface SendWelcomeEmailParams {
+interface SendWelcomeArgs {
   email: string;
   name?: string;
 }
 
-/**
- * Generate 6-digit OTP
- */
+interface AuthTemplateArgs {
+  name?: string;
+  otp?: string | null;
+}
+
 export const generateOTP = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-/**
- * Send OTP email for email verification
- */
-export const sendOTPEmail = async ({ email, otp, name }: SendOTPEmailParams): Promise<boolean> => {
-  try {
-    if (!resend) {
-      // Graceful degradation: don't fail server logic, just log and report false
-      console.warn(`⚠️ Skipping OTP email (RESEND_API_KEY missing). Intended recipient: ${email}, OTP: ${otp}`);
-      return false;
-    }
-    console.log('📧 Sending OTP email to:', email);
-    console.log('📧 OTP:', otp);
-    console.log('📧 Name:', name);
-    
-    const { data, error } = await resend.emails.send({
-      from: 'Omegoo <onboarding@resend.dev>',
-      to: [email],
-      subject: 'Verify Your Omegoo Account',
-      html: `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Verify Your Email - Omegoo</title>
-        </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f7f9fc;">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f7f9fc; padding: 40px 20px;">
-            <tr>
-              <td align="center">
-                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
-                  
-                  <!-- Header -->
-                  <tr>
-                    <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">
-                        Welcome to Omegoo
-                      </h1>
-                      <p style="margin: 10px 0 0; color: #f0f0f0; font-size: 16px; font-weight: 300;">
-                        Connect with people worldwide
-                      </p>
-                    </td>
-                  </tr>
-
-                  <!-- Content -->
-                  <tr>
-                    <td style="padding: 40px 30px;">
-                      <p style="margin: 0 0 20px; color: #1a202c; font-size: 16px; line-height: 1.6;">
-                        Hello <strong>${name || 'there'}</strong>,
-                      </p>
-                      <p style="margin: 0 0 20px; color: #4a5568; font-size: 15px; line-height: 1.7;">
-                        Thank you for signing up! To complete your registration and start connecting with people, please verify your email address using the code below.
-                      </p>
-
-                      <!-- OTP Box -->
-                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 30px 0;">
-                        <tr>
-                          <td style="background-color: #f7fafc; border: 2px solid #667eea; border-radius: 12px; padding: 30px; text-align: center;">
-                            <p style="margin: 0 0 15px; color: #2d3748; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
-                              Your Verification Code
-                            </p>
-                            <p style="margin: 0; color: #667eea; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">
-                              ${otp}
-                            </p>
-                            <p style="margin: 15px 0 0; color: #718096; font-size: 13px;">
-                              Valid for 10 minutes
-                            </p>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <!-- Instructions -->
-                      <div style="background-color: #edf2f7; border-left: 4px solid #667eea; border-radius: 8px; padding: 20px; margin: 25px 0;">
-                        <p style="margin: 0 0 12px; color: #2d3748; font-size: 14px; font-weight: 600;">
-                          Important Notes:
-                        </p>
-                        <ul style="margin: 0; padding-left: 20px; color: #4a5568; font-size: 14px; line-height: 1.8;">
-                          <li>This code expires in 10 minutes</li>
-                          <li>Never share this code with anyone</li>
-                          <li>If you didn't request this, please ignore this email</li>
-                          <li><strong>Check your spam folder</strong> if you don't see our emails in your inbox</li>
-                        </ul>
-                      </div>
-
-                      <p style="margin: 25px 0 0; color: #718096; font-size: 14px; line-height: 1.6;">
-                        Once verified, you'll have access to:
-                      </p>
-                      <ul style="margin: 10px 0 0; padding-left: 20px; color: #4a5568; font-size: 14px; line-height: 1.8;">
-                        <li>Text, audio, and video chat</li>
-                        <li>Match with random people worldwide</li>
-                        <li>Safe and moderated conversations</li>
-                      </ul>
-                    </td>
-                  </tr>
-
-                  <!-- Footer -->
-                  <tr>
-                    <td style="background-color: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-                      <p style="margin: 0 0 10px; color: #718096; font-size: 14px;">
-                        Need help? Contact us at <a href="mailto:support@omegoo.com" style="color: #667eea; text-decoration: none; font-weight: 600;">support@omegoo.com</a>
-                      </p>
-                      <p style="margin: 15px 0 0; color: #a0aec0; font-size: 12px;">
-                        &copy; ${new Date().getFullYear()} Omegoo. All rights reserved.
-                      </p>
-                      <p style="margin: 10px 0 0; color: #cbd5e0; font-size: 11px;">
-                        This is an automated email. Please do not reply.
-                      </p>
-                    </td>
-                  </tr>
-
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-      `
-    });
-
-    if (error) {
-      console.error('❌ Resend API error:', error);
-      return false;
-    }
-
-    console.log('✅ Email sent successfully:', data);
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to send OTP email:', error);
+export const sendOTPEmail = async ({ email, otp, name }: SendOTPArgs): Promise<boolean> => {
+  if (!resendClient) {
+    console.warn(`⚠️ Skipping OTP email. RESEND_API_KEY missing. Target: ${email}`);
     return false;
   }
+
+  console.log('📧 Sending OTP email to', email);
+
+  const result = await sendWithFallback({
+    to: [email],
+    subject: 'Welcome to Omegoo – Verify Your Email',
+    html: buildAuthEmailTemplate({ name, otp }),
+  });
+
+  if (!result.success) {
+    console.error('❌ Failed to send OTP email.');
+    return false;
+  }
+
+  console.log('✅ OTP email dispatched.', result.data);
+  return true;
 };
 
-/**
- * Send welcome email for Google OAuth users (no OTP needed)
- */
-export const sendWelcomeEmail = async ({ email, name }: SendWelcomeEmailParams): Promise<boolean> => {
-  try {
-    if (!resend) {
-      console.warn(`⚠️ Skipping welcome email (RESEND_API_KEY missing). Intended recipient: ${email}`);
-      return false;
-    }
-    const { data, error } = await resend.emails.send({
-      from: 'Omegoo <onboarding@resend.dev>',
-      to: [email],
-      subject: 'Welcome to Omegoo - Your Account is Ready',
-      html: `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Welcome to Omegoo</title>
-        </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f7f9fc;">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f7f9fc; padding: 40px 20px;">
+export const sendWelcomeEmail = async ({ email, name }: SendWelcomeArgs): Promise<boolean> => {
+  if (!resendClient) {
+    console.warn(`⚠️ Skipping welcome email. RESEND_API_KEY missing. Target: ${email}`);
+    return false;
+  }
+
+  const result = await sendWithFallback({
+    to: [email],
+    subject: 'Welcome to Omegoo – Let\'s Get Started',
+    html: buildAuthEmailTemplate({ name }),
+  });
+
+  if (!result.success) {
+    console.error('❌ Failed to send welcome email.');
+    return false;
+  }
+
+  console.log('✅ Welcome email dispatched.', result.data);
+  return true;
+};
+
+const buildAuthEmailTemplate = ({ name, otp }: AuthTemplateArgs): string => {
+  const displayName = escapeHtml(name) || 'there';
+  const safeOtp = otp ? escapeHtml(otp) : null;
+  const currentYear = new Date().getFullYear();
+  const safePlatformUrl = escapeHtml(PLATFORM_URL);
+
+  const headline = safeOtp
+    ? `Welcome aboard, ${displayName}!`
+    : `Hi ${displayName}, your journey starts now!`;
+
+  const subHeadline = safeOtp
+    ? 'We are thrilled to have you at Omegoo. To keep your account secure, please verify your email using the code below.'
+    : 'Your Google account is all set! Dive into Omegoo and start discovering real conversations right away.';
+
+  const verificationBlock = safeOtp
+    ? `
+        <div class="otp-box">
+          <p style="margin: 0; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; color: #a5b4fc;">Verify your email</p>
+          <p class="otp-code">${safeOtp}</p>
+          <p style="margin: 0; font-size: 13px; color: #cbd5f5;">Valid for the next 10 minutes. Please do not share this code with anyone.</p>
+        </div>
+      `
+    : '';
+
+  const supportNote = safeOtp
+    ? 'If you did not request this email, simply ignore it. For any questions, reach us at'
+    : 'Need a hand or have feedback? Reach us anytime at';
+
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to Omegoo</title>
+    <style>
+      body { margin: 0; background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+      a.button { display: inline-block; padding: 14px 32px; border-radius: 9999px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; font-weight: 600; }
+      .card { background-color: #111c44; border-radius: 18px; padding: 32px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35); }
+      .feature { background-color: rgba(99, 102, 241, 0.12); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
+      .otp-box { background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.35) 100%); border-radius: 16px; padding: 28px; text-align: center; color: #e0e7ff; }
+      .otp-code { font-size: 36px; letter-spacing: 8px; font-weight: 700; font-family: 'Courier New', Courier, monospace; margin: 16px 0 10px; }
+      @media only screen and (max-width: 600px) {
+        .card { padding: 24px; }
+        .otp-code { font-size: 30px; letter-spacing: 6px; }
+      }
+    </style>
+  </head>
+  <body>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="padding: 40px 16px; background: radial-gradient(circle at top, rgba(99,102,241,0.45), rgba(15,23,42,0.95));">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px;">
             <tr>
-              <td align="center">
-                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
-                  
-                  <!-- Header -->
+              <td class="card">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                   <tr>
-                    <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">
-                        Welcome to Omegoo
-                      </h1>
-                      <p style="margin: 10px 0 0; color: #f0f0f0; font-size: 16px; font-weight: 300;">
-                        Your account is ready to use
-                      </p>
+                    <td style="text-align: center; padding-bottom: 28px;">
+                      <p style="margin: 0; color: #a5b4fc; font-size: 14px; letter-spacing: 3px; text-transform: uppercase;">Omegoo</p>
+                      <h1 style="margin: 12px 0 10px; font-size: 28px; color: #ffffff; font-weight: 700;">${headline}</h1>
+                      <p style="margin: 0; color: #cbd5f5; font-size: 16px; line-height: 1.6;">${subHeadline}</p>
                     </td>
                   </tr>
-
-                  <!-- Content -->
                   <tr>
-                    <td style="padding: 40px 30px;">
-                      <p style="margin: 0 0 20px; color: #1a202c; font-size: 16px; line-height: 1.6;">
-                        Hello <strong>${name || 'there'}</strong>,
-                      </p>
-                      <p style="margin: 0 0 20px; color: #4a5568; font-size: 15px; line-height: 1.7;">
-                        Your Google account has been successfully verified. You can now start connecting with people from around the world.
-                      </p>
-
-                      <!-- Features -->
-                      <div style="margin: 30px 0;">
-                        <p style="margin: 0 0 20px; color: #2d3748; font-size: 16px; font-weight: 600;">
-                          What you can do on Omegoo:
-                        </p>
-                        
-                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-                          <tr>
-                            <td style="padding: 15px; background-color: #f7fafc; border-radius: 8px; margin-bottom: 10px;">
-                              <p style="margin: 0 0 5px; color: #2d3748; font-size: 15px; font-weight: 600;">Text Chat</p>
-                              <p style="margin: 0; color: #718096; font-size: 14px;">Connect instantly via messages</p>
-                            </td>
-                          </tr>
-                          <tr><td style="height: 10px;"></td></tr>
-                          <tr>
-                            <td style="padding: 15px; background-color: #f7fafc; border-radius: 8px;">
-                              <p style="margin: 0 0 5px; color: #2d3748; font-size: 15px; font-weight: 600;">Audio Chat</p>
-                              <p style="margin: 0; color: #718096; font-size: 14px;">Crystal clear voice conversations</p>
-                            </td>
-                          </tr>
-                          <tr><td style="height: 10px;"></td></tr>
-                          <tr>
-                            <td style="padding: 15px; background-color: #f7fafc; border-radius: 8px;">
-                              <p style="margin: 0 0 5px; color: #2d3748; font-size: 15px; font-weight: 600;">Video Chat</p>
-                              <p style="margin: 0; color: #718096; font-size: 14px;">Face-to-face with strangers worldwide</p>
-                            </td>
-                          </tr>
-                        </table>
+                    <td>
+                      <div style="background-color: rgba(148, 163, 239, 0.1); border-radius: 16px; padding: 24px;">
+                        <p style="margin: 0 0 16px; color: #e2e8f0; font-size: 16px; font-weight: 600;">Here is what awaits you:</p>
+                        <div class="feature">
+                          <strong style="display: block; color: #e0e7ff;">Instant global matches</strong>
+                          <span style="color: #cbd5f5; font-size: 14px;">Meet new people via text, audio, or video within seconds.</span>
+                        </div>
+                        <div class="feature">
+                          <strong style="display: block; color: #e0e7ff;">Smarter, safer chats</strong>
+                          <span style="color: #cbd5f5; font-size: 14px;">Community-first moderation keeps conversations respectful.</span>
+                        </div>
+                        <div class="feature">
+                          <strong style="display: block; color: #e0e7ff;">Earn and unlock perks</strong>
+                          <span style="color: #cbd5f5; font-size: 14px;">Daily streaks and coins help you explore premium experiences.</span>
+                        </div>
                       </div>
-
-                      <!-- CTA Button -->
-                      <div style="text-align: center; margin: 35px 0;">
-                        <a href="https://omegoo.com" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
-                          Start Chatting
-                        </a>
-                      </div>
-
-                      <p style="margin: 25px 0 0; color: #718096; font-size: 14px; line-height: 1.6; text-align: center;">
-                        Stay safe and have fun connecting!
-                      </p>
                     </td>
                   </tr>
-
-                  <!-- Footer -->
                   <tr>
-                    <td style="background-color: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-                      <p style="margin: 0 0 10px; color: #718096; font-size: 14px;">
-                        Need help? Contact us at <a href="mailto:support@omegoo.com" style="color: #667eea; text-decoration: none; font-weight: 600;">support@omegoo.com</a>
-                      </p>
-                      <p style="margin: 15px 0 0; color: #a0aec0; font-size: 12px;">
-                        &copy; ${new Date().getFullYear()} Omegoo. All rights reserved.
-                      </p>
-                      <p style="margin: 10px 0 0; color: #cbd5e0; font-size: 11px;">
-                        This is an automated email. Please do not reply.
-                      </p>
+                    <td style="padding: 28px 0 12px; text-align: center;">
+                      <a class="button" href="${safePlatformUrl}">Open Omegoo</a>
                     </td>
                   </tr>
-
+                  <tr>
+                    <td>
+                      ${verificationBlock}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top: 24px;">
+                      <div style="background-color: rgba(15, 23, 42, 0.65); border-radius: 14px; padding: 18px 20px;">
+                        <p style="margin: 0 0 8px; font-size: 14px; color: #94a3b8; font-weight: 600;">Need a hand?</p>
+                        <p style="margin: 0; color: #cbd5f5; font-size: 14px; line-height: 1.6;">${supportNote} <a href="mailto:support@omegoo.com" style="color: #a5b4fc; text-decoration: none; font-weight: 600;">support@omegoo.com</a>.</p>
+                      </div>
+                    </td>
+                  </tr>
                 </table>
+                <p style="margin: 26px 0 0; text-align: center; color: #64748b; font-size: 12px;">&copy; ${currentYear} Omegoo. All rights reserved.</p>
               </td>
             </tr>
           </table>
-        </body>
-        </html>
-      `,
-    });
-
-    if (error) {
-      console.error('❌ Error sending welcome email:', error);
-      return false;
-    }
-
-    console.log('✅ Welcome email sent successfully:', data);
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to send welcome email:', error);
-    return false;
-  }
+        </td>
+      </tr>
+    </table>
+  </body>
+  </html>
+  `;
 };
