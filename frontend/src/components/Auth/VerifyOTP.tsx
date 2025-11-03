@@ -127,7 +127,7 @@ const VerifyOTP: React.FC = () => {
       setError(
         err?.response?.data?.message ||
         err?.response?.data?.error ||
-        'OTP verification failed. कृपया फिर से try करें।'
+        'OTP verification failed. Please try again.'
       );
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
@@ -144,7 +144,7 @@ const VerifyOTP: React.FC = () => {
     setError('');
 
     try {
-  await authAPI.resendEmailOTP(email);
+      await authAPI.resendEmailOTP(email);
       
       setResendCooldown(60); // 60 seconds cooldown
       setTimer(600); // Reset timer to 10 minutes

@@ -1,6 +1,18 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
+
+const PRIMARY_FROM = process.env.RESEND_FROM_EMAIL || 'Omegoo <noreply@omegoo.chat>';
+const FALLBACK_FROM = process.env.RESEND_FALLBACK_FROM_EMAIL || 'Omegoo <onboarding@resend.dev>';
+
+const logResendConfig = () => {
+  console.log('📨 Resend configuration:', {
+    hasApiKey: Boolean(resendApiKey),
+    primaryFrom: PRIMARY_FROM,
+    fallbackFrom: FALLBACK_FROM
+  });
+};
 
 interface SendOTPEmailParams {
   email: string;
@@ -13,19 +25,43 @@ interface SendOTPEmailParams {
  */
 export const sendOTPEmail = async ({ email, otp, name }: SendOTPEmailParams): Promise<boolean> => {
   try {
+    if (!resend) {
+      console.error('❌ Resend API key missing. Cannot send OTP email.');
+      logResendConfig();
+      return false;
+    }
+
     console.log('📧 Sending OTP email via Resend...');
     console.log('Recipient:', email);
     console.log('OTP:', otp);
+    logResendConfig();
 
-    const { data, error } = await resend.emails.send({
-      from: 'Omegoo <noreply@omegoo.chat>', // send from verified Omegoo domain
-      to: [email],
-      subject: '🎉 Welcome to Omegoo - Verify Your Email',
-      html: generateOTPEmailHTML(name, otp),
-    });
+    const attemptSend = async (fromAddress: string) => {
+      const { data, error } = await resend.emails.send({
+        from: fromAddress,
+        to: [email],
+        subject: '🎉 Welcome to Omegoo - Verify Your Email',
+        html: generateOTPEmailHTML(name, otp),
+      });
+
+      return { data, error };
+    };
+
+    let { data, error } = await attemptSend(PRIMARY_FROM);
 
     if (error) {
-      console.error('❌ Resend API error:', error);
+      console.error('❌ Resend API error (primary sender):', error);
+      const reason = typeof error === 'object' && error !== null ? (error as any).message : String(error);
+      const shouldFallback = reason?.toLowerCase().includes('domain not verified') || reason?.toLowerCase().includes('unauthorized');
+
+      if (shouldFallback && PRIMARY_FROM !== FALLBACK_FROM) {
+        console.warn('⚠️ Falling back to default Resend sender address.');
+        ({ data, error } = await attemptSend(FALLBACK_FROM));
+      }
+    }
+
+    if (error) {
+      console.error('❌ Resend API error (after fallback attempt):', error);
       return false;
     }
 
@@ -43,18 +79,42 @@ export const sendOTPEmail = async ({ email, otp, name }: SendOTPEmailParams): Pr
  */
 export const sendWelcomeEmail = async (email: string, name: string): Promise<boolean> => {
   try {
+    if (!resend) {
+      console.error('❌ Resend API key missing. Cannot send welcome email.');
+      logResendConfig();
+      return false;
+    }
+
     console.log('📧 Sending welcome email via Resend...');
     console.log('Recipient:', email);
+    logResendConfig();
 
-    const { data, error } = await resend.emails.send({
-      from: 'Omegoo <noreply@omegoo.chat>',
-      to: [email],
-      subject: '🎉 Welcome to Omegoo!',
-      html: generateWelcomeEmailHTML(name),
-    });
+    const attemptSend = async (fromAddress: string) => {
+      const { data, error } = await resend.emails.send({
+        from: fromAddress,
+        to: [email],
+        subject: '🎉 Welcome to Omegoo!',
+        html: generateWelcomeEmailHTML(name),
+      });
+
+      return { data, error };
+    };
+
+    let { data, error } = await attemptSend(PRIMARY_FROM);
 
     if (error) {
-      console.error('❌ Resend API error:', error);
+      console.error('❌ Resend API error (primary sender):', error);
+      const reason = typeof error === 'object' && error !== null ? (error as any).message : String(error);
+      const shouldFallback = reason?.toLowerCase().includes('domain not verified') || reason?.toLowerCase().includes('unauthorized');
+
+      if (shouldFallback && PRIMARY_FROM !== FALLBACK_FROM) {
+        console.warn('⚠️ Falling back to default Resend sender address for welcome email.');
+        ({ data, error } = await attemptSend(FALLBACK_FROM));
+      }
+    }
+
+    if (error) {
+      console.error('❌ Resend API error (after fallback attempt):', error);
       return false;
     }
 
@@ -71,6 +131,7 @@ export const sendWelcomeEmail = async (email: string, name: string): Promise<boo
  * Generate OTP verification email HTML
  */
 function generateOTPEmailHTML(name: string, otp: string): string {
+  const currentYear = new Date().getFullYear();
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -108,30 +169,30 @@ function generateOTPEmailHTML(name: string, otp: string): string {
               <td align="center">
                 <div class="card">
                   <div class="hero">
-                    <h1>Omegoo में आपका हार्दिक स्वागत है!</h1>
+                    <h1>Welcome to Omegoo!</h1>
                     <p>Let’s secure your account in under a minute.</p>
                   </div>
                   <div class="content">
-                    <p>नमस्ते <strong>${name}</strong>,</p>
+                    <p>Hello <strong>${name}</strong>,</p>
                     <p>
-                      आपके लिए Omegoo की दुनिया का दरवाजा खुल चुका है! 🚀
-                      नीचे दिया गया verification code 10 मिनट तक मान्य रहेगा।
+                      We are thrilled to have you on board. 🚀
+                      Use the verification code below to activate your account within the next 10 minutes.
                     </p>
                     <div class="otp-box">
                       <p class="otp-label">Verification Code</p>
                       <span class="otp-code">${otp}</span>
-                      <p class="note">⏱️ OTP विफल होने से पहले इसे पूरा कर लें</p>
+                      <p class="note">⏱️ This code expires in 10 minutes</p>
                     </div>
                     <div class="alert">
-                      <strong>Security Tip:</strong> यह OTP सिर्फ आपके लिए है।
-                      कोई भी Omegoo टीम सदस्य इसे कभी नहीं मांगेगा।
+                      <strong>Security Tip:</strong> Your OTP is private.
+                      The Omegoo team will never ask you to share it.
                     </div>
-                    <p>यदि आपने इस signup की शुरुआत नहीं की है, तो निश्चिंत रहें — आप इस ईमेल को अनदेखा कर सकते हैं।</p>
-                    <p style="margin-top:28px;">शुभकामनाएं,<br/><strong>Team Omegoo</strong></p>
+                    <p>If you did not request this signup, you can safely ignore this message.</p>
+                    <p style="margin-top:28px;">With appreciation,<br/><strong>Team Omegoo</strong></p>
                   </div>
                   <div class="footer">
-                    यह एक system generated ईमेल है। कृपया reply न करें।<br/>
-                    © ${new Date().getFullYear()} Omegoo Chat. All rights reserved.
+                    This is an automated email. Please do not reply.<br/>
+                    © ${currentYear} Omegoo Chat. All rights reserved.
                   </div>
                 </div>
               </td>
@@ -147,6 +208,7 @@ function generateOTPEmailHTML(name: string, otp: string): string {
  * Generate welcome email HTML for Google OAuth users
  */
 function generateWelcomeEmailHTML(name: string): string {
+  const currentYear = new Date().getFullYear();
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -185,31 +247,31 @@ function generateWelcomeEmailHTML(name: string): string {
                 <div class="card">
                   <div class="hero">
                     <h1>Welcome to Omegoo!</h1>
-                    <p>नए connections, smarter conversations.</p>
+                    <p>New connections. Smarter conversations.</p>
                   </div>
                   <div class="content">
-                    <p>Hey <strong>${name}</strong>,</p>
+                    <p>Hello <strong>${name}</strong>,</p>
                     <p>
-                      Google से successful sign-in के लिए बधाई! अब आप Omegoo के सभी
-                      AI-powered experiences explore कर सकते हैं।
+                      Your Google sign-in was successful! You now have instant access to every
+                      AI-powered experience inside Omegoo.
                     </p>
                     <div class="cta">
                       <h2>🚀 You’re ready to chat!</h2>
-                      <p>अपनी complimentary welcome credits के साथ शुरुआत करें।</p>
+                      <p>Kick off with your complimentary welcome credits.</p>
                     </div>
                     <div class="benefits">
-                      <h3>जल्दी से शुरुआत करने के लिए:</h3>
+                      <h3>Jump back in with:</h3>
                       <ul>
-                        <li>AI experts से instant replies</li>
-                        <li>Smart prompts & personalised threads</li>
+                        <li>Instant replies from our AI experts</li>
+                        <li>Smart prompts and personalised threads</li>
                         <li>Daily rewards and community events</li>
                       </ul>
                     </div>
                     <p style="margin-top: 28px;">Stay curious,<br/><strong>Team Omegoo</strong></p>
                   </div>
                   <div class="footer">
-                    कोई सवाल? support@omegoo.chat पर लिखें।<br/>
-                    © ${new Date().getFullYear()} Omegoo Chat. All rights reserved.
+                    Questions? Reach us at support@omegoo.chat.<br/>
+                    © ${currentYear} Omegoo Chat. All rights reserved.
                   </div>
                 </div>
               </td>

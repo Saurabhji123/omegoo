@@ -347,14 +347,14 @@ const Home: React.FC = () => {
                 ⚠️ Email Verification Required
               </h2>
               <p className="text-gray-300 text-sm">
-                आपको सभी features use करने के लिए अपना email verify करना होगा
+                Please verify your email to unlock every feature
               </p>
             </div>
 
             {/* Message */}
             <div className="bg-yellow-500 bg-opacity-10 border border-yellow-500 border-opacity-30 rounded-xl p-4 mb-6">
               <p className="text-white text-sm">
-                हमने आपके email <span className="font-semibold">{user.email}</span> पर एक verification code भेजा है। कृपया अपना email check करें।
+                We have sent a verification code to <span className="font-semibold">{user.email}</span>. Please check your inbox.
               </p>
             </div>
 
