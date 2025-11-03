@@ -9,6 +9,29 @@ interface LoginRegisterProps {
   onSuccess?: () => void;
 }
 
+const ALLOWED_EMAIL_DOMAINS = new Set([
+  'gmail.com',
+  'googlemail.com',
+  'outlook.com',
+  'hotmail.com',
+  'live.com',
+  'msn.com',
+  'yahoo.com',
+  'yahoo.co.in',
+  'icloud.com',
+  'me.com',
+  'mac.com',
+  'aol.com',
+  'zoho.com',
+  'zohomail.com',
+  'protonmail.com',
+  'proton.me',
+  'gmx.com',
+  'gmx.de',
+  'yandex.com',
+  'yandex.ru'
+]);
+
 const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
   const { loginWithEmail, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -20,6 +43,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showMailGuard, setShowMailGuard] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,10 +65,19 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
           return;
         }
 
+        const normalizedEmail = email.trim().toLowerCase();
+        const emailDomain = normalizedEmail.split('@')[1] || '';
+
+        if (!ALLOWED_EMAIL_DOMAINS.has(emailDomain)) {
+          setLoading(false);
+          setShowMailGuard(true);
+          return;
+        }
+
         console.log('📝 ===== REGISTRATION START =====');
-        console.log('📝 Registration data:', { email, username, gender });
+        console.log('📝 Registration data:', { email: normalizedEmail, username, gender });
         
-        const response = await register(email, username, password, gender);
+        const response = await register(normalizedEmail, username, password, gender);
         
         console.log('✅ ===== REGISTRATION RESPONSE =====');
         console.log('Full response object:', response);
@@ -120,6 +153,36 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {showMailGuard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black bg-opacity-60"
+            onClick={() => setShowMailGuard(false)}
+          ></div>
+          <div className="relative max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-purple-200">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-t-2xl px-6 py-4">
+              <h3 className="text-white text-lg font-semibold">Use a trusted email</h3>
+            </div>
+            <div className="px-6 py-5 space-y-3">
+              <p className="text-sm text-gray-700">
+                We noticed this address looks temporary. Please sign up with a genuine email from providers like Gmail, Outlook, Zoho, Proton, or Yahoo so we can keep your account secure.
+              </p>
+              <p className="text-xs text-gray-500">
+                Disposable inboxes are blocked to prevent abuse. Switch to your real mailbox and try again.
+              </p>
+            </div>
+            <div className="px-6 pb-5">
+              <button
+                type="button"
+                onClick={() => setShowMailGuard(false)}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm rounded-lg py-2.5 transition"
+              >
+                Got it, I&apos;ll use a real email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Navbar */}
       <nav className="bg-white bg-opacity-10 backdrop-blur-md border-b border-white border-opacity-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
