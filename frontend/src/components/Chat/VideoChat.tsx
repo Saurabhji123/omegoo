@@ -7,6 +7,8 @@ import {
   VideoCameraIcon,
   VideoCameraSlashIcon,
   MicrophoneIcon,
+  SpeakerWaveIcon,
+  SpeakerXMarkIcon,
   ChatBubbleLeftRightIcon,
   PaperAirplaneIcon,
   ArrowPathIcon
@@ -30,6 +32,8 @@ const VideoChat: React.FC = () => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null); // Track local stream for mic control
+  const remoteStreamRef = useRef<MediaStream | null>(null); // Track remote stream for speaker control
+  const speakerStateRef = useRef(true);
   
   // Track latest state values for event handlers (prevent stale closures)
   const isMatchConnectedRef = useRef(false);
@@ -41,6 +45,7 @@ const VideoChat: React.FC = () => {
   const [isMatchConnected, setIsMatchConnected] = useState(false); // Renamed for clarity - this is for match connection
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user'); // Track camera facing mode
   const [isLocalMirrored, setIsLocalMirrored] = useState(true); // Track local video mirror state (for PC toggle)
   const [cameraBlocked, setCameraBlocked] = useState(false);
@@ -70,6 +75,15 @@ const VideoChat: React.FC = () => {
     sessionIdRef.current = sessionId;
   }, [isMatchConnected, partnerId, currentState, sessionId]);
 
+  useEffect(() => {
+    speakerStateRef.current = isSpeakerOn;
+    const remoteVideo = remoteVideoRef.current;
+    if (remoteVideo) {
+      remoteVideo.muted = !isSpeakerOn;
+      remoteVideo.volume = isSpeakerOn ? 1 : 0;
+    }
+  }, [isSpeakerOn]);
+
   // Handle window resize for responsive video aspect ratio
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -86,9 +100,13 @@ const VideoChat: React.FC = () => {
       id: stream.id
     });
     
+    remoteStreamRef.current = stream;
+    
     if (remoteVideoRef.current) {
       // Always set the remote stream
       remoteVideoRef.current.srcObject = stream;
+      remoteVideoRef.current.muted = !speakerStateRef.current;
+      remoteVideoRef.current.volume = speakerStateRef.current ? 1 : 0;
       console.log('✅ Remote stream assigned to video element');
       
       // Force play the remote video
@@ -318,6 +336,8 @@ const VideoChat: React.FC = () => {
           remoteVideoRef.current.srcObject = null;
           remoteVideoRef.current.load(); // Force video element to reset
         }
+        remoteStreamRef.current = null;
+        remoteStreamRef.current = null;
         
         // Reset all state
         setIsMatchConnected(false);
@@ -488,6 +508,7 @@ const VideoChat: React.FC = () => {
           remoteVideo.srcObject = null;
           remoteVideo.load();
         }
+        remoteStreamRef.current = null;
       }
       
       // Remove all socket listeners
@@ -603,6 +624,12 @@ const VideoChat: React.FC = () => {
           audioTrack.enabled = isMicOn;
           console.log('🎤 Applied mic state to fresh stream:', { isMicOn, trackEnabled: audioTrack.enabled });
         }
+
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.enabled = isCameraOn;
+          console.log('🎥 Applied camera state to fresh stream:', { isCameraOn, trackEnabled: videoTrack.enabled });
+        }
         
         // Ensure video plays
         try {
@@ -710,8 +737,6 @@ const VideoChat: React.FC = () => {
     setCurrentState('finding'); // Set to finding state
     setMessages([]);
     setIsSearching(true);
-    setIsMicOn(true); // CRITICAL: Reset mic to ON for next match (AudioChat pattern)
-    setIsCameraOn(true); // Reset camera to ON for next match
     setFacingMode('user'); // Reset to front camera
     setIsLocalMirrored(true); // Reset to mirrored for front camera
     console.log('🔄 State reset for new connection - Mic and Camera ON');
@@ -851,6 +876,30 @@ const VideoChat: React.FC = () => {
     } catch (error) {
       console.error('❌ Error toggling microphone:', error);
       addMessage('Failed to toggle microphone. Please try again.', false);
+    }
+  };
+
+  const toggleSpeaker = () => {
+    try {
+      console.log('🔊 SPEAKER TOGGLE: Current state =', isSpeakerOn);
+      const newState = !isSpeakerOn;
+
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.muted = !newState;
+        remoteVideoRef.current.volume = newState ? 1 : 0;
+        console.log('🔊 Applied speaker state to remote video element:', {
+          muted: remoteVideoRef.current.muted,
+          volume: remoteVideoRef.current.volume
+        });
+      } else {
+        console.warn('⚠️ Remote video element not ready for speaker toggle');
+      }
+
+      setIsSpeakerOn(newState);
+      console.log('✅ Speaker toggled successfully:', newState);
+    } catch (error) {
+      console.error('❌ Error toggling speaker:', error);
+      addMessage('Failed to toggle speaker. Please try again.', false);
     }
   };
 
@@ -1157,20 +1206,6 @@ const VideoChat: React.FC = () => {
           {/* Controls - Mobile friendly */}
           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 lg:bottom-4">
             <div className="flex space-x-2 lg:space-x-3">
-              {/* Camera Toggle */}
-              <button
-                onClick={toggleCamera}
-                className={`p-2 lg:p-3 rounded-full ${
-                  isCameraOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'
-                } text-white transition-colors touch-manipulation`}
-              >
-                {isCameraOn ? (
-                  <VideoCameraIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-                ) : (
-                  <VideoCameraSlashIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-                )}
-              </button>
-
               {/* Mic Toggle */}
               <button
                 onClick={toggleMic}
@@ -1182,6 +1217,35 @@ const VideoChat: React.FC = () => {
                   <MicrophoneIcon className="w-4 h-4 lg:w-5 lg:h-5" />
                 ) : (
                   <MicrophoneSlashIcon className="w-4 h-4 lg:w-5 lg:h-5" />
+                )}
+              </button>
+
+              {/* Speaker Toggle */}
+              <button
+                onClick={toggleSpeaker}
+                className={`p-2 lg:p-3 rounded-full ${
+                  isSpeakerOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'
+                } text-white transition-colors touch-manipulation`}
+                title={isSpeakerOn ? 'Mute Speaker' : 'Unmute Speaker'}
+              >
+                {isSpeakerOn ? (
+                  <SpeakerWaveIcon className="w-4 h-4 lg:w-5 lg:h-5" />
+                ) : (
+                  <SpeakerXMarkIcon className="w-4 h-4 lg:w-5 lg:h-5" />
+                )}
+              </button>
+
+              {/* Camera Toggle */}
+              <button
+                onClick={toggleCamera}
+                className={`p-2 lg:p-3 rounded-full ${
+                  isCameraOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'
+                } text-white transition-colors touch-manipulation`}
+              >
+                {isCameraOn ? (
+                  <VideoCameraIcon className="w-4 h-4 lg:w-5 lg:h-5" />
+                ) : (
+                  <VideoCameraSlashIcon className="w-4 h-4 lg:w-5 lg:h-5" />
                 )}
               </button>
 

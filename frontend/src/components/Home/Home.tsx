@@ -136,19 +136,12 @@ const Home: React.FC = () => {
         {/* Hero Headline */}
         <div className="mb-6">
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text drop-shadow-2xl tracking-wider">
-            Random video chat, built for Strangers
+            Random Chat · Video · Voice · Text
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 mt-3 uppercase tracking-[0.35rem]">
             Meet new people in seconds
           </p>
         </div>
-
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
-          50 daily coins · Video · Voice · Text
-        </h2>
-        <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-2xl mx-auto">
-          Verified strangers, friends, and creators connect instantly—spend coins to jump into spam-free chats from anywhere.
-        </p>
         
         {/* User Status & Coins - Only show if logged in */}
         {user ? (
