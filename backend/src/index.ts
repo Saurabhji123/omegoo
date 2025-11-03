@@ -37,8 +37,8 @@ const io = new SocketIOServer(server, {
     origin: process.env.NODE_ENV === 'production' 
       ? [
           'https://omegoo.vercel.app',
-          'https://saurabhji123.github.io', 
-          'https://saurabhji123.github.io/omegoo'
+          'https://www.omegoo.chat',
+          'https://omegoo.chat'
         ]
       : process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST"],
@@ -68,11 +68,13 @@ app.use(helmet({
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://omegoo.vercel.app',
-        'https://saurabhji123.github.io', 
-        'https://saurabhji123.github.io/omegoo'
-      ]
+      ? [
+          'https://omegoo.vercel.app',
+          'https://www.omegoo.chat',
+          'https://omegoo.chat',
+          'https://saurabhji123.github.io', 
+          'https://saurabhji123.github.io/omegoo'
+        ]
     : process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Added PATCH method
