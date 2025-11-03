@@ -33,7 +33,16 @@ const VideoChat: React.FC = () => {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null); // Track local stream for mic control
   const remoteStreamRef = useRef<MediaStream | null>(null); // Track remote stream for speaker control
-  const speakerStateRef = useRef(true);
+  const getStoredBoolean = (key: string, fallback: boolean): boolean => {
+    if (typeof window === 'undefined') {
+      return fallback;
+    }
+    const storedValue = window.sessionStorage.getItem(key);
+    if (storedValue === null) {
+      return fallback;
+    }
+    return storedValue === 'true';
+  };
   
   // Track latest state values for event handlers (prevent stale closures)
   const isMatchConnectedRef = useRef(false);
@@ -44,8 +53,8 @@ const VideoChat: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isMatchConnected, setIsMatchConnected] = useState(false); // Renamed for clarity - this is for match connection
   const [isCameraOn, setIsCameraOn] = useState(true);
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const [isMicOn, setIsMicOn] = useState<boolean>(() => getStoredBoolean('videoChat:isMicOn', true));
+  const [isSpeakerOn, setIsSpeakerOn] = useState<boolean>(() => getStoredBoolean('videoChat:isSpeakerOn', true));
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user'); // Track camera facing mode
   const [isLocalMirrored, setIsLocalMirrored] = useState(true); // Track local video mirror state (for PC toggle)
   const [cameraBlocked, setCameraBlocked] = useState(false);
@@ -59,6 +68,30 @@ const VideoChat: React.FC = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [showReportModal, setShowReportModal] = useState(false);
   const videoOnlineCount = modeUserCounts.video;
+
+  const micStateRef = useRef<boolean>(isMicOn);
+  const speakerStateRef = useRef<boolean>(isSpeakerOn);
+
+  const applyMicState = useCallback(() => {
+    const currentMicState = micStateRef.current;
+    const localStream = localStreamRef.current;
+    if (localStream) {
+      const audioTrack = localStream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = currentMicState;
+      }
+    }
+    webRTCRef.current?.updateAudioSenders(currentMicState);
+  }, []);
+
+  const applySpeakerState = useCallback(() => {
+    const currentSpeakerState = speakerStateRef.current;
+    const remoteVideo = remoteVideoRef.current;
+    if (remoteVideo) {
+      remoteVideo.muted = !currentSpeakerState;
+      remoteVideo.volume = currentSpeakerState ? 1 : 0;
+    }
+  }, []);
 
   useEffect(() => {
     setActiveMode('video');
@@ -76,13 +109,20 @@ const VideoChat: React.FC = () => {
   }, [isMatchConnected, partnerId, currentState, sessionId]);
 
   useEffect(() => {
-    speakerStateRef.current = isSpeakerOn;
-    const remoteVideo = remoteVideoRef.current;
-    if (remoteVideo) {
-      remoteVideo.muted = !isSpeakerOn;
-      remoteVideo.volume = isSpeakerOn ? 1 : 0;
+    micStateRef.current = isMicOn;
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem('videoChat:isMicOn', String(isMicOn));
     }
-  }, [isSpeakerOn]);
+    applyMicState();
+  }, [isMicOn, applyMicState]);
+
+  useEffect(() => {
+    speakerStateRef.current = isSpeakerOn;
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem('videoChat:isSpeakerOn', String(isSpeakerOn));
+    }
+    applySpeakerState();
+  }, [isSpeakerOn, applySpeakerState]);
 
   // Handle window resize for responsive video aspect ratio
   useEffect(() => {
@@ -105,8 +145,7 @@ const VideoChat: React.FC = () => {
     if (remoteVideoRef.current) {
       // Always set the remote stream
       remoteVideoRef.current.srcObject = stream;
-      remoteVideoRef.current.muted = !speakerStateRef.current;
-      remoteVideoRef.current.volume = speakerStateRef.current ? 1 : 0;
+      applySpeakerState();
       console.log('✅ Remote stream assigned to video element');
       
       // Force play the remote video
@@ -128,7 +167,47 @@ const VideoChat: React.FC = () => {
     setIsMatchConnected(true);
     setCurrentState('connected');
     setIsSearching(false);
-  }, []);
+  }, [applySpeakerState]);
+
+  const handleConnectionStateChange = useCallback((state: RTCPeerConnectionState) => {
+    console.log('🔌 WebRTC Connection State Changed:', state);
+
+    if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+      console.log('⚠️ WebRTC connection lost, triggering reconnection...');
+      console.log('Current state (from refs):', {
+        isMatchConnected: isMatchConnectedRef.current,
+        sessionId: sessionIdRef.current
+      });
+
+      if (isMatchConnectedRef.current && sessionIdRef.current) {
+        setIsMatchConnected(false);
+        setCurrentState('finding');
+        setIsSearching(true);
+
+        if (remoteVideoRef.current) {
+          if (remoteVideoRef.current.srcObject) {
+            const stream = remoteVideoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+          }
+          remoteVideoRef.current.pause();
+          remoteVideoRef.current.srcObject = null;
+          remoteVideoRef.current.load();
+        }
+
+        addMessage('Connection lost. Finding someone new...', false);
+        setTimeout(() => {
+          if (socket && socket.connected) {
+            console.log('🔍 Auto-searching after WebRTC disconnect...');
+            socket.emit('find_match', { mode: 'video' });
+          }
+        }, 1000);
+      }
+    } else if (state === 'connected') {
+      setIsMatchConnected(true);
+      setCurrentState('connected');
+      applyMicState();
+    }
+  }, [socket, applyMicState]);
 
   useEffect(() => {
     // Initialize WebRTC service without socket (we'll use the context socket)
@@ -136,50 +215,7 @@ const VideoChat: React.FC = () => {
     
     // Set up remote video stream handler (works for both initial and reconnections)
     webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
-
-    webRTCRef.current.onConnectionStateChanged((state: RTCPeerConnectionState) => {
-      console.log('🔌 WebRTC Connection State Changed:', state);
-      
-      if (state === 'disconnected' || state === 'failed' || state === 'closed') {
-        console.log('⚠️ WebRTC connection lost, triggering reconnection...');
-        console.log('Current state (from refs):', { 
-          isMatchConnected: isMatchConnectedRef.current, 
-          sessionId: sessionIdRef.current 
-        });
-        
-        // Only trigger auto-search if we were actually connected (use refs for latest state)
-        if (isMatchConnectedRef.current && sessionIdRef.current) {
-          setIsMatchConnected(false);
-          setCurrentState('finding');
-          setIsSearching(true);
-          
-          // Clear remote video with proper cleanup
-          if (remoteVideoRef.current) {
-            // Stop all tracks first
-            if (remoteVideoRef.current.srcObject) {
-              const stream = remoteVideoRef.current.srcObject as MediaStream;
-              stream.getTracks().forEach(track => track.stop());
-            }
-            // CRITICAL: Pause video, clear srcObject, and force reload
-            remoteVideoRef.current.pause();
-            remoteVideoRef.current.srcObject = null;
-            remoteVideoRef.current.load(); // Force video element to reset
-          }
-          
-          // Auto-search for new partner
-          addMessage('Connection lost. Finding someone new...', false);
-          setTimeout(() => {
-            if (socket && socket.connected) {
-              console.log('🔍 Auto-searching after WebRTC disconnect...');
-              socket.emit('find_match', { mode: 'video' });
-            }
-          }, 1000);
-        }
-      } else if (state === 'connected') {
-        setIsMatchConnected(true);
-        setCurrentState('connected');
-      }
-    });
+    webRTCRef.current.onConnectionStateChanged(handleConnectionStateChange);
 
     // Socket event listeners
     if (socket) {
@@ -238,6 +274,7 @@ const VideoChat: React.FC = () => {
           
           // CRITICAL: Set remote video callback on NEW instance
           webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
+          webRTCRef.current.onConnectionStateChanged(handleConnectionStateChange);
           
           // Set up new connection
           webRTCRef.current.setSocket(socket, data.sessionId, data.matchUserId);
@@ -619,11 +656,12 @@ const VideoChat: React.FC = () => {
         console.log('✅ Local video stream set to video element');
         
         // Apply current mic state to audio track (important for fresh stream after Next Person)
-        const audioTrack = stream.getAudioTracks()[0];
-        if (audioTrack) {
-          audioTrack.enabled = isMicOn;
-          console.log('🎤 Applied mic state to fresh stream:', { isMicOn, trackEnabled: audioTrack.enabled });
-        }
+        applyMicState();
+        const currentMicState = micStateRef.current;
+        console.log('🎤 Applied mic state to fresh stream:', {
+          currentMicState,
+          trackEnabled: localStreamRef.current?.getAudioTracks()[0]?.enabled
+        });
 
         const videoTrack = stream.getVideoTracks()[0];
         if (videoTrack) {
@@ -725,6 +763,7 @@ const VideoChat: React.FC = () => {
           console.log('🔄 Reinitializing WebRTC service after cleanup');
           webRTCRef.current = new WebRTCService();
           webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
+          webRTCRef.current.onConnectionStateChanged(handleConnectionStateChange);
           console.log('✅ Fresh WebRTC instance created');
         }
       }, 100);
@@ -739,7 +778,7 @@ const VideoChat: React.FC = () => {
     setIsSearching(true);
     setFacingMode('user'); // Reset to front camera
     setIsLocalMirrored(true); // Reset to mirrored for front camera
-    console.log('🔄 State reset for new connection - Mic and Camera ON');
+  console.log('🔄 State reset for new connection - preserving mic and speaker states');
     
     // START NEW SEARCH (with delay if force cleanup)
     const searchDelay = forceCleanup ? 200 : 0;
@@ -820,54 +859,37 @@ const VideoChat: React.FC = () => {
     try {
       console.log('🎤 MIC TOGGLE: Current state =', isMicOn);
       
-      // Check if we have a valid local stream
       if (!localStreamRef.current) {
         console.error('❌ No local stream available for mic toggle');
         addMessage('Microphone not available. Please refresh the page.', false);
         return;
       }
-      
+
       const audioTrack = localStreamRef.current.getAudioTracks()[0];
       if (!audioTrack) {
-        console.error('❌ No audio track found');
+        console.error('❌ Audio track not found');
         addMessage('Microphone not found. Please check permissions.', false);
         return;
       }
-      
+
       if (audioTrack.readyState !== 'live') {
         console.error('❌ Audio track not live:', audioTrack.readyState);
         addMessage('Microphone is not active. Please refresh.', false);
+        console.log('🔄 Attempting audio recovery...');
+        startLocalVideo().catch(console.error);
         return;
       }
-      
-      // Direct toggle based on UI state for consistency
+
       const newState = !isMicOn;
       audioTrack.enabled = newState;
-      
-      // Update WebRTC senders to propagate mic state
+
       if (webRTCRef.current) {
-        try {
-          // Get peer connection and update audio senders
-          const pc = (webRTCRef.current as any).peerConnection;
-          if (pc && pc.connectionState === 'connected') {
-            const senders = pc.getSenders();
-            senders.forEach((sender: RTCRtpSender) => {
-              if (sender.track?.kind === 'audio') {
-                sender.track.enabled = newState;
-                console.log('🔄 Updated audio sender:', sender.track.id, 'enabled:', newState);
-              }
-            });
-          }
-        } catch (peerError) {
-          console.warn('⚠️ Could not update peer connection audio:', peerError);
-          // Continue anyway - local toggle still works
-        }
+        webRTCRef.current.updateAudioSenders(newState);
       }
-      
-      // Update UI state
+
       setIsMicOn(newState);
-      
-      console.log('✅ Mic toggled successfully:', {
+
+      console.log('✅ Mic toggle complete:', {
         newState,
         trackEnabled: audioTrack.enabled,
         trackId: audioTrack.id
@@ -881,22 +903,36 @@ const VideoChat: React.FC = () => {
 
   const toggleSpeaker = () => {
     try {
-      console.log('🔊 SPEAKER TOGGLE: Current state =', isSpeakerOn);
-      const newState = !isSpeakerOn;
-
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.muted = !newState;
-        remoteVideoRef.current.volume = newState ? 1 : 0;
-        console.log('🔊 Applied speaker state to remote video element:', {
-          muted: remoteVideoRef.current.muted,
-          volume: remoteVideoRef.current.volume
-        });
-      } else {
-        console.warn('⚠️ Remote video element not ready for speaker toggle');
+      if (!remoteVideoRef.current) {
+        console.error('❌ Remote video element not available for speaker toggle');
+        return;
       }
 
-      setIsSpeakerOn(newState);
-      console.log('✅ Speaker toggled successfully:', newState);
+      console.log('🔊 SPEAKER TOGGLE: Current state =', isSpeakerOn);
+      const newSpeakerState = !isSpeakerOn;
+
+      remoteVideoRef.current.muted = !newSpeakerState;
+      remoteVideoRef.current.volume = newSpeakerState ? 1 : 0;
+
+      setIsSpeakerOn(newSpeakerState);
+
+      console.log('🔊 SPEAKER TOGGLE COMPLETE:', {
+        oldSpeakerState: isSpeakerOn,
+        newSpeakerState,
+        videoElementMuted: remoteVideoRef.current.muted,
+        videoVolume: remoteVideoRef.current.volume
+      });
+
+      if (remoteVideoRef.current.srcObject) {
+        const remoteStream = remoteVideoRef.current.srcObject as MediaStream;
+        const audioTracks = remoteStream.getAudioTracks();
+        console.log('🔊 Remote audio verification:', {
+          tracks: audioTracks.length,
+          firstTrackEnabled: audioTracks[0]?.enabled
+        });
+      } else {
+        console.warn('🔊 No remote stream found for speaker verification');
+      }
     } catch (error) {
       console.error('❌ Error toggling speaker:', error);
       addMessage('Failed to toggle speaker. Please try again.', false);
