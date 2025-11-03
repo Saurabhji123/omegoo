@@ -136,7 +136,7 @@ const Home: React.FC = () => {
         {/* Hero Headline */}
         <div className="mb-6">
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text drop-shadow-2xl tracking-wider">
-            Random video chat for campuses & communities worldwide
+            Random video chat, built for Strangers
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 mt-3 uppercase tracking-[0.35rem]">
             Meet new people in seconds
@@ -144,10 +144,10 @@ const Home: React.FC = () => {
         </div>
 
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
-          Find friends from Indian universities, IITs, colleges, and beyond
+          50 daily coins · Video · Voice · Text
         </h2>
-        <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-3xl mx-auto">
-          Omegoo instantly connects students, alumni, job seekers, and curious strangers across India and the world through safe video, voice, and text chat. Every verified account gets 50 daily coins to spend on high-quality matches, so conversations stay meaningful and spam-free.
+        <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-2xl mx-auto">
+          Verified strangers, friends, and creators connect instantly—spend coins to jump into spam-free chats from anywhere.
         </p>
         
         {/* User Status & Coins - Only show if logged in */}
@@ -212,7 +212,7 @@ const Home: React.FC = () => {
             Text Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Anonymous text rooms for students, alumni, and explorers everywhere
+            Quick anonymous conversations. Say hello and keep it light.
           </p>
           <button
             onClick={() => handleStartChat('text')}
@@ -250,7 +250,7 @@ const Home: React.FC = () => {
             Voice Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Drop into spontaneous voice chats with campuses across India and abroad
+            Drop into real-time voice rooms for more natural chats.
           </p>
           <button
             onClick={() => handleStartChat('audio')}
@@ -288,7 +288,7 @@ const Home: React.FC = () => {
             Video Chat
           </h3>
           <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Face-to-face conversations with classmates, founders, and global creators
+            Meet face-to-face with verified matches in secure rooms.
           </p>
           <button
             onClick={() => handleStartChat('video')}
@@ -316,7 +316,7 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-        {/* Coin System & SEO Content */}
+    {/* Coin System & SEO Content */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 sm:p-10 text-white shadow-xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-start">
@@ -359,7 +359,7 @@ const Home: React.FC = () => {
               copy: 'Discover project partners, hackathon teammates, fest collaborators, or someone to vent to after exams. Omegoo makes it simple to meet peers from IITs, NITs, DU, VIT, SRM, JNU, and more.'
             }, {
               title: 'College applicants & aspirants',
-              copy: 'Talk to current students to understand campus life before making your choice. Use filtered tags to match by course, city, or interest.'
+              copy: 'Talk to current students to understand campus life before making your choice. Ask real people about hostels, placements, and clubs in a live random chat.'
             }, {
               title: 'Alumni & young professionals',
               copy: 'Reconnect with Indian campuses while building a global professional network. Host mentoring sessions or language exchanges over voice and video.'
@@ -378,6 +378,36 @@ const Home: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Random Chat Pitch */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <div className="bg-white/10 border border-white/15 rounded-3xl p-6 sm:p-10 text-white backdrop-blur-md shadow-xl">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">Searching for a safe random stranger chat?</h2>
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mb-6">
+              Omegoo is a fresh alternative to classic stranger chat platforms. You can start a <strong className="text-white">random chat with strangers</strong>, match for <strong className="text-white">video chat in India</strong>, or discover <strong className="text-white">voice chat rooms for college students</strong> without worrying about safety. AI moderation, verified badges, and the coin system keep every connection respectful.
+            </p>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
+                <h3 className="text-lg font-semibold mb-2">Pick your vibe fast</h3>
+                <p className="text-sm text-gray-100">
+                  Select text, voice, or video chat, share a quick intro, and start an instant random chat with strangers who are online now.
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
+                <h3 className="text-lg font-semibold mb-2">Skip anonymous spam</h3>
+                <p className="text-sm text-gray-100">
+                  Coins cost per session discourages trolls yet keeps random chat free and fun for genuine users.
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
+                <h3 className="text-lg font-semibold mb-2">Works on any device</h3>
+                <p className="text-sm text-gray-100">
+                  No downloads. Join from mobile, desktop, or tablet with a single tap and continue chatting on the go.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -413,6 +443,30 @@ const Home: React.FC = () => {
           </div>
         </section>
 
+        {/* Use Cases */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
+            Popular ways people use Omegoo
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[{
+              title: 'Random stranger chat India',
+              description: 'Jump into anonymous conversations after classes or work. Great for venting, sharing memes, or practicing conversational English with real people.'
+            }, {
+              title: 'Campus networking & study help',
+              description: 'Exchange notes, prep for exams, and find teammates for hackathons or college festivals using quick text or voice chat sessions.'
+            }, {
+              title: 'Global late-night chill sessions',
+              description: 'Meet travelers, gamers, and creators from other countries, host virtual coffee chats, or plan collaborations using secure video rooms.'
+            }].map((useCase) => (
+              <div key={useCase.title} className="bg-white/10 border border-white/15 rounded-2xl p-6 text-gray-100 backdrop-blur-md shadow-lg">
+                <h3 className="text-lg font-semibold text-white mb-3">{useCase.title}</h3>
+                <p className="text-sm sm:text-base leading-relaxed">{useCase.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* FAQ Section */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
           <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
@@ -431,6 +485,18 @@ const Home: React.FC = () => {
             }, {
               question: 'Can I access Omegoo from outside India?',
               answer: 'Absolutely. Omegoo supports users in over 150 countries, so you can switch between India-centric and global matches depending on your preferences.'
+            }, {
+              question: 'How is Omegoo different from Omegle or other random chat sites?',
+              answer: 'Omegoo combines verified badges, a daily coin system, and AI moderation to deliver safer random chat sessions. It is designed for students and young professionals who want meaningful conversations, not bots or spam.'
+            }, {
+              question: 'Does Omegoo work on mobile for random video chat?',
+              answer: 'Yes. The web app is fully responsive, so you can launch random video or voice chats from your phone, tablet, or laptop without installing anything.'
+            }, {
+              question: 'Can I start audio-only chats without showing my face?',
+              answer: 'Absolutely. Choose the voice mode to enter audio-only rooms. You can switch to video later or stay on voice-only conversations if you prefer more privacy.'
+            }, {
+              question: 'How do I report abusive strangers during a chat?',
+              answer: 'Tap the report or block button inside the chat window. Our moderation team reviews every report instantly, and repeated offenders lose access to their coins and account.'
             }].map((item) => (
               <details key={item.question} className="group bg-white/10 border border-white/15 rounded-2xl px-5 py-4 text-gray-100">
                 <summary className="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
