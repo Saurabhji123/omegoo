@@ -45,7 +45,7 @@ interface BufferedChatMessage {
 
 export class SocketService {
   private static io: SocketIOServer;
-  private static connectedUsers = new Map<string, string>(); // userId -> socketId
+  private static connectedUsers = new Map<string, string[]>(); // userId -> socketId[] (multi-device support)
   private static waitingQueue: string[] = []; // For in-memory queue management
   private static activeSessions = new Map<string, { user1: string; user2: string; mode: string }>(); // sessionId -> users + mode
   private static disconnectionTimers = new Map<string, NodeJS.Timeout>(); // userId -> timer for delayed cleanup
@@ -56,6 +56,17 @@ export class SocketService {
     video: new Set()
   };
   private static userActiveMode = new Map<string, ChatMode>();
+
+  // Helper: Emit event to all devices of a user
+  private static emitToAllUserDevices(userId: string, event: string, data: any) {
+    const socketIds = this.connectedUsers.get(userId) || [];
+    if (socketIds.length > 0) {
+      console.log(`📤 [Multi-Device] Emitting '${event}' to ${socketIds.length} device(s) for user ${userId}`);
+      socketIds.forEach(socketId => {
+        this.io.to(socketId).emit(event, data);
+      });
+    }
+  }
 
   static initialize(io: SocketIOServer) {
     this.io = io;
@@ -149,15 +160,12 @@ export class SocketService {
         return;
       }
       
-      // Check if user already has an active connection
-      const existingSocketId = this.connectedUsers.get(socket.userId!);
-      if (existingSocketId) {
-        console.log(`⚠️ User ${socket.userId} already connected, disconnecting old connection`);
-        const existingSocket = this.io.sockets.sockets.get(existingSocketId);
-        if (existingSocket) {
-          existingSocket.emit('connection_replaced', { reason: 'New device connected' });
-          existingSocket.disconnect(true);
-        }
+      // Multi-device support: Add this socket to user's connected devices
+      const existingSocketIds = this.connectedUsers.get(socket.userId!) || [];
+      if (!existingSocketIds.includes(socket.id)) {
+        existingSocketIds.push(socket.id);
+        this.connectedUsers.set(socket.userId!, existingSocketIds);
+        console.log(`✅ [Multi-Device] User ${socket.userId} connected. Total devices: ${existingSocketIds.length}`);
       }
       
       // Clear any pending disconnection timer for this user
@@ -167,9 +175,6 @@ export class SocketService {
         clearTimeout(existingTimer);
         this.disconnectionTimers.delete(socket.userId!);
       }
-
-      // Store new connection
-      this.connectedUsers.set(socket.userId!, socket.id);
       
       // Set user online status in Redis and Database
       DevRedisService.setUserOnline(socket.userId!);
@@ -188,31 +193,34 @@ export class SocketService {
 
       socket.on('disconnect', async () => {
         this.updateUserModePresence(socket.userId, null);
-        console.log(`🔌 User ${socket.userId} disconnected`);
+        console.log(`🔌 [Multi-Device] Socket ${socket.id} disconnected for user ${socket.userId}`);
+        
+        // Remove THIS specific socket from user's devices
+        const existingSocketIds = this.connectedUsers.get(socket.userId!) || [];
+        const filteredSocketIds = existingSocketIds.filter(id => id !== socket.id);
+        
+        if (filteredSocketIds.length > 0) {
+          this.connectedUsers.set(socket.userId!, filteredSocketIds);
+          console.log(`✅ [Multi-Device] User ${socket.userId} still connected on ${filteredSocketIds.length} device(s). Skipping cleanup.`);
+          return; // User still has other active devices - don't disconnect session!
+        } else {
+          this.connectedUsers.delete(socket.userId!);
+          console.log(`🔌 [Multi-Device] User ${socket.userId} fully disconnected (no remaining devices)`);
+        }
+        
         console.log(`📊 Active sessions before cleanup:`, Array.from(this.activeSessions.entries()));
         
         // IMMEDIATE: Notify partner if user is in an active session
         for (const [sessionId, session] of this.activeSessions.entries()) {
           if (session.user1 === socket.userId || session.user2 === socket.userId) {
             const partnerId = session.user1 === socket.userId ? session.user2 : session.user1;
-            const partnerSocketId = this.connectedUsers.get(partnerId);
             
             console.log(`🔍 Found active session ${sessionId} with partner ${partnerId}`);
-            console.log(`🔍 Partner socket ID: ${partnerSocketId}`);
             
-            if (partnerSocketId) {
-              const partnerSocket = this.io.sockets.sockets.get(partnerSocketId);
-              if (partnerSocket) {
-                console.log(`📢 Immediately notifying partner ${partnerId} about disconnect`);
-                partnerSocket.emit('user_disconnected', { userId: socket.userId });
-                partnerSocket.emit('session_ended', { reason: 'partner_left' });
-                console.log(`✅ Partner ${partnerId} notified successfully`);
-              } else {
-                console.log(`⚠️ Partner socket not found in io.sockets.sockets`);
-              }
-            } else {
-              console.log(`⚠️ Partner ${partnerId} not found in connectedUsers map`);
-            }
+            // Notify ALL partner devices
+            this.emitToAllUserDevices(partnerId, 'user_disconnected', { userId: socket.userId });
+            this.emitToAllUserDevices(partnerId, 'session_ended', { reason: 'partner_left' });
+            console.log(`✅ [Multi-Device] All partner devices notified`);
           }
         }
         
@@ -632,16 +640,26 @@ export class SocketService {
         dailyChats: user1Stats.dailyChats
       });
 
+      // Emit stats to current socket
       socket.emit('stats-update', {
         coins: user1Stats.coins,
         totalChats: user1Stats.totalChats,
         dailyChats: user1Stats.dailyChats
       });
 
-      const matchSocketId = this.connectedUsers.get(match.userId);
-      if (matchSocketId) {
-        console.log(`📤 Sending match-found to ${match.userId} (receiver) with coins: ${user2Stats.coins}`);
-        this.io.to(matchSocketId).emit('match-found', {
+      // [MULTI-DEVICE FIX] Emit to ALL other devices of this user
+      this.emitToAllUserDevices(socket.userId!, 'stats-update', {
+        coins: user1Stats.coins,
+        totalChats: user1Stats.totalChats,
+        dailyChats: user1Stats.dailyChats
+      });
+
+      // Get ALL partner socket IDs for multi-device support
+      const partnerSocketIds = this.connectedUsers.get(match.userId) || [];
+      if (partnerSocketIds.length > 0) {
+        const primarySocketId = partnerSocketIds[0]; // Use first for match-found
+        console.log(`📤 Sending match-found to ${match.userId} (receiver) on ${partnerSocketIds.length} device(s) with coins: ${user2Stats.coins}`);
+        this.io.to(primarySocketId).emit('match-found', {
           sessionId: session.id,
           matchUserId: socket.userId,
           isInitiator: false,
@@ -651,8 +669,9 @@ export class SocketService {
           dailyChats: user2Stats.dailyChats
         });
 
+        // [MULTI-DEVICE FIX] Emit stats to ALL partner devices
         if (partnerSpend?.success || user2Stats.coins !== 50 || user2Stats.totalChats !== 0 || user2Stats.dailyChats !== 0) {
-          this.io.to(matchSocketId).emit('stats-update', {
+          this.emitToAllUserDevices(match.userId, 'stats-update', {
             coins: user2Stats.coins,
             totalChats: user2Stats.totalChats,
             dailyChats: user2Stats.dailyChats
@@ -874,17 +893,30 @@ export class SocketService {
 
       socket.emit('match-found', initiatorPayload);
       socket.emit('match_found', { ...session, ...initiatorPayload } as any);
+      
+      // Emit stats to current socket
       socket.emit('stats-update', {
         coins: user1Stats.coins,
         totalChats: user1Stats.totalChats,
         dailyChats: user1Stats.dailyChats
       });
 
-      const matchSocketId = this.connectedUsers.get(match.userId);
-      if (matchSocketId) {
-        this.io.to(matchSocketId).emit('match-found', partnerPayload);
-        this.io.to(matchSocketId).emit('match_found', { ...session, ...partnerPayload } as any);
-        this.io.to(matchSocketId).emit('stats-update', {
+      // [MULTI-DEVICE FIX] Emit to ALL other devices of this user
+      this.emitToAllUserDevices(socket.userId!, 'stats-update', {
+        coins: user1Stats.coins,
+        totalChats: user1Stats.totalChats,
+        dailyChats: user1Stats.dailyChats
+      });
+
+      // Get ALL partner socket IDs for multi-device support
+      const partnerSocketIds = this.connectedUsers.get(match.userId) || [];
+      if (partnerSocketIds.length > 0) {
+        const primarySocketId = partnerSocketIds[0]; // Use first for match-found
+        this.io.to(primarySocketId).emit('match-found', partnerPayload);
+        this.io.to(primarySocketId).emit('match_found', { ...session, ...partnerPayload } as any);
+        
+        // [MULTI-DEVICE FIX] Emit stats to ALL partner devices
+        this.emitToAllUserDevices(match.userId, 'stats-update', {
           coins: user2Stats.coins,
           totalChats: user2Stats.totalChats,
           dailyChats: user2Stats.dailyChats
@@ -1136,11 +1168,11 @@ export class SocketService {
   }
 
   static async banUser(userId: string) {
-    const socketId = this.connectedUsers.get(userId);
-    if (socketId) {
+    const socketIds = this.connectedUsers.get(userId) || [];
+    socketIds.forEach(socketId => {
       this.io.to(socketId).emit('user_banned');
       this.io.sockets.sockets.get(socketId)?.disconnect(true);
-    }
+    });
   }
 
   static getConnectedUserCount(): number {
