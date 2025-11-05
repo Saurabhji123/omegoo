@@ -1,5 +1,9 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /omegoo-admin
+Disallow: /verify
+Disallow: /verify-otp
+Disallow: /chat
 
 Sitemap: https://omegoo.chat/sitemap.xml
