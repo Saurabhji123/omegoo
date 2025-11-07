@@ -315,26 +315,26 @@ const Home: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-start">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-                  How the Omegoo coin system keeps chats high-quality
+                  How the Omegoo coin system powers a safer Omegle alternative
                 </h2>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
-                  Receive <strong className="text-yellow-300">50 free coins every midnight (IST)</strong> and spend them on text (1 coin), voice (2 coins), or video (3 coins) sessions. The coin economy limits spam, rewards verified users, and ensures every match feels valuable—whether you are from an IIT hostel, an Indian university dorm, a community college, or connecting from overseas.
+                  Receive <strong className="text-yellow-300">50 free coins every midnight (IST)</strong> and spend them on text (1 coin), voice (2 coins), or video (3 coins) sessions. This balanced economy turns Omegoo into a trusted <strong className="text-white">Omegle alternative for India</strong>: coins limit spam, reward verified users, and make every match feel valuable—whether you are joining from an IIT hostel, an Indian university dorm, a community college, or connecting from overseas.
                 </p>
                 <ul className="mt-4 space-y-2 text-sm sm:text-base text-gray-200 list-disc list-inside">
-                  <li>Earn bonus coins by verifying your email and staying active.</li>
-                  <li>Switch between chat modes without losing your queue position.</li>
-                  <li>Upcoming: invite friends from any campus worldwide and unlock extra coins.</li>
+                  <li>Earn bonus coins by verifying your email, staying active, and hosting respectful sessions.</li>
+                  <li>Switch between chat modes without losing your queue position, just like Omegle but with smarter controls.</li>
+                  <li>Upcoming: invite friends from any campus worldwide and unlock extra coins while growing our safe Omegle-style network.</li>
                 </ul>
               </div>
               <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/20 rounded-2xl p-6 flex flex-col gap-4">
-                <h3 className="text-xl font-semibold">Why students choose Omegoo</h3>
+                <h3 className="text-xl font-semibold">Why students pick this Omegle alternative</h3>
                 <div className="space-y-3 text-sm sm:text-base text-gray-100">
-                  <p>• Match with peers from IITs, NITs, DU, SRM, MIT, and global universities.</p>
-                  <p>• Safe, anonymous matching with instant moderation tools and verified badges.</p>
-                  <p>• Perfect for language practice, hackathon teaming, or meeting new travel buddies.</p>
+                  <p>• Match with peers from IITs, NITs, DU, SRM, MIT, and global universities on a moderated random chat platform.</p>
+                  <p>• Safer than Omegle thanks to instant reporting, verified badges, and AI-powered moderation prompts.</p>
+                  <p>• Perfect for language practice, hackathon teaming, or meeting new travel buddies without worrying about bots.</p>
                 </div>
                 <div className="mt-auto text-xs text-gray-200">
-                  Popular searches we rank for: <span className="font-semibold text-white">"random video chat for students", "college chat India", "anonymous campus chat", "meet strangers online India".</span>
+                  Popular searches we rank for: <span className="font-semibold text-white">"Omegle alternative India", "random video chat for students", "safe Omegle like site", "anonymous campus chat".</span>
                 </div>
               </div>
             </div>
@@ -344,21 +344,21 @@ const Home: React.FC = () => {
         {/* Audience Targets */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
           <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-8">
-            Built for campuses in India, loved by communities everywhere
+            Built for campuses in India, loved as an Omegle alternative everywhere
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {[{
               title: 'University & IIT students',
-              copy: 'Discover project partners, hackathon teammates, fest collaborators, or someone to vent to after exams. Omegoo makes it simple to meet peers from IITs, NITs, DU, VIT, SRM, JNU, and more.'
+              copy: 'Discover project partners, hackathon teammates, fest collaborators, or someone to vent to after exams. Omegoo makes it simple to meet peers from IITs, NITs, DU, VIT, SRM, JNU, and more—without the unpredictability of Omegle-style chats.'
             }, {
               title: 'College applicants & aspirants',
-              copy: 'Talk to current students to understand campus life before making your choice. Ask real people about hostels, placements, and clubs in a live random chat.'
+              copy: 'Talk to current students to understand campus life before making your choice. Ask real people about hostels, placements, and clubs in a live random chat that feels like Omegle, but with moderation and context.'
             }, {
               title: 'Alumni & young professionals',
-              copy: 'Reconnect with Indian campuses while building a global professional network. Host mentoring sessions or language exchanges over voice and video.'
+              copy: 'Reconnect with Indian campuses while building a global professional network. Host mentoring sessions or language exchanges over voice and video on a trusted Omegle competitor.'
             }, {
               title: 'Creators & explorers',
-              copy: 'Grow engaged communities by hosting pop-up conversations, Q\u0026A jams, or cultural exchanges with people around the world.'
+              copy: 'Grow engaged communities by hosting pop-up conversations, Q\u0026A jams, or cultural exchanges with people around the world on an Omegle-like platform that actually celebrates creativity.'
             }].map((audience) => (
               <div
                 key={audience.title}
@@ -367,7 +367,7 @@ const Home: React.FC = () => {
                 <h3 className="text-lg font-semibold text-white mb-3">{audience.title}</h3>
                 <p className="text-sm sm:text-base leading-relaxed">{audience.copy}</p>
                 <div className="mt-4 text-xs uppercase tracking-wider text-indigo-200">
-                  Popular keywords: random chat app India, campus chat platform, anonymous university chat
+                  Popular keywords: random chat app India, safe Omegle alternative, campus chat platform, anonymous university chat
                 </div>
               </div>
             ))}
@@ -377,27 +377,27 @@ const Home: React.FC = () => {
         {/* Random Chat Pitch */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
           <div className="bg-white/10 border border-white/15 rounded-3xl p-6 sm:p-10 text-white backdrop-blur-md shadow-xl">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4">Searching for a safe random stranger chat?</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">Searching for a safe Omegle alternative for random stranger chat?</h2>
             <p className="text-sm sm:text-base text-gray-200 leading-relaxed mb-6">
-              Omegoo is a fresh alternative to classic stranger chat platforms. You can start a <strong className="text-white">random chat with strangers</strong>, match for <strong className="text-white">video chat in India</strong>, or discover <strong className="text-white">voice chat rooms for college students</strong> without worrying about safety. AI moderation, verified badges, and the coin system keep every connection respectful.
+              Omegoo is a fresh alternative to classic stranger chat platforms like Omegle. You can start a <strong className="text-white">random chat with strangers</strong>, match for <strong className="text-white">video chat in India</strong>, or discover <strong className="text-white">voice chat rooms for college students</strong> without worrying about safety. AI moderation, verified badges, and the coin system keep every connection respectful, making Omegoo the go-to Omegle-like site for students and young professionals.
             </p>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
                 <h3 className="text-lg font-semibold mb-2">Pick your vibe fast</h3>
                 <p className="text-sm text-gray-100">
-                  Select text, voice, or video chat, share a quick intro, and start an instant random chat with strangers who are online now.
+                  Select text, voice, or video chat, share a quick intro, and start an instant Omegle-style conversation with strangers who are online now.
                 </p>
               </div>
               <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
                 <h3 className="text-lg font-semibold mb-2">Skip anonymous spam</h3>
                 <p className="text-sm text-gray-100">
-                  Coins cost per session discourages trolls yet keeps random chat free and fun for genuine users.
+                  Coins cost per session discourages trolls yet keeps random chat free and fun for genuine users—something Omegle alternatives often miss.
                 </p>
               </div>
               <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
                 <h3 className="text-lg font-semibold mb-2">Works on any device</h3>
                 <p className="text-sm text-gray-100">
-                  No downloads. Join from mobile, desktop, or tablet with a single tap and continue chatting on the go.
+                  No downloads. Join from mobile, desktop, or tablet with a single tap and continue chatting on the go—no VPN hacks or third-party plugins like older Omegle clones.
                 </p>
               </div>
             </div>
@@ -408,28 +408,28 @@ const Home: React.FC = () => {
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
           <div className="bg-gradient-to-br from-indigo-900/60 to-purple-900/60 border border-white/10 rounded-3xl p-6 sm:p-10 text-white shadow-xl">
             <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-              Why Omegoo ranks for random chat keywords in India and worldwide
+              Why Omegoo ranks as a leading Omegle alternative in India and worldwide
             </h2>
             <p className="text-sm sm:text-base text-gray-200 leading-relaxed mb-4">
-              Searchers looking for <strong className="text-white">"stranger chat website in India"</strong>, <strong className="text-white">"random video chat for students"</strong>, or <strong className="text-white">"anonymous college chat"</strong> find Omegoo because each feature is crafted for intent-based discovery. Our pages highlight quick matching, coin-powered trust, and culturally relevant communities so Google and users understand Omegoo is the best alternative to traditional random chat apps.
+              Searchers looking for <strong className="text-white">"Omegle alternative India"</strong>, <strong className="text-white">"stranger chat website in India"</strong>, <strong className="text-white">"random video chat for students"</strong>, or <strong className="text-white">"anonymous college chat"</strong> find Omegoo because each feature is crafted for intent-based discovery. Our pages highlight quick matching, coin-powered trust, and culturally relevant communities so Google and users understand Omegoo is the best ethical replacement for Omegle and other random chat apps.
             </p>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="bg-white/10 rounded-2xl border border-white/10 p-5">
                 <h3 className="text-lg font-semibold mb-2">Localized Indian coverage</h3>
                 <p className="text-sm text-gray-200">
-                  Content covers metro cities, tier-2 colleges, and IIT hostels while staying inclusive for global matches. Geo-specific keywords help us appear when users search from Delhi, Bengaluru, Mumbai, Hyderabad, or abroad.
+                  Content covers metro cities, tier-2 colleges, and IIT hostels while staying inclusive for global matches. Geo-specific keywords help us appear when users search for Omegle alternatives from Delhi, Bengaluru, Mumbai, Hyderabad, or abroad.
                 </p>
               </div>
               <div className="bg-white/10 rounded-2xl border border-white/10 p-5">
                 <h3 className="text-lg font-semibold mb-2">Topic clusters & internal links</h3>
                 <p className="text-sm text-gray-200">
-                  Guides on safety, privacy, and community policies link to About, Safety, Terms, and Contact pages. This network signals expertise to search engines and keeps visitors exploring the product.
+                  Guides on safety, privacy, and community policies link to About, Safety, Terms, and Contact pages. This network signals expertise to search engines and keeps visitors exploring this responsible Omegle-style experience.
                 </p>
               </div>
               <div className="bg-white/10 rounded-2xl border border-white/10 p-5">
                 <h3 className="text-lg font-semibold mb-2">Performance-focused experience</h3>
                 <p className="text-sm text-gray-200">
-                  Optimized image assets, minimal blocking scripts, and responsive UI keep Core Web Vitals healthy, which improves our search rankings for competitive chat keywords.
+                  Optimized image assets, minimal blocking scripts, and responsive UI keep Core Web Vitals healthy, which improves our search rankings for competitive chat keywords like "best Omegle replacement".
                 </p>
               </div>
             </div>
@@ -441,16 +441,19 @@ const Home: React.FC = () => {
           <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
             Popular ways people use Omegoo
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {[{
-              title: 'Random stranger chat India',
-              description: 'Jump into anonymous conversations after classes or work. Great for venting, sharing memes, or practicing conversational English with real people.'
+              title: 'Omegle alternative for random stranger chat',
+              description: 'Jump into anonymous conversations after classes or work. Great for venting, sharing memes, or practicing conversational English with real people who actually behave.'
             }, {
               title: 'Campus networking & study help',
-              description: 'Exchange notes, prep for exams, and find teammates for hackathons or college festivals using quick text or voice chat sessions.'
+              description: 'Exchange notes, prep for exams, and find teammates for hackathons or college festivals using quick text or voice chat sessions—minus the Omegle chaos.'
             }, {
               title: 'Global late-night chill sessions',
-              description: 'Meet travelers, gamers, and creators from other countries, host virtual coffee chats, or plan collaborations using secure video rooms.'
+              description: 'Meet travelers, gamers, and creators from other countries, host virtual coffee chats, or plan collaborations using secure video rooms that outperform legacy Omegle clones.'
+            }, {
+              title: 'Creators promoting safe stranger chat',
+              description: 'Streamers and podcast hosts can invite followers into moderated random chats, showcasing Omegoo as a responsible Omegle replacement during live sessions.'
             }].map((useCase) => (
               <div key={useCase.title} className="bg-white/10 border border-white/15 rounded-2xl p-6 text-gray-100 backdrop-blur-md shadow-lg">
                 <h3 className="text-lg font-semibold text-white mb-3">{useCase.title}</h3>
@@ -468,19 +471,25 @@ const Home: React.FC = () => {
           <div className="space-y-4">
             {[{
               question: 'Is Omegoo only for college and university students?',
-              answer: 'Omegoo began with Indian campuses in mind, but anyone can join. Students, alumni, working professionals, creators, and curious travelers use the platform to meet new people instantly.'
+              answer: 'Omegoo began with Indian campuses in mind, but anyone can join. Students, alumni, working professionals, creators, and curious travelers use this Omegle-style platform to meet new people instantly.'
+            }, {
+              question: 'Is Omegoo an Omegle alternative for India?',
+              answer: 'Yes. Omegoo was built as a safer, student-friendly Omegle alternative with verified badges, community norms, and AI safety tools tailored for Indian internet users.'
             }, {
               question: 'How do I get more Omegoo coins?',
-              answer: 'Verified accounts receive 50 coins every midnight (IST). You can unlock bonus coins for streak logins, inviting friends, and participating in moderated community events.'
+              answer: 'Verified accounts receive 50 coins every midnight (IST). You can unlock bonus coins for streak logins, inviting friends, and participating in moderated community events, keeping Omegoo free yet spam-resistant compared to Omegle.'
             }, {
               question: 'Is it safe to chat with strangers on Omegoo?',
-              answer: 'Yes. Moderation bots, community reporting, and real-time safety prompts protect every session. You can also block or report any user in one tap.'
+              answer: 'Yes. Moderation bots, community reporting, and real-time safety prompts protect every session. You can also block or report any user in one tap, creating a calmer environment than traditional Omegle alternatives.'
+            }, {
+              question: 'Do I need a VPN like I did for Omegle?',
+              answer: 'No VPN is required. Omegoo runs in the browser with modern infra, so you can connect instantly without geo-restrictions or proxy tricks.'
             }, {
               question: 'Can I access Omegoo from outside India?',
               answer: 'Absolutely. Omegoo supports users in over 150 countries, so you can switch between India-centric and global matches depending on your preferences.'
             }, {
               question: 'How is Omegoo different from Omegle or other random chat sites?',
-              answer: 'Omegoo combines verified badges, a daily coin system, and AI moderation to deliver safer random chat sessions. It is designed for students and young professionals who want meaningful conversations, not bots or spam.'
+              answer: 'Omegoo combines verified badges, a daily coin system, safety prompts, and contextual onboarding to deliver meaningful random chat sessions. The result is an Omegle alternative built for students and young professionals who want quality conversations, not bots or spam.'
             }, {
               question: 'Does Omegoo work on mobile for random video chat?',
               answer: 'Yes. The web app is fully responsive, so you can launch random video or voice chats from your phone, tablet, or laptop without installing anything.'
@@ -489,7 +498,10 @@ const Home: React.FC = () => {
               answer: 'Absolutely. Choose the voice mode to enter audio-only rooms. You can switch to video later or stay on voice-only conversations if you prefer more privacy.'
             }, {
               question: 'How do I report abusive strangers during a chat?',
-              answer: 'Tap the report or block button inside the chat window. Our moderation team reviews every report instantly, and repeated offenders lose access to their coins and account.'
+              answer: 'Tap the report or block button inside the chat window. Our moderation team reviews every report instantly, and repeated offenders lose access to their coins and account, keeping this Omegle-style experience respectful.'
+            }, {
+              question: 'Will Omegoo stay free like Omegle was?',
+              answer: 'Daily coins keep Omegoo accessible without subscriptions. Optional boosters and events will arrive later, but core random text, voice, and video chat will remain free so everyone can enjoy a safe Omegle alternative.'
             }].map((item) => (
               <details key={item.question} className="group bg-white/10 border border-white/15 rounded-2xl px-5 py-4 text-gray-100">
                 <summary className="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
@@ -507,6 +519,67 @@ const Home: React.FC = () => {
             <a href="/about" className="underline hover:text-white">About</a>,{' '}
             <a href="/safety" className="underline hover:text-white">Safety Guidelines</a>, and{' '}
             <a href="/contact" className="underline hover:text-white">Contact</a> pages for more details.
+          </div>
+        </section>
+
+        {/* Omegle Comparison */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <div className="bg-white/10 border border-white/15 rounded-3xl p-6 sm:p-10 text-white backdrop-blur-md shadow-xl">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center">How Omegoo compares to Omegle in 2025</h2>
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mb-6 text-center">
+              Users still search for Omegle when they want fast random chat rooms, but Omegoo delivers the same excitement with modern safety layers. Think of it as an Omegle alternative built for today’s internet norms—verified identities, community moderation, and privacy-first design.
+            </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-6">
+                <h3 className="text-xl font-semibold mb-3">Where Omegle fell short</h3>
+                <ul className="space-y-2 text-sm sm:text-base text-gray-100 list-disc list-inside">
+                  <li>Unverified strangers could appear in any chat room, making experiences unpredictable.</li>
+                  <li>Reports of spam, bots, and n*sfw content made it risky for students or young professionals.</li>
+                  <li>No built-in contextual onboarding or community rules beyond a generic terms page.</li>
+                </ul>
+              </div>
+              <div className="bg-gradient-to-br from-green-500/40 to-blue-500/40 border border-white/10 rounded-2xl p-6">
+                <h3 className="text-xl font-semibold mb-3">What Omegoo improves</h3>
+                <ul className="space-y-2 text-sm sm:text-base text-gray-100 list-disc list-inside">
+                  <li>Coin system curbs spam and rewards good behavior, keeping matches respectful.</li>
+                  <li>Moderation bots, AI prompts, and verified badges provide context that Omegle never offered.</li>
+                  <li>Campus-friendly onboarding explains expectations before you join a random text, voice, or video chat.</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-6 text-xs sm:text-sm text-gray-200 text-center">
+              Omegoo respects Omegle’s legacy of spontaneous conversations while upgrading the experience for learners, creators, and travelers seeking ethical random chats.
+            </div>
+          </div>
+        </section>
+
+        {/* Omegle Safety Tips */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <div className="bg-gradient-to-br from-indigo-900/60 to-blue-900/60 border border-white/10 rounded-3xl p-6 sm:p-10 text-white shadow-xl">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Ethical tips for anyone seeking Omegle-style chats</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white/10 rounded-2xl border border-white/10 p-5">
+                <h3 className="text-lg font-semibold mb-2">Respect boundaries</h3>
+                <p className="text-sm text-gray-200">
+                  Whether you use Omegoo or revisit Omegle alternatives, always ask before sharing personal details or recording screens. Consent keeps random chats positive.
+                </p>
+              </div>
+              <div className="bg-white/10 rounded-2xl border border-white/10 p-5">
+                <h3 className="text-lg font-semibold mb-2">Report unsafe behavior</h3>
+                <p className="text-sm text-gray-200">
+                  Omegoo makes it easy to block and report. If you encounter issues on legacy Omegle clones, exit the chat immediately and alert moderators if possible.
+                </p>
+              </div>
+              <div className="bg-white/10 rounded-2xl border border-white/10 p-5">
+                <h3 className="text-lg font-semibold mb-2">Protect your identity</h3>
+                <p className="text-sm text-gray-200">
+                  Stick to nicknames, use neutral backgrounds, and avoid sharing location data. These habits apply on Omegle, Omegoo, and any random video chat site.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 text-center text-sm text-gray-200">
+              Following these ethical guidelines keeps the global random chat community safer—whether you are exploring Omegoo or searching for trusted Omegle replacements.
+            </div>
           </div>
         </section>
 

@@ -66,6 +66,9 @@ Thumbs.db
 tmp/
 temp/
 
+# AI assistant guidance
+.github/copilot-instructions.md
+
 # Evidence storage (local development)
 evidence/
 uploads/
