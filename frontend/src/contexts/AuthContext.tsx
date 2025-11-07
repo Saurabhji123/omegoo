@@ -417,7 +417,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
+      const requestToken = token;
       const response = await authAPI.getCurrentUser();
+
+      const activeToken = storageService.getToken();
+      if (!activeToken || activeToken !== requestToken) {
+        console.log('⏭️ Skipping refresh update - auth token changed mid-request');
+        return;
+      }
+
       if (response && response.user) {
         console.log('✅ Fresh user data received:', {
           username: response.user.username,
