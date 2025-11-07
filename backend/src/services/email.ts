@@ -32,7 +32,7 @@ const buildDisplayAddress = (raw: string | undefined, fallback: string): string 
 
 const PRIMARY_SENDER = buildDisplayAddress(process.env.RESEND_FROM_EMAIL, 'no-reply@omegoo.chat');
 const FALLBACK_SENDER = buildDisplayAddress(process.env.RESEND_FALLBACK_FROM_EMAIL, 'onboarding@resend.dev');
-const PLATFORM_URL = process.env.OMEGOO_APP_URL || 'https://omegoo.chat';
+const PLATFORM_URL = process.env.OMEGOO_APP_URL || 'https://www.omegoo.chat';
 
 const resolveSenders = (): string[] => {
   if (PRIMARY_SENDER === FALLBACK_SENDER) {

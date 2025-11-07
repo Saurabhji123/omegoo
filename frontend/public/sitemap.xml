@@ -1,49 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://omegoo.chat/</loc>
+  <loc>https://www.omegoo.chat/</loc>
     <lastmod>2025-11-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://omegoo.chat/about</loc>
+  <loc>https://www.omegoo.chat/about</loc>
     <lastmod>2025-11-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://omegoo.chat/contact</loc>
+  <loc>https://www.omegoo.chat/contact</loc>
     <lastmod>2025-11-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://omegoo.chat/privacy</loc>
+  <loc>https://www.omegoo.chat/privacy</loc>
     <lastmod>2025-11-03</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://omegoo.chat/terms</loc>
+  <loc>https://www.omegoo.chat/terms</loc>
     <lastmod>2025-11-03</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://omegoo.chat/safety</loc>
+  <loc>https://www.omegoo.chat/safety</loc>
     <lastmod>2025-11-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://omegoo.chat/profile</loc>
+  <loc>https://www.omegoo.chat/profile</loc>
     <lastmod>2025-11-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://omegoo.chat/settings</loc>
+  <loc>https://www.omegoo.chat/settings</loc>
     <lastmod>2025-11-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

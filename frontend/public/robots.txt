@@ -6,4 +6,4 @@ Disallow: /verify
 Disallow: /verify-otp
 Disallow: /chat
 
-Sitemap: https://omegoo.chat/sitemap.xml
+Sitemap: https://www.omegoo.chat/sitemap.xml

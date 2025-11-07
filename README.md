@@ -4,7 +4,7 @@
 
 ### *Connect Anonymously, Chat Safely — Make Friends in Seconds*
 
-[![Live Demo](https://img.shields.io/badge/Live-omegoo.chat-blueviolet?style=for-the-badge&logo=vercel)](https://omegoo.chat)
+[![Live Demo](https://img.shields.io/badge/Live-www.omegoo.chat-blueviolet?style=for-the-badge&logo=vercel)](https://www.omegoo.chat)
 [![Made with React](https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7.3-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/WebRTC-Supported-orange?style=flat-square" alt="WebRTC">
 </p>
 
-[Live Demo](https://omegoo.chat) • [Report Bug](https://github.com/Saurabhji123/omegoo/issues) • [Request Feature](https://github.com/Saurabhji123/omegoo/issues)
+[Live Demo](https://www.omegoo.chat) • [Report Bug](https://github.com/Saurabhji123/omegoo/issues) • [Request Feature](https://github.com/Saurabhji123/omegoo/issues)
 
 </div>
 
@@ -25,7 +25,7 @@
 
 **Omegoo** is a modern, anonymous video chat platform that connects strangers from around the world in real-time. Built with cutting-edge web technologies, it offers a safe and exciting way to meet new people through text, voice, or video chat.
 
-> **🔥 Now Live**: Experience seamless anonymous chatting at [omegoo.chat](https://omegoo.chat)
+> **🔥 Now Live**: Experience seamless anonymous chatting at [www.omegoo.chat](https://www.omegoo.chat)
 
 ---
 
@@ -74,7 +74,7 @@ graph LR
     G -->|Done| H[End Session]
 ```
 
-1. **📍 Visit** - Go to [omegoo.chat](https://omegoo.chat)
+1. **📍 Visit** - Go to [www.omegoo.chat](https://www.omegoo.chat)
 2. **🔐 Sign In** - Register with Email or Google OAuth
 3. **✅ Accept** - Agree to age verification and terms
 4. **🎯 Choose** - Select Text, Voice, or Video chat
@@ -149,7 +149,7 @@ npm run dev
 ### Access the Application
 - **Frontend**: http://localhost:3000
 - **Backend**: http://localhost:3001
-- **Production**: https://omegoo.chat
+- **Production**: https://www.omegoo.chat
 
 ---
 
@@ -196,8 +196,8 @@ NODE_ENV=production
 PORT=3001
 JWT_SECRET=your-super-secure-secret-key
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/omegoo
-FRONTEND_URL=https://omegoo.chat
-ALLOWED_ORIGINS=https://omegoo.chat
+FRONTEND_URL=https://www.omegoo.chat
+ALLOWED_ORIGINS=https://www.omegoo.chat
 ```
 
 ---

@@ -2,12 +2,12 @@
   "redirects": [
     {
       "source": "http://omegoo.chat/(.*)",
-      "destination": "https://omegoo.chat/$1",
+  "destination": "https://www.omegoo.chat/$1",
       "permanent": true
     },
     {
       "source": "http://www.omegoo.chat/(.*)",
-      "destination": "https://omegoo.chat/$1",
+  "destination": "https://www.omegoo.chat/$1",
       "permanent": true
     }
   ],

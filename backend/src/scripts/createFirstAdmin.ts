@@ -112,7 +112,7 @@ async function createAdmin() {
           console.log(`👑 Role: super_admin (Owner)`);
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           console.log('\n🎉 You can now login to the admin panel!');
-          console.log('🔗 Admin Panel: https://omegoo.chat/omegoo-admin');
+          console.log('🔗 Admin Panel: https://www.omegoo.chat/omegoo-admin');
 
           await mongoose.disconnect();
           process.exit(0);

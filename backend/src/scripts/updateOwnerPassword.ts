@@ -87,7 +87,7 @@ async function updateOwnerPassword() {
     console.log('🔑 New password applied from environment (value hidden)');
     console.log('👑 Role: super_admin (Owner)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('\n🎉 You can now login at: https://omegoo.chat/omegoo-admin\n');
+  console.log('\n🎉 You can now login at: https://www.omegoo.chat/omegoo-admin\n');
 
     await mongoose.disconnect();
     console.log('👋 Disconnected from MongoDB');
