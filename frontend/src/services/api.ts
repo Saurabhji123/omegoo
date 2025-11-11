@@ -60,7 +60,12 @@ class ApiService {
           throw new Error(data.error || 'Session replaced');
         }
 
-        throw new Error(data.error || `HTTP ${response.status}`);
+        const errorMessage = data.error || `HTTP ${response.status}`;
+        const errorObject: any = new Error(errorMessage);
+        if (data.code) {
+          errorObject.code = data.code;
+        }
+        throw errorObject;
       }
 
       return data;
@@ -126,6 +131,27 @@ export const authAPI = {
     return apiService.post<{ success: boolean; message: string }>(
       '/api/auth/resend-otp',
       { email }
+    );
+  },
+
+  requestPasswordReset: async (email: string) => {
+    return apiService.post<{ success: boolean; message: string }>(
+      '/api/auth/forgot-password',
+      { email }
+    );
+  },
+
+  validateResetToken: async (token: string) => {
+    return apiService.post<{ success: boolean; message: string; code?: string }>(
+      '/api/auth/validate-reset-token',
+      { token }
+    );
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    return apiService.post<{ success: boolean; message: string; code?: string }>(
+      '/api/auth/reset-password',
+      { token, password }
     );
   },
 

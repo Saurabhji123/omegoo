@@ -11,6 +11,8 @@ import AgeGate from './components/Auth/AgeGate';
 import LoginRegister from './components/Auth/LoginRegister';
 import VerifyOTP from './components/Auth/VerifyOTP';
 import PhoneVerification from './components/Auth/PhoneVerification';
+import ForgotPassword from './components/Auth/ForgotPassword';
+import ResetPassword from './components/Auth/ResetPassword';
 import Home from './components/Home/Home';
 import Chat from './components/Chat/Chat';
 import TextChat from './components/Chat/TextChat';
@@ -79,6 +81,10 @@ const AppRoutes: React.FC = () => {
       <Routes>
         {/* Login/Register route */}
         <Route path="/login" element={<LoginRegister />} />
+
+  {/* Password reset routes */}
+  <Route path="/forgot-password" element={<ForgotPassword />} />
+  <Route path="/reset-password" element={<ResetPassword />} />
         
         {/* Email OTP Verification route */}
         <Route path="/verify-otp" element={<VerifyOTP />} />

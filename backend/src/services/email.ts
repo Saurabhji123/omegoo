@@ -107,6 +107,17 @@ interface AuthTemplateArgs {
   otp?: string | null;
 }
 
+interface PasswordResetTemplateArgs {
+  name?: string;
+  resetUrl: string;
+}
+
+interface SendPasswordResetArgs {
+  email: string;
+  name?: string;
+  token: string;
+}
+
 export const generateOTP = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
@@ -152,6 +163,29 @@ export const sendWelcomeEmail = async ({ email, name }: SendWelcomeArgs): Promis
   }
 
   console.log('✅ Welcome email dispatched.', result.data);
+  return true;
+};
+
+export const sendPasswordResetEmail = async ({ email, name, token }: SendPasswordResetArgs): Promise<boolean> => {
+  if (!resendClient) {
+    console.warn(`⚠️ Skipping password reset email. RESEND_API_KEY missing. Target: ${email}`);
+    return false;
+  }
+
+  const resetUrl = `${PLATFORM_URL.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
+
+  const result = await sendWithFallback({
+    to: [email],
+    subject: 'Reset Your Omegoo Password',
+    html: buildPasswordResetEmailTemplate({ name, resetUrl }),
+  });
+
+  if (!result.success) {
+    console.error('❌ Failed to send password reset email.');
+    return false;
+  }
+
+  console.log('✅ Password reset email dispatched.', result.data);
   return true;
 };
 
@@ -252,6 +286,88 @@ const buildAuthEmailTemplate = ({ name, otp }: AuthTemplateArgs): string => {
                       <div style="background-color: rgba(15, 23, 42, 0.65); border-radius: 14px; padding: 18px 20px;">
                         <p style="margin: 0 0 8px; font-size: 14px; color: #94a3b8; font-weight: 600;">Need a hand?</p>
                         <p style="margin: 0; color: #cbd5f5; font-size: 14px; line-height: 1.6;">${supportNote} <a href="mailto:support@omegoo.com" style="color: #a5b4fc; text-decoration: none; font-weight: 600;">support@omegoo.com</a>.</p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin: 26px 0 0; text-align: center; color: #64748b; font-size: 12px;">&copy; ${currentYear} Omegoo. All rights reserved.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+  </html>
+  `;
+};
+
+const buildPasswordResetEmailTemplate = ({ name, resetUrl }: PasswordResetTemplateArgs): string => {
+  const displayName = escapeHtml(name) || 'there';
+  const safeResetUrl = escapeHtml(resetUrl);
+  const currentYear = new Date().getFullYear();
+
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reset your Omegoo password</title>
+    <style>
+      body { margin: 0; background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+      a.button { display: inline-block; padding: 14px 32px; border-radius: 9999px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; font-weight: 600; }
+      .card { background-color: #111c44; border-radius: 18px; padding: 32px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35); }
+      .notice { background: linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.35) 100%); border-radius: 16px; padding: 24px; color: #e0e7ff; }
+      .code { font-size: 15px; letter-spacing: 1px; font-weight: 500; }
+      @media only screen and (max-width: 600px) {
+        .card { padding: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="padding: 40px 16px; background: radial-gradient(circle at top, rgba(99,102,241,0.45), rgba(15,23,42,0.95));">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px;">
+            <tr>
+              <td class="card">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td style="text-align: center; padding-bottom: 28px;">
+                      <p style="margin: 0; color: #a5b4fc; font-size: 14px; letter-spacing: 3px; text-transform: uppercase;">Omegoo</p>
+                      <h1 style="margin: 12px 0 10px; font-size: 28px; color: #ffffff; font-weight: 700;">Need to reset your password?</h1>
+                      <p style="margin: 0; color: #cbd5f5; font-size: 16px; line-height: 1.6;">Hi ${displayName}, tap the button below to create a new password and jump back into the conversation.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 28px 0 12px; text-align: center;">
+                      <a class="button" href="${safeResetUrl}">Reset Password</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="notice">
+                        <p style="margin: 0 0 12px; font-size: 15px; font-weight: 600;">Security heads-up</p>
+                        <ul style="margin: 0; padding-left: 18px; color: #d1dcff; font-size: 14px; line-height: 1.7;">
+                          <li>This link works once and expires in 30 minutes.</li>
+                          <li>If you didn’t request a reset, you can safely ignore this email.</li>
+                          <li>For extra safety, resetting signs you out of other active sessions.</li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top: 20px;">
+                      <p style="margin: 0; color: #94a3b8; font-size: 14px; line-height: 1.6;">If the button doesn’t work, copy and paste this link into your browser:</p>
+                      <p class="code" style="margin: 8px 0 0; color: #cbd5f5; word-break: break-all;">${safeResetUrl}</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top: 24px;">
+                      <div style="background-color: rgba(15, 23, 42, 0.65); border-radius: 14px; padding: 18px 20px;">
+                        <p style="margin: 0 0 8px; font-size: 14px; color: #94a3b8; font-weight: 600;">Need help?</p>
+                        <p style="margin: 0; color: #cbd5f5; font-size: 14px; line-height: 1.6;">Reach our safety team anytime at <a href="mailto:support@omegoo.com" style="color: #a5b4fc; text-decoration: none; font-weight: 600;">support@omegoo.com</a>.</p>
                       </div>
                     </td>
                   </tr>

@@ -386,4 +386,22 @@ export class DatabaseService {
     console.warn('⚠️ incrementUserReportCount called on PostgreSQL - use MongoDB for user management');
     return 0;
   }
+
+  static async setPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+    console.warn('⚠️ setPasswordResetToken called on PostgreSQL - use MongoDB or dev database');
+  }
+
+  static async getUserByPasswordResetToken(tokenHash: string): Promise<any | null> {
+    console.warn('⚠️ getUserByPasswordResetToken called on PostgreSQL - use MongoDB or dev database');
+    return null;
+  }
+
+  static async clearPasswordResetToken(userId: string): Promise<void> {
+    console.warn('⚠️ clearPasswordResetToken called on PostgreSQL - use MongoDB or dev database');
+  }
+
+  static async updateUserPassword(userId: string, passwordHash: string): Promise<any | null> {
+    console.warn('⚠️ updateUserPassword called on PostgreSQL - use MongoDB or dev database');
+    return null;
+  }
 }

@@ -1,10 +1,24 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { DatabaseService } from '../services/serviceFactory';
+import { DatabaseService, RedisService } from '../services/serviceFactory';
 import { authenticateAdmin, requirePermission } from '../middleware/adminAuth';
 
 const router: Router = Router();
+
+const ADMIN_LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const ADMIN_LOGIN_RATE_LIMIT_MAX_PER_IDENTIFIER = 10;
+const ADMIN_LOGIN_RATE_LIMIT_MAX_PER_IP = 20;
+
+const getAdminLoginIdentifierKey = (identifier: string) => {
+  const safeIdentifier = identifier?.toLowerCase().replace(/[^a-z0-9._-]/gi, '') || 'unknown';
+  return `admin-login:identifier:${safeIdentifier}`;
+};
+
+const getAdminLoginIpKey = (ip: string) => {
+  const safeIp = ip?.replace(/[^a-z0-9:._-]/gi, '') || 'unknown';
+  return `admin-login:ip:${safeIp}`;
+};
 
 /* ---------- Public Routes (No Auth Required) ---------- */
 
@@ -13,8 +27,8 @@ const router: Router = Router();
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    console.log('🔐 Admin login attempt received');
-    console.log('📝 Request body:', { username: req.body.username, hasPassword: !!req.body.password });
+  console.log('🔐 Admin login attempt received');
+  console.log('📝 Request body:', { username: req.body.username, hasPassword: !!req.body.password });
     
     const { username, password } = req.body;
 
@@ -23,6 +37,30 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Username and password required'
+      });
+    }
+
+    const forwardedFor = (req.headers['x-forwarded-for'] as string) || '';
+    const clientIp = forwardedFor.split(',')[0]?.trim() || req.ip || 'unknown';
+    const identifierKey = getAdminLoginIdentifierKey(username);
+    const ipKey = getAdminLoginIpKey(clientIp);
+
+    const [identifierAllowed, ipAllowed] = await Promise.all([
+      RedisService.checkRateLimit(identifierKey, ADMIN_LOGIN_RATE_LIMIT_MAX_PER_IDENTIFIER, ADMIN_LOGIN_RATE_LIMIT_WINDOW_MS),
+      RedisService.checkRateLimit(ipKey, ADMIN_LOGIN_RATE_LIMIT_MAX_PER_IP, ADMIN_LOGIN_RATE_LIMIT_WINDOW_MS)
+    ]);
+
+    if (!identifierAllowed || !ipAllowed) {
+      console.log('🚫 ADMIN LOGIN RATE LIMIT TRIGGERED:', {
+        username,
+        clientIp,
+        identifierAllowed,
+        ipAllowed
+      });
+      return res.status(429).json({
+        success: false,
+        error: 'Too many login attempts. Please wait a few minutes and try again.',
+        code: 'ADMIN_LOGIN_RATE_LIMIT'
       });
     }
 
@@ -143,6 +181,15 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // Update last login
     await DatabaseService.updateAdminLastLogin(adminId);
+
+    try {
+      await Promise.all([
+        RedisService.del(identifierKey),
+        RedisService.del(ipKey)
+      ]);
+    } catch (clearError) {
+      console.warn('⚠️ Failed to clear admin login rate limit counters:', clearError);
+    }
 
     res.json({
       success: true,

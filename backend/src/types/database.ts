@@ -19,6 +19,9 @@ export interface User {
   otpExpiresAt?: Date; // 📧 OTP expiry time
   activeDeviceToken?: string; // Current active session token - only one device at a time
   lastLoginDevice?: string; // Device info for last login
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  lastPasswordResetAt?: Date;
   preferences: {
     language: string;
     interests: string[];

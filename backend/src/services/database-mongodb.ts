@@ -29,6 +29,9 @@ interface IUserDoc extends Document {
   socketId?: string | null;
   activeDeviceToken?: string; // 🔒 Single-device session enforcement
   lastLoginDevice?: string; // 🔒 Last login device info
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  lastPasswordResetAt?: Date;
   lastActiveAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -175,6 +178,9 @@ const UserSchema = new Schema<IUserDoc>({
   socketId: { type: String, default: null },
   activeDeviceToken: { type: String, default: null, index: true }, // 🔒🔍 Single-device session token + index for fast validation
   lastLoginDevice: { type: String, default: null }, // 🔒 Last login device info
+  passwordResetToken: { type: String, default: null, index: true },
+  passwordResetExpires: { type: Date },
+  lastPasswordResetAt: { type: Date },
   lastActiveAt: { type: Date, index: true }, // 🔍 Index for sorting by activity
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
@@ -401,6 +407,7 @@ export class DatabaseService {
       await UserModel.collection.createIndex({ phoneHash: 1 }, { sparse: true });
       await UserModel.collection.createIndex({ status: 1 });
       await UserModel.collection.createIndex({ isOnline: 1 });
+  await UserModel.collection.createIndex({ passwordResetToken: 1 }, { sparse: true });
       await ReportedChatTranscriptModel.collection.createIndex({ sessionId: 1, createdAt: -1 });
       console.log('✅ MongoDB indexes created');
     } catch (error) {
@@ -420,6 +427,10 @@ export class DatabaseService {
       status: 'active',
       coins: 100,
       isVerified: false,
+      activeDeviceToken: null,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      lastPasswordResetAt: null,
       preferences: { language: 'en', interests: [], genderPreference: 'any' },
       subscription: { type: 'none' },
       gender: 'others',
@@ -456,6 +467,9 @@ export class DatabaseService {
       // Session & verification related fields (kept optional in returned shape)
       activeDeviceToken: (mongoUser as any).activeDeviceToken || null,
       lastLoginDevice: (mongoUser as any).lastLoginDevice || null,
+  passwordResetToken: (mongoUser as any).passwordResetToken || null,
+  passwordResetExpires: (mongoUser as any).passwordResetExpires || null,
+  lastPasswordResetAt: (mongoUser as any).lastPasswordResetAt || null,
       otp: (mongoUser as any).otp,
       otpExpiresAt: (mongoUser as any).otpExpiresAt,
       preferences: mongoUser.preferences,
@@ -550,6 +564,9 @@ export class DatabaseService {
           // Session fields (optional on creation)
           activeDeviceToken: (userData as any).activeDeviceToken || null,
           lastLoginDevice: (userData as any).lastLoginDevice || null,
+          passwordResetToken: (userData as any).passwordResetToken || null,
+          passwordResetExpires: (userData as any).passwordResetExpires || null,
+          lastPasswordResetAt: (userData as any).lastPasswordResetAt || null,
           preferences: userData.preferences ?? {},
           subscription: userData.subscription ?? {},
           createdAt: new Date(),
@@ -582,6 +599,11 @@ export class DatabaseService {
       dailyChats: userData.dailyChats ?? 0,
       lastCoinClaim: userData.lastCoinClaim ?? new Date(),
       gender: userData.gender ?? 'others',
+  activeDeviceToken: (userData as any).activeDeviceToken ?? null,
+  lastLoginDevice: (userData as any).lastLoginDevice ?? null,
+  passwordResetToken: (userData as any).passwordResetToken ?? null,
+  passwordResetExpires: (userData as any).passwordResetExpires ?? null,
+  lastPasswordResetAt: (userData as any).lastPasswordResetAt ?? null,
       preferences: userData.preferences ?? {},
       subscription: userData.subscription ?? {},
       createdAt: new Date(),
@@ -684,6 +706,108 @@ export class DatabaseService {
     Object.assign(user, updates);
     user.updatedAt = new Date();
     this.users.set(id, user);
+    return user;
+  }
+
+  static async setPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+    if (this.isConnected) {
+      try {
+        await UserModel.updateOne(
+          { id: userId },
+          {
+            $set: {
+              passwordResetToken: tokenHash,
+              passwordResetExpires: expiresAt,
+              updatedAt: new Date()
+            }
+          }
+        );
+        return;
+      } catch (error) {
+        console.error('MongoDB setPasswordResetToken failed, using fallback:', error);
+      }
+    }
+
+    const user = this.users.get(userId);
+    if (!user) return;
+    user.passwordResetToken = tokenHash;
+    user.passwordResetExpires = expiresAt;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+  }
+
+  static async getUserByPasswordResetToken(tokenHash: string): Promise<any | null> {
+    if (this.isConnected) {
+      try {
+        const user = await UserModel.findOne({ passwordResetToken: tokenHash }).lean();
+        return this.mongoUserToUser(user);
+      } catch (error) {
+        console.error('MongoDB getUserByPasswordResetToken failed, using fallback:', error);
+      }
+    }
+
+    for (const user of this.users.values()) {
+      if (user.passwordResetToken === tokenHash) {
+        return user;
+      }
+    }
+    return null;
+  }
+
+  static async clearPasswordResetToken(userId: string): Promise<void> {
+    if (this.isConnected) {
+      try {
+        await UserModel.updateOne(
+          { id: userId },
+          {
+            $set: {
+              passwordResetToken: null,
+              passwordResetExpires: null,
+              updatedAt: new Date()
+            }
+          }
+        );
+        return;
+      } catch (error) {
+        console.error('MongoDB clearPasswordResetToken failed, using fallback:', error);
+      }
+    }
+
+    const user = this.users.get(userId);
+    if (!user) return;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+  }
+
+  static async updateUserPassword(userId: string, passwordHash: string): Promise<any | null> {
+    const updates = {
+      passwordHash,
+      activeDeviceToken: null,
+      lastPasswordResetAt: new Date(),
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      updatedAt: new Date()
+    };
+
+    if (this.isConnected) {
+      try {
+        const user = await UserModel.findOneAndUpdate(
+          { id: userId },
+          { $set: updates },
+          { new: true }
+        ).lean();
+        return this.mongoUserToUser(user);
+      } catch (error) {
+        console.error('MongoDB updateUserPassword failed, using fallback:', error);
+      }
+    }
+
+    const user = this.users.get(userId);
+    if (!user) return null;
+    Object.assign(user, updates);
+    this.users.set(userId, user);
     return user;
   }
 

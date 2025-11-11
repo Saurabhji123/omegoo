@@ -356,6 +356,17 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               )}
             </div>
 
+            {isLogin && (
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs sm:text-sm text-purple-200 hover:text-white transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"

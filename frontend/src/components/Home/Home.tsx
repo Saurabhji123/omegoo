@@ -7,8 +7,8 @@ import { useSocket } from '../../contexts/SocketContext';
 // Coin costs for each mode
 const COIN_COSTS = {
   text: 1,
-  audio: 2,
-  video: 3
+  audio: 1,
+  video: 1
 };
 
 const Home: React.FC = () => {
@@ -318,7 +318,7 @@ const Home: React.FC = () => {
                   How the Omegoo coin system powers a safer Omegle alternative
                 </h2>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
-                  Receive <strong className="text-yellow-300">50 free coins every midnight (IST)</strong> and spend them on text (1 coin), voice (2 coins), or video (3 coins) sessions. This balanced economy turns Omegoo into a trusted <strong className="text-white">Omegle alternative for India</strong>: coins limit spam, reward verified users, and make every match feel valuable—whether you are joining from an IIT hostel, an Indian university dorm, a community college, or connecting from overseas.
+                  Receive <strong className="text-yellow-300">50 free coins every midnight (IST)</strong> and spend them on text, voice, or video sessions for just <strong className="text-yellow-300">1 coin each</strong>. This balanced economy turns Omegoo into a trusted <strong className="text-white">Omegle alternative for India</strong>: coins limit spam, reward verified users, and make every match feel valuable—whether you are joining from an IIT hostel, an Indian university dorm, a community college, or connecting from overseas.
                 </p>
                 <ul className="mt-4 space-y-2 text-sm sm:text-base text-gray-200 list-disc list-inside">
                   <li>Earn bonus coins by verifying your email, staying active, and hosting respectful sessions.</li>

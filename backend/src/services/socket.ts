@@ -8,8 +8,8 @@ type ChatMode = 'text' | 'audio' | 'video';
 const VALID_CHAT_MODES: ChatMode[] = ['text', 'audio', 'video'];
 const CHAT_MODE_COSTS: Record<ChatMode, number> = {
   text: 1,
-  audio: 2,
-  video: 3
+  audio: 1,
+  video: 1
 };
 
 const normalizeMode = (mode?: string): ChatMode => {

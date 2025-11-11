@@ -49,6 +49,45 @@ Verify OTP for tier progression.
 }
 ```
 
+### POST /api/auth/forgot-password
+Send a password reset link to the user's registered email. The response is always success to avoid user enumeration.
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "If your email is registered, you will receive a password reset link shortly."
+}
+```
+
+### POST /api/auth/validate-reset-token
+Validate a password reset token before showing the reset form. Returns a 400 error if the token is invalid or expired.
+
+**Request Body:**
+```json
+{
+  "token": "reset-token"
+}
+```
+
+### POST /api/auth/reset-password
+Set a new password using a valid reset token. All existing sessions are revoked when the password changes.
+
+**Request Body:**
+```json
+{
+  "token": "reset-token",
+  "password": "newSecurePassword"
+}
+```
+
 ### POST /api/auth/refresh
 Refresh JWT token.
 

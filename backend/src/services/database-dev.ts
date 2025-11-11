@@ -18,6 +18,10 @@ interface User {
   isOnline?: boolean;
   isVerified: boolean;
   gender?: 'male' | 'female' | 'others';
+  activeDeviceToken?: string | null;
+  passwordResetToken?: string | null;
+  passwordResetExpires?: Date | null;
+  lastPasswordResetAt?: Date | null;
   preferences: any;
   subscription: any;
   createdAt: Date;
@@ -73,6 +77,10 @@ export class DatabaseService {
       lastCoinClaim: new Date(),
       isVerified: false,
       gender: 'others',
+      activeDeviceToken: null,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      lastPasswordResetAt: null,
       preferences: { language: 'en', interests: [] },
       subscription: { type: 'none' },
       createdAt: new Date(),
@@ -179,6 +187,10 @@ export class DatabaseService {
       lastCoinClaim: userData.lastCoinClaim ?? new Date(),
       isVerified: userData.isVerified || false,
       gender: userData.gender || 'others',
+      activeDeviceToken: userData.activeDeviceToken ?? null,
+      passwordResetToken: userData.passwordResetToken ?? null,
+      passwordResetExpires: userData.passwordResetExpires ?? null,
+      lastPasswordResetAt: userData.lastPasswordResetAt ?? null,
       preferences: userData.preferences || { 
         language: 'en', 
         interests: [],
@@ -201,6 +213,51 @@ export class DatabaseService {
     const updatedUser = { ...user, ...updates, updatedAt: new Date() } as User;
     this.users.set(userId, updatedUser);
     return updatedUser;
+  }
+
+  static async setPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+    const user = this.users.get(userId);
+    if (!user) return;
+    user.passwordResetToken = tokenHash;
+    user.passwordResetExpires = expiresAt;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+  }
+
+  static async getUserByPasswordResetToken(tokenHash: string): Promise<User | null> {
+    for (const user of this.users.values()) {
+      if (user.passwordResetToken === tokenHash) {
+        return user;
+      }
+    }
+    return null;
+  }
+
+  static async clearPasswordResetToken(userId: string): Promise<void> {
+    const user = this.users.get(userId);
+    if (!user) return;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+  }
+
+  static async updateUserPassword(userId: string, passwordHash: string): Promise<User | null> {
+    const user = this.users.get(userId);
+    if (!user) return null;
+
+    const updated: User = {
+      ...user,
+      passwordHash,
+      activeDeviceToken: null,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      lastPasswordResetAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    this.users.set(userId, updated);
+    return updated;
   }
 
   private static ensureDailyReset(user: User): User {

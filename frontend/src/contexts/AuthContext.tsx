@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from 'react';
 import apiService, { authAPI, userAPI } from '../services/api';
 import { storageService } from '../services/storage';
 
@@ -69,6 +69,9 @@ interface AuthContextType extends AuthState {
   updateUser: (updates: Partial<User>) => void;
   refreshUser: () => Promise<void>;
   acceptTerms: () => void;
+  requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string; code?: string }>;
+  validateResetToken: (token: string) => Promise<{ success: boolean; message: string; code?: string }>;
+  resetPassword: (token: string, password: string) => Promise<{ success: boolean; message: string; code?: string }>;
 }
 
 type AuthAction =
@@ -390,6 +393,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const requestPasswordReset = useCallback(async (email: string) => {
+    try {
+      return await authAPI.requestPasswordReset(email.trim().toLowerCase());
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+      throw error;
+    }
+  }, []);
+
+  const validateResetToken = useCallback(async (token: string) => {
+    try {
+      return await authAPI.validateResetToken(token);
+    } catch (error) {
+      console.error('Reset token validation failed:', error);
+      throw error;
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (token: string, password: string) => {
+    try {
+      return await authAPI.resetPassword(token, password);
+    } catch (error) {
+      console.error('Password reset failed:', error);
+      throw error;
+    }
+  }, []);
+
   const updateUser = (updates: Partial<User>) => {
     console.log('🔄 updateUser function called with:', updates);
     const mergedUser = userRef.current ? { ...userRef.current, ...updates } : null;
@@ -459,7 +489,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     verifyPhone,
     updateUser,
     refreshUser,
-    acceptTerms
+    acceptTerms,
+    requestPasswordReset,
+    validateResetToken,
+    resetPassword
   };
 
   return (

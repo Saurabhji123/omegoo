@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { DatabaseService, RedisService } from '../services/serviceFactory';
-import { generateOTP, sendOTPEmail, sendWelcomeEmail } from '../services/email';
+import { generateOTP, sendOTPEmail, sendWelcomeEmail, sendPasswordResetEmail } from '../services/email';
 
 const router: Router = Router();
 
@@ -84,6 +84,18 @@ const hashPhone = (phone: string): string => {
 const getPendingRegistrationKey = (email: string) => `pending_registration:${email.trim().toLowerCase()}`;
 const PENDING_REGISTRATION_TTL_SECONDS = 15 * 60; // 15 minutes to complete OTP verification
 
+const getPasswordResetRateKey = (identifier: string) => `password_reset_req:${identifier}`;
+
+const hashResetToken = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
+
+const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const LOGIN_RATE_LIMIT_MAX_PER_EMAIL = 5;
+const LOGIN_RATE_LIMIT_MAX_PER_IP = 20;
+
+const sanitizeRateLimitId = (value: string) => value.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+const getLoginEmailRateKey = (email: string) => `login_email:${sanitizeRateLimitId(email)}`;
+const getLoginIpRateKey = (ip: string) => `login_ip:${sanitizeRateLimitId(ip)}`;
+
 const TRUSTED_EMAIL_PROVIDERS = new Set([
   'gmail.com',
   'googlemail.com',
@@ -106,6 +118,8 @@ const TRUSTED_EMAIL_PROVIDERS = new Set([
   'yandex.com',
   'yandex.ru'
 ]);
+
+const PASSWORD_RESET_TOKEN_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
 
 /**
  * Helper function to check and reset daily coins automatically
@@ -747,6 +761,31 @@ router.post('/login', async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
+    const forwardedFor = (req.headers['x-forwarded-for'] as string) || '';
+    const clientIp = forwardedFor.split(',')[0]?.trim() || req.ip || 'unknown';
+    const emailRateKey = getLoginEmailRateKey(normalizedEmail);
+    const ipRateKey = getLoginIpRateKey(clientIp);
+
+    const [emailAllowed, ipAllowed] = await Promise.all([
+      RedisService.checkRateLimit(emailRateKey, LOGIN_RATE_LIMIT_MAX_PER_EMAIL, LOGIN_RATE_LIMIT_WINDOW_MS),
+      RedisService.checkRateLimit(ipRateKey, LOGIN_RATE_LIMIT_MAX_PER_IP, LOGIN_RATE_LIMIT_WINDOW_MS)
+    ]);
+
+    if (!emailAllowed || !ipAllowed) {
+      console.log('🚫 LOGIN RATE LIMIT TRIGGERED:', {
+        email: normalizedEmail,
+        clientIp,
+        emailAllowed,
+        ipAllowed
+      });
+      console.log('=== LOGIN ATTEMPT END (RATE LIMITED) ===\n');
+      return res.status(429).json({
+        success: false,
+        error: 'Too many login attempts. Please wait a few minutes and try again.',
+        code: 'LOGIN_RATE_LIMIT'
+      });
+    }
+
     // Find user by email
     console.log('🔍 Looking up user in database...');
     const user = await DatabaseService.getUserByEmail(normalizedEmail);
@@ -873,6 +912,15 @@ router.post('/login', async (req, res) => {
       device: deviceInfo.substring(0, 50) 
     });
     console.log('=== LOGIN ATTEMPT END ===\n');
+
+    try {
+      await Promise.all([
+        RedisService.del(emailRateKey),
+        RedisService.del(ipRateKey)
+      ]);
+    } catch (clearError) {
+      console.warn('⚠️ Failed to clear login rate limit counters:', clearError);
+    }
 
     res.json({
       success: true,
@@ -1264,6 +1312,198 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch user data'
+    });
+  }
+});
+
+/**
+ * Request Password Reset
+ * POST /api/auth/forgot-password
+ */
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    // Rate limit by email and IP to slow down enumeration attempts
+    const emailAllowed = await RedisService.checkRateLimit(
+      getPasswordResetRateKey(normalizedEmail),
+      3,
+      15 * 60 * 1000
+    );
+
+    const ipIdentifier = req.ip ? req.ip.replace(/[:.]/g, '_') : 'unknown';
+    const ipAllowed = await RedisService.checkRateLimit(
+      getPasswordResetRateKey(`ip:${ipIdentifier}`),
+      10,
+      15 * 60 * 1000
+    );
+
+    if (!emailAllowed || !ipAllowed) {
+      return res.status(429).json({
+        success: false,
+        error: 'Too many reset requests. Please try again later.',
+        code: 'RESET_RATE_LIMIT'
+      });
+    }
+
+    const user = await DatabaseService.getUserByEmail(normalizedEmail);
+
+    if (user && user.passwordHash) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = hashResetToken(resetToken);
+      const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_EXPIRY_MS);
+
+      await DatabaseService.setPasswordResetToken(user.id, tokenHash, expiresAt);
+
+      const emailSent = await sendPasswordResetEmail({
+        email: normalizedEmail,
+        name: user.username,
+        token: resetToken
+      });
+
+      if (!emailSent) {
+        console.warn('⚠️ Password reset email dispatch failed', { email: normalizedEmail });
+      }
+    } else if (user && !user.passwordHash) {
+      console.log('⚠️ Password reset requested for account without password login', { email: normalizedEmail });
+    } else {
+      console.log('ℹ️ Password reset requested for non-existent email', { email: normalizedEmail });
+    }
+
+    return res.json({
+      success: true,
+      message: 'If your email is registered, you will receive a password reset link shortly.'
+    });
+  } catch (error) {
+    console.error('❌ Forgot password error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Unable to process password reset request'
+    });
+  }
+});
+
+/**
+ * Validate Password Reset Token
+ * POST /api/auth/validate-reset-token
+ */
+router.post('/validate-reset-token', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Reset token is required'
+      });
+    }
+
+    const tokenHash = hashResetToken(token);
+    const user = await DatabaseService.getUserByPasswordResetToken(tokenHash);
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired reset link',
+        code: 'INVALID_TOKEN'
+      });
+    }
+
+    const expiresAt = user.passwordResetExpires ? new Date(user.passwordResetExpires) : null;
+    if (!expiresAt || expiresAt.getTime() < Date.now()) {
+      await DatabaseService.clearPasswordResetToken(user.id);
+      return res.status(400).json({
+        success: false,
+        error: 'Reset link has expired. Please request a new one.',
+        code: 'RESET_EXPIRED'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Reset link is valid'
+    });
+  } catch (error) {
+    console.error('❌ Validate reset token error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Unable to validate reset token'
+    });
+  }
+});
+
+/**
+ * Reset Password
+ * POST /api/auth/reset-password
+ */
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Reset token is required'
+      });
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password must be at least 6 characters'
+      });
+    }
+
+    const tokenHash = hashResetToken(token);
+    const user = await DatabaseService.getUserByPasswordResetToken(tokenHash);
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired reset link',
+        code: 'INVALID_TOKEN'
+      });
+    }
+
+    const expiresAt = user.passwordResetExpires ? new Date(user.passwordResetExpires) : null;
+    if (!expiresAt || expiresAt.getTime() < Date.now()) {
+      await DatabaseService.clearPasswordResetToken(user.id);
+      return res.status(400).json({
+        success: false,
+        error: 'Reset link has expired. Please request a new one.',
+        code: 'RESET_EXPIRED'
+      });
+    }
+
+    const newPasswordHash = await bcrypt.hash(password, 12);
+    const updatedUser = await DatabaseService.updateUserPassword(user.id, newPasswordHash);
+
+    if (!updatedUser) {
+      await DatabaseService.clearPasswordResetToken(user.id);
+      return res.status(500).json({
+        success: false,
+        error: 'Unable to update password. Please request a new reset link and try again.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Password updated successfully. You can now login with your new password.'
+    });
+  } catch (error) {
+    console.error('❌ Reset password error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Unable to reset password'
     });
   }
 });
