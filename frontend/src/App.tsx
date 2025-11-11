@@ -166,11 +166,10 @@ const AppRoutes: React.FC = () => {
         } />
         
         {/* Admin routes - Protected */}
-        <Route path="/admin/*" element={
-          <ProtectedRoute requiresVerification>
-            <Admin />
-          </ProtectedRoute>
-        } />
+  <Route path="/omegoo-admin/*" element={<Admin />} />
+
+  {/* Hide legacy /admin path */}
+  <Route path="/admin/*" element={<Navigate to="/" replace />} />
         
         {/* Fallback - Redirect any unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
