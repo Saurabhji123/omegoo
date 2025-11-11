@@ -1357,7 +1357,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
 
     const user = await DatabaseService.getUserByEmail(normalizedEmail);
 
-    if (user && user.passwordHash) {
+    if (user) {
       const resetToken = crypto.randomBytes(32).toString('hex');
       const tokenHash = hashResetToken(resetToken);
       const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_EXPIRY_MS);
@@ -1367,14 +1367,13 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       const emailSent = await sendPasswordResetEmail({
         email: normalizedEmail,
         name: user.username,
-        token: resetToken
+        token: resetToken,
+        isPasswordlessAccount: !user.passwordHash
       });
 
       if (!emailSent) {
         console.warn('⚠️ Password reset email dispatch failed', { email: normalizedEmail });
       }
-    } else if (user && !user.passwordHash) {
-      console.log('⚠️ Password reset requested for account without password login', { email: normalizedEmail });
     } else {
       console.log('ℹ️ Password reset requested for non-existent email', { email: normalizedEmail });
     }

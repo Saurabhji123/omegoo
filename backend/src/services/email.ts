@@ -12,6 +12,7 @@ interface SendPayload {
   to: string[];
   subject: string;
   html: string;
+  text?: string;
 }
 
 interface SendResult {
@@ -41,7 +42,7 @@ const resolveSenders = (): string[] => {
   return [PRIMARY_SENDER, FALLBACK_SENDER];
 };
 
-const sendWithFallback = async ({ to, subject, html }: SendPayload): Promise<SendResult> => {
+const sendWithFallback = async ({ to, subject, html, text }: SendPayload): Promise<SendResult> => {
   if (!resendClient) {
     return { success: false };
   }
@@ -51,7 +52,7 @@ const sendWithFallback = async ({ to, subject, html }: SendPayload): Promise<Sen
   for (let idx = 0; idx < senders.length; idx += 1) {
     const from = senders[idx];
     try {
-      const response = await resendClient.emails.send({ from, to, subject, html });
+  const response = await resendClient.emails.send({ from, to, subject, html, text });
 
       if (response.error) {
         console.error(`❌ Resend rejected email from ${from}`, response.error);
@@ -110,12 +111,14 @@ interface AuthTemplateArgs {
 interface PasswordResetTemplateArgs {
   name?: string;
   resetUrl: string;
+  isPasswordlessAccount?: boolean;
 }
 
 interface SendPasswordResetArgs {
   email: string;
   name?: string;
   token: string;
+  isPasswordlessAccount?: boolean;
 }
 
 export const generateOTP = (): string => {
@@ -166,7 +169,7 @@ export const sendWelcomeEmail = async ({ email, name }: SendWelcomeArgs): Promis
   return true;
 };
 
-export const sendPasswordResetEmail = async ({ email, name, token }: SendPasswordResetArgs): Promise<boolean> => {
+export const sendPasswordResetEmail = async ({ email, name, token, isPasswordlessAccount }: SendPasswordResetArgs): Promise<boolean> => {
   if (!resendClient) {
     console.warn(`⚠️ Skipping password reset email. RESEND_API_KEY missing. Target: ${email}`);
     return false;
@@ -174,10 +177,15 @@ export const sendPasswordResetEmail = async ({ email, name, token }: SendPasswor
 
   const resetUrl = `${PLATFORM_URL.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
 
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🔗 Password reset link (dev):', resetUrl);
+  }
+
   const result = await sendWithFallback({
     to: [email],
     subject: 'Reset Your Omegoo Password',
-    html: buildPasswordResetEmailTemplate({ name, resetUrl }),
+    html: buildPasswordResetEmailTemplate({ name, resetUrl, isPasswordlessAccount }),
+    text: buildPasswordResetText({ name, resetUrl, isPasswordlessAccount }),
   });
 
   if (!result.success) {
@@ -302,10 +310,16 @@ const buildAuthEmailTemplate = ({ name, otp }: AuthTemplateArgs): string => {
   `;
 };
 
-const buildPasswordResetEmailTemplate = ({ name, resetUrl }: PasswordResetTemplateArgs): string => {
+const buildPasswordResetEmailTemplate = ({ name, resetUrl, isPasswordlessAccount }: PasswordResetTemplateArgs): string => {
   const displayName = escapeHtml(name) || 'there';
   const safeResetUrl = escapeHtml(resetUrl);
   const currentYear = new Date().getFullYear();
+  const introCopy = isPasswordlessAccount
+    ? `Hi ${displayName}, we noticed you first joined Omegoo using Google. Set a password below so you can also log in with email.`
+    : `Hi ${displayName}, tap the button below to create a new password and jump back into the conversation.`;
+  const passwordlessBullet = isPasswordlessAccount
+    ? '<li>Setting a password lets you log in with email as well as Google.</li>'
+    : '';
 
   return `
   <!DOCTYPE html>
@@ -337,7 +351,7 @@ const buildPasswordResetEmailTemplate = ({ name, resetUrl }: PasswordResetTempla
                     <td style="text-align: center; padding-bottom: 28px;">
                       <p style="margin: 0; color: #a5b4fc; font-size: 14px; letter-spacing: 3px; text-transform: uppercase;">Omegoo</p>
                       <h1 style="margin: 12px 0 10px; font-size: 28px; color: #ffffff; font-weight: 700;">Need to reset your password?</h1>
-                      <p style="margin: 0; color: #cbd5f5; font-size: 16px; line-height: 1.6;">Hi ${displayName}, tap the button below to create a new password and jump back into the conversation.</p>
+                      <p style="margin: 0; color: #cbd5f5; font-size: 16px; line-height: 1.6;">${introCopy}</p>
                     </td>
                   </tr>
                   <tr>
@@ -352,6 +366,7 @@ const buildPasswordResetEmailTemplate = ({ name, resetUrl }: PasswordResetTempla
                         <ul style="margin: 0; padding-left: 18px; color: #d1dcff; font-size: 14px; line-height: 1.7;">
                           <li>This link works once and expires in 30 minutes.</li>
                           <li>If you didn’t request a reset, you can safely ignore this email.</li>
+                          ${passwordlessBullet}
                           <li>For extra safety, resetting signs you out of other active sessions.</li>
                         </ul>
                       </div>
@@ -382,4 +397,31 @@ const buildPasswordResetEmailTemplate = ({ name, resetUrl }: PasswordResetTempla
   </body>
   </html>
   `;
+};
+
+const buildPasswordResetText = ({ name, resetUrl, isPasswordlessAccount }: PasswordResetTemplateArgs): string => {
+  const displayName = name || 'there';
+  const intro = isPasswordlessAccount
+    ? `Hi ${displayName}, we noticed you first joined Omegoo using Google. Use the link below to set a password so you can also log in with email.`
+    : `Hi ${displayName}, here is the link to reset your Omegoo password.`;
+
+  const notes = [
+    'This link works once and expires in 30 minutes.',
+    'If you did not request a reset, you can ignore this message.',
+    ...(isPasswordlessAccount ? ['Setting a password lets you log in with email as well as Google.'] : []),
+    'Resetting your password signs you out of other active sessions.'
+  ];
+
+  return [
+    'Reset your Omegoo password',
+    '',
+    intro,
+    '',
+    `Reset link: ${resetUrl}`,
+    '',
+    'Security notes:',
+    ...notes.map((note) => `- ${note}`),
+    '',
+    'Need help? Email support@omegoo.com.'
+  ].join('\n');
 };
