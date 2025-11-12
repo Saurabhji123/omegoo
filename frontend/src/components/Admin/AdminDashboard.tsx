@@ -119,6 +119,19 @@ const toIsoIfPresent = (value: string): string | undefined => {
   return date.toISOString();
 };
 
+const toReadableDateTime = (iso?: string | null): string => {
+  if (!iso) {
+    return '—';
+  }
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+
+  return date.toLocaleString();
+};
+
 const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>('overview');
 
@@ -161,6 +174,23 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   const adminPermissions = Array.isArray(admin?.permissions) ? admin.permissions : [];
   const canManageUsers = admin?.role === 'super_admin' || adminPermissions.includes('manage_users');
   const canManageRoles = admin?.role === 'super_admin';
+  const canManageStatus = admin?.role === 'super_admin' || adminPermissions.includes('manage_status');
+  const canViewStatus = canManageStatus || adminPermissions.includes('view_stats');
+
+  const availableTabs = useMemo(() => {
+    return TABS.filter((tab) => {
+      if (tab === 'incidents') {
+        return canViewStatus;
+      }
+      return true;
+    });
+  }, [canViewStatus]);
+
+  useEffect(() => {
+    if (!availableTabs.includes(activeTab)) {
+      setActiveTab(availableTabs[0] || 'overview');
+    }
+  }, [activeTab, availableTabs]);
 
   const showNotice = useCallback((next: Notice) => {
     setNotice(next);
@@ -298,7 +328,9 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   useEffect(() => {
     if (activeTab === 'overview') {
       fetchAnalytics();
-      fetchStatusSummary();
+      if (canViewStatus) {
+        fetchStatusSummary();
+      }
     }
     if (activeTab === 'users') {
       fetchUsers(search);
@@ -312,7 +344,22 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
     if (activeTab === 'analytics') {
       fetchAnalytics();
     }
-  }, [activeTab, fetchAnalytics, fetchBannedUsers, fetchReports, fetchUsers, fetchStatusSummary, search]);
+  }, [activeTab, canViewStatus, fetchAnalytics, fetchBannedUsers, fetchReports, fetchUsers, fetchStatusSummary, search]);
+
+  useEffect(() => {
+    if (activeTab !== 'incidents' || !canViewStatus) {
+      return;
+    }
+
+    fetchStatusSummary();
+    const refreshId = window.setInterval(() => {
+      fetchStatusSummary();
+    }, 15000);
+
+    return () => {
+      window.clearInterval(refreshId);
+    };
+  }, [activeTab, canViewStatus, fetchStatusSummary]);
 
   useEffect(() => {
     const drafts: Record<string, 'pending' | 'reviewed' | 'resolved'> = {};
@@ -704,6 +751,10 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   };
 
   const publishIncident = async () => {
+    if (!canManageStatus) {
+      showNotice({ kind: 'error', message: 'You do not have permission to publish incidents.' });
+      return;
+    }
     if (!incidentMsg.trim()) {
       showNotice({ kind: 'error', message: 'Incident message required.' });
       return;
@@ -736,6 +787,17 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   };
 
   const clearIncident = async () => {
+    if (!canManageStatus) {
+      showNotice({ kind: 'error', message: 'You do not have permission to clear incidents.' });
+      return;
+    }
+
+    const liveIncident = statusSummary?.activeIncident || statusSummary?.incident || null;
+    if (!liveIncident) {
+      showNotice({ kind: 'info', message: 'No active incident to clear.' });
+      return;
+    }
+
     if (!window.confirm('Clear the active incident banner?')) {
       return;
     }
@@ -757,6 +819,46 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
 
   const incidentActive = statusSummary?.activeIncident || statusSummary?.incident || null;
   const incidentUpcoming = statusSummary?.upcomingIncident || null;
+  const queueStats = statusSummary?.queue ?? statusSummary?.queues?.queues ?? null;
+  const statusLastUpdatedRaw = statusSummary?.lastUpdated || statusSummary?.updatedAt || incidentActive?.updatedAt || null;
+  const statusLastUpdatedLabel = statusLastUpdatedRaw
+    ? new Date(statusLastUpdatedRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null;
+  const activeSeverityTone = incidentActive?.severity === 'critical'
+    ? 'border-rose-400/50 bg-rose-500/20 text-rose-50'
+    : incidentActive?.severity === 'warning'
+    ? 'border-amber-400/50 bg-amber-500/20 text-amber-50'
+    : 'border-sky-400/50 bg-sky-500/20 text-sky-50';
+  const queueTotals = (() => {
+    if (!queueStats || typeof queueStats !== 'object') {
+      return {
+        total: null,
+        text: null,
+        audio: null,
+        video: null
+      };
+    }
+
+    const snapshot = queueStats as Record<string, number> & { totalWaiting?: number };
+    const text = typeof snapshot.text === 'number' ? snapshot.text : null;
+    const audio = typeof snapshot.audio === 'number' ? snapshot.audio : null;
+    const video = typeof snapshot.video === 'number' ? snapshot.video : null;
+    const hasModeBreakdown = [text, audio, video].every((value) => typeof value === 'number');
+
+    const total = typeof snapshot.total === 'number'
+      ? snapshot.total
+      : typeof snapshot.totalWaiting === 'number'
+      ? snapshot.totalWaiting
+      : hasModeBreakdown
+      ? (text ?? 0) + (audio ?? 0) + (video ?? 0)
+      : null;
+
+    return { total, text, audio, video };
+  })();
+
+  const connectedUsersValue = typeof statusSummary?.connectedUsers === 'number'
+    ? statusSummary.connectedUsers
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-900 py-8 px-4">
@@ -785,7 +887,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
             </div>
           </div>
           <nav className="flex flex-wrap gap-2 text-white/70">
-            {TABS.map((tab) => {
+            {availableTabs.map((tab) => {
               const isActive = tab === activeTab;
               return (
                 <button
@@ -1449,7 +1551,81 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                 </a>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-6">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-6">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Live incident</h3>
+                      <p className="text-xs uppercase tracking-wide text-white/50">
+                        {incidentActive ? `Updated ${statusLastUpdatedLabel ?? 'just now'}` : 'No active banner'}
+                      </p>
+                    </div>
+                    {incidentActive && (
+                      <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${activeSeverityTone}`}>
+                        {incidentActive.severity}
+                      </span>
+                    )}
+                  </div>
+
+                  {incidentActive ? (
+                    <>
+                      <p className="mt-4 text-sm text-white/80">{incidentActive.message}</p>
+
+                      <div className="mt-4 grid gap-3 text-xs text-white/70 md:grid-cols-2">
+                        <div>Started {toReadableDateTime(incidentActive.startedAt)}</div>
+                        {incidentActive.expiresAt && <div>Expires {toReadableDateTime(incidentActive.expiresAt)}</div>}
+                        <div>Audience · {incidentActive.audience || 'all'}</div>
+                        <div>{incidentActive.requiresAck ? 'Requires acknowledgement' : 'No acknowledgement required'}</div>
+                        {incidentActive.updatedAt && <div>Last updated {toReadableDateTime(incidentActive.updatedAt)}</div>}
+                      </div>
+
+                      {incidentActive.fallbackUrl && (
+                        <a
+                          href={incidentActive.fallbackUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-4 inline-flex text-xs font-medium text-indigo-300 underline"
+                        >
+                          View fallback link
+                        </a>
+                      )}
+
+                      {canManageStatus && (
+                        <div className="mt-6 flex flex-wrap items-center gap-3">
+                          <button
+                            onClick={clearIncident}
+                            disabled={actionLoading}
+                            className="rounded-full bg-red-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Resolve & clear
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="mt-4 rounded-xl bg-white/5 px-4 py-3 text-sm text-white/70">
+                      No incident is live. Publish an alert below to reach every user.
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
+                  <h3 className="text-lg font-semibold text-white">Realtime snapshot</h3>
+                  <p className="text-xs uppercase tracking-wide text-white/50">
+                    {statusLastUpdatedLabel ? `Updated ${statusLastUpdatedLabel}` : 'Waiting for telemetry'}
+                  </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <StatChip label="Connected users" value={connectedUsersValue ?? '—'} />
+                    <StatChip label="Queue total" value={queueTotals.total ?? '—'} />
+                    <StatChip label="Text queue" value={queueTotals.text ?? '—'} />
+                    <StatChip label="Audio queue" value={queueTotals.audio ?? '—'} />
+                    <StatChip label="Video queue" value={queueTotals.video ?? '—'} />
+                  </div>
+                </div>
+              </div>
+
+              {canManageStatus ? (
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-6">
                 <label className="text-xs uppercase tracking-wide text-white/50">Incident message</label>
                 <textarea
                   value={incidentMsg}
@@ -1481,10 +1657,10 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                     </button>
                     <button
                       onClick={clearIncident}
-                      disabled={actionLoading}
+                      disabled={actionLoading || !incidentActive}
                       className="rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Clear banner
+                      Resolve & clear
                     </button>
                   </div>
                 </div>
@@ -1546,7 +1722,12 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                     Require in-app acknowledgement before the user can continue.
                   </label>
                 </div>
-              </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-6 text-sm text-white/70">
+                  You have read-only access to incidents. Contact a super admin to publish or clear banners.
+                </div>
+              )}
 
               {incidentUpcoming && (
                 <div className="rounded-2xl border border-white/10 bg-black/25 p-6">
