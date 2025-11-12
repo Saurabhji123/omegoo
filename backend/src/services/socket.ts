@@ -1179,6 +1179,14 @@ export class SocketService {
     return this.connectedUsers.size;
   }
 
+  static getModePresenceSnapshot() {
+    return {
+      text: this.modePresence.text.size,
+      audio: this.modePresence.audio.size,
+      video: this.modePresence.video.size
+    };
+  }
+
   static isUserConnected(userId: string): boolean {
     return this.connectedUsers.has(userId);
   }

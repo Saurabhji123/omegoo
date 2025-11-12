@@ -1,84 +1,263 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 import AdminDashboard from './AdminDashboard';
+import { API_BASE_URL } from '../../services/api';
+import { setAdminAuthToken, setAdminSession, clearAdminSession, onAdminUnauthorized } from '../../services/adminApi';
 
-// Use production URL when deployed, localhost only for local dev
-const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const API_URL = isLocalhost ? 'http://localhost:3001' : 'https://omegoo-api-clean.onrender.com';
+const ADMIN_TOKEN_KEY = 'adminToken';
+const ADMIN_USER_KEY = 'adminUser';
+const ADMIN_TOKEN_EXPIRY_KEY = 'adminTokenExpiry';
+const ADMIN_SESSION_KEY = 'adminSessionId';
+const ADMIN_CSRF_KEY = 'adminCsrfToken';
+const isBrowser = typeof window !== 'undefined';
+
+interface JwtPayload {
+  exp?: number;
+  [key: string]: unknown;
+}
+
+type AdminSessionPayload = {
+  id?: string;
+  csrfToken?: string;
+  expiresAt?: string;
+  ttlSeconds?: number;
+};
+
+const decodeJwt = (token: string): JwtPayload | null => {
+  try {
+    const [, payload] = token.split('.');
+    if (!payload) {
+      return null;
+    }
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+};
+
+const readFromStorage = (key: string): string | null => {
+  if (!isBrowser) {
+    return null;
+  }
+
+  try {
+    const sessionValue = window.sessionStorage.getItem(key);
+    if (sessionValue !== null) {
+      return sessionValue;
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const persistToStorage = (key: string, value: string | null) => {
+  if (!isBrowser) {
+    return;
+  }
+
+  try {
+    if (value === null) {
+      window.sessionStorage.removeItem(key);
+    } else {
+      window.sessionStorage.setItem(key, value);
+    }
+  } catch {
+    // Ignore sessionStorage write errors
+  }
+
+  try {
+    if (value === null) {
+      window.localStorage.removeItem(key);
+    } else {
+      window.localStorage.setItem(key, value);
+    }
+  } catch {
+    // Ignore localStorage write errors
+  }
+};
 
 const Admin: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [token, setToken] = useState<string>('');
   const [admin, setAdmin] = useState<any>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPersistedSession = useCallback(() => {
+    persistToStorage(ADMIN_TOKEN_KEY, null);
+    persistToStorage(ADMIN_USER_KEY, null);
+    persistToStorage(ADMIN_TOKEN_EXPIRY_KEY, null);
+    persistToStorage(ADMIN_SESSION_KEY, null);
+    persistToStorage(ADMIN_CSRF_KEY, null);
+  }, []);
+
+  const handleLogout = useCallback((message?: string) => {
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+      logoutTimerRef.current = null;
+    }
+
+    setIsAuthenticated(false);
+    setAdmin(null);
+    setUsername('');
+    setPassword('');
+    setError('');
+    clearPersistedSession();
+    setAdminAuthToken(null);
+    clearAdminSession();
+
+    if (message) {
+      window.alert(message);
+    }
+  }, [clearPersistedSession]);
+
+  const scheduleAutoLogout = useCallback((expiryMs?: number) => {
+    if (!expiryMs) {
+      return;
+    }
+
+    const delay = expiryMs - Date.now();
+    if (delay <= 0) {
+      handleLogout('Admin session expired. Please login again.');
+      return;
+    }
+
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+    }
+
+    logoutTimerRef.current = setTimeout(() => {
+      handleLogout('Admin session expired. Please login again.');
+    }, delay);
+  }, [handleLogout]);
+
+  const persistSession = useCallback((token: string, adminData: any, session?: AdminSessionPayload) => {
+    const payload = decodeJwt(token);
+    const jwtExpiryMs = payload?.exp ? payload.exp * 1000 : undefined;
+    const sessionExpiryMs = session?.expiresAt ? Date.parse(session.expiresAt) : undefined;
+
+    persistToStorage(ADMIN_TOKEN_KEY, token);
+    persistToStorage(ADMIN_USER_KEY, JSON.stringify(adminData));
+    persistToStorage(ADMIN_SESSION_KEY, session?.id ?? null);
+    persistToStorage(ADMIN_CSRF_KEY, session?.csrfToken ?? null);
+
+    setAdminSession(session?.id ?? null, session?.csrfToken ?? null);
+
+    const effectiveExpiry = (() => {
+      if (jwtExpiryMs && sessionExpiryMs) {
+        return Math.min(jwtExpiryMs, sessionExpiryMs);
+      }
+      return jwtExpiryMs ?? sessionExpiryMs;
+    })();
+
+    if (effectiveExpiry) {
+      persistToStorage(ADMIN_TOKEN_EXPIRY_KEY, String(effectiveExpiry));
+    } else {
+      persistToStorage(ADMIN_TOKEN_EXPIRY_KEY, null);
+    }
+
+    scheduleAutoLogout(effectiveExpiry);
+  }, [scheduleAutoLogout]);
+
+  useEffect(() => {
+    onAdminUnauthorized(() => handleLogout('Admin session expired. Please login again.'));
+
+    const storedToken = readFromStorage(ADMIN_TOKEN_KEY);
+    const storedAdminRaw = readFromStorage(ADMIN_USER_KEY);
+    const storedExpiryRaw = readFromStorage(ADMIN_TOKEN_EXPIRY_KEY);
+    const storedSessionId = readFromStorage(ADMIN_SESSION_KEY);
+    const storedCsrfToken = readFromStorage(ADMIN_CSRF_KEY);
+
+    if (storedToken && storedAdminRaw) {
+      try {
+        const parsedAdmin = JSON.parse(storedAdminRaw);
+        const expiryMs = storedExpiryRaw ? Number(storedExpiryRaw) : undefined;
+        const hasSessionHeaders = Boolean(storedSessionId && storedCsrfToken);
+
+        if (!hasSessionHeaders) {
+          clearPersistedSession();
+          return;
+        }
+
+        if (expiryMs && expiryMs <= Date.now()) {
+          handleLogout();
+        } else {
+          setAdmin(parsedAdmin);
+          setIsAuthenticated(true);
+          setAdminAuthToken(storedToken);
+          setAdminSession(storedSessionId as string, storedCsrfToken as string);
+
+          if (expiryMs) {
+            scheduleAutoLogout(expiryMs);
+          } else {
+            const decoded = decodeJwt(storedToken);
+            const derivedExpiry = decoded?.exp ? decoded.exp * 1000 : undefined;
+            if (derivedExpiry && derivedExpiry > Date.now()) {
+              persistToStorage(ADMIN_TOKEN_EXPIRY_KEY, String(derivedExpiry));
+              scheduleAutoLogout(derivedExpiry);
+            }
+          }
+        }
+      } catch (parseError) {
+        clearPersistedSession();
+      }
+    }
+
+    return () => {
+      if (logoutTimerRef.current) {
+        clearTimeout(logoutTimerRef.current);
+      }
+      onAdminUnauthorized(null);
+    };
+  }, [handleLogout, scheduleAutoLogout, clearPersistedSession]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    console.log('🔐 Admin login started');
-    console.log('📡 API URL:', API_URL);
-    console.log('📧 Email/Username:', username);
-
     try {
-      console.log('📤 Sending login request...');
-      const response = await axios.post(`${API_URL}/api/admin/login`, {
-        username,
-        password
-      });
-
-      console.log('✅ Login response received:', response.data);
+      const response = await axios.post(
+        `${API_BASE_URL}/api/admin/login`,
+        { username, password },
+        { timeout: 15000 }
+      );
 
       if (response.data.success) {
-        console.log('✅ Login successful!');
-        setToken(response.data.token);
-        setAdmin(response.data.admin);
+        const { token: authToken, admin: adminPayload, session } = response.data;
+
+        if (!session?.id || !session?.csrfToken) {
+          throw new Error('Admin session missing in response');
+        }
+
+        setAdmin(adminPayload);
         setIsAuthenticated(true);
-        
-        // Store in localStorage
-        localStorage.setItem('adminToken', response.data.token);
-        localStorage.setItem('adminUser', JSON.stringify(response.data.admin));
+        setPassword('');
+        setAdminAuthToken(authToken);
+        persistSession(authToken, adminPayload, session);
       }
     } catch (err: any) {
-      console.error('❌ Login error:', err);
-      console.error('❌ Error response:', err.response?.data);
-      console.error('❌ Error status:', err.response?.status);
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      const message = err?.response?.data?.error || 'Login failed. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setToken('');
-    setAdmin(null);
-    setUsername('');
-    setPassword('');
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminUser');
-  };
-
-  // Check for existing session on mount
-  React.useEffect(() => {
-    const savedToken = localStorage.getItem('adminToken');
-    const savedAdmin = localStorage.getItem('adminUser');
-    
-    if (savedToken && savedAdmin) {
-      setToken(savedToken);
-      setAdmin(JSON.parse(savedAdmin));
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  if (isAuthenticated && token && admin) {
-    return <AdminDashboard token={token} admin={admin} onLogout={handleLogout} />;
+  if (isAuthenticated && admin) {
+    return <AdminDashboard admin={admin} onLogout={() => handleLogout()} />;
   }
 
   return (

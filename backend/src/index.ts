@@ -1,5 +1,5 @@
 import express from 'express';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
@@ -20,6 +20,8 @@ import moderationRoutes from './routes/moderation';
 import paymentRoutes from './routes/payment';
 import adminRoutes from './routes/admin';
 import reportsRoutes from './routes/reports';
+import statusRoutes from './routes/status';
+import analyticsRoutes from './routes/analytics';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -65,19 +67,45 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-      ? [
-          'https://www.omegoo.chat',
-          'https://omegoo.chat',
-          'https://saurabhji123.github.io', 
-          'https://saurabhji123.github.io/omegoo'
-        ]
-    : process.env.FRONTEND_URL || "http://localhost:3000",
+const defaultAllowedOrigins = process.env.NODE_ENV === 'production'
+  ? [
+      'https://www.omegoo.chat',
+      'https://omegoo.chat',
+      'https://saurabhji123.github.io',
+      'https://saurabhji123.github.io/omegoo'
+    ]
+  : [process.env.FRONTEND_URL || 'http://localhost:3000'];
+
+const adminAllowedOrigins = (process.env.ADMIN_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0);
+
+const dedupeOrigins = (origins: string[]) => Array.from(new Set(origins));
+
+const sharedCorsOptions: Pick<CorsOptions, 'credentials' | 'methods' | 'allowedHeaders'> = {
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Added PATCH method
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Session', 'X-Admin-Csrf', 'X-CSRF-Token']
+};
+
+const defaultCors = cors({
+  origin: dedupeOrigins(defaultAllowedOrigins),
+  ...sharedCorsOptions
+});
+
+const adminCors = cors({
+  origin: dedupeOrigins(adminAllowedOrigins.length ? adminAllowedOrigins : defaultAllowedOrigins),
+  ...sharedCorsOptions
+});
+
+app.use((req, res, next) => {
+  const path = req.path || '';
+  if (path.startsWith('/api/admin')) {
+    return adminCors(req, res, next);
+  }
+  return defaultCors(req, res, next);
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -170,10 +198,9 @@ app.use('/api/auth/register', authLimiter); // 🔒 Rate limit register endpoint
 
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 120,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true,
   message: {
     success: false,
     error: 'Admin requests limited. Please wait a moment and retry.'
@@ -182,6 +209,8 @@ const adminLimiter = rateLimit({
 
 app.use('/api/admin', adminLimiter);
 app.use('/api/auth', authRoutes);
+app.use('/api/status', statusRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reports', reportsRoutes); // Public reports endpoint
 app.use('/api/user', authenticateToken, userRoutes);
 // Chat APIs require both authentication and verified accounts

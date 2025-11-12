@@ -1,4 +1,5 @@
 // Simple in-memory Redis service for development
+import type { AdminSessionRecord } from './redis';
 
 type GenderValue = 'male' | 'female' | 'others';
 
@@ -21,6 +22,7 @@ interface MatchRequest {
 export class RedisService {
   private static storage: Map<string, any> = new Map();
   private static queues: Map<string, MatchRequest[]> = new Map();
+  private static ttlTimers: Map<string, NodeJS.Timeout> = new Map();
 
   static async initialize() {
     console.log('✅ Development Redis initialized (in-memory)');
@@ -33,11 +35,19 @@ export class RedisService {
   // Basic key-value operations
   static async set(key: string, value: any, ttl?: number) {
     this.storage.set(key, JSON.stringify(value));
-    
+
     if (ttl) {
-      setTimeout(() => {
+      const previousTimer = this.ttlTimers.get(key);
+      if (previousTimer) {
+        clearTimeout(previousTimer);
+      }
+
+      const timer = setTimeout(() => {
         this.storage.delete(key);
+        this.ttlTimers.delete(key);
       }, ttl * 1000);
+
+      this.ttlTimers.set(key, timer);
     }
   }
 
@@ -48,10 +58,27 @@ export class RedisService {
 
   static async del(key: string) {
     this.storage.delete(key);
+    const timer = this.ttlTimers.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      this.ttlTimers.delete(key);
+    }
   }
 
   static async exists(key: string): Promise<boolean> {
     return this.storage.has(key);
+  }
+
+  static async increment(key: string, amount: number = 1, ttl?: number): Promise<number> {
+    const current = Number(await this.get(key) ?? 0);
+    const next = current + amount;
+    await this.set(key, next, ttl);
+    return next;
+  }
+
+  static async keys(pattern: string): Promise<string[]> {
+    const prefix = pattern.endsWith('*') ? pattern.slice(0, -1) : pattern;
+    return Array.from(this.storage.keys()).filter((key) => key.startsWith(prefix));
   }
 
   // Matching queue operations
@@ -192,6 +219,33 @@ export class RedisService {
     }, windowMs);
     
     return true;
+  }
+
+  static async storeAdminSession(sessionId: string, data: AdminSessionRecord, ttlSeconds: number) {
+    await this.set(`admin:session:${sessionId}`, data, ttlSeconds);
+  }
+
+  static async getAdminSession(sessionId: string): Promise<AdminSessionRecord | null> {
+    return await this.get(`admin:session:${sessionId}`);
+  }
+
+  static async deleteAdminSession(sessionId: string) {
+    await this.del(`admin:session:${sessionId}`);
+  }
+
+  static async refreshAdminSession(sessionId: string, ttlSeconds: number): Promise<AdminSessionRecord | null> {
+    const current = await this.get(`admin:session:${sessionId}`);
+    if (!current) {
+      return null;
+    }
+
+    const refreshed: AdminSessionRecord = {
+      ...current,
+      expiresAt: Date.now() + ttlSeconds * 1000
+    };
+
+    await this.set(`admin:session:${sessionId}`, refreshed, ttlSeconds);
+    return refreshed;
   }
 
   // Removed duplicate methods - using the ones defined above

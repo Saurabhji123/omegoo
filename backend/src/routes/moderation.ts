@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { DatabaseService } from '../services/serviceFactory';
+import { createLogger } from '../utils/logger';
 
 const router: Router = Router();
+const log = createLogger('moderation-routes');
 
 // Video frame moderation (AI placeholder)
 router.post('/frame', (req, res) => {
@@ -34,8 +36,13 @@ router.post('/create', async (req: Request, res: Response) => {
 
     // Increment user's report count (this also triggers auto-ban if needed)
     const newReportCount = await DatabaseService.incrementUserReportCount(reportedUserId);
-    
-    console.log(`📊 User ${reportedUserId} now has ${newReportCount} reports`);
+
+    log.info('Report created and counters updated', {
+      reportedUserId,
+      newReportCount,
+      violationType,
+      sessionId
+    });
 
     res.json({
       success: true,
@@ -44,7 +51,7 @@ router.post('/create', async (req: Request, res: Response) => {
       reportCount: newReportCount
     });
   } catch (error: any) {
-    console.error('Report creation error:', error);
+    log.error('Report creation error', { error });
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to create report'
@@ -79,8 +86,14 @@ router.post('/report', async (req: Request, res: Response) => {
 
     // Check total report count for user
     const reportCount = await DatabaseService.getUserReportCount(reportedUserId);
-    
-    console.log(`📊 User ${reportedUserId} now has ${reportCount} reports`);
+
+    log.info('Report submitted', {
+      reportId: report?.id,
+      reportedUserId,
+      reporterUserId,
+      reportCount,
+      violationType
+    });
 
     // Auto-ban logic: 3, 6, 9 reports trigger bans
     if (reportCount >= 3 && (reportCount === 3 || reportCount === 6 || reportCount >= 9)) {
@@ -91,7 +104,12 @@ router.post('/report', async (req: Request, res: Response) => {
       );
 
       if (banResult) {
-        console.log(`🚫 User ${reportedUserId} auto-banned: ${banResult.banType}`);
+        log.warn('Auto-ban triggered from report', {
+          reportedUserId,
+          banType: banResult.banType,
+          reportCount,
+          expiresAt: banResult.expiresAt
+        });
         return res.json({
           success: true,
           report,
@@ -112,7 +130,7 @@ router.post('/report', async (req: Request, res: Response) => {
       reportCount
     });
   } catch (error: any) {
-    console.error('Report submission error:', error);
+    log.error('Report submission error', { error });
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to submit report'
@@ -132,7 +150,7 @@ router.get('/reports/:userId', async (req: Request, res: Response) => {
       count: reports.length
     });
   } catch (error: any) {
-    console.error('Get reports error:', error);
+    log.error('Get reports error', { error });
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to fetch reports'

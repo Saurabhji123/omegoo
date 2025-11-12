@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { DatabaseService } from '../services/serviceFactory';
+import { DatabaseService, RedisService } from '../services/serviceFactory';
 
 interface AdminTokenPayload {
   adminId: string;
@@ -9,26 +9,48 @@ interface AdminTokenPayload {
   permissions: string[];
 }
 
+interface AdminSessionData {
+  adminId: string;
+  csrfToken: string;
+  createdAt: number;
+  expiresAt: number;
+  ip?: string;
+  userAgent?: string;
+}
+
+const ADMIN_SESSION_HEADER = 'x-admin-session';
+
 // Extend Express Request type
 declare global {
   namespace Express {
     interface Request {
       admin?: AdminTokenPayload;
+      adminSession?: AdminSessionData;
+      adminSessionId?: string;
     }
   }
 }
 
 /**
- * Middleware to verify admin JWT token
+ * Middleware to verify admin JWT token and active admin session
  */
 export const authenticateAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
-    
+    const rawSessionHeader = req.headers[ADMIN_SESSION_HEADER];
+    const sessionId = Array.isArray(rawSessionHeader) ? rawSessionHeader[0] : rawSessionHeader;
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
         error: 'No admin token provided'
+      });
+    }
+
+    if (!sessionId || typeof sessionId !== 'string' || sessionId.trim().length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: 'Admin session missing'
       });
     }
 
@@ -48,13 +70,51 @@ export const authenticateAdmin = async (req: Request, res: Response, next: NextF
       });
     }
 
+    const normalizedAdminId = String((admin as any).id || (admin as any)._id || '').trim();
+    if (!normalizedAdminId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Admin record missing identifier'
+      });
+    }
+
+    const sessionRecord = typeof RedisService.getAdminSession === 'function'
+      ? await RedisService.getAdminSession(sessionId)
+      : null;
+
+    if (!sessionRecord) {
+      return res.status(401).json({
+        success: false,
+        error: 'Admin session invalid or expired'
+      });
+    }
+
+    if (sessionRecord.expiresAt && sessionRecord.expiresAt <= Date.now()) {
+      if (typeof RedisService.deleteAdminSession === 'function') {
+        await RedisService.deleteAdminSession(sessionId);
+      }
+      return res.status(401).json({
+        success: false,
+        error: 'Admin session expired'
+      });
+    }
+
+    if (sessionRecord.adminId !== normalizedAdminId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Admin session does not match account'
+      });
+    }
+
     // Attach admin info to request
     req.admin = {
-      adminId: admin.id,
+      adminId: normalizedAdminId,
       username: admin.username,
       role: admin.role,
       permissions: admin.permissions
     };
+    req.adminSession = sessionRecord;
+    req.adminSessionId = sessionId;
 
     next();
   } catch (error: any) {

@@ -15,7 +15,10 @@ interface IUserDoc extends Document {
   isVerified: boolean;
   otp?: string; // 📧 OTP for email verification
   otpExpiresAt?: Date; // 📧 OTP expiry time (10 minutes)
-  tier: 'guest' | 'verified' | 'premium';
+  verificationStatus: 'guest' | 'verified';
+  subscriptionLevel: 'normal' | 'premium';
+  role: 'user' | 'admin' | 'super_admin';
+  tier?: 'guest' | 'verified' | 'premium' | 'admin' | 'super_admin';
   status: 'active' | 'banned' | 'suspended';
   coins?: number;
   totalChats?: number;
@@ -100,8 +103,21 @@ interface IBanHistoryDoc extends Document {
   createdAt: Date;
 }
 
+interface ICoinAdjustmentDoc extends Document {
+  id: string;
+  userId: string;
+  delta: number;
+  reason?: string;
+  adminId?: string;
+  adminUsername?: string;
+  previousCoins: number;
+  newCoins: number;
+  createdAt: Date;
+}
+
 interface IAdminDoc extends Document {
   id: string;
+  userId?: string;
   username: string;
   email: string;
   passwordHash: string;
@@ -164,7 +180,9 @@ const UserSchema = new Schema<IUserDoc>({
   isVerified: { type: Boolean, default: false },
   otp: { type: String }, // 📧 OTP for email verification
   otpExpiresAt: { type: Date }, // 📧 OTP expiry time
-  tier: { type: String, enum: ['guest', 'verified', 'premium'], default: 'guest' },
+  verificationStatus: { type: String, enum: ['guest', 'verified'], default: 'guest', index: true },
+  subscriptionLevel: { type: String, enum: ['normal', 'premium'], default: 'normal' },
+  role: { type: String, enum: ['user', 'admin', 'super_admin'], default: 'user', index: true },
   status: { type: String, enum: ['active', 'banned', 'suspended'], default: 'active', index: true }, // 🔍 Index for status filtering
   coins: { type: Number, default: 0 },
   totalChats: { type: Number, default: 0 },
@@ -251,6 +269,7 @@ const BanHistorySchema = new Schema<IBanHistoryDoc>({
 
 const AdminSchema = new Schema<IAdminDoc>({
   id: { type: String, required: true, unique: true },
+  userId: { type: String, unique: true, sparse: true },
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
@@ -336,6 +355,23 @@ const ChatRoomModel: Model<IChatRoomDoc> = mongoose.model<IChatRoomDoc>('ChatRoo
 const BanHistoryModel: Model<IBanHistoryDoc> = mongoose.model<IBanHistoryDoc>('BanHistory', BanHistorySchema);
 const AdminModel: Model<IAdminDoc> = mongoose.model<IAdminDoc>('Admin', AdminSchema);
 const DeletedAccountModel: Model<IDeletedAccountDoc> = mongoose.model<IDeletedAccountDoc>('DeletedAccount', DeletedAccountSchema);
+const CoinAdjustmentSchema = new Schema<ICoinAdjustmentDoc>({
+  id: { type: String, required: true, unique: true },
+  userId: { type: String, required: true, index: true },
+  delta: { type: Number, required: true },
+  reason: { type: String },
+  adminId: { type: String },
+  adminUsername: { type: String },
+  previousCoins: { type: Number, required: true },
+  newCoins: { type: Number, required: true },
+  createdAt: { type: Date, required: true, default: () => new Date() }
+}, {
+  versionKey: false
+});
+
+CoinAdjustmentSchema.index({ userId: 1, createdAt: -1 });
+
+const CoinAdjustmentModel: Model<ICoinAdjustmentDoc> = mongoose.model<ICoinAdjustmentDoc>('CoinAdjustment', CoinAdjustmentSchema);
 
 /* -------------------------
    DatabaseService
@@ -350,6 +386,8 @@ export class DatabaseService {
   private static deletedAccounts = new Map<string, any>();
   private static adminDeletedAccounts = new Map<string, any>();
   private static reportedChatTranscripts = new Map<string, any>();
+  private static admins = new Map<string, any>();
+  private static coinAdjustments = new Map<string, any[]>();
 
   /* ---------- Connection ---------- */
   static async initialize(): Promise<void> {
@@ -439,6 +477,7 @@ export class DatabaseService {
       lastActiveAt: new Date()
     };
     this.users.set(testUser.id, testUser);
+    this.coinAdjustments.clear();
   }
 
   /* ---------- Utility ---------- */
@@ -446,8 +485,61 @@ export class DatabaseService {
     return prefix + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
   }
 
+  private static rememberCoinAdjustment(record: any): void {
+    const history = this.coinAdjustments.get(record.userId) || [];
+    history.unshift(record);
+    this.coinAdjustments.set(record.userId, history.slice(0, 100));
+  }
+
+  private static normalizeUserClassification(input: Partial<IUserDoc> & { tier?: string } = {}) {
+    const tier = input.tier;
+
+    const role: 'user' | 'admin' | 'super_admin' = (() => {
+      if (input.role === 'super_admin' || tier === 'super_admin') return 'super_admin';
+      if (input.role === 'admin' || tier === 'admin') return 'admin';
+      return 'user';
+    })();
+
+    const verificationStatus: 'guest' | 'verified' = (() => {
+      if (input.verificationStatus === 'verified') return 'verified';
+      if (input.isVerified) return 'verified';
+      if (tier === 'verified' || tier === 'premium' || tier === 'admin' || tier === 'super_admin') {
+        return 'verified';
+      }
+      return 'guest';
+    })();
+
+    const subscriptionLevel: 'normal' | 'premium' = (() => {
+      if (input.subscriptionLevel === 'premium') return 'premium';
+      if (tier === 'premium') return 'premium';
+      return 'normal';
+    })();
+
+    return { role, verificationStatus, subscriptionLevel };
+  }
+
   private static mongoUserToUser(mongoUser: any) {
     if (!mongoUser) return null;
+
+    const verificationStatus: 'guest' | 'verified' = (mongoUser.verificationStatus === 'verified' || mongoUser.isVerified)
+      ? 'verified'
+      : 'guest';
+    const subscriptionLevel: 'normal' | 'premium' = mongoUser.subscriptionLevel === 'premium' ? 'premium' : 'normal';
+    const role: 'user' | 'admin' | 'super_admin' =
+      mongoUser.role === 'super_admin'
+        ? 'super_admin'
+        : mongoUser.role === 'admin'
+          ? 'admin'
+          : 'user';
+
+    const legacyTier = (() => {
+      if (role === 'super_admin') return 'super_admin';
+      if (role === 'admin') return 'admin';
+      if (subscriptionLevel === 'premium') return 'premium';
+      if (verificationStatus === 'verified') return 'verified';
+      return 'guest';
+    })();
+
     return {
       id: mongoUser.id || mongoUser._id?.toString(),
       deviceId: mongoUser.deviceId,
@@ -456,7 +548,10 @@ export class DatabaseService {
       passwordHash: mongoUser.passwordHash,
       phoneHash: mongoUser.phoneHash,
       phoneNumber: mongoUser.phoneNumber,
-      tier: mongoUser.tier,
+      verificationStatus,
+      subscriptionLevel,
+      role,
+      tier: mongoUser.tier || legacyTier,
       status: mongoUser.status,
       coins: mongoUser.coins,
       totalChats: mongoUser.totalChats || 0,
@@ -467,9 +562,9 @@ export class DatabaseService {
       // Session & verification related fields (kept optional in returned shape)
       activeDeviceToken: (mongoUser as any).activeDeviceToken || null,
       lastLoginDevice: (mongoUser as any).lastLoginDevice || null,
-  passwordResetToken: (mongoUser as any).passwordResetToken || null,
-  passwordResetExpires: (mongoUser as any).passwordResetExpires || null,
-  lastPasswordResetAt: (mongoUser as any).lastPasswordResetAt || null,
+      passwordResetToken: (mongoUser as any).passwordResetToken || null,
+      passwordResetExpires: (mongoUser as any).passwordResetExpires || null,
+      lastPasswordResetAt: (mongoUser as any).lastPasswordResetAt || null,
       otp: (mongoUser as any).otp,
       otpExpiresAt: (mongoUser as any).otpExpiresAt,
       preferences: mongoUser.preferences,
@@ -540,6 +635,9 @@ export class DatabaseService {
 
   /* ---------- User operations ---------- */
   static async createUser(userData: Partial<IUserDoc>): Promise<any> {
+    const classification = this.normalizeUserClassification(userData as Partial<IUserDoc> & { tier?: string });
+    const isVerified = userData.isVerified ?? classification.verificationStatus === 'verified';
+
     if (this.isConnected) {
       try {
         const userDoc = new UserModel({
@@ -550,8 +648,10 @@ export class DatabaseService {
           passwordHash: userData.passwordHash,
           phoneNumber: userData.phoneNumber,
           phoneHash: userData.phoneHash,
-          isVerified: userData.isVerified ?? false,
-          tier: userData.tier ?? 'guest',
+          isVerified,
+          verificationStatus: classification.verificationStatus,
+          subscriptionLevel: classification.subscriptionLevel,
+          role: classification.role,
           status: userData.status ?? 'active',
           coins: userData.coins ?? 50,
           totalChats: userData.totalChats ?? 0,
@@ -583,6 +683,12 @@ export class DatabaseService {
 
     // in-memory fallback
     const id = this.generateId('user-');
+    const legacyTier = userData.tier
+      || (classification.role === 'super_admin' ? 'super_admin'
+        : classification.role === 'admin' ? 'admin'
+          : classification.subscriptionLevel === 'premium' ? 'premium'
+            : classification.verificationStatus === 'verified' ? 'verified' : 'guest');
+
     const newUser = {
       id,
       deviceId: userData.deviceId!,
@@ -591,8 +697,11 @@ export class DatabaseService {
       passwordHash: userData.passwordHash,
       phoneNumber: userData.phoneNumber,
       phoneHash: userData.phoneHash,
-      isVerified: userData.isVerified ?? false,
-      tier: userData.tier ?? 'guest',
+      isVerified,
+      verificationStatus: classification.verificationStatus,
+      subscriptionLevel: classification.subscriptionLevel,
+      role: classification.role,
+      tier: legacyTier,
       status: userData.status ?? 'active',
       coins: userData.coins ?? 50,
       totalChats: userData.totalChats ?? 0,
@@ -693,9 +802,40 @@ export class DatabaseService {
   }
 
   static async updateUser(id: string, updates: Partial<IUserDoc>): Promise<any | null> {
+    const normalizedUpdates: any = { ...updates };
+    const shouldRecomputeClassification = (
+      typeof updates.tier !== 'undefined' ||
+      typeof updates.role !== 'undefined' ||
+      typeof updates.verificationStatus !== 'undefined' ||
+      typeof updates.subscriptionLevel !== 'undefined' ||
+      typeof updates.isVerified !== 'undefined'
+    );
+
+    let recomputedLegacyTier: string | undefined;
+
+    if (shouldRecomputeClassification) {
+      const classification = this.normalizeUserClassification(updates as Partial<IUserDoc> & { tier?: string });
+      normalizedUpdates.role = classification.role;
+      normalizedUpdates.verificationStatus = classification.verificationStatus;
+      normalizedUpdates.subscriptionLevel = classification.subscriptionLevel;
+      if (typeof updates.isVerified === 'undefined') {
+        normalizedUpdates.isVerified = classification.verificationStatus === 'verified';
+      }
+
+      recomputedLegacyTier =
+        classification.role === 'super_admin' ? 'super_admin'
+        : classification.role === 'admin' ? 'admin'
+        : classification.subscriptionLevel === 'premium' ? 'premium'
+        : classification.verificationStatus === 'verified' ? 'verified'
+        : 'guest';
+    }
+
+    delete normalizedUpdates.tier;
+    normalizedUpdates.updatedAt = new Date();
+
     if (this.isConnected) {
       try {
-        const user = await UserModel.findOneAndUpdate({ id }, { ...updates, updatedAt: new Date() }, { new: true }).lean();
+        const user = await UserModel.findOneAndUpdate({ id }, normalizedUpdates, { new: true }).lean();
         return this.mongoUserToUser(user);
       } catch (err) {
         console.error('MongoDB updateUser failed, using fallback:', err);
@@ -703,8 +843,15 @@ export class DatabaseService {
     }
     const user = this.users.get(id);
     if (!user) return null;
-    Object.assign(user, updates);
-    user.updatedAt = new Date();
+    Object.assign(user, normalizedUpdates);
+    if (shouldRecomputeClassification) {
+      user.verificationStatus = normalizedUpdates.verificationStatus;
+      user.subscriptionLevel = normalizedUpdates.subscriptionLevel;
+      user.role = normalizedUpdates.role;
+      user.isVerified = normalizedUpdates.isVerified;
+      user.tier = recomputedLegacyTier ?? user.tier;
+    }
+    user.updatedAt = normalizedUpdates.updatedAt;
     this.users.set(id, user);
     return user;
   }
@@ -798,6 +945,9 @@ export class DatabaseService {
           { $set: updates },
           { new: true }
         ).lean();
+        if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+          await this.refreshAdminPasswordForUser(user);
+        }
         return this.mongoUserToUser(user);
       } catch (error) {
         console.error('MongoDB updateUserPassword failed, using fallback:', error);
@@ -808,6 +958,9 @@ export class DatabaseService {
     if (!user) return null;
     Object.assign(user, updates);
     this.users.set(userId, user);
+    if (user.role === 'admin' || user.role === 'super_admin') {
+      await this.refreshAdminPasswordForUser(user);
+    }
     return user;
   }
 
@@ -961,6 +1114,128 @@ export class DatabaseService {
     return refunded;
   }
 
+  static async adjustUserCoins(
+    userId: string,
+    delta: number,
+    metadata: { reason?: string; adminId?: string; adminUsername?: string } = {}
+  ): Promise<{ success: boolean; user?: any; adjustment?: any; error?: string }> {
+    if (!Number.isFinite(delta) || delta === 0) {
+      return { success: false, error: 'INVALID_DELTA' };
+    }
+
+    const reason = metadata.reason || 'manual_adjustment';
+    const now = new Date();
+
+    if (this.isConnected) {
+      try {
+        let userDoc = await UserModel.findOne({ id: userId }).lean();
+        if (!userDoc) {
+          return { success: false, error: 'USER_NOT_FOUND' };
+        }
+
+        userDoc = await this.ensureDailyReset(userDoc);
+        const previousCoins = userDoc?.coins ?? 0;
+        const newCoins = Math.max(previousCoins + delta, 0);
+
+        const updatedDoc = await UserModel.findOneAndUpdate(
+          { id: userId },
+          {
+            $set: {
+              coins: newCoins,
+              updatedAt: now,
+              lastActiveAt: now
+            }
+          },
+          { new: true }
+        ).lean();
+
+        if (!updatedDoc) {
+          return { success: false, error: 'USER_NOT_FOUND' };
+        }
+
+        const adjustmentRecord = {
+          id: this.generateId('coinadj-'),
+          userId,
+          delta,
+          reason,
+          adminId: metadata.adminId,
+          adminUsername: metadata.adminUsername,
+          previousCoins,
+          newCoins,
+          createdAt: now
+        };
+
+        await CoinAdjustmentModel.create(adjustmentRecord);
+        this.rememberCoinAdjustment(adjustmentRecord);
+
+        return {
+          success: true,
+          user: this.mongoUserToUser(updatedDoc),
+          adjustment: adjustmentRecord
+        };
+      } catch (error) {
+        console.error('MongoDB adjustUserCoins failed:', error);
+        return { success: false, error: 'ADJUST_FAILED' };
+      }
+    }
+
+    const user = this.users.get(userId);
+    if (!user) {
+      return { success: false, error: 'USER_NOT_FOUND' };
+    }
+
+    const normalized = await this.ensureDailyReset(user);
+    const previousCoins = normalized?.coins ?? 0;
+    const newCoins = Math.max(previousCoins + delta, 0);
+
+    const updated = {
+      ...normalized,
+      coins: newCoins,
+      updatedAt: now,
+      lastActiveAt: now
+    };
+
+    this.users.set(userId, updated);
+
+    const adjustmentRecord = {
+      id: this.generateId('coinadj-'),
+      userId,
+      delta,
+      reason,
+      adminId: metadata.adminId,
+      adminUsername: metadata.adminUsername,
+      previousCoins,
+      newCoins,
+      createdAt: now
+    };
+
+    this.rememberCoinAdjustment(adjustmentRecord);
+
+    return {
+      success: true,
+      user: updated,
+      adjustment: adjustmentRecord
+    };
+  }
+
+  static async getCoinAdjustmentHistory(userId: string, limit: number = 20): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        const adjustments = await CoinAdjustmentModel.find({ userId })
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .lean();
+
+        return adjustments.map((doc) => ({ ...doc }));
+      } catch (error) {
+        console.error('MongoDB getCoinAdjustmentHistory failed:', error);
+      }
+    }
+
+    const history = this.coinAdjustments.get(userId) || [];
+    return history.slice(0, limit).map((entry) => ({ ...entry }));
+  }
+
   static async archiveAndDeleteUser(
     userId: string,
     metadata: {
@@ -1087,7 +1362,7 @@ export class DatabaseService {
   }
 
   static async verifyUserPhone(userId: string, phoneHash: string): Promise<any | null> {
-    return this.updateUser(userId, { phoneHash, isVerified: true, tier: 'verified' } as any);
+  return this.updateUser(userId, { phoneHash, isVerified: true, verificationStatus: 'verified' } as any);
   }
 
   static async updateLastActive(userId: string): Promise<void> {
@@ -1620,6 +1895,87 @@ export class DatabaseService {
 
   /* ---------- Admin Operations ---------- */
 
+  private static async ensureOwnerUserAccount(params: {
+    email: string;
+    username: string;
+    passwordHash: string;
+  }): Promise<IUserDoc | null> {
+    if (!this.isConnected) {
+      console.warn('MongoDB not connected, cannot ensure owner user account');
+      return null;
+    }
+
+    const normalizedEmail = params.email.trim().toLowerCase();
+    const now = new Date();
+
+    const existing = await UserModel.findOne({ email: normalizedEmail });
+    if (existing) {
+      const updates: Record<string, any> = {};
+
+      if (existing.role !== 'super_admin') {
+        updates.role = 'super_admin';
+      }
+      if (existing.subscriptionLevel !== 'normal') {
+        updates.subscriptionLevel = 'normal';
+      }
+      if (existing.verificationStatus !== 'verified' || !existing.isVerified) {
+        updates.verificationStatus = 'verified';
+        updates.isVerified = true;
+      }
+      if (existing.status !== 'active') {
+        updates.status = 'active';
+      }
+      if (!existing.isVerified) {
+        updates.isVerified = true;
+      }
+      if (normalizedEmail && existing.email !== normalizedEmail) {
+        updates.email = normalizedEmail;
+      }
+      if (!existing.username && params.username) {
+        updates.username = params.username;
+      }
+      if (!existing.deviceId) {
+        updates.deviceId = this.generateId('device-');
+      }
+      if (params.passwordHash && existing.passwordHash !== params.passwordHash) {
+        updates.passwordHash = params.passwordHash;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        updates.updatedAt = now;
+        updates.lastActiveAt = now;
+        await UserModel.updateOne({ _id: existing._id }, { $set: updates });
+        const refreshed = await UserModel.findOne({ _id: existing._id }).lean();
+        return refreshed as IUserDoc | null;
+      }
+
+      return existing.toObject ? (existing.toObject() as IUserDoc) : (existing as unknown as IUserDoc);
+    }
+
+    const userDoc: Partial<IUserDoc> & { id: string; deviceId: string } = {
+      id: this.generateId('user-'),
+      deviceId: this.generateId('device-'),
+      email: normalizedEmail,
+      username: params.username || normalizedEmail,
+      passwordHash: params.passwordHash,
+      role: 'super_admin',
+      subscriptionLevel: 'normal',
+      verificationStatus: 'verified',
+      status: 'active',
+      isVerified: true,
+      coins: 0,
+      totalChats: 0,
+      dailyChats: 0,
+      createdAt: now,
+      updatedAt: now,
+      lastActiveAt: now
+    };
+
+    const created = await UserModel.create(userDoc);
+    console.log('👑 Ensured owner user account exists');
+    return created.toObject() as IUserDoc;
+  }
+
   private static async seedOwnerAdmin(): Promise<void> {
     if (!this.isConnected) {
       return;
@@ -1691,10 +2047,21 @@ export class DatabaseService {
       const desiredPassword = resolveDesiredPassword();
 
       const ownerAdmin = await AdminModel.findOne({ email }).lean();
+      const passwordResolution = await ensurePasswordHash(ownerAdmin?.passwordHash ?? null, desiredPassword);
+      const effectiveHash = passwordResolution.nextHash || ownerAdmin?.passwordHash || null;
+
+      if (!effectiveHash) {
+        console.warn('⚠️ Unable to ensure owner admin: missing password configuration.');
+        return;
+      }
+
+      await this.ensureOwnerUserAccount({
+        email,
+        username,
+        passwordHash: effectiveHash
+      });
 
       if (ownerAdmin) {
-        const passwordResolution = await ensurePasswordHash(ownerAdmin.passwordHash, desiredPassword);
-
         const setFields: any = {
           role: 'super_admin',
           isOwner: true,
@@ -1730,17 +2097,11 @@ export class DatabaseService {
         return;
       }
 
-      const passwordResolution = await ensurePasswordHash(null, desiredPassword);
-      if (!passwordResolution.nextHash) {
-        console.warn('⚠️ Unable to create owner admin: missing password configuration.');
-        return;
-      }
-
       const adminData = {
         id: this.generateId('admin-'),
         username,
         email,
-        passwordHash: passwordResolution.nextHash,
+        passwordHash: effectiveHash,
         role: 'super_admin',
         permissions: [
           'view_users',
@@ -1750,7 +2111,9 @@ export class DatabaseService {
           'resolve_reports',
           'manage_reports',
           'manage_users',
+          'view_stats',
           'view_analytics',
+          'manage_status',
           'manage_admins',
           'manage_settings'
         ],
@@ -1903,10 +2266,218 @@ export class DatabaseService {
   private static getDefaultPermissions(role: string): string[] {
     const permissionMap: Record<string, string[]> = {
       super_admin: ['all'],
-      admin: ['view_users', 'ban_users', 'view_reports', 'resolve_reports', 'view_stats'],
+      admin: ['view_users', 'ban_users', 'view_reports', 'resolve_reports', 'view_stats', 'view_analytics', 'manage_status'],
       moderator: ['view_users', 'view_reports', 'resolve_reports']
     };
     return permissionMap[role] || permissionMap.moderator;
+  }
+
+  private static buildAdminUsername(user: any): string {
+    const email = typeof user?.email === 'string' ? user.email.trim().toLowerCase() : '';
+    if (email) {
+      return email;
+    }
+
+    const username = typeof user?.username === 'string' ? user.username.trim().toLowerCase() : '';
+    if (username) {
+      return username;
+    }
+
+    return `admin-${String(user?.id || this.generateId('anon-')).toLowerCase()}`;
+  }
+
+  private static async ensureAdminAccountFromUser(user: any): Promise<any | null> {
+    if (!user || !user.id) {
+      return null;
+    }
+
+    const username = this.buildAdminUsername(user);
+    const email = typeof user.email === 'string' ? user.email.trim().toLowerCase() : undefined;
+  const ownerEmail = (process.env.OWNER_ADMIN_EMAIL || process.env.DEV_ADMIN_EMAIL || '').trim().toLowerCase();
+  const isOwner = Boolean(email && ownerEmail && email === ownerEmail);
+  const role = (user.role === 'super_admin' || isOwner) ? 'super_admin' : 'admin';
+
+    const now = new Date();
+
+    if (this.isConnected) {
+      try {
+        const filters: any[] = [{ userId: user.id }];
+        if (email) {
+          filters.push({ email });
+        }
+        filters.push({ username });
+
+        const updateDoc: Record<string, any> = {
+          userId: user.id,
+          username,
+          email: email || `${username}@omegoo.local`,
+          passwordHash: user.passwordHash,
+          role,
+          permissions: this.getDefaultPermissions(role),
+          isActive: true,
+          updatedAt: now
+        };
+
+        if (isOwner) {
+          updateDoc.isOwner = true;
+        }
+
+        const adminDoc = await AdminModel.findOneAndUpdate(
+          { $or: filters },
+          {
+            $set: updateDoc,
+            $setOnInsert: {
+              id: this.generateId('admin-'),
+              createdAt: now
+            }
+          },
+          { new: true, upsert: true }
+        ).lean();
+
+        return adminDoc;
+      } catch (err) {
+        console.error('MongoDB ensureAdminAccountFromUser failed:', err);
+        return null;
+      }
+    }
+
+    // In-memory fallback
+    const existing = Array.from(this.admins.values()).find((admin: any) => admin.userId === user.id || admin.email === email);
+    const payload = {
+      id: existing?.id || this.generateId('admin-'),
+      userId: user.id,
+      username,
+      email: email || `${username}@omegoo.local`,
+      passwordHash: user.passwordHash,
+      role,
+      permissions: this.getDefaultPermissions(role),
+      isActive: true,
+      isOwner: existing?.isOwner || isOwner,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now
+    };
+
+    this.admins.set(payload.id, { ...existing, ...payload });
+    return payload;
+  }
+
+  private static async deactivateAdminForUser(user: any): Promise<void> {
+    if (!user) {
+      return;
+    }
+
+    const email = typeof user.email === 'string' ? user.email.trim().toLowerCase() : undefined;
+
+    if (this.isConnected) {
+      try {
+        const filters: any[] = [{ userId: user.id }];
+        if (email) {
+          filters.push({ email });
+        }
+
+        await AdminModel.updateMany(
+          { $or: filters },
+          {
+            $set: {
+              isActive: false,
+              updatedAt: new Date(),
+              role: 'moderator',
+              permissions: this.getDefaultPermissions('moderator')
+            }
+          }
+        );
+      } catch (err) {
+        console.error('MongoDB deactivateAdminForUser failed:', err);
+      }
+      return;
+    }
+
+    for (const [id, admin] of this.admins.entries()) {
+      if (admin.userId === user.id || (email && admin.email?.toLowerCase() === email)) {
+        this.admins.set(id, {
+          ...admin,
+          isActive: false,
+          role: 'moderator',
+          permissions: this.getDefaultPermissions('moderator'),
+          updatedAt: new Date()
+        });
+      }
+    }
+  }
+
+  private static async refreshAdminPasswordForUser(user: any): Promise<void> {
+    if (!user?.id || !user.passwordHash) {
+      return;
+    }
+
+    const email = typeof user.email === 'string' ? user.email.trim().toLowerCase() : undefined;
+    const now = new Date();
+
+    if (this.isConnected) {
+      try {
+        const filters: any[] = [{ userId: user.id }];
+        if (email) {
+          filters.push({ email });
+        }
+
+        await AdminModel.updateMany(
+          { $or: filters },
+          {
+            $set: {
+              passwordHash: user.passwordHash,
+              updatedAt: now
+            }
+          }
+        );
+      } catch (err) {
+        console.error('MongoDB refreshAdminPasswordForUser failed:', err);
+      }
+      return;
+    }
+
+    for (const [id, admin] of this.admins.entries()) {
+      if (admin.userId === user.id || (email && admin.email?.toLowerCase() === email)) {
+        this.admins.set(id, {
+          ...admin,
+          passwordHash: user.passwordHash,
+          updatedAt: now
+        });
+      }
+    }
+  }
+
+  static async syncAdminAccessForRole(userId: string, role: 'guest' | 'user' | 'admin' | 'super_admin'): Promise<any | null> {
+    if (!userId) {
+      return null;
+    }
+
+    const user = await this.getUserById(userId);
+    if (!user) {
+      return null;
+    }
+
+    if (role === 'admin' || role === 'super_admin') {
+      if (!user.passwordHash) {
+        console.warn('syncAdminAccessForRole skipped: user missing password', { userId });
+        return null;
+      }
+      const updatedUser = await this.updateUser(userId, {
+        role,
+        verificationStatus: 'verified',
+        isVerified: true
+      } as Partial<IUserDoc>);
+
+      const effectiveUser = updatedUser || { ...user, role, verificationStatus: 'verified', isVerified: true };
+      return this.ensureAdminAccountFromUser(effectiveUser);
+    }
+
+    const downgradedUser = await this.updateUser(userId, {
+      role: 'user',
+      verificationStatus: role === 'guest' ? 'guest' : (user.verificationStatus || 'guest'),
+      isVerified: role === 'guest' ? false : user.isVerified
+    } as Partial<IUserDoc>);
+    await this.deactivateAdminForUser(downgradedUser || user);
+    return null;
   }
 
   /**
@@ -1921,6 +2492,23 @@ export class DatabaseService {
           .lean();
       } catch (err) {
         console.error('MongoDB getPendingReports failed:', err);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Get reports filtered by status
+   */
+  static async getReportsByStatus(status: string, limit: number = 100): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        return await ModerationReportModel.find({ status })
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .lean();
+      } catch (err) {
+        console.error('MongoDB getReportsByStatus failed:', err);
       }
     }
     return [];
@@ -2033,20 +2621,35 @@ export class DatabaseService {
     if (this.isConnected) {
       try {
         const users = await UserModel.find({}).lean();
-        return users.map((user: any) => ({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          tier: user.tier || 'guest',
-          status: user.status,
-          reportCount: user.reportCount || 0,
-          isVerified: user.isVerified || false,
-          coins: user.coins || 0,
-          totalChats: user.totalChats || 0,
-          dailyChats: user.dailyChats || 0,
-          createdAt: user.createdAt,
-          lastActiveAt: user.lastActiveAt
-        }));
+        return users.map((user: any) => {
+          const verificationStatus = user.verificationStatus === 'verified' || user.isVerified ? 'verified' : 'guest';
+          const subscriptionLevel = user.subscriptionLevel === 'premium' ? 'premium' : 'normal';
+          const role = user.role === 'super_admin' ? 'super_admin' : user.role === 'admin' ? 'admin' : 'user';
+          const tier = user.tier
+            || (role === 'super_admin' ? 'super_admin'
+              : role === 'admin' ? 'admin'
+                : subscriptionLevel === 'premium' ? 'premium'
+                  : verificationStatus === 'verified' ? 'verified'
+                    : 'guest');
+
+          return {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role,
+            verificationStatus,
+            subscriptionLevel,
+            tier,
+            status: user.status,
+            reportCount: user.reportCount || 0,
+            isVerified: user.isVerified || false,
+            coins: user.coins || 0,
+            totalChats: user.totalChats || 0,
+            dailyChats: user.dailyChats || 0,
+            createdAt: user.createdAt,
+            lastActiveAt: user.lastActiveAt
+          };
+        });
       } catch (err) {
         console.error('MongoDB getAllUsers failed:', err);
       }
@@ -2060,19 +2663,55 @@ export class DatabaseService {
   static async updateUserRole(userId: string, newRole: 'guest' | 'user' | 'admin' | 'super_admin'): Promise<boolean> {
     if (this.isConnected) {
       try {
+        const normalizedRole = newRole === 'guest' ? 'user' : newRole;
+        const baseUpdate: Record<string, any> = {
+          role: normalizedRole,
+          updatedAt: new Date()
+        };
+
+        if (newRole === 'admin' || newRole === 'super_admin') {
+          baseUpdate.verificationStatus = 'verified';
+          baseUpdate.isVerified = true;
+        } else if (newRole === 'guest') {
+          baseUpdate.verificationStatus = 'guest';
+          baseUpdate.isVerified = false;
+          baseUpdate.subscriptionLevel = 'normal';
+        }
+
         const result = await UserModel.updateOne(
           { id: userId },
-          { tier: newRole, updatedAt: new Date() }
+          { $set: baseUpdate }
         );
-        return result.modifiedCount > 0;
+        const updated = result.modifiedCount > 0;
+        if (updated) {
+          await this.syncAdminAccessForRole(userId, newRole);
+        }
+        return updated;
       } catch (err) {
         console.error('MongoDB updateUserRole failed:', err);
       }
     }
     const user = this.users.get(userId);
     if (user) {
-      user.tier = newRole;
+      const normalizedRole = newRole === 'guest' ? 'user' : newRole;
+      user.role = normalizedRole as typeof user.role;
+      if (newRole === 'admin' || newRole === 'super_admin') {
+        user.verificationStatus = 'verified';
+        user.isVerified = true;
+      } else if (newRole === 'guest') {
+        user.verificationStatus = 'guest';
+        user.isVerified = false;
+        user.subscriptionLevel = 'normal';
+      } else {
+        user.verificationStatus = user.verificationStatus || 'guest';
+      }
+      user.tier =
+        newRole === 'super_admin' ? 'super_admin'
+          : newRole === 'admin' ? 'admin'
+            : user.subscriptionLevel === 'premium' ? 'premium'
+              : user.verificationStatus === 'verified' ? 'verified' : 'guest';
       user.updatedAt = new Date();
+      await this.syncAdminAccessForRole(userId, newRole);
       return true;
     }
     return false;

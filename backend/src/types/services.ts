@@ -4,7 +4,11 @@ export interface User {
   id: string;
   deviceId: string;
   phoneHash?: string;
-  tier: 'guest' | 'verified' | 'premium';
+  verificationStatus: 'guest' | 'verified';
+  subscriptionLevel: 'normal' | 'premium';
+  role: 'user' | 'admin' | 'super_admin';
+  /** @deprecated legacy combined tier */
+  tier?: 'guest' | 'verified' | 'premium' | 'admin' | 'super_admin';
   status: 'active' | 'banned' | 'suspended';
   coins: number;
   isVerified: boolean;
@@ -108,4 +112,10 @@ export interface RedisService {
   addToQueue(queueName: string, data: any): Promise<void>;
   getFromQueue(queueName: string): Promise<any>;
   removeFromQueue(queueName: string, data: any): Promise<void>;
+
+  // Admin session helpers
+  storeAdminSession?(sessionId: string, data: any, ttlSeconds: number): Promise<void>;
+  getAdminSession?(sessionId: string): Promise<any | null>;
+  deleteAdminSession?(sessionId: string): Promise<void>;
+  refreshAdminSession?(sessionId: string, ttlSeconds: number): Promise<any | null>;
 }

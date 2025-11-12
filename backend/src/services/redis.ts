@@ -18,6 +18,15 @@ interface MatchRequest {
   timestamp: number;
 }
 
+export interface AdminSessionRecord {
+  adminId: string;
+  csrfToken: string;
+  createdAt: number;
+  expiresAt: number;
+  ip?: string;
+  userAgent?: string;
+}
+
 export class RedisService {
   private static redis: Redis;
 
@@ -123,6 +132,32 @@ export class RedisService {
     return current <= limit;
   }
 
+  static async storeAdminSession(sessionId: string, data: AdminSessionRecord, ttlSeconds: number) {
+    await this.redis.setex(`admin:session:${sessionId}`, ttlSeconds, JSON.stringify(data));
+  }
+
+  static async getAdminSession(sessionId: string): Promise<AdminSessionRecord | null> {
+    const payload = await this.redis.get(`admin:session:${sessionId}`);
+    return payload ? JSON.parse(payload) : null;
+  }
+
+  static async deleteAdminSession(sessionId: string) {
+    await this.redis.del(`admin:session:${sessionId}`);
+  }
+
+  static async refreshAdminSession(sessionId: string, ttlSeconds: number): Promise<AdminSessionRecord | null> {
+    const payload = await this.redis.get(`admin:session:${sessionId}`);
+    if (!payload) {
+      return null;
+    }
+
+    const session = JSON.parse(payload) as AdminSessionRecord;
+    const nextExpiry = Date.now() + ttlSeconds * 1000;
+    session.expiresAt = nextExpiry;
+    await this.redis.setex(`admin:session:${sessionId}`, ttlSeconds, JSON.stringify(session));
+    return session;
+  }
+
   // Session management
   static async setUserSession(userId: string, sessionData: any) {
     await this.redis.setex(`session:${userId}`, 3600, JSON.stringify(sessionData));
@@ -199,5 +234,18 @@ export class RedisService {
   static async exists(key: string): Promise<boolean> {
     const exists = await this.redis.exists(key);
     return exists === 1;
+  }
+
+  static async increment(key: string, amount: number = 1, ttl?: number): Promise<number> {
+    const value = await this.redis.incrby(key, amount);
+    if (ttl) {
+      await this.redis.expire(key, ttl);
+    }
+    return value;
+  }
+
+  static async keys(pattern: string): Promise<string[]> {
+    const normalized = pattern.endsWith('*') ? pattern : `${pattern}*`;
+    return this.redis.keys(normalized);
   }
 }

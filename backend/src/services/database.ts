@@ -312,6 +312,13 @@ export class DatabaseService {
     return [];
   }
 
+  static async getReportsByStatus(status: string, limit: number = 100): Promise<any[]> {
+    console.warn('⚠️ getReportsByStatus called on PostgreSQL - use MongoDB for ban system');
+    void status;
+    void limit;
+    return [];
+  }
+
   static async getAllReports(limit: number = 100): Promise<any[]> {
     console.warn('⚠️ getAllReports called on PostgreSQL - use MongoDB for ban system');
     return [];
@@ -320,6 +327,21 @@ export class DatabaseService {
   static async updateReportStatus(reportId: string, status: string): Promise<boolean> {
     console.warn('⚠️ updateReportStatus called on PostgreSQL - use MongoDB for ban system');
     return false;
+  }
+
+  static async adjustUserCoins(userId: string, delta: number, metadata?: any): Promise<any> {
+    console.warn('⚠️ adjustUserCoins called on PostgreSQL - use MongoDB for coin management');
+    void userId;
+    void delta;
+    void metadata;
+    return { success: false, error: 'UNSUPPORTED' };
+  }
+
+  static async getCoinAdjustmentHistory(userId: string, limit: number = 20): Promise<any[]> {
+    console.warn('⚠️ getCoinAdjustmentHistory called on PostgreSQL - use MongoDB for coin management');
+    void userId;
+    void limit;
+    return [];
   }
 
   static async getPlatformStats(): Promise<any> {

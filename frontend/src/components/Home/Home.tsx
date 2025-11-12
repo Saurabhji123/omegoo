@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth as useAuthContext } from '../../contexts/AuthContext';
 import axios from 'axios';
 import { useSocket } from '../../contexts/SocketContext';
+import { API_BASE_URL } from '../../services/api';
+import { trackEvent } from '../../services/analyticsClient';
 
 // Coin costs for each mode
 const COIN_COSTS = {
@@ -19,6 +21,45 @@ const Home: React.FC = () => {
   const [, forceUpdate] = useState({});
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);
   const [resendingOTP, setResendingOTP] = useState(false);
+  const [statusSummary, setStatusSummary] = useState<{
+    connectedUsers: number;
+    queue: { text: number; audio: number; video: number; total: number };
+    activeIncident: { message: string; severity: string; fallbackUrl?: string } | null;
+    lastUpdated: string;
+  } | null>(null);
+
+  useEffect(() => {
+    trackEvent('home_view');
+
+    let isMounted = true;
+    let refreshTimer: number | null = null;
+
+    const fetchStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/status/summary`, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+
+        if (isMounted && data?.success) {
+          setStatusSummary(data.summary);
+        }
+      } catch (error) {
+        console.warn('Status summary fetch failed', error);
+      }
+    };
+
+    fetchStatus();
+
+    refreshTimer = window.setInterval(fetchStatus, 30000);
+
+    return () => {
+      isMounted = false;
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+      }
+    };
+  }, []);
 
   // Listen for real-time stats updates
   useEffect(() => {
@@ -142,7 +183,48 @@ const Home: React.FC = () => {
             Meet new people in seconds
           </p>
         </div>
-        
+
+        {statusSummary?.activeIncident && (
+          (() => {
+            const incident = statusSummary.activeIncident;
+            const lastUpdatedLabel = statusSummary.lastUpdated
+              ? new Date(statusSummary.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : null;
+
+            return (
+          <div className={`max-w-3xl mx-auto mb-6 rounded-2xl border px-4 py-3 text-left shadow-lg ${
+            incident.severity === 'critical'
+              ? 'bg-red-500/20 border-red-400/50 text-red-100'
+              : 'bg-yellow-500/20 border-yellow-400/50 text-yellow-100'
+          }`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="font-semibold uppercase tracking-wide text-xs sm:text-sm">
+                {incident.severity === 'critical' ? 'Active Outage' : 'Service Advisory'}
+              </div>
+              {lastUpdatedLabel && (
+                <div className="text-xs text-white/70">
+                  Updated {lastUpdatedLabel}
+                </div>
+              )}
+            </div>
+            <p className="mt-2 text-sm sm:text-base text-white">
+              {incident.message}
+            </p>
+            {incident.fallbackUrl && (
+              <a
+                href={incident.fallbackUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center text-xs sm:text-sm font-medium text-white underline"
+              >
+                View live status details
+              </a>
+            )}
+          </div>
+            );
+          })()
+        )}
+
         {/* User Status & Coins - Only show if logged in */}
         {user ? (
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6">
@@ -308,6 +390,29 @@ const Home: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {statusSummary && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm text-white">
+            <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
+              <div className="text-white/70">Online Now</div>
+              <div className="text-lg sm:text-xl font-bold">{statusSummary.connectedUsers}</div>
+            </div>
+            <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
+              <div className="text-white/70">In Queue</div>
+              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.total}</div>
+            </div>
+            <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
+              <div className="text-white/70">Voice Queue</div>
+              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.audio}</div>
+            </div>
+            <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
+              <div className="text-white/70">Video Queue</div>
+              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.video}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
     {/* Coin System & SEO Content */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">

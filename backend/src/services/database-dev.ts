@@ -8,7 +8,10 @@ interface User {
   username?: string;
   passwordHash?: string;
   phoneHash?: string;
-  tier: string;
+  verificationStatus: 'guest' | 'verified';
+  subscriptionLevel: 'normal' | 'premium';
+  role: 'user' | 'admin' | 'super_admin';
+  tier?: string;
   status: string;
   coins: number;
   totalChats?: number;
@@ -41,6 +44,7 @@ interface ChatSession {
 
 interface Admin {
   id: string;
+  userId?: string;
   username: string;
   email: string;
   passwordHash: string;
@@ -61,15 +65,57 @@ export class DatabaseService {
   private static adminDeletedUsers: Map<string, any> = new Map();
   private static reportedChatTranscripts: Map<string, any> = new Map();
   private static admins: Map<string, Admin> = new Map();
+  private static coinAdjustments: Map<string, any[]> = new Map();
+
+  private static deriveClassification(input: Partial<User>): {
+    role: 'user' | 'admin' | 'super_admin';
+    verificationStatus: 'guest' | 'verified';
+    subscriptionLevel: 'normal' | 'premium';
+    tier: string;
+  } {
+    const tier = input.tier;
+
+    const role: 'user' | 'admin' | 'super_admin' = (() => {
+      if (input.role === 'super_admin' || tier === 'super_admin') return 'super_admin';
+      if (input.role === 'admin' || tier === 'admin') return 'admin';
+      return 'user';
+    })();
+
+    const verificationStatus: 'guest' | 'verified' = (() => {
+      if (input.verificationStatus === 'verified' || input.isVerified) return 'verified';
+      if (tier === 'verified' || tier === 'premium' || tier === 'admin' || tier === 'super_admin') {
+        return 'verified';
+      }
+      return 'guest';
+    })();
+
+    const subscriptionLevel: 'normal' | 'premium' = (() => {
+      if (input.subscriptionLevel === 'premium' || tier === 'premium') return 'premium';
+      return 'normal';
+    })();
+
+    const legacyTier = tier
+      || (role === 'super_admin' ? 'super_admin'
+        : role === 'admin' ? 'admin'
+          : subscriptionLevel === 'premium' ? 'premium'
+            : verificationStatus === 'verified' ? 'verified'
+              : 'guest');
+
+    return { role, verificationStatus, subscriptionLevel, tier: legacyTier };
+  }
 
   static async initialize() {
     console.log('✅ Development database initialized (in-memory)');
     
     // Create a test user for development
+    const testClassification = this.deriveClassification({});
     const testUser: User = {
       id: 'test-user-1',
       deviceId: 'dev-device-1',
-      tier: 'guest',
+      verificationStatus: testClassification.verificationStatus,
+      subscriptionLevel: testClassification.subscriptionLevel,
+      role: testClassification.role,
+      tier: testClassification.tier,
       status: 'active',
       coins: 100,
       totalChats: 0,
@@ -130,7 +176,9 @@ export class DatabaseService {
         'resolve_reports',
         'manage_reports',
         'manage_users',
+        'view_stats',
         'view_analytics',
+        'manage_status',
         'manage_admins',
         'manage_settings'
       ],
@@ -172,6 +220,9 @@ export class DatabaseService {
   }
 
   static async createUser(userData: Partial<User>): Promise<User> {
+    const classification = this.deriveClassification(userData);
+    const isVerified = userData.isVerified ?? classification.verificationStatus === 'verified';
+
     const user: User = {
       id: userData.id || `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       deviceId: userData.deviceId!,
@@ -179,13 +230,16 @@ export class DatabaseService {
       username: userData.username,
       passwordHash: userData.passwordHash,
       phoneHash: userData.phoneHash,
-      tier: userData.tier || 'guest',
+      verificationStatus: classification.verificationStatus,
+      subscriptionLevel: classification.subscriptionLevel,
+      role: classification.role,
+      tier: classification.tier,
       status: userData.status || 'active',
       coins: userData.coins ?? 50,
       totalChats: userData.totalChats ?? 0,
       dailyChats: userData.dailyChats ?? 0,
       lastCoinClaim: userData.lastCoinClaim ?? new Date(),
-      isVerified: userData.isVerified || false,
+      isVerified,
       gender: userData.gender || 'others',
       activeDeviceToken: userData.activeDeviceToken ?? null,
       passwordResetToken: userData.passwordResetToken ?? null,
@@ -210,7 +264,22 @@ export class DatabaseService {
     const user = this.users.get(userId);
     if (!user) return null;
 
-    const updatedUser = { ...user, ...updates, updatedAt: new Date() } as User;
+    const merged = { ...user, ...updates } as Partial<User>;
+    const classification = this.deriveClassification(merged);
+
+    const updatedUser: User = {
+      ...user,
+      ...updates,
+      verificationStatus: classification.verificationStatus,
+      subscriptionLevel: classification.subscriptionLevel,
+      role: classification.role,
+      tier: classification.tier,
+      isVerified: typeof updates.isVerified === 'boolean'
+        ? updates.isVerified
+        : classification.verificationStatus === 'verified',
+      updatedAt: new Date()
+    } as User;
+
     this.users.set(userId, updatedUser);
     return updatedUser;
   }
@@ -257,6 +326,9 @@ export class DatabaseService {
     };
 
     this.users.set(userId, updated);
+    if (updated.role === 'admin' || updated.role === 'super_admin') {
+      this.refreshAdminPasswordMock(updated);
+    }
     return updated;
   }
 
@@ -357,6 +429,62 @@ export class DatabaseService {
     return { ...refunded };
   }
 
+  static async adjustUserCoins(
+    userId: string,
+    delta: number,
+    metadata: { reason?: string; adminId?: string; adminUsername?: string } = {}
+  ): Promise<{ success: boolean; user?: User; adjustment?: any; error?: string }> {
+    if (!Number.isFinite(delta) || delta === 0) {
+      return { success: false, error: 'INVALID_DELTA' };
+    }
+
+    const user = this.users.get(userId);
+    if (!user) {
+      return { success: false, error: 'USER_NOT_FOUND' };
+    }
+
+    const normalized = this.ensureDailyReset(user);
+    const previousCoins = normalized.coins ?? 0;
+    const now = new Date();
+    const newCoins = Math.max(previousCoins + delta, 0);
+
+    const updated: User = {
+      ...normalized,
+      coins: newCoins,
+      updatedAt: now,
+      lastActiveAt: now
+    };
+
+    this.users.set(userId, updated);
+
+    const adjustmentRecord = {
+      id: `coinadj-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      userId,
+      delta,
+      reason: metadata.reason || 'manual_adjustment',
+      adminId: metadata.adminId,
+      adminUsername: metadata.adminUsername,
+      previousCoins,
+      newCoins,
+      createdAt: now
+    };
+
+    const history = this.coinAdjustments.get(userId) || [];
+    history.unshift(adjustmentRecord);
+    this.coinAdjustments.set(userId, history.slice(0, 50));
+
+    return {
+      success: true,
+      user: { ...updated },
+      adjustment: adjustmentRecord
+    };
+  }
+
+  static async getCoinAdjustmentHistory(userId: string, limit: number = 20): Promise<any[]> {
+    const history = this.coinAdjustments.get(userId) || [];
+    return history.slice(0, limit).map((entry) => ({ ...entry }));
+  }
+
   static async archiveAndDeleteUser(
     userId: string,
     metadata: {
@@ -447,14 +575,29 @@ export class DatabaseService {
 
   static async verifyPhone(userId: string, phoneHash: string): Promise<User | null> {
     const user = this.users.get(userId);
-    if (user) {
-      user.phoneHash = phoneHash;
-      user.isVerified = true;
-      user.tier = 'verified';
-      user.updatedAt = new Date();
-      return user;
+    if (!user) {
+      return null;
     }
-    return null;
+
+    const classification = this.deriveClassification({
+      ...user,
+      verificationStatus: 'verified',
+      isVerified: true
+    });
+
+    const updated: User = {
+      ...user,
+      phoneHash,
+      isVerified: true,
+      verificationStatus: classification.verificationStatus,
+      subscriptionLevel: classification.subscriptionLevel,
+      role: classification.role,
+      tier: classification.tier,
+      updatedAt: new Date()
+    };
+
+    this.users.set(userId, updated);
+    return updated;
   }
 
   static async verifyUserPhone(userId: string, phoneHash: string): Promise<User | null> {
@@ -629,6 +772,13 @@ export class DatabaseService {
     return [];
   }
 
+  static async getReportsByStatus(status: string, limit: number = 100): Promise<any[]> {
+    // Mock: return empty array in dev mode
+    void status;
+    void limit;
+    return [];
+  }
+
   static async getAllReports(limit: number = 100): Promise<any[]> {
     // Mock: return empty array in dev mode
     return [];
@@ -660,6 +810,113 @@ export class DatabaseService {
     };
   }
 
+  private static getDefaultPermissions(role: string): string[] {
+    const map: Record<string, string[]> = {
+      super_admin: ['all'],
+      admin: ['view_users', 'ban_users', 'view_reports', 'resolve_reports', 'view_stats', 'view_analytics', 'manage_status'],
+      moderator: ['view_users', 'view_reports', 'resolve_reports']
+    };
+
+    return map[role] || map.moderator;
+  }
+
+  private static deriveAdminUsername(user: User): string {
+    if (user.email) {
+      return user.email.toLowerCase();
+    }
+
+    if (user.username) {
+      return user.username.toLowerCase();
+    }
+
+    return `admin-${user.id}`;
+  }
+
+  private static ensureAdminFromUser(user: User): Admin | null {
+    if (!user.email || !user.passwordHash) {
+      return null;
+    }
+
+    const username = this.deriveAdminUsername(user);
+    const normalizedEmail = user.email.toLowerCase();
+    const classification = this.deriveClassification(user);
+    const adminRole: 'super_admin' | 'admin' = classification.role === 'super_admin' ? 'super_admin' : 'admin';
+
+    const existingEntry = Array.from(this.admins.entries()).find(([, admin]) => admin.userId === user.id || admin.email === normalizedEmail);
+
+    const base: Admin = existingEntry
+      ? { ...existingEntry[1] }
+      : {
+          id: `admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          userId: user.id,
+          username,
+          email: normalizedEmail,
+          passwordHash: user.passwordHash,
+          role: adminRole,
+          permissions: this.getDefaultPermissions(adminRole),
+          isActive: true,
+          isOwner: adminRole === 'super_admin',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+    base.userId = user.id;
+    base.username = username;
+    base.email = normalizedEmail;
+    base.passwordHash = user.passwordHash;
+    base.role = adminRole;
+    base.permissions = this.getDefaultPermissions(adminRole);
+    base.isActive = true;
+    base.isOwner = existingEntry ? existingEntry[1].isOwner : base.isOwner;
+    base.updatedAt = new Date();
+
+    this.admins.set(base.id, base);
+    return this.cloneAdmin(base);
+  }
+
+  private static deactivateAdminMock(user: User): void {
+    for (const [id, admin] of this.admins.entries()) {
+      if (admin.userId === user.id || (user.email && admin.email === user.email.toLowerCase())) {
+        this.admins.set(id, {
+          ...admin,
+          isActive: false,
+          role: 'moderator',
+          permissions: this.getDefaultPermissions('moderator'),
+          updatedAt: new Date()
+        });
+      }
+    }
+  }
+
+  private static refreshAdminPasswordMock(user: User): void {
+    for (const [id, admin] of this.admins.entries()) {
+      if (admin.userId === user.id || (user.email && admin.email === user.email.toLowerCase())) {
+        this.admins.set(id, {
+          ...admin,
+          passwordHash: user.passwordHash || admin.passwordHash,
+          updatedAt: new Date()
+        });
+      }
+    }
+  }
+
+  static async syncAdminAccessForRole(userId: string, role: 'guest' | 'user' | 'admin' | 'super_admin'): Promise<Admin | null> {
+    const user = this.users.get(userId);
+    if (!user) {
+      return null;
+    }
+
+    if (role === 'admin' || role === 'super_admin') {
+      if (!user.passwordHash) {
+        return null;
+      }
+      return this.ensureAdminFromUser(user);
+    }
+
+    this.deactivateAdminMock(user);
+    return null;
+  }
+
   static async createAdmin(adminData: any): Promise<any | null> {
     const normalizedEmail = adminData.email?.trim().toLowerCase();
     if (!normalizedEmail) {
@@ -675,11 +932,12 @@ export class DatabaseService {
 
     const admin: Admin = {
       id: adminData.id || `admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      userId: adminData.userId,
       username: usernameDisplay,
       email: normalizedEmail,
       passwordHash: adminData.passwordHash,
       role: adminData.role || 'admin',
-      permissions: adminData.permissions || ['view_users', 'view_reports'],
+  permissions: adminData.permissions || ['view_users', 'view_reports', 'view_stats', 'view_analytics', 'manage_status'],
       isActive: adminData.isActive !== false,
       isOwner: !!adminData.isOwner,
       lastLoginAt: adminData.lastLoginAt ? new Date(adminData.lastLoginAt) : undefined,
@@ -764,13 +1022,56 @@ export class DatabaseService {
 
   static async updateUserRole(userId: string, newRole: string): Promise<boolean> {
     const user = this.users.get(userId);
-    if (user) {
-      user.tier = newRole;
-      user.updatedAt = new Date();
-      this.users.set(userId, user);
-      return true;
+    if (!user) {
+      return false;
     }
-    return false;
+
+    const roleAdjustments: Partial<User> = (() => {
+      if (newRole === 'super_admin') {
+        return { role: 'super_admin', verificationStatus: 'verified', isVerified: true };
+      }
+      if (newRole === 'admin') {
+        return { role: 'admin', verificationStatus: 'verified', isVerified: true };
+      }
+      if (newRole === 'user') {
+        return { role: 'user', verificationStatus: 'verified', isVerified: true };
+      }
+      if (newRole === 'guest') {
+        return { role: 'user', verificationStatus: 'guest', isVerified: false };
+      }
+      return { role: 'user' };
+    })();
+
+    const tierOverride = newRole === 'super_admin'
+      ? 'super_admin'
+      : newRole === 'admin'
+        ? 'admin'
+        : newRole === 'guest'
+          ? 'guest'
+          : undefined;
+
+    const classification = this.deriveClassification({
+      ...user,
+      ...roleAdjustments,
+      ...(tierOverride ? { tier: tierOverride } : {})
+    });
+
+    const updated: User = {
+      ...user,
+      ...roleAdjustments,
+      verificationStatus: classification.verificationStatus,
+      subscriptionLevel: classification.subscriptionLevel,
+      role: classification.role,
+      tier: classification.tier,
+      isVerified: typeof roleAdjustments.isVerified === 'boolean'
+        ? roleAdjustments.isVerified
+        : classification.verificationStatus === 'verified',
+      updatedAt: new Date()
+    };
+
+    this.users.set(userId, updated);
+    await this.syncAdminAccessForRole(userId, newRole as 'guest' | 'user' | 'admin' | 'super_admin');
+    return true;
   }
 
   static async deleteUser(

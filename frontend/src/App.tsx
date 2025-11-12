@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -190,17 +191,19 @@ const App: React.FC = () => {
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '493047971159-6089h729jnghpfo7scujvjjhcb0lmg8d.apps.googleusercontent.com';
 
   return (
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <ThemeProvider>
-        <AuthProvider>
-          <SocketProvider>
-            <div className="App min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-              <AppRoutes />
-            </div>
-          </SocketProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </GoogleOAuthProvider>
+    <HelmetProvider>
+      <GoogleOAuthProvider clientId={googleClientId}>
+        <ThemeProvider>
+          <AuthProvider>
+            <SocketProvider>
+              <div className="App min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                <AppRoutes />
+              </div>
+            </SocketProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </GoogleOAuthProvider>
+    </HelmetProvider>
   );
 };
 

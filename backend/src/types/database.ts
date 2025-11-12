@@ -1,5 +1,9 @@
 // Database types for Omegoo
 
+export type VerificationStatus = 'guest' | 'verified';
+export type SubscriptionLevel = 'normal' | 'premium';
+export type UserRole = 'user' | 'admin' | 'super_admin';
+
 export interface User {
   id: string;
   deviceId: string;
@@ -7,7 +11,11 @@ export interface User {
   username?: string;
   passwordHash?: string;
   phoneHash?: string;
-  tier: 'guest' | 'verified' | 'premium';
+  verificationStatus: VerificationStatus;
+  subscriptionLevel: SubscriptionLevel;
+  role: UserRole;
+  /** @deprecated kept for backward compatibility until frontend migrates */
+  tier?: 'guest' | 'verified' | 'premium' | 'admin' | 'super_admin';
   status: 'active' | 'banned' | 'suspended';
   coins: number;
   totalChats?: number;
