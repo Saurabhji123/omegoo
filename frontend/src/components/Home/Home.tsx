@@ -13,6 +13,23 @@ const COIN_COSTS = {
   video: 1
 };
 
+type IncidentRecord = {
+  message: string;
+  severity: string;
+  fallbackUrl?: string;
+  updatedAt?: string;
+  startedAt?: string;
+};
+
+type StatusSummaryRecord = {
+  connectedUsers: number;
+  queue: { text: number; audio: number; video: number; total: number };
+  activeIncident?: IncidentRecord | null;
+  incident?: IncidentRecord | null;
+  lastUpdated?: string;
+  [key: string]: any;
+};
+
 const Home: React.FC = () => {
   const [isMatching, setIsMatching] = useState(false);
   const { user, loading } = useAuthContext();
@@ -21,12 +38,8 @@ const Home: React.FC = () => {
   const [, forceUpdate] = useState({});
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);
   const [resendingOTP, setResendingOTP] = useState(false);
-  const [statusSummary, setStatusSummary] = useState<{
-    connectedUsers: number;
-    queue: { text: number; audio: number; video: number; total: number };
-    activeIncident: { message: string; severity: string; fallbackUrl?: string } | null;
-    lastUpdated: string;
-  } | null>(null);
+
+  const [statusSummary, setStatusSummary] = useState<StatusSummaryRecord | null>(null);
 
   useEffect(() => {
     trackEvent('home_view');
@@ -42,7 +55,13 @@ const Home: React.FC = () => {
         const data = await response.json();
 
         if (isMounted && data?.success) {
-          setStatusSummary(data.summary);
+          const summary = (data.summary ?? null) as StatusSummaryRecord | null;
+
+          if (summary && !summary.activeIncident && summary.incident) {
+            summary.activeIncident = summary.incident;
+          }
+
+          setStatusSummary(summary);
         }
       } catch (error) {
         console.warn('Status summary fetch failed', error);
@@ -184,46 +203,50 @@ const Home: React.FC = () => {
           </p>
         </div>
 
-        {statusSummary?.activeIncident && (
-          (() => {
-            const incident = statusSummary.activeIncident;
-            const lastUpdatedLabel = statusSummary.lastUpdated
-              ? new Date(statusSummary.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              : null;
+        {(() => {
+          const incident = statusSummary?.activeIncident || statusSummary?.incident || null;
 
-            return (
-          <div className={`max-w-3xl mx-auto mb-6 rounded-2xl border px-4 py-3 text-left shadow-lg ${
-            incident.severity === 'critical'
-              ? 'bg-red-500/20 border-red-400/50 text-red-100'
-              : 'bg-yellow-500/20 border-yellow-400/50 text-yellow-100'
-          }`}>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="font-semibold uppercase tracking-wide text-xs sm:text-sm">
-                {incident.severity === 'critical' ? 'Active Outage' : 'Service Advisory'}
-              </div>
-              {lastUpdatedLabel && (
-                <div className="text-xs text-white/70">
-                  Updated {lastUpdatedLabel}
+          if (!incident) {
+            return null;
+          }
+
+          const lastUpdatedSource = statusSummary?.lastUpdated || incident.updatedAt || incident.startedAt;
+          const lastUpdatedLabel = lastUpdatedSource
+            ? new Date(lastUpdatedSource).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : null;
+
+          return (
+            <div
+              className={`max-w-3xl mx-auto mb-6 rounded-2xl border px-4 py-3 text-left shadow-lg ${
+                incident.severity === 'critical'
+                  ? 'bg-red-500/20 border-red-400/50 text-red-100'
+                  : 'bg-yellow-500/20 border-yellow-400/50 text-yellow-100'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="font-semibold uppercase tracking-wide text-xs sm:text-sm">
+                  {incident.severity === 'critical' ? 'Active Outage' : 'Service Advisory'}
                 </div>
+                {lastUpdatedLabel && (
+                  <div className="text-xs text-white/70">
+                    Updated {lastUpdatedLabel}
+                  </div>
+                )}
+              </div>
+              <p className="mt-2 text-sm sm:text-base text-white">{incident.message}</p>
+              {incident.fallbackUrl && (
+                <a
+                  href={incident.fallbackUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex items-center text-xs sm:text-sm font-medium text-white underline"
+                >
+                  View live status details
+                </a>
               )}
             </div>
-            <p className="mt-2 text-sm sm:text-base text-white">
-              {incident.message}
-            </p>
-            {incident.fallbackUrl && (
-              <a
-                href={incident.fallbackUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center text-xs sm:text-sm font-medium text-white underline"
-              >
-                View live status details
-              </a>
-            )}
-          </div>
-            );
-          })()
-        )}
+          );
+        })()}
 
         {/* User Status & Coins - Only show if logged in */}
         {user ? (
