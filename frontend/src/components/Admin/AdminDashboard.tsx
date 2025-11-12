@@ -155,6 +155,9 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   const [roleDraft, setRoleDraft] = useState<'guest' | 'user' | 'admin' | 'super_admin'>('user');
   const [roleUpdating, setRoleUpdating] = useState(false);
 
+  const selectClassName =
+    'appearance-none rounded-xl border border-white/15 bg-slate-900/70 px-4 py-2 text-sm text-white/90 shadow-sm transition-colors duration-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-60';
+
   const adminPermissions = Array.isArray(admin?.permissions) ? admin.permissions : [];
   const canManageUsers = admin?.role === 'super_admin' || adminPermissions.includes('manage_users');
   const canManageRoles = admin?.role === 'super_admin';
@@ -823,7 +826,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
 
         <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-slate-950/50 backdrop-blur-xl">
           {activeTab === 'overview' && (
-            <div className="space-y-6 text-white">
+            <div className="space-y-6 text-white animate-fade-in">
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {overviewMetrics.length === 0 && !analyticsLoading && (
                   <div className="col-span-full rounded-2xl border border-white/10 bg-black/20 p-6 text-center text-white/60">
@@ -833,7 +836,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                 {overviewMetrics.map((metric) => (
                   <div
                     key={metric.label}
-                    className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/15 via-white/5 to-transparent p-5 shadow-lg shadow-indigo-950/40"
+                    className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/15 via-white/5 to-transparent p-5 shadow-lg shadow-indigo-950/40 transition-transform duration-300 ease-out hover:-translate-y-1 hover:border-white/20 hover:shadow-2xl"
                   >
                     <p className="text-xs uppercase tracking-wide text-white/60">{metric.label}</p>
                     <p className="mt-3 text-3xl font-semibold text-white">{metric.value}</p>
@@ -906,7 +909,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
           )}
 
           {activeTab === 'users' && (
-            <div className="space-y-6 text-white">
+            <div className="space-y-6 text-white animate-fade-in">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <form
                   onSubmit={(event) => {
@@ -924,7 +927,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                   <select
                     value={userStatusFilter}
                     onChange={(event) => setUserStatusFilter(event.target.value as 'all' | 'active' | 'banned')}
-                    className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                    className={`${selectClassName} rounded-full`}
                   >
                     <option value="all">All statuses</option>
                     <option value="active">Active</option>
@@ -982,7 +985,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                       )}
                       {!usersLoading &&
                         users.map((user) => (
-                          <tr key={user.id} className="hover:bg-white/5">
+                          <tr key={user.id} className="transition hover:bg-white/10">
                             <td className="px-4 py-3 font-mono text-xs text-white/70">{user.id}</td>
                             <td className="px-4 py-3">
                               <div className="flex flex-col gap-1">
@@ -1070,7 +1073,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                           <select
                             value={roleDraft}
                             onChange={(event) => setRoleDraft(event.target.value as 'guest' | 'user' | 'admin' | 'super_admin')}
-                            className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white focus:border-indigo-400 focus:outline-none"
+                            className={`${selectClassName} rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide`}
                           >
                             <option value="guest">Guest</option>
                             <option value="user">User</option>
@@ -1181,7 +1184,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
           )}
 
           {activeTab === 'bans' && (
-            <div className="space-y-6 text-white">
+            <div className="space-y-6 text-white animate-fade-in">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Banned users</h2>
                 <button
@@ -1205,7 +1208,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                 )}
                 {!bansLoading &&
                   bannedUsers.map((user) => (
-                    <div key={user.id} className="rounded-2xl border border-white/10 bg-gradient-to-br from-red-500/15 via-white/5 to-transparent p-5 shadow-lg shadow-red-900/30">
+                    <div key={user.id} className="rounded-2xl border border-white/10 bg-gradient-to-br from-red-500/15 via-white/5 to-transparent p-5 shadow-lg shadow-red-900/30 transition-transform duration-300 ease-out hover:-translate-y-1 hover:border-red-300/40 hover:shadow-2xl">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="text-xs uppercase tracking-wide text-white/60">User</p>
@@ -1254,14 +1257,14 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
           )}
 
           {activeTab === 'reports' && (
-            <div className="space-y-6 text-white">
+            <div className="space-y-6 text-white animate-fade-in">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">User reports</h2>
                 <div className="flex flex-wrap items-center gap-3">
                   <select
                     value={reportStatusFilter}
                     onChange={(event) => setReportStatusFilter(event.target.value as 'all' | 'pending' | 'reviewed' | 'resolved')}
-                    className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-medium uppercase tracking-wide text-white focus:border-indigo-400 focus:outline-none"
+                    className={`${selectClassName} rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide`}
                   >
                     <option value="pending">Pending</option>
                     <option value="reviewed">Reviewed</option>
@@ -1290,7 +1293,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                 )}
                 {!reportsLoading &&
                   reports.map((report) => (
-                    <div key={report.id} className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/15 via-white/5 to-transparent p-5 shadow-lg shadow-purple-950/30">
+                    <div key={report.id} className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/15 via-white/5 to-transparent p-5 shadow-lg shadow-purple-950/30 transition-transform duration-300 ease-out hover:-translate-y-1 hover:border-white/20 hover:shadow-2xl">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="text-xs uppercase tracking-wide text-white/50">Report ID</p>
@@ -1322,7 +1325,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                               [report.id]: event.target.value as 'pending' | 'reviewed' | 'resolved'
                             }))
                           }
-                          className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-medium uppercase tracking-wide text-white focus:border-indigo-400 focus:outline-none"
+                          className={`${selectClassName} rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide`}
                         >
                           <option value="pending">Pending</option>
                           <option value="reviewed">Reviewed</option>
@@ -1343,14 +1346,14 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
           )}
 
           {activeTab === 'analytics' && (
-            <div className="space-y-6 text-white">
+            <div className="space-y-6 text-white animate-fade-in">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <h2 className="text-xl font-semibold">Analytics snapshot</h2>
                   <select
                     value={analyticsRange}
                     onChange={(event) => setAnalyticsRange(Number(event.target.value))}
-                    className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-medium text-white focus:border-indigo-400 focus:outline-none"
+                    className={`${selectClassName} rounded-full px-4 py-2 text-xs font-semibold`}
                   >
                     <option value={7}>7 days</option>
                     <option value={14}>14 days</option>
@@ -1380,7 +1383,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
               {!analyticsLoading && analyticPairs.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {analyticPairs.map((pair) => (
-                    <div key={pair.key} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                    <div key={pair.key} className="rounded-2xl border border-white/10 bg-black/30 p-5 transition-transform duration-300 ease-out hover:-translate-y-1 hover:border-white/20 hover:shadow-xl">
                       <p className="text-xs uppercase tracking-wide text-white/50">{pair.key}</p>
                       <div className="mt-3 text-sm text-white/80">{pair.value}</div>
                     </div>
@@ -1389,7 +1392,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
               )}
 
               {!analyticsLoading && (
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-5 transition-transform duration-300 ease-out hover:border-white/20 hover:shadow-xl">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-semibold text-white">Daily trends</h3>
@@ -1430,7 +1433,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
           )}
 
           {activeTab === 'incidents' && (
-            <div className="space-y-6 text-white">
+            <div className="space-y-6 text-white animate-fade-in">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-xl font-semibold">Incident broadcast</h2>
@@ -1461,7 +1464,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                     <select
                       value={incidentSeverity}
                       onChange={(event) => setIncidentSeverity(event.target.value as any)}
-                      className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                      className={`${selectClassName} rounded-full px-4 py-2`}
                     >
                       <option value="info">Info</option>
                       <option value="warning">Warning</option>
@@ -1516,7 +1519,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                     <select
                       value={incidentAudience}
                       onChange={(event) => setIncidentAudience(event.target.value as 'all' | 'web' | 'mobile')}
-                      className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                      className={`${selectClassName} w-full`}
                     >
                       <option value="all">All clients</option>
                       <option value="web">Web only</option>
@@ -1609,7 +1612,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                         current ? { ...current, banType: event.target.value as 'temporary' | 'permanent' } : current
                       )
                     }
-                    className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm text-white focus:border-red-400 focus:outline-none"
+                    className={`${selectClassName} w-full focus:border-red-400 focus:ring-red-400/30`}
                   >
                     <option value="temporary">Temporary</option>
                     <option value="permanent">Permanent</option>

@@ -181,6 +181,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ token }) => {
     }
   };
 
+  const roleSelectClass =
+    'appearance-none rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/90 shadow-sm transition-colors duration-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-60';
+
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -333,7 +336,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ token }) => {
                       value={user.tier}
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
                       disabled={actionLoading === user.id}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.tier)} cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50`}
+                      className={`${roleSelectClass} ${getRoleBadgeColor(user.tier)} cursor-pointer hover:opacity-90`}
                     >
                       <option value="guest">Guest</option>
                       <option value="user">User</option>
