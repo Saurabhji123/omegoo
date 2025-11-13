@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import adminApi from '../../services/adminApi';
 import { API_BASE_URL } from '../../services/api';
+import AcquisitionAnalytics, { AcquisitionMapSummary, AcquisitionSourcesSummary } from './AcquisitionAnalytics';
 
 type AdminAccount = {
   id: string;
@@ -72,6 +73,20 @@ type AnalyticsSeries = {
   daily: Array<{ date: string; count: number }>;
 };
 
+type AnalyticsFilters = {
+  genders: string[];
+  platforms: string[];
+  signupSources: string[];
+  campaigns: string[];
+};
+
+type AnalyticsFilterOptions = {
+  genders: string[];
+  platforms: string[];
+  signupSources: string[];
+  campaigns: string[];
+};
+
 type UserGrowthDay = {
   date: string;
   newUsers: number;
@@ -91,6 +106,60 @@ type UserGrowthSummary = {
     totalUsers: number;
   };
   daily: UserGrowthDay[];
+};
+
+type RetentionBucketSummary = {
+  offset: number;
+  date: string;
+  retainedUsers: number;
+  retentionRate: number;
+};
+
+type RetentionCohortSummary = {
+  cohort: string;
+  size: number;
+  buckets: RetentionBucketSummary[];
+};
+
+type RetentionAverageSummary = {
+  offset: number;
+  retentionRate: number;
+  sampleSize: number;
+};
+
+type UserRetentionSummary = {
+  window: {
+    start: string;
+    end: string;
+    cohorts: number;
+  };
+  maxOffset: number;
+  averages: RetentionAverageSummary[];
+  cohorts: RetentionCohortSummary[];
+};
+
+type FunnelStepSummary = {
+  id: string;
+  label: string;
+  count: number;
+  conversionRate: number;
+  stepRate: number;
+};
+
+type FunnelDefinitionSummary = {
+  id: string;
+  name: string;
+  description?: string;
+  totalUsers: number;
+  steps: FunnelStepSummary[];
+};
+
+type FunnelSummary = {
+  window: {
+    start: string;
+    end: string;
+  };
+  funnels: FunnelDefinitionSummary[];
 };
 
 type CoinAdjustment = {
@@ -113,7 +182,46 @@ type BanDraft = {
   reason: string;
 };
 
+const createEmptyAnalyticsFilters = (): AnalyticsFilters => ({
+  genders: [],
+  platforms: [],
+  signupSources: [],
+  campaigns: []
+});
+
+const ANALYTIC_FILTER_KEYS = ['genders', 'platforms', 'signupSources', 'campaigns'] as const;
+
+const sortFilterValues = (values: string[]): string[] => [...values].sort((a, b) => a.localeCompare(b));
+
+const areAnalyticsFiltersEqual = (a: AnalyticsFilters, b: AnalyticsFilters): boolean =>
+  ANALYTIC_FILTER_KEYS.every((key) => {
+    const left = sortFilterValues(a[key]);
+    const right = sortFilterValues(b[key]);
+    if (left.length !== right.length) {
+      return false;
+    }
+    return left.every((value, index) => value === right[index]);
+  });
+
+const formatSegmentLabel = (value: string): string => {
+  if (!value) {
+    return 'Unknown';
+  }
+
+  const normalized = value === 'unknown' ? 'Unknown' : value.replace(/[_-]+/g, ' ');
+  return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const TABS = ['overview', 'users', 'bans', 'reports', 'analytics', 'incidents'] as const;
+
+type AnalyticsRangeMode = '7' | '14' | '30' | 'custom';
+
+const ANALYTICS_RANGE_OPTIONS: Array<{ value: AnalyticsRangeMode; label: string }> = [
+  { value: '7', label: 'Past 7 days' },
+  { value: '14', label: 'Past 14 days' },
+  { value: '30', label: 'Past 30 days' },
+  { value: 'custom', label: 'Custom range' }
+];
 const ANALYTICS_COLORS = ['#8b5cf6', '#0ea5e9', '#f97316', '#22c55e', '#facc15'];
 
 const toDateTimeInputValue = (iso?: string | null): string => {
@@ -182,6 +290,14 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSeries[]>([]);
   const [userGrowth, setUserGrowth] = useState<UserGrowthSummary | null>(null);
   const [analyticsWindow, setAnalyticsWindow] = useState<{ start: string; end: string; days: number } | null>(null);
+  const [retentionSummary, setRetentionSummary] = useState<UserRetentionSummary | null>(null);
+  const [funnelSummary, setFunnelSummary] = useState<FunnelSummary | null>(null);
+  const [acquisitionMapSummary, setAcquisitionMapSummary] = useState<AcquisitionMapSummary | null>(null);
+  const [acquisitionSourcesSummary, setAcquisitionSourcesSummary] = useState<AcquisitionSourcesSummary | null>(null);
+  const [acquisitionLoading, setAcquisitionLoading] = useState(false);
+  const [acquisitionMapError, setAcquisitionMapError] = useState<string | null>(null);
+  const [acquisitionSourcesError, setAcquisitionSourcesError] = useState<string | null>(null);
+  const [selectedAcquisitionCountry, setSelectedAcquisitionCountry] = useState<string | null>(null);
 
   const [usersLoading, setUsersLoading] = useState(false);
   const [bansLoading, setBansLoading] = useState(false);
@@ -207,19 +323,28 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   const [incidentFallbackUrl, setIncidentFallbackUrl] = useState('');
   const [roleDraft, setRoleDraft] = useState<'guest' | 'user' | 'admin' | 'super_admin'>('user');
   const [roleUpdating, setRoleUpdating] = useState(false);
-  const [analyticsMode, setAnalyticsMode] = useState<'14' | '30' | 'custom'>('14');
+  const [analyticsMode, setAnalyticsMode] = useState<AnalyticsRangeMode>('7');
   const [customRange, setCustomRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [customRangeDraft, setCustomRangeDraft] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [customRangePanelOpen, setCustomRangePanelOpen] = useState(false);
+  const [analyticsFilters, setAnalyticsFilters] = useState<AnalyticsFilters>(() => createEmptyAnalyticsFilters());
+  const [analyticsFilterDraft, setAnalyticsFilterDraft] = useState<AnalyticsFilters>(() => createEmptyAnalyticsFilters());
+  const [analyticsFilterOptions, setAnalyticsFilterOptions] = useState<AnalyticsFilterOptions>({
+    genders: [],
+    platforms: [],
+    signupSources: [],
+    campaigns: []
+  });
+  const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
 
   const selectClassName =
     'appearance-none rounded-xl border border-white/15 bg-slate-900/70 px-4 py-2 text-sm text-white/90 shadow-sm transition-colors duration-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-60';
 
-  const analyticsModeButtonClass = (mode: '14' | '30' | 'custom') => {
-    const isActive = analyticsMode === mode;
-    const base = 'rounded-full border px-4 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-indigo-400/40';
+  const analyticsFilterButtonClass = (isOpen: boolean, hasSelection: boolean) => {
+    const isActive = isOpen || hasSelection;
+    const base = 'rounded-full border px-4 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-emerald-400/30';
     if (isActive) {
-      return `${base} border-indigo-400 bg-indigo-500/20 text-white shadow-sm shadow-indigo-900/40`;
+      return `${base} border-emerald-400 bg-emerald-500/20 text-white shadow-sm shadow-emerald-900/40`;
     }
     return `${base} border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:bg-white/10`;
   };
@@ -343,7 +468,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
 
   const fetchAnalytics = useCallback(
     async (options?: { showCustomRangeWarning?: boolean }) => {
-      const params: Record<string, string> = {};
+      const params: Record<string, string> = {}; 
       const DAY_MS = 24 * 60 * 60 * 1000;
       let requestedWindowDays = 0;
 
@@ -376,11 +501,29 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
         requestedWindowDays = Number(analyticsMode);
       }
 
+      const appendListParam = (key: string, values?: string[]) => {
+        if (values && values.length) {
+          params[key] = values.join(',');
+        }
+      };
+
+      appendListParam('gender', analyticsFilters.genders);
+      appendListParam('platform', analyticsFilters.platforms);
+      appendListParam('signupSource', analyticsFilters.signupSources);
+      appendListParam('campaign', analyticsFilters.campaigns);
+
       setAnalyticsLoading(true);
+      setAcquisitionLoading(true);
+      setAcquisitionMapError(null);
+      setAcquisitionSourcesError(null);
       try {
-        const [statsRes, summaryRes] = await Promise.all([
-          adminApi.get('/analytics'),
-          adminApi.get('/analytics/summary', { params })
+        const [statsRes, summaryRes, retentionRes, funnelRes, acquisitionMapRes, acquisitionSourcesRes] = await Promise.all([
+          adminApi.get('/analytics', { params }),
+          adminApi.get('/analytics/summary', { params }),
+          adminApi.get('/analytics/retention', { params }),
+          adminApi.get('/analytics/funnels', { params }),
+          adminApi.get('/analytics/acquisition/map', { params }),
+          adminApi.get('/analytics/acquisition/sources', { params })
         ]);
 
         if (statsRes.data?.success) {
@@ -406,22 +549,79 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
           } else {
             setAnalyticsWindow(null);
           }
+
+          const optionsPayload = summaryRes.data?.filters?.options;
+          if (optionsPayload) {
+            setAnalyticsFilterOptions({
+              genders: Array.isArray(optionsPayload.genders) ? sortFilterValues(optionsPayload.genders) : [],
+              platforms: Array.isArray(optionsPayload.platforms) ? sortFilterValues(optionsPayload.platforms) : [],
+              signupSources: Array.isArray(optionsPayload.signupSources) ? sortFilterValues(optionsPayload.signupSources) : [],
+              campaigns: Array.isArray(optionsPayload.campaigns) ? sortFilterValues(optionsPayload.campaigns) : []
+            });
+          }
         } else {
           setAnalyticsSummary([]);
           setUserGrowth(null);
           setAnalyticsWindow(null);
+        }
+
+        if (retentionRes.data?.success) {
+          setRetentionSummary(retentionRes.data.retention ?? null);
+        } else {
+          setRetentionSummary(null);
+        }
+
+        if (funnelRes.data?.success) {
+          setFunnelSummary(funnelRes.data.funnelSummary ?? null);
+        } else {
+          setFunnelSummary(null);
+        }
+
+        if (acquisitionMapRes.data?.success) {
+          const nextMap: AcquisitionMapSummary | null = acquisitionMapRes.data.map ?? null;
+          setAcquisitionMapSummary(nextMap);
+          setAcquisitionMapError(null);
+          setSelectedAcquisitionCountry((current) => {
+            if (!current || !nextMap) {
+              return nextMap ? current : null;
+            }
+            const exists = nextMap.countries.some((country) => country.countryCode.toUpperCase() === current.toUpperCase());
+            return exists ? current : null;
+          });
+        } else {
+          setAcquisitionMapSummary(null);
+          setAcquisitionMapError(acquisitionMapRes.data?.error || 'Failed to load acquisition map.');
+          setSelectedAcquisitionCountry(null);
+        }
+
+        if (acquisitionSourcesRes.data?.success) {
+          const nextSources: AcquisitionSourcesSummary | null = acquisitionSourcesRes.data.sources ?? null;
+          setAcquisitionSourcesSummary(nextSources);
+          setAcquisitionSourcesError(null);
+        } else {
+          setAcquisitionSourcesSummary(null);
+          setAcquisitionSourcesError(acquisitionSourcesRes.data?.error || 'Failed to load acquisition sources.');
         }
       } catch (err) {
         console.error('Fetch analytics failed', err);
         setAnalyticsSummary([]);
         setUserGrowth(null);
         setAnalyticsWindow(null);
+        setAnalyticsFilterOptions({ genders: [], platforms: [], signupSources: [], campaigns: [] });
+        setRetentionSummary(null);
+        setFunnelSummary(null);
+        setAcquisitionMapSummary(null);
+        setAcquisitionSourcesSummary(null);
+        setAcquisitionMapError('Unable to load acquisition analytics.');
+        setAcquisitionSourcesError('Unable to load acquisition analytics.');
+        setSelectedAcquisitionCountry(null);
         showNotice({ kind: 'error', message: 'Unable to load analytics.' });
       } finally {
         setAnalyticsLoading(false);
+        setAcquisitionLoading(false);
       }
     },
-    [analyticsMode, customRange.end, customRange.start, showNotice]
+    [analyticsFilters, analyticsMode, customRange.end, customRange.start, showNotice]
   );
 
   const fetchCoinHistory = useCallback(async (userId: string) => {
@@ -438,7 +638,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
     }
   }, []);
 
-  const handlePresetAnalyticsRange = useCallback((mode: '14' | '30') => {
+  const handlePresetAnalyticsRange = useCallback((mode: Exclude<AnalyticsRangeMode, 'custom'>) => {
     setAnalyticsMode(mode);
     setCustomRangePanelOpen(false);
   }, []);
@@ -451,13 +651,32 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
         return current;
       }
       const now = new Date();
-      const start = new Date(now.getTime() - 13 * 24 * 60 * 60 * 1000);
+      const start = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
       return {
         start: toDateInputValue(start),
         end: toDateInputValue(now)
       };
     });
   }, []);
+
+  const handleAnalyticsRangeSelect = useCallback(
+    (value: string) => {
+      if (value === 'custom') {
+        handleCustomRangeClick();
+        return;
+      }
+
+      if (value === '7' || value === '14' || value === '30') {
+        handlePresetAnalyticsRange(value);
+        return;
+      }
+
+      console.error('Unsupported analytics range selection', value);
+      showNotice({ kind: 'error', message: 'Unable to apply the selected range. Please try again.' });
+      handlePresetAnalyticsRange('7');
+    },
+    [handleCustomRangeClick, handlePresetAnalyticsRange, showNotice]
+  );
 
   const applyCustomRange = useCallback(() => {
     if (!customRangeDraft.start || !customRangeDraft.end) {
@@ -503,9 +722,60 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
       return current;
     });
     if (!customRange.start || !customRange.end) {
-      setAnalyticsMode('14');
+      setAnalyticsMode('7');
     }
   }, [customRange.end, customRange.start]);
+
+  const toggleFilterDraftValue = useCallback((dimension: keyof AnalyticsFilters, value: string) => {
+    setAnalyticsFilterDraft((current) => {
+      const existing = new Set(current[dimension]);
+      if (existing.has(value)) {
+        existing.delete(value);
+      } else {
+        existing.add(value);
+      }
+
+      return {
+        ...current,
+        [dimension]: sortFilterValues(Array.from(existing))
+      };
+    });
+  }, []);
+
+  const openFiltersPanel = useCallback(() => {
+    setAnalyticsFilterDraft(analyticsFilters);
+    setFiltersPanelOpen(true);
+  }, [analyticsFilters]);
+
+  const closeFiltersPanel = useCallback(() => {
+    setFiltersPanelOpen(false);
+    setAnalyticsFilterDraft(analyticsFilters);
+  }, [analyticsFilters]);
+
+  const applyAnalyticsFilters = useCallback(() => {
+    setAnalyticsFilters((current) => {
+      if (areAnalyticsFiltersEqual(current, analyticsFilterDraft)) {
+        return current;
+      }
+      return {
+        genders: [...analyticsFilterDraft.genders],
+        platforms: [...analyticsFilterDraft.platforms],
+        signupSources: [...analyticsFilterDraft.signupSources],
+        campaigns: [...analyticsFilterDraft.campaigns]
+      };
+    });
+    setFiltersPanelOpen(false);
+  }, [analyticsFilterDraft]);
+
+  const clearAnalyticsFilters = useCallback(() => {
+    const empty = createEmptyAnalyticsFilters();
+    setAnalyticsFilters(empty);
+    setAnalyticsFilterDraft(empty);
+  }, []);
+
+  const resetFilterDraft = useCallback(() => {
+    setAnalyticsFilterDraft(createEmptyAnalyticsFilters());
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'overview') {
@@ -527,6 +797,31 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
       fetchAnalytics();
     }
   }, [activeTab, canViewStatus, fetchAnalytics, fetchBannedUsers, fetchReports, fetchUsers, fetchStatusSummary, search]);
+
+  useEffect(() => {
+    if (activeTab !== 'analytics') {
+      setFiltersPanelOpen(false);
+      setSelectedAcquisitionCountry(null);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (filtersPanelOpen) {
+      return;
+    }
+
+    setAnalyticsFilterDraft((current) => {
+      if (areAnalyticsFiltersEqual(current, analyticsFilters)) {
+        return current;
+      }
+      return {
+        genders: [...analyticsFilters.genders],
+        platforms: [...analyticsFilters.platforms],
+        signupSources: [...analyticsFilters.signupSources],
+        campaigns: [...analyticsFilters.campaigns]
+      };
+    });
+  }, [analyticsFilters, filtersPanelOpen]);
 
   useEffect(() => {
     if (activeTab !== 'incidents' || !canViewStatus) {
@@ -676,14 +971,50 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
     return pairs;
   }, [analytics]);
 
-  const selectedCoinHistory = useMemo(() => {
-    if (!selectedUser) {
-      return [] as CoinAdjustment[];
+  const formatRetentionLabel = useCallback((offset: number): string => {
+    if (offset <= 0) {
+      return 'Day 0';
     }
-    return coinHistory[selectedUser.id] || [];
-  }, [coinHistory, selectedUser]);
+    if (offset === 1) {
+      return 'Day 1';
+    }
+    if (offset % 7 === 0 && offset >= 7) {
+      const weeks = offset / 7;
+      return weeks === 1 ? 'Week 1' : `Week ${weeks}`;
+    }
+    return `Day ${offset}`;
+  }, []);
 
-  const todayInputValue = useMemo(() => toDateInputValue(new Date()), []);
+  const retentionOffsets = useMemo(() => {
+    if (!retentionSummary) {
+      return [] as number[];
+    }
+
+    const offsets = new Set<number>();
+    retentionSummary.cohorts.forEach((cohort) => {
+      cohort.buckets.forEach((bucket) => {
+        if (bucket.offset > 0) {
+          offsets.add(bucket.offset);
+        }
+      });
+    });
+
+    return Array.from(offsets).sort((a, b) => a - b);
+  }, [retentionSummary]);
+
+  const retentionAverages = useMemo(() => {
+    if (!retentionSummary) {
+      return [] as RetentionAverageSummary[];
+    }
+    return [...retentionSummary.averages].sort((a, b) => a.offset - b.offset);
+  }, [retentionSummary]);
+
+  const topRetentionCohorts = useMemo(() => {
+    if (!retentionSummary) {
+      return [] as RetentionCohortSummary[];
+    }
+    return retentionSummary.cohorts.slice(0, 6);
+  }, [retentionSummary]);
 
   const analyticsRangeLabel = useMemo(() => {
     if (analyticsWindow?.start && analyticsWindow?.end) {
@@ -696,6 +1027,9 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
       return rangeLabel;
     }
 
+    if (analyticsMode === '7') {
+      return 'Past 7 days';
+    }
     if (analyticsMode === '14') {
       return 'Past 14 days';
     }
@@ -709,6 +1043,66 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
 
     return 'Custom range';
   }, [analyticsMode, analyticsWindow, customRange.end, customRange.start]);
+
+  const retentionRangeLabel = useMemo(() => {
+    if (!retentionSummary || !retentionSummary.window.start || !retentionSummary.window.end) {
+      return analyticsRangeLabel;
+    }
+    return `${retentionSummary.window.start} → ${retentionSummary.window.end}`;
+  }, [analyticsRangeLabel, retentionSummary]);
+
+  const funnelDefinitions = useMemo(() => {
+    if (!funnelSummary) {
+      return [] as FunnelDefinitionSummary[];
+    }
+    return funnelSummary.funnels;
+  }, [funnelSummary]);
+
+  const funnelRangeLabel = useMemo(() => {
+    if (!funnelSummary || !funnelSummary.window?.start || !funnelSummary.window?.end) {
+      return analyticsRangeLabel;
+    }
+    return `${funnelSummary.window.start} → ${funnelSummary.window.end}`;
+  }, [analyticsRangeLabel, funnelSummary]);
+
+  const selectedCoinHistory = useMemo(() => {
+    if (!selectedUser) {
+      return [] as CoinAdjustment[];
+    }
+    return coinHistory[selectedUser.id] || [];
+  }, [coinHistory, selectedUser]);
+
+  const todayInputValue = useMemo(() => toDateInputValue(new Date()), []);
+
+  const hasActiveAnalyticsFilters = useMemo(
+    () =>
+      analyticsFilters.genders.length > 0 ||
+      analyticsFilters.platforms.length > 0 ||
+      analyticsFilters.signupSources.length > 0 ||
+      analyticsFilters.campaigns.length > 0,
+    [analyticsFilters]
+  );
+
+  const activeAnalyticsFilterCount = useMemo(
+    () =>
+      analyticsFilters.genders.length +
+      analyticsFilters.platforms.length +
+      analyticsFilters.signupSources.length +
+      analyticsFilters.campaigns.length,
+    [analyticsFilters]
+  );
+
+  const analyticsFilterConfig = useMemo(
+    () => (
+      [
+        { key: 'genders' as const, label: 'Gender', options: analyticsFilterOptions.genders },
+        { key: 'platforms' as const, label: 'Platform', options: analyticsFilterOptions.platforms },
+        { key: 'signupSources' as const, label: 'Signup source', options: analyticsFilterOptions.signupSources },
+        { key: 'campaigns' as const, label: 'Campaign', options: analyticsFilterOptions.campaigns }
+      ]
+    ),
+    [analyticsFilterOptions]
+  );
 
   const userGrowthChartData = useMemo(() => {
     if (!userGrowth?.daily?.length) {
@@ -1698,29 +2092,31 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
                   <h2 className="text-xl font-semibold">Analytics snapshot</h2>
                   <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={analyticsMode}
+                      onChange={(event) => handleAnalyticsRangeSelect(event.target.value)}
+                      className={`${selectClassName} rounded-full pr-10 text-xs font-semibold uppercase tracking-wide`}
+                    >
+                      {ANALYTICS_RANGE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {analyticsMode === 'custom' && customRange.start && customRange.end && (
+                      <span className="text-[10px] uppercase tracking-wide text-white/60">
+                        {customRange.start} → {customRange.end}
+                      </span>
+                    )}
                     <button
                       type="button"
-                      onClick={() => handlePresetAnalyticsRange('14')}
-                      className={analyticsModeButtonClass('14')}
+                      onClick={filtersPanelOpen ? closeFiltersPanel : openFiltersPanel}
+                      className={analyticsFilterButtonClass(filtersPanelOpen, hasActiveAnalyticsFilters)}
                     >
-                      14 days
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handlePresetAnalyticsRange('30')}
-                      className={analyticsModeButtonClass('30')}
-                    >
-                      30 days
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCustomRangeClick}
-                      className={analyticsModeButtonClass('custom')}
-                    >
-                      <span>Custom range</span>
-                      {analyticsMode === 'custom' && customRange.start && customRange.end && (
-                        <span className="ml-2 text-[10px] uppercase tracking-wide text-white/50">
-                          {customRange.start} → {customRange.end}
+                      Segment filters
+                      {hasActiveAnalyticsFilters && (
+                        <span className="ml-2 rounded-full bg-emerald-500/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-100/90">
+                          {activeAnalyticsFilterCount}
                         </span>
                       )}
                     </button>
@@ -1785,6 +2181,103 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                       Cancel
                     </button>
                   </div>
+                </div>
+              )}
+
+              {filtersPanelOpen && (
+                <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-5 text-sm text-white/80">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-emerald-100/70">Segment audience</p>
+                      <p className="text-[11px] text-emerald-100/60">Combine filters to inspect specific cohorts.</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={resetFilterDraft}
+                        className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-white/70 transition hover:border-white/30 hover:bg-white/10"
+                      >
+                        Reset selections
+                      </button>
+                      {hasActiveAnalyticsFilters && (
+                        <button
+                          onClick={clearAnalyticsFilters}
+                          className="rounded-full border border-red-400/40 bg-red-500/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-red-100 transition hover:border-red-300 hover:bg-red-500/30"
+                        >
+                          Clear applied
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    {analyticsFilterConfig.map((config) => (
+                      <div key={config.key} className="space-y-3">
+                        <p className="text-xs uppercase tracking-wide text-white/60">{config.label}</p>
+                        <div className="space-y-2">
+                          {config.options.length ? (
+                            config.options.map((option) => (
+                              <label
+                                key={`${config.key}-${option}`}
+                                className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white/80 transition hover:border-white/25"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={analyticsFilterDraft[config.key].includes(option)}
+                                  onChange={() => toggleFilterDraftValue(config.key, option)}
+                                  className="h-4 w-4 rounded border-white/40 bg-black/60 text-emerald-400 focus:ring-emerald-400"
+                                />
+                                <span>{formatSegmentLabel(option)}</span>
+                              </label>
+                            ))
+                          ) : (
+                            <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/60">
+                              No data yet
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={applyAnalyticsFilters}
+                      className="rounded-full bg-emerald-500/80 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-emerald-900/40 transition hover:bg-emerald-500"
+                    >
+                      Apply filters
+                    </button>
+                    <button
+                      onClick={closeFiltersPanel}
+                      className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!filtersPanelOpen && hasActiveAnalyticsFilters && (
+                <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-white/60">
+                  {analyticsFilters.genders.map((value) => (
+                    <span key={`filter-gender-${value}`} className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1 text-emerald-100/80">
+                      Gender · {formatSegmentLabel(value)}
+                    </span>
+                  ))}
+                  {analyticsFilters.platforms.map((value) => (
+                    <span key={`filter-platform-${value}`} className="rounded-full border border-sky-400/40 bg-sky-500/15 px-3 py-1 text-sky-100/80">
+                      Platform · {formatSegmentLabel(value)}
+                    </span>
+                  ))}
+                  {analyticsFilters.signupSources.map((value) => (
+                    <span key={`filter-source-${value}`} className="rounded-full border border-purple-400/40 bg-purple-500/15 px-3 py-1 text-purple-100/80">
+                      Signup · {formatSegmentLabel(value)}
+                    </span>
+                  ))}
+                  {analyticsFilters.campaigns.map((value) => (
+                    <span key={`filter-campaign-${value}`} className="rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-1 text-amber-100/80">
+                      Campaign · {formatSegmentLabel(value)}
+                    </span>
+                  ))}
                 </div>
               )}
 
@@ -1862,6 +2355,166 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              <AcquisitionAnalytics
+                map={acquisitionMapSummary}
+                sources={acquisitionSourcesSummary}
+                loading={acquisitionLoading}
+                mapError={acquisitionMapError}
+                sourcesError={acquisitionSourcesError}
+                onRetry={() => fetchAnalytics()}
+                onSelectCountry={setSelectedAcquisitionCountry}
+                selectedCountry={selectedAcquisitionCountry}
+                rangeLabel={analyticsRangeLabel}
+              />
+
+              {!analyticsLoading && (
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-5 transition-transform duration-300 ease-out hover:border-white/20 hover:shadow-xl">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Retention cohorts</h3>
+                      <p className="text-xs uppercase tracking-wide text-white/50">
+                        {retentionSummary?.window.cohorts ? `${retentionSummary.window.cohorts} cohorts tracked` : 'Monitor who comes back'}
+                      </p>
+                    </div>
+                    <div className="text-right text-[11px] uppercase tracking-wide text-white/50">{retentionRangeLabel}</div>
+                  </div>
+
+                  {retentionSummary && retentionSummary.cohorts.length > 0 ? (
+                    <>
+                      {retentionAverages.length > 0 ? (
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          {retentionAverages.map((average) => (
+                            <div
+                              key={`retention-avg-${average.offset}`}
+                              className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-100/80"
+                            >
+                              <span>{formatRetentionLabel(average.offset)}</span>
+                              <span className="ml-2 text-white">{average.retentionRate.toFixed(1)}%</span>
+                              <span className="ml-1 text-white/60">({average.sampleSize.toLocaleString()})</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-4 rounded-xl bg-white/5 px-4 py-3 text-sm text-white/60">
+                          Not enough samples yet to calculate averages.
+                        </div>
+                      )}
+
+                      {retentionOffsets.length > 0 ? (
+                        <div className="mt-4 overflow-x-auto">
+                          <table className="min-w-full table-fixed border-separate border-spacing-y-2 text-left text-sm text-white/80">
+                            <thead>
+                              <tr>
+                                <th className="px-3 py-2 text-xs uppercase tracking-wide text-white/50">Cohort</th>
+                                <th className="px-3 py-2 text-right text-xs uppercase tracking-wide text-white/50">Users</th>
+                                {retentionOffsets.map((offset) => (
+                                  <th key={`retention-header-${offset}`} className="px-3 py-2 text-right text-xs uppercase tracking-wide text-white/50">
+                                    {formatRetentionLabel(offset)}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {topRetentionCohorts.map((cohort) => (
+                                <tr key={`retention-row-${cohort.cohort}`} className="rounded-xl border border-white/10 bg-black/40">
+                                  <td className="px-3 py-3 font-medium text-white">{cohort.cohort}</td>
+                                  <td className="px-3 py-3 text-right font-mono text-sm text-white/70">{cohort.size.toLocaleString()}</td>
+                                  {retentionOffsets.map((offset) => {
+                                    const bucket = cohort.buckets.find((entry) => entry.offset === offset);
+                                    const rate = bucket ? bucket.retentionRate : null;
+                                    const retained = bucket ? bucket.retainedUsers : null;
+                                    return (
+                                      <td key={`retention-${cohort.cohort}-${offset}`} className="px-3 py-3 text-right">
+                                        {rate !== null ? (
+                                          <div>
+                                            <span className="font-semibold text-white">{rate.toFixed(1)}%</span>
+                                            <span className="ml-1 text-xs text-white/50">{retained !== null ? `(${retained.toLocaleString()})` : ''}</span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-white/40">—</span>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="mt-4 rounded-xl bg-white/5 px-4 py-3 text-sm text-white/60">
+                          Retention buckets are still being prepared. Expand the window to collect more sessions.
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="mt-4 rounded-xl bg-white/5 px-4 py-3 text-sm text-white/60">
+                      Not enough cohorts to calculate retention for this window.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!analyticsLoading && (
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-5 transition-transform duration-300 ease-out hover:border-white/20 hover:shadow-xl">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Conversion funnels</h3>
+                      <p className="text-xs uppercase tracking-wide text-white/50">Track step-by-step drop-off</p>
+                    </div>
+                    <div className="text-right text-[11px] uppercase tracking-wide text-white/50">{funnelRangeLabel}</div>
+                  </div>
+
+                  {funnelDefinitions.length > 0 ? (
+                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                      {funnelDefinitions.map((funnel) => (
+                        <div key={`funnel-${funnel.id}`} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-white">{funnel.name}</p>
+                              {funnel.description && (
+                                <p className="text-xs text-white/60">{funnel.description}</p>
+                              )}
+                            </div>
+                            <div className="text-right text-xs uppercase tracking-wide text-white/50">
+                              <p>Total cohort</p>
+                              <p className="text-base font-semibold text-white">{funnel.totalUsers.toLocaleString()}</p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 space-y-3">
+                            {funnel.steps.map((step, index) => (
+                              <div key={`funnel-${funnel.id}-${step.id}`} className="rounded-xl border border-white/10 bg-black/50 p-3">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-white">{step.label}</p>
+                                    <p className="text-xs uppercase tracking-wide text-white/50">{step.count.toLocaleString()} users</p>
+                                  </div>
+                                  <div className="text-right text-xs uppercase tracking-wide text-white/50">
+                                    <p className="text-sm font-semibold text-white">{step.conversionRate.toFixed(1)}%</p>
+                                    <p>{index === 0 ? 'Baseline' : `vs prev ${step.stepRate.toFixed(1)}%`}</p>
+                                  </div>
+                                </div>
+                                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/15">
+                                  <div
+                                    className="h-full rounded-full bg-emerald-400/70"
+                                    style={{ width: `${Math.max(0, Math.min(100, step.conversionRate))}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-xl bg-white/5 px-4 py-3 text-sm text-white/60">
+                      No funnel activity recorded for this range yet.
+                    </div>
+                  )}
                 </div>
               )}
 

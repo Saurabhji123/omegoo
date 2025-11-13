@@ -2,98 +2,104 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.omegoo.chat/</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/about</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/contact</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/privacy</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/terms</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/safety</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/login</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/profile</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/settings</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/forgot-password</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/reset-password</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/chat/text</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/chat/audio</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/chat/video</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/verify</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://www.omegoo.chat/verify-otp</loc>
-    <lastmod>2025-11-12T11:35:55.468Z</lastmod>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://www.omegoo.chat/omegoo-admin</loc>
+    <lastmod>2025-11-13T18:05:16.656Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.2</priority>
   </url>
 </urlset>

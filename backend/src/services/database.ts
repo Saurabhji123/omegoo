@@ -1,6 +1,12 @@
 import { Pool, PoolClient } from 'pg';
 import bcrypt from 'bcryptjs';
-import type { UserGrowthSummary } from '../types/services';
+import type {
+  AnalyticsFilterOptionsSnapshot,
+  AnalyticsFilterParams,
+  FunnelSummary,
+  UserGrowthSummary,
+  UserRetentionSummary
+} from '../types/services';
 
 export class DatabaseService {
   private static pool: Pool;
@@ -357,7 +363,7 @@ export class DatabaseService {
     };
   }
 
-  static async getUserGrowthMetrics(start: Date, end: Date): Promise<UserGrowthSummary> {
+  static async getUserGrowthMetrics(start: Date, end: Date, _filters: AnalyticsFilterParams = {}): Promise<UserGrowthSummary> {
     console.warn('⚠️ getUserGrowthMetrics called on PostgreSQL - use MongoDB for analytics');
     void start;
     void end;
@@ -373,6 +379,45 @@ export class DatabaseService {
         totalUsers: 0
       },
       daily: []
+    };
+  }
+
+  static async getUserRetentionMetrics(start: Date, end: Date, _filters: AnalyticsFilterParams = {}): Promise<UserRetentionSummary> {
+    console.warn('⚠️ getUserRetentionMetrics called on PostgreSQL - use MongoDB for analytics');
+    void start;
+    void end;
+    return {
+      window: {
+        start: '',
+        end: '',
+        cohorts: 0
+      },
+      maxOffset: 0,
+      averages: [],
+      cohorts: []
+    };
+  }
+
+  static async getFunnelMetrics(start: Date, end: Date, _filters: AnalyticsFilterParams = {}): Promise<FunnelSummary> {
+    console.warn('⚠️ getFunnelMetrics called on PostgreSQL - use MongoDB for analytics');
+    void start;
+    void end;
+    return {
+      window: {
+        start: '',
+        end: ''
+      },
+      funnels: []
+    };
+  }
+
+  static async getAnalyticsFilterOptions(): Promise<AnalyticsFilterOptionsSnapshot> {
+    console.warn('⚠️ getAnalyticsFilterOptions called on PostgreSQL - analytics filters limited');
+    return {
+      genders: ['unknown'],
+      platforms: ['unknown'],
+      signupSources: ['unknown'],
+      campaigns: ['unknown']
     };
   }
 

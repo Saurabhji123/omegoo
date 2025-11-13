@@ -8,6 +8,7 @@ import { adminCsrfProtection } from '../middleware/adminCsrf';
 import { StatusService, ActiveIncident, IncidentSeverity } from '../services/status';
 import { AnalyticsService } from '../services/analytics';
 import { createLogger } from '../utils/logger';
+import type { AnalyticsFilterParams } from '../types/services';
 
 const router: Router = Router();
 const log = createLogger('admin-routes');
@@ -98,6 +99,121 @@ const getAdminLoginIdentifierKey = (identifier: string) => {
 const getAdminLoginIpKey = (ip: string) => {
   const safeIp = ip?.replace(/[^a-z0-9:._-]/gi, '') || 'unknown';
   return `admin-login:ip:${safeIp}`;
+};
+
+const ANALYTICS_MAX_DAYS = 60;
+const ANALYTICS_DAY_MS = 24 * 60 * 60 * 1000;
+
+type ParsedAnalyticsQuery = {
+  windowStart: Date;
+  windowEnd: Date;
+  windowDays: number;
+  filters: AnalyticsFilterParams;
+  appliedFilters: {
+    genders: string[];
+    platforms: string[];
+    signupSources: string[];
+    campaigns: string[];
+  };
+};
+
+const collectFilterValues = (...candidates: Array<unknown>): string[] => {
+  const values: string[] = [];
+
+  candidates.forEach((candidate) => {
+    if (!candidate) {
+      return;
+    }
+
+    if (Array.isArray(candidate)) {
+      candidate.forEach((entry) => {
+        if (typeof entry === 'string') {
+          entry
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean)
+            .forEach((value) => values.push(value));
+        }
+      });
+      return;
+    }
+
+    if (typeof candidate === 'string') {
+      candidate
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .forEach((value) => values.push(value));
+    }
+  });
+
+  return Array.from(new Set(values));
+};
+
+const parseAnalyticsQueryParams = (req: Request): ParsedAnalyticsQuery => {
+  const rawStart = typeof req.query.start === 'string' ? req.query.start : undefined;
+  const rawEnd = typeof req.query.end === 'string' ? req.query.end : undefined;
+  const rawDays = typeof req.query.days === 'string' ? req.query.days : undefined;
+  const daysParam = rawDays ? Number.parseInt(rawDays, 10) : NaN;
+
+  const genders = collectFilterValues(req.query.gender, req.query['gender[]']);
+  const platforms = collectFilterValues(req.query.platform, req.query['platform[]']);
+  const signupSources = collectFilterValues(req.query.signupSource, req.query['signupSource[]'], req.query.source, req.query['source[]']);
+  const campaigns = collectFilterValues(req.query.campaign, req.query['campaign[]'], req.query.campaignId, req.query['campaignId[]']);
+
+  const filters: AnalyticsFilterParams = {
+    genders: genders.length ? genders : undefined,
+    platforms: platforms.length ? platforms : undefined,
+    signupSources: signupSources.length ? signupSources : undefined,
+    campaigns: campaigns.length ? campaigns : undefined
+  };
+
+  let windowStart: Date;
+  let windowEnd: Date;
+  let windowDays: number;
+
+  if (rawStart && rawEnd) {
+    const parsedStart = new Date(rawStart);
+    const parsedEnd = new Date(rawEnd);
+
+    if (Number.isNaN(parsedStart.getTime()) || Number.isNaN(parsedEnd.getTime())) {
+      throw new Error('INVALID_RANGE:Invalid custom date range provided.');
+    }
+
+    windowStart = new Date(parsedStart.getTime());
+    windowStart.setUTCHours(0, 0, 0, 0);
+    windowEnd = new Date(parsedEnd.getTime());
+    windowEnd.setUTCHours(0, 0, 0, 0);
+
+    if (windowStart > windowEnd) {
+      throw new Error('INVALID_RANGE:Start date must be before end date.');
+    }
+
+    windowDays = Math.floor((windowEnd.getTime() - windowStart.getTime()) / ANALYTICS_DAY_MS) + 1;
+    if (windowDays > ANALYTICS_MAX_DAYS) {
+      throw new Error(`INVALID_RANGE:Date range cannot exceed ${ANALYTICS_MAX_DAYS} days.`);
+    }
+  } else {
+    const boundedDays = Number.isFinite(daysParam) && daysParam > 0 && daysParam <= ANALYTICS_MAX_DAYS ? daysParam : 14;
+    windowDays = boundedDays;
+
+    windowEnd = new Date();
+    windowEnd.setUTCHours(0, 0, 0, 0);
+    windowStart = new Date(windowEnd.getTime() - (windowDays - 1) * ANALYTICS_DAY_MS);
+  }
+
+  return {
+    windowStart,
+    windowEnd,
+    windowDays,
+    filters,
+    appliedFilters: {
+      genders: filters.genders ?? [],
+      platforms: filters.platforms ?? [],
+      signupSources: filters.signupSources ?? [],
+      campaigns: filters.campaigns ?? []
+    }
+  };
 };
 
 /* ---------- Public Routes (No Auth Required) ---------- */
@@ -683,68 +799,201 @@ router.delete('/status/incident', authenticateAdmin, adminCsrfProtection, requir
  */
 router.get('/analytics/summary', authenticateAdmin, requirePermission('view_analytics'), async (req: Request, res: Response) => {
   try {
-    const rawStart = typeof req.query.start === 'string' ? req.query.start : undefined;
-    const rawEnd = typeof req.query.end === 'string' ? req.query.end : undefined;
-    const daysParam = Number.parseInt(String(req.query.days ?? ''), 10);
-    const MAX_DAYS = 60;
-    const DAY_MS = 24 * 60 * 60 * 1000;
+    const parsed = parseAnalyticsQueryParams(req);
 
-    let windowStart: Date;
-    let windowEnd: Date;
-    let windowDays: number;
+    const analyticsWindowDays = Math.min(parsed.windowDays, ANALYTICS_MAX_DAYS);
+    const summary = await AnalyticsService.getSummary(analyticsWindowDays, parsed.filters);
+    const userGrowth = await DatabaseService.getUserGrowthMetrics(parsed.windowStart, parsed.windowEnd, parsed.filters);
 
-    if (rawStart && rawEnd) {
-      const parsedStart = new Date(rawStart);
-      const parsedEnd = new Date(rawEnd);
-
-      if (Number.isNaN(parsedStart.getTime()) || Number.isNaN(parsedEnd.getTime())) {
-        return res.status(400).json({ success: false, error: 'Invalid custom date range provided.' });
-      }
-
-      const normalizedStart = new Date(parsedStart.getTime());
-      normalizedStart.setUTCHours(0, 0, 0, 0);
-      const normalizedEnd = new Date(parsedEnd.getTime());
-      normalizedEnd.setUTCHours(0, 0, 0, 0);
-
-      if (normalizedStart > normalizedEnd) {
-        return res.status(400).json({ success: false, error: 'Start date must be before end date.' });
-      }
-
-      windowDays = Math.floor((normalizedEnd.getTime() - normalizedStart.getTime()) / DAY_MS) + 1;
-      if (windowDays > MAX_DAYS) {
-        return res.status(400).json({ success: false, error: `Date range cannot exceed ${MAX_DAYS} days.` });
-      }
-
-      windowStart = normalizedStart;
-      windowEnd = normalizedEnd;
-    } else {
-      const boundedDays = Number.isFinite(daysParam) && daysParam > 0 && daysParam <= MAX_DAYS ? daysParam : 14;
-      windowDays = boundedDays;
-
-      windowEnd = new Date();
-      windowEnd.setUTCHours(0, 0, 0, 0);
-      windowStart = new Date(windowEnd.getTime() - (windowDays - 1) * DAY_MS);
-    }
-
-    const analyticsWindowDays = Math.min(windowDays, MAX_DAYS);
-    const summary = await AnalyticsService.getSummary(analyticsWindowDays);
-    const userGrowth = await DatabaseService.getUserGrowthMetrics(windowStart, windowEnd);
+    const filterOptions = typeof DatabaseService.getAnalyticsFilterOptions === 'function'
+      ? await DatabaseService.getAnalyticsFilterOptions()
+      : { genders: [], platforms: [], signupSources: [], campaigns: [] };
 
     res.json({
       success: true,
       summary,
-      windowDays,
+      windowDays: parsed.windowDays,
       range: {
-        start: windowStart.toISOString().split('T')[0],
-        end: windowEnd.toISOString().split('T')[0]
+        start: parsed.windowStart.toISOString().split('T')[0],
+        end: parsed.windowEnd.toISOString().split('T')[0]
       },
-      userGrowth
+      userGrowth,
+      filters: {
+        applied: parsed.appliedFilters,
+        options: filterOptions
+      }
     });
   } catch (error: any) {
+    if (typeof error?.message === 'string' && error.message.startsWith('INVALID_RANGE:')) {
+      const [, message] = error.message.split(':');
+      return res.status(400).json({
+        success: false,
+        error: message || 'Invalid analytics date range.'
+      });
+    }
+
     log.error('Admin analytics summary error', { error });
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to fetch analytics summary'
+    });
+  }
+});
+
+/**
+ * Analytics retention cohorts
+ */
+router.get('/analytics/retention', authenticateAdmin, requirePermission('view_analytics'), async (req: Request, res: Response) => {
+  try {
+    const parsed = parseAnalyticsQueryParams(req);
+    const retention = await DatabaseService.getUserRetentionMetrics(parsed.windowStart, parsed.windowEnd, parsed.filters);
+
+    res.json({
+      success: true,
+      retention,
+      windowDays: parsed.windowDays,
+      range: {
+        start: parsed.windowStart.toISOString().split('T')[0],
+        end: parsed.windowEnd.toISOString().split('T')[0]
+      },
+      filters: {
+        applied: parsed.appliedFilters
+      }
+    });
+  } catch (error: any) {
+    if (typeof error?.message === 'string' && error.message.startsWith('INVALID_RANGE:')) {
+      const [, message] = error.message.split(':');
+      return res.status(400).json({
+        success: false,
+        error: message || 'Invalid analytics date range.'
+      });
+    }
+
+    log.error('Admin analytics retention error', { error });
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch retention analytics'
+    });
+  }
+});
+
+/**
+ * Analytics funnel overview
+ */
+router.get('/analytics/funnels', authenticateAdmin, requirePermission('view_analytics'), async (req: Request, res: Response) => {
+  try {
+    const parsed = parseAnalyticsQueryParams(req);
+    const funnelSummary = await DatabaseService.getFunnelMetrics(parsed.windowStart, parsed.windowEnd, parsed.filters);
+
+    res.json({
+      success: true,
+      funnelSummary,
+      windowDays: parsed.windowDays,
+      range: {
+        start: parsed.windowStart.toISOString().split('T')[0],
+        end: parsed.windowEnd.toISOString().split('T')[0]
+      },
+      filters: {
+        applied: parsed.appliedFilters
+      }
+    });
+  } catch (error: any) {
+    if (typeof error?.message === 'string' && error.message.startsWith('INVALID_RANGE:')) {
+      const [, message] = error.message.split(':');
+      return res.status(400).json({
+        success: false,
+        error: message || 'Invalid analytics date range.'
+      });
+    }
+
+    log.error('Admin analytics funnels error', { error });
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch funnel analytics'
+    });
+  }
+});
+
+router.get('/analytics/acquisition/map', authenticateAdmin, requirePermission('view_analytics'), async (req: Request, res: Response) => {
+  try {
+    const parsed = parseAnalyticsQueryParams(req);
+
+    if (typeof DatabaseService.getAcquisitionMapMetrics !== 'function') {
+      return res.status(501).json({
+        success: false,
+        error: 'Acquisition map analytics are not supported in this environment.'
+      });
+    }
+
+    const mapSummary = await DatabaseService.getAcquisitionMapMetrics(parsed.windowStart, parsed.windowEnd, parsed.filters);
+
+    res.json({
+      success: true,
+      map: mapSummary,
+      windowDays: parsed.windowDays,
+      range: {
+        start: parsed.windowStart.toISOString().split('T')[0],
+        end: parsed.windowEnd.toISOString().split('T')[0]
+      },
+      filters: {
+        applied: parsed.appliedFilters
+      }
+    });
+  } catch (error: any) {
+    if (typeof error?.message === 'string' && error.message.startsWith('INVALID_RANGE:')) {
+      const [, message] = error.message.split(':');
+      return res.status(400).json({
+        success: false,
+        error: message || 'Invalid analytics date range.'
+      });
+    }
+
+    log.error('Admin acquisition map analytics error', { error });
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch acquisition map analytics'
+    });
+  }
+});
+
+router.get('/analytics/acquisition/sources', authenticateAdmin, requirePermission('view_analytics'), async (req: Request, res: Response) => {
+  try {
+    const parsed = parseAnalyticsQueryParams(req);
+
+    if (typeof DatabaseService.getAcquisitionSourceMetrics !== 'function') {
+      return res.status(501).json({
+        success: false,
+        error: 'Acquisition source analytics are not supported in this environment.'
+      });
+    }
+
+    const sourcesSummary = await DatabaseService.getAcquisitionSourceMetrics(parsed.windowStart, parsed.windowEnd, parsed.filters);
+
+    res.json({
+      success: true,
+      sources: sourcesSummary,
+      windowDays: parsed.windowDays,
+      range: {
+        start: parsed.windowStart.toISOString().split('T')[0],
+        end: parsed.windowEnd.toISOString().split('T')[0]
+      },
+      filters: {
+        applied: parsed.appliedFilters
+      }
+    });
+  } catch (error: any) {
+    if (typeof error?.message === 'string' && error.message.startsWith('INVALID_RANGE:')) {
+      const [, message] = error.message.split(':');
+      return res.status(400).json({
+        success: false,
+        error: message || 'Invalid analytics date range.'
+      });
+    }
+
+    log.error('Admin acquisition source analytics error', { error });
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch acquisition source analytics'
     });
   }
 });
@@ -985,90 +1234,98 @@ router.post('/ban', authenticateAdmin, adminCsrfProtection, requirePermission('b
 });
 
 /**
- * Unban a user
- */
-router.post('/unban', authenticateAdmin, adminCsrfProtection, requirePermission('ban_users'), async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.body;
-    const adminId = req.admin?.adminId;
-
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: 'userId required'
-      });
-    }
-
-    const success = await DatabaseService.unbanUser(userId, adminId);
-
-    if (!success) {
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to unban user'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'User unbanned successfully'
-    });
-  } catch (error: any) {
-    log.error('Admin unban user error', { error });
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Failed to unban user'
-    });
-  }
-});
-
-/**
- * Get user ban history
- */
-router.get('/bans/:userId', authenticateAdmin, requirePermission('view_users'), async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const banHistory = await DatabaseService.getUserBanHistory(userId);
-    
-    res.json({
-      success: true,
-      banHistory,
-      total: banHistory.length
-    });
-  } catch (error: any) {
-    log.error('Admin ban history fetch error', { error });
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Failed to fetch ban history'
-    });
-  }
-});
-
-/**
- * Get all users with pagination
+ * Get users with optional filters and analytics snapshot
  */
 router.get('/users', authenticateAdmin, requirePermission('view_users'), async (req: Request, res: Response) => {
   try {
-    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
     const status = typeof req.query.status === 'string' ? req.query.status.trim().toLowerCase() : undefined;
+    const includeAnalyticsParam = typeof req.query.includeAnalytics === 'string' ? req.query.includeAnalytics.toLowerCase() : undefined;
 
-    let users;
-
-    if (search) {
-      users = await DatabaseService.searchUsers(search);
-      if (status && status !== 'all') {
-        users = users.filter((user: any) => user.status === status);
-      }
-    } else if (status && status !== 'all') {
-      users = await DatabaseService.getUsersByStatus(status);
-    } else {
-      users = await DatabaseService.getAllUsers();
+    let users = search ? await DatabaseService.searchUsers(search) : await DatabaseService.getAllUsers();
+    if (!Array.isArray(users)) {
+      users = [];
     }
 
-    res.json({
+    if (status && status !== 'all') {
+      const allowedStatuses = new Set(['active', 'banned', 'suspended']);
+      if (!allowedStatuses.has(status)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid status filter'
+        });
+      }
+
+      users = users.filter((user: any) => {
+        const userStatus = typeof user?.status === 'string' ? user.status.toLowerCase() : 'active';
+        return userStatus === status;
+      });
+    }
+
+    const shouldIncludeAnalytics =
+      includeAnalyticsParam === 'true' ||
+      includeAnalyticsParam === '1' ||
+      typeof req.query.start === 'string' ||
+      typeof req.query.end === 'string' ||
+      typeof req.query.days === 'string' ||
+      typeof req.query.gender !== 'undefined' ||
+      typeof req.query.platform !== 'undefined' ||
+      typeof req.query.signupSource !== 'undefined' ||
+      typeof req.query.campaign !== 'undefined' ||
+      typeof req.query['gender[]'] !== 'undefined' ||
+      typeof req.query['platform[]'] !== 'undefined' ||
+      typeof req.query['signupSource[]'] !== 'undefined' ||
+      typeof req.query['campaign[]'] !== 'undefined';
+
+    const responsePayload: Record<string, unknown> = {
       success: true,
       users,
       total: users.length
-    });
+    };
+
+    if (shouldIncludeAnalytics) {
+      try {
+        const parsed = parseAnalyticsQueryParams(req);
+        const analyticsWindowDays = Math.min(parsed.windowDays, ANALYTICS_MAX_DAYS);
+        const summary = await AnalyticsService.getSummary(analyticsWindowDays, parsed.filters);
+        const userGrowth = await DatabaseService.getUserGrowthMetrics(parsed.windowStart, parsed.windowEnd, parsed.filters);
+
+        const analyticsPayload: Record<string, unknown> = {
+          summary,
+          windowDays: parsed.windowDays,
+          range: {
+            start: parsed.windowStart.toISOString().split('T')[0],
+            end: parsed.windowEnd.toISOString().split('T')[0]
+          },
+          userGrowth,
+          filters: {
+            applied: parsed.appliedFilters
+          }
+        };
+
+        if (typeof DatabaseService.getAnalyticsFilterOptions === 'function') {
+          const filterOptions = await DatabaseService.getAnalyticsFilterOptions();
+          analyticsPayload.filters = {
+            ...(analyticsPayload.filters as Record<string, unknown>),
+            options: filterOptions
+          };
+        }
+
+        responsePayload.analytics = analyticsPayload;
+      } catch (analyticsError: any) {
+        if (typeof analyticsError?.message === 'string' && analyticsError.message.startsWith('INVALID_RANGE:')) {
+          const [, message] = analyticsError.message.split(':');
+          return res.status(400).json({
+            success: false,
+            error: message || 'Invalid analytics date range.'
+          });
+        }
+
+        log.error('Admin users analytics snapshot error', { error: analyticsError });
+      }
+    }
+
+    res.json(responsePayload);
   } catch (error: any) {
     log.error('Admin users fetch error', { error });
     res.status(500).json({
@@ -1084,14 +1341,7 @@ router.get('/users', authenticateAdmin, requirePermission('view_users'), async (
 router.put('/users/:userId/role', authenticateAdmin, adminCsrfProtection, requirePermission('manage_users'), async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const { role } = req.body as { role?: string };
-
-    if (!role || !['guest', 'user', 'admin', 'super_admin'].includes(role)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid role'
-      });
-    }
+    const { role } = req.body;
 
     const actingAdminRole = normalizeRole(req.admin?.role);
     const isActingSuperAdmin = actingAdminRole === 'super_admin';

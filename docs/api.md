@@ -219,6 +219,73 @@ Get all user reports.
 ### PUT /api/admin/reports/:id
 Update report status.
 
+### GET /api/admin/analytics/acquisition/map
+Fetch aggregated signup distribution by country and region. Accepts the same window and filter query parameters as other analytics endpoints (`days`, `start`, `end`, `gender`, `platform`, `signupSource`, `campaign`).
+
+**Response:**
+```json
+{
+  "success": true,
+  "map": {
+    "window": {
+      "start": "2024-09-01",
+      "end": "2024-09-14",
+      "days": 14
+    },
+    "totalSignups": 4820,
+    "unknown": 97,
+    "countries": [
+      {
+        "countryCode": "US",
+        "name": "United States",
+        "signups": 1820,
+        "share": 37.7,
+        "regions": [
+          {
+            "regionCode": "CA",
+            "subdivisionCode": "US-CA",
+            "name": "California",
+            "signups": 460,
+            "share": 25.3
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### GET /api/admin/analytics/acquisition/sources
+Fetch top referral sources (source, medium, campaign) for the selected window. Supports the same filter query parameters. Includes previous-window comparisons when available.
+
+**Response:**
+```json
+{
+  "success": true,
+  "sources": {
+    "window": {
+      "start": "2024-09-01",
+      "end": "2024-09-14",
+      "days": 14
+    },
+    "totalSignups": 4820,
+    "uniqueSources": 38,
+    "unknown": 420,
+    "sources": [
+      {
+        "source": "google",
+        "medium": "cpc",
+        "campaign": "back_to_school",
+        "signups": 640,
+        "share": 13.3,
+        "previousSignups": 510,
+        "trendDelta": 25.5
+      }
+    ]
+  }
+}
+```
+
 ## WebSocket Events
 
 ### Client to Server Events
