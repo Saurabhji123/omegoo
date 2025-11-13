@@ -337,7 +337,7 @@ router.post('/login', async (req: Request, res: Response) => {
     const allowedAdminRoles = new Set(['admin', 'super_admin']);
     const linkedUserRole = linkedUser ? resolveUserRole(linkedUser) : 'guest';
 
-    if (linkedUser && !allowedAdminRoles.has(linkedUserRole)) {
+    if (linkedUser && !allowedAdminRoles.has(linkedUserRole) && !isOwnerEnvLoginAttempt) {
       log.warn('Admin login rejected: user lacks admin privileges', {
         userId: linkedUser.id,
         role: linkedUserRole
@@ -348,10 +348,23 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
 
-    if (!admin && linkedUser && allowedAdminRoles.has(linkedUserRole)) {
+    if (!admin && linkedUser && (allowedAdminRoles.has(linkedUserRole) || isOwnerEnvLoginAttempt)) {
+      const targetRole = isOwnerEnvLoginAttempt ? 'super_admin' : (linkedUserRole as 'admin' | 'super_admin');
+      if (!allowedAdminRoles.has(linkedUserRole) && isOwnerEnvLoginAttempt) {
+        try {
+          await DatabaseService.updateUserRole(linkedUser.id, 'super_admin');
+          linkedUser.role = 'super_admin';
+        } catch (promoteError) {
+          log.warn('Failed to promote linked user to super_admin during owner login', {
+            error: promoteError,
+            userId: linkedUser.id
+          });
+        }
+      }
+
       admin = await DatabaseService.syncAdminAccessForRole(
         linkedUser.id,
-        linkedUserRole as 'admin' | 'super_admin'
+        targetRole
       );
     }
 
@@ -421,7 +434,9 @@ router.post('/login', async (req: Request, res: Response) => {
     const adminNormalizedRole = normalizeRole(admin.role);
 
     let effectiveRole: 'admin' | 'super_admin';
-    if (linkedUser && allowedAdminRoles.has(linkedUserRole)) {
+    if (isOwnerEnvLoginAttempt) {
+      effectiveRole = 'super_admin';
+    } else if (linkedUser && allowedAdminRoles.has(linkedUserRole)) {
       effectiveRole = linkedUserRole as 'admin' | 'super_admin';
     } else if (adminNormalizedRole && allowedAdminRoles.has(adminNormalizedRole)) {
       effectiveRole = adminNormalizedRole as 'admin' | 'super_admin';
@@ -497,7 +512,7 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
 
-    if (linkedUser && allowedAdminRoles.has(linkedUserRole)) {
+    if (linkedUser && (allowedAdminRoles.has(linkedUserRole) || isOwnerEnvLoginAttempt)) {
       const refreshedAdmin = await DatabaseService.syncAdminAccessForRole(
         linkedUser.id,
         effectiveRole
@@ -507,6 +522,15 @@ router.post('/login', async (req: Request, res: Response) => {
       } else {
         admin.role = effectiveRole;
         admin.email = linkedUser.email || admin.email;
+      }
+    } else if (isOwnerEnvLoginAttempt && admin?.userId) {
+      try {
+        await DatabaseService.updateUserRole(admin.userId, 'super_admin');
+      } catch (syncRoleError) {
+        log.warn('Failed to sync user role for owner login', {
+          error: syncRoleError,
+          adminId
+        });
       }
     }
 
