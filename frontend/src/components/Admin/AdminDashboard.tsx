@@ -72,6 +72,27 @@ type AnalyticsSeries = {
   daily: Array<{ date: string; count: number }>;
 };
 
+type UserGrowthDay = {
+  date: string;
+  newUsers: number;
+  returningUsers: number;
+  totalUsers: number;
+};
+
+type UserGrowthSummary = {
+  window: {
+    start: string;
+    end: string;
+    days: number;
+  };
+  totals: {
+    newUsers: number;
+    returningUsers: number;
+    totalUsers: number;
+  };
+  daily: UserGrowthDay[];
+};
+
 type CoinAdjustment = {
   id: string;
   userId: string;
@@ -132,6 +153,24 @@ const toReadableDateTime = (iso?: string | null): string => {
   return date.toLocaleString();
 };
 
+const toDateInputValue = (date: Date): string => {
+  const iso = date.toISOString();
+  return iso.split('T')[0] || '';
+};
+
+const toStartOfDayIso = (value: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) {
+    return undefined;
+  }
+
+  return date.toISOString();
+};
+
 const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>('overview');
 
@@ -141,6 +180,8 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   const [analytics, setAnalytics] = useState<any | null>(null);
   const [statusSummary, setStatusSummary] = useState<any | null>(null);
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSeries[]>([]);
+  const [userGrowth, setUserGrowth] = useState<UserGrowthSummary | null>(null);
+  const [analyticsWindow, setAnalyticsWindow] = useState<{ start: string; end: string; days: number } | null>(null);
 
   const [usersLoading, setUsersLoading] = useState(false);
   const [bansLoading, setBansLoading] = useState(false);
@@ -153,7 +194,6 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   const [incidentMsg, setIncidentMsg] = useState('');
   const [incidentSeverity, setIncidentSeverity] = useState<'info' | 'warning' | 'critical'>('info');
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [analyticsRange, setAnalyticsRange] = useState(14);
   const [reportStatusFilter, setReportStatusFilter] = useState<'all' | 'pending' | 'reviewed' | 'resolved'>('pending');
   const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'banned'>('all');
   const [reportStatusDrafts, setReportStatusDrafts] = useState<Record<string, 'pending' | 'reviewed' | 'resolved'>>({});
@@ -167,9 +207,22 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   const [incidentFallbackUrl, setIncidentFallbackUrl] = useState('');
   const [roleDraft, setRoleDraft] = useState<'guest' | 'user' | 'admin' | 'super_admin'>('user');
   const [roleUpdating, setRoleUpdating] = useState(false);
+  const [analyticsMode, setAnalyticsMode] = useState<'14' | '30' | 'custom'>('14');
+  const [customRange, setCustomRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [customRangeDraft, setCustomRangeDraft] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [customRangePanelOpen, setCustomRangePanelOpen] = useState(false);
 
   const selectClassName =
     'appearance-none rounded-xl border border-white/15 bg-slate-900/70 px-4 py-2 text-sm text-white/90 shadow-sm transition-colors duration-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-60';
+
+  const analyticsModeButtonClass = (mode: '14' | '30' | 'custom') => {
+    const isActive = analyticsMode === mode;
+    const base = 'rounded-full border px-4 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-indigo-400/40';
+    if (isActive) {
+      return `${base} border-indigo-400 bg-indigo-500/20 text-white shadow-sm shadow-indigo-900/40`;
+    }
+    return `${base} border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:bg-white/10`;
+  };
 
   const adminPermissions = Array.isArray(admin?.permissions) ? admin.permissions : [];
   const canManageUsers = admin?.role === 'super_admin' || adminPermissions.includes('manage_users');
@@ -288,28 +341,88 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
     }
   }, [reportStatusFilter, showNotice]);
 
-  const fetchAnalytics = useCallback(async () => {
-    setAnalyticsLoading(true);
-    try {
-      const [statsRes, summaryRes] = await Promise.all([
-        adminApi.get('/analytics'),
-        adminApi.get('/analytics/summary', { params: { days: analyticsRange } })
-      ]);
+  const fetchAnalytics = useCallback(
+    async (options?: { showCustomRangeWarning?: boolean }) => {
+      const params: Record<string, string> = {};
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      let requestedWindowDays = 0;
 
-      if (statsRes.data?.success) {
-        setAnalytics(statsRes.data.data || statsRes.data.summary || null);
+      if (analyticsMode === 'custom') {
+        if (!customRange.start || !customRange.end) {
+          if (options?.showCustomRangeWarning) {
+            showNotice({ kind: 'error', message: 'Select a custom range before refreshing analytics.' });
+          }
+          return;
+        }
+
+        const startIso = toStartOfDayIso(customRange.start);
+        const endIso = toStartOfDayIso(customRange.end);
+
+        if (!startIso || !endIso) {
+          if (options?.showCustomRangeWarning) {
+            showNotice({ kind: 'error', message: 'Custom range is invalid. Please pick valid dates.' });
+          }
+          return;
+        }
+
+        params.start = startIso;
+        params.end = endIso;
+
+        const startDate = new Date(startIso);
+        const endDate = new Date(endIso);
+        requestedWindowDays = Math.floor((endDate.getTime() - startDate.getTime()) / DAY_MS) + 1;
+      } else {
+        params.days = analyticsMode;
+        requestedWindowDays = Number(analyticsMode);
       }
 
-      if (summaryRes.data?.success) {
-        setAnalyticsSummary(summaryRes.data.summary || []);
+      setAnalyticsLoading(true);
+      try {
+        const [statsRes, summaryRes] = await Promise.all([
+          adminApi.get('/analytics'),
+          adminApi.get('/analytics/summary', { params })
+        ]);
+
+        if (statsRes.data?.success) {
+          setAnalytics(statsRes.data.data || statsRes.data.summary || null);
+        }
+
+        if (summaryRes.data?.success) {
+          setAnalyticsSummary(summaryRes.data.summary || []);
+          setUserGrowth(summaryRes.data.userGrowth ?? null);
+
+          const windowDays: number = Number(summaryRes.data.windowDays) || summaryRes.data?.userGrowth?.window?.days || requestedWindowDays || 0;
+          const rangeStart: string =
+            summaryRes.data?.range?.start ?? summaryRes.data?.userGrowth?.window?.start ?? (analyticsMode === 'custom' ? customRange.start : '');
+          const rangeEnd: string =
+            summaryRes.data?.range?.end ?? summaryRes.data?.userGrowth?.window?.end ?? (analyticsMode === 'custom' ? customRange.end : '');
+
+          if (rangeStart || rangeEnd || windowDays) {
+            setAnalyticsWindow({
+              start: rangeStart,
+              end: rangeEnd,
+              days: windowDays
+            });
+          } else {
+            setAnalyticsWindow(null);
+          }
+        } else {
+          setAnalyticsSummary([]);
+          setUserGrowth(null);
+          setAnalyticsWindow(null);
+        }
+      } catch (err) {
+        console.error('Fetch analytics failed', err);
+        setAnalyticsSummary([]);
+        setUserGrowth(null);
+        setAnalyticsWindow(null);
+        showNotice({ kind: 'error', message: 'Unable to load analytics.' });
+      } finally {
+        setAnalyticsLoading(false);
       }
-    } catch (err) {
-      console.error('Fetch analytics failed', err);
-      showNotice({ kind: 'error', message: 'Unable to load analytics.' });
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  }, [analyticsRange, showNotice]);
+    },
+    [analyticsMode, customRange.end, customRange.start, showNotice]
+  );
 
   const fetchCoinHistory = useCallback(async (userId: string) => {
     try {
@@ -324,6 +437,75 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
       console.error('Fetch coin history failed', err);
     }
   }, []);
+
+  const handlePresetAnalyticsRange = useCallback((mode: '14' | '30') => {
+    setAnalyticsMode(mode);
+    setCustomRangePanelOpen(false);
+  }, []);
+
+  const handleCustomRangeClick = useCallback(() => {
+    setAnalyticsMode('custom');
+    setCustomRangePanelOpen(true);
+    setCustomRangeDraft((current) => {
+      if (current.start && current.end) {
+        return current;
+      }
+      const now = new Date();
+      const start = new Date(now.getTime() - 13 * 24 * 60 * 60 * 1000);
+      return {
+        start: toDateInputValue(start),
+        end: toDateInputValue(now)
+      };
+    });
+  }, []);
+
+  const applyCustomRange = useCallback(() => {
+    if (!customRangeDraft.start || !customRangeDraft.end) {
+      showNotice({ kind: 'error', message: 'Select both start and end dates.' });
+      return;
+    }
+
+    const startIso = toStartOfDayIso(customRangeDraft.start);
+    const endIso = toStartOfDayIso(customRangeDraft.end);
+
+    if (!startIso || !endIso) {
+      showNotice({ kind: 'error', message: 'Custom range is invalid. Please choose valid dates.' });
+      return;
+    }
+
+    const startDate = new Date(startIso);
+    const endDate = new Date(endIso);
+    if (startDate > endDate) {
+      showNotice({ kind: 'error', message: 'Start date must be before or equal to end date.' });
+      return;
+    }
+
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const diffDays = Math.floor((endDate.getTime() - startDate.getTime()) / DAY_MS) + 1;
+    if (diffDays > 60) {
+      showNotice({ kind: 'error', message: 'Custom range cannot exceed 60 days.' });
+      return;
+    }
+
+    setCustomRange({ start: customRangeDraft.start, end: customRangeDraft.end });
+    setCustomRangePanelOpen(false);
+  }, [customRangeDraft, showNotice]);
+
+  const cancelCustomRange = useCallback(() => {
+    setCustomRangePanelOpen(false);
+    setCustomRangeDraft((current) => {
+      if (customRange.start && customRange.end) {
+        if (current.start === customRange.start && current.end === customRange.end) {
+          return current;
+        }
+        return { start: customRange.start, end: customRange.end };
+      }
+      return current;
+    });
+    if (!customRange.start || !customRange.end) {
+      setAnalyticsMode('14');
+    }
+  }, [customRange.end, customRange.start]);
 
   useEffect(() => {
     if (activeTab === 'overview') {
@@ -378,6 +560,22 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
       setCoinForm({ delta: '', reason: '' });
     }
   }, [fetchCoinHistory, selectedUser]);
+
+  useEffect(() => {
+    if (analyticsMode !== 'custom') {
+      setCustomRangePanelOpen(false);
+      return;
+    }
+
+    if (customRange.start && customRange.end) {
+      setCustomRangeDraft((current) => {
+        if (current.start === customRange.start && current.end === customRange.end) {
+          return current;
+        }
+        return { start: customRange.start, end: customRange.end };
+      });
+    }
+  }, [analyticsMode, customRange.end, customRange.start]);
 
   useEffect(() => {
     if (selectedUser?.tier) {
@@ -485,6 +683,51 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
     return coinHistory[selectedUser.id] || [];
   }, [coinHistory, selectedUser]);
 
+  const todayInputValue = useMemo(() => toDateInputValue(new Date()), []);
+
+  const analyticsRangeLabel = useMemo(() => {
+    if (analyticsWindow?.start && analyticsWindow?.end) {
+      const sameDay = analyticsWindow.start === analyticsWindow.end;
+      const rangeLabel = sameDay ? analyticsWindow.start : `${analyticsWindow.start} → ${analyticsWindow.end}`;
+      if (analyticsWindow.days > 0) {
+        const daySuffix = analyticsWindow.days === 1 ? '' : 's';
+        return `${rangeLabel} · ${analyticsWindow.days} day${daySuffix}`;
+      }
+      return rangeLabel;
+    }
+
+    if (analyticsMode === '14') {
+      return 'Past 14 days';
+    }
+    if (analyticsMode === '30') {
+      return 'Past 30 days';
+    }
+
+    if (customRange.start && customRange.end) {
+      return `${customRange.start} → ${customRange.end}`;
+    }
+
+    return 'Custom range';
+  }, [analyticsMode, analyticsWindow, customRange.end, customRange.start]);
+
+  const userGrowthChartData = useMemo(() => {
+    if (!userGrowth?.daily?.length) {
+      return [] as Array<{
+        date: string;
+        newUsers: number;
+        returningUsers: number;
+        totalUsers: number;
+      }>;
+    }
+
+    return userGrowth.daily.map((day) => ({
+      date: day.date,
+      newUsers: day.newUsers,
+      returningUsers: day.returningUsers,
+      totalUsers: day.totalUsers
+    }));
+  }, [userGrowth]);
+
   const analyticsChartData = useMemo(() => {
     if (!analyticsSummary.length) {
       return [] as Array<Record<string, number | string>>;
@@ -503,6 +746,8 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
 
     return Array.from(buckets.values()).sort((a, b) => String(a.date).localeCompare(String(b.date)));
   }, [analyticsSummary]);
+
+  const userGrowthTotals = userGrowth?.totals;
 
   const analyticsSeriesKeys = useMemo(() => analyticsSummary.map((series) => series.type), [analyticsSummary]);
 
@@ -1450,25 +1695,98 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
           {activeTab === 'analytics' && (
             <div className="space-y-6 text-white animate-fade-in">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
                   <h2 className="text-xl font-semibold">Analytics snapshot</h2>
-                  <select
-                    value={analyticsRange}
-                    onChange={(event) => setAnalyticsRange(Number(event.target.value))}
-                    className={`${selectClassName} rounded-full px-4 py-2 text-xs font-semibold`}
-                  >
-                    <option value={7}>7 days</option>
-                    <option value={14}>14 days</option>
-                    <option value={30}>30 days</option>
-                  </select>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePresetAnalyticsRange('14')}
+                      className={analyticsModeButtonClass('14')}
+                    >
+                      14 days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePresetAnalyticsRange('30')}
+                      className={analyticsModeButtonClass('30')}
+                    >
+                      30 days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCustomRangeClick}
+                      className={analyticsModeButtonClass('custom')}
+                    >
+                      <span>Custom range</span>
+                      {analyticsMode === 'custom' && customRange.start && customRange.end && (
+                        <span className="ml-2 text-[10px] uppercase tracking-wide text-white/50">
+                          {customRange.start} → {customRange.end}
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <button
-                  onClick={fetchAnalytics}
+                  onClick={() => fetchAnalytics({ showCustomRangeWarning: true })}
                   className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10"
                 >
                   Refresh
                 </button>
               </div>
+
+              {analyticsMode === 'custom' && customRangePanelOpen && (
+                <div className="rounded-2xl border border-indigo-500/40 bg-indigo-500/10 p-5 text-sm text-white/80">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs uppercase tracking-wide text-indigo-100/70">Choose up to 60 days</p>
+                    <span className="text-xs uppercase tracking-wide text-indigo-100/60">
+                      {customRangeDraft.start && customRangeDraft.end
+                        ? `${customRangeDraft.start} → ${customRangeDraft.end}`
+                        : analyticsRangeLabel}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <label className="space-y-2 text-xs uppercase tracking-wide text-white/60">
+                      Start date
+                      <input
+                        type="date"
+                        value={customRangeDraft.start}
+                        max={customRangeDraft.end || todayInputValue}
+                        onChange={(event) =>
+                          setCustomRangeDraft((current) => ({ ...current, start: event.target.value }))
+                        }
+                        className="w-full rounded-xl border border-indigo-400/40 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                      />
+                    </label>
+                    <label className="space-y-2 text-xs uppercase tracking-wide text-white/60">
+                      End date
+                      <input
+                        type="date"
+                        value={customRangeDraft.end}
+                        min={customRangeDraft.start || undefined}
+                        max={todayInputValue}
+                        onChange={(event) =>
+                          setCustomRangeDraft((current) => ({ ...current, end: event.target.value }))
+                        }
+                        className="w-full rounded-xl border border-indigo-400/40 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                      />
+                    </label>
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={applyCustomRange}
+                      className="rounded-full bg-indigo-500/80 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-indigo-900/40 transition hover:bg-indigo-500"
+                    >
+                      Apply range
+                    </button>
+                    <button
+                      onClick={cancelCustomRange}
+                      className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {analyticsLoading && (
                 <div className="rounded-2xl border border-white/10 bg-black/25 p-6 text-center text-white/60">
@@ -1497,8 +1815,62 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-5 transition-transform duration-300 ease-out hover:border-white/20 hover:shadow-xl">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
+                      <h3 className="text-lg font-semibold text-white">User growth</h3>
+                      <p className="text-xs uppercase tracking-wide text-white/50">New vs returning users</p>
+                    </div>
+                    <div className="text-right text-[11px] uppercase tracking-wide text-white/50">{analyticsRangeLabel}</div>
+                  </div>
+
+                  {userGrowthTotals ? (
+                    <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                      <div className="rounded-2xl border border-sky-400/40 bg-sky-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wide text-sky-200/80">New users</p>
+                        <p className="mt-2 text-lg font-semibold text-white">{userGrowthTotals.newUsers.toLocaleString()}</p>
+                      </div>
+                      <div className="rounded-2xl border border-orange-400/40 bg-orange-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wide text-orange-200/80">Returning users</p>
+                        <p className="mt-2 text-lg font-semibold text-white">{userGrowthTotals.returningUsers.toLocaleString()}</p>
+                      </div>
+                      <div className="rounded-2xl border border-purple-400/40 bg-purple-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wide text-purple-200/80">Window total</p>
+                        <p className="mt-2 text-lg font-semibold text-white">{userGrowthTotals.totalUsers.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-xl bg-white/5 px-4 py-3 text-sm text-white/60">
+                      No aggregate growth totals available for this window yet.
+                    </div>
+                  )}
+
+                  <div className="mt-4 h-72">
+                    {userGrowthChartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={userGrowthChartData} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
+                          <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+                          <XAxis dataKey="date" stroke="#cbd5f5" tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.2)' }} />
+                          <YAxis allowDecimals={false} stroke="#cbd5f5" tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.2)' }} />
+                          <Tooltip labelStyle={{ color: '#111827' }} contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', color: '#e2e8f0' }} />
+                          <Legend wrapperStyle={{ color: '#cbd5f5' }} />
+                          <Line type="monotone" dataKey="newUsers" name="New users" stroke="#38bdf8" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
+                          <Line type="monotone" dataKey="returningUsers" name="Returning users" stroke="#f97316" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
+                          <Line type="monotone" dataKey="totalUsers" name="Daily total" stroke="#8b5cf6" strokeWidth={2} dot={false} activeDot={{ r: 5 }} strokeDasharray="6 3" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="rounded-xl bg-white/5 px-4 py-3 text-sm text-white/60">
+                        No user growth data for the selected window.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!analyticsLoading && (
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-5 transition-transform duration-300 ease-out hover:border-white/20 hover:shadow-xl">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
                       <h3 className="text-lg font-semibold text-white">Daily trends</h3>
-                      <p className="text-xs uppercase tracking-wide text-white/50">Past {analyticsRange} days</p>
+                      <p className="text-xs uppercase tracking-wide text-white/50">{analyticsRangeLabel}</p>
                     </div>
                   </div>
                   <div className="mt-4 h-72">

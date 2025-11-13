@@ -683,15 +683,62 @@ router.delete('/status/incident', authenticateAdmin, adminCsrfProtection, requir
  */
 router.get('/analytics/summary', authenticateAdmin, requirePermission('view_analytics'), async (req: Request, res: Response) => {
   try {
+    const rawStart = typeof req.query.start === 'string' ? req.query.start : undefined;
+    const rawEnd = typeof req.query.end === 'string' ? req.query.end : undefined;
     const daysParam = Number.parseInt(String(req.query.days ?? ''), 10);
-    const boundedDays = Number.isFinite(daysParam) && daysParam > 0 && daysParam <= 60 ? daysParam : 7;
+    const MAX_DAYS = 60;
+    const DAY_MS = 24 * 60 * 60 * 1000;
 
-    const summary = await AnalyticsService.getSummary(boundedDays);
+    let windowStart: Date;
+    let windowEnd: Date;
+    let windowDays: number;
+
+    if (rawStart && rawEnd) {
+      const parsedStart = new Date(rawStart);
+      const parsedEnd = new Date(rawEnd);
+
+      if (Number.isNaN(parsedStart.getTime()) || Number.isNaN(parsedEnd.getTime())) {
+        return res.status(400).json({ success: false, error: 'Invalid custom date range provided.' });
+      }
+
+      const normalizedStart = new Date(parsedStart.getTime());
+      normalizedStart.setUTCHours(0, 0, 0, 0);
+      const normalizedEnd = new Date(parsedEnd.getTime());
+      normalizedEnd.setUTCHours(0, 0, 0, 0);
+
+      if (normalizedStart > normalizedEnd) {
+        return res.status(400).json({ success: false, error: 'Start date must be before end date.' });
+      }
+
+      windowDays = Math.floor((normalizedEnd.getTime() - normalizedStart.getTime()) / DAY_MS) + 1;
+      if (windowDays > MAX_DAYS) {
+        return res.status(400).json({ success: false, error: `Date range cannot exceed ${MAX_DAYS} days.` });
+      }
+
+      windowStart = normalizedStart;
+      windowEnd = normalizedEnd;
+    } else {
+      const boundedDays = Number.isFinite(daysParam) && daysParam > 0 && daysParam <= MAX_DAYS ? daysParam : 14;
+      windowDays = boundedDays;
+
+      windowEnd = new Date();
+      windowEnd.setUTCHours(0, 0, 0, 0);
+      windowStart = new Date(windowEnd.getTime() - (windowDays - 1) * DAY_MS);
+    }
+
+    const analyticsWindowDays = Math.min(windowDays, MAX_DAYS);
+    const summary = await AnalyticsService.getSummary(analyticsWindowDays);
+    const userGrowth = await DatabaseService.getUserGrowthMetrics(windowStart, windowEnd);
 
     res.json({
       success: true,
       summary,
-      windowDays: boundedDays
+      windowDays,
+      range: {
+        start: windowStart.toISOString().split('T')[0],
+        end: windowEnd.toISOString().split('T')[0]
+      },
+      userGrowth
     });
   } catch (error: any) {
     log.error('Admin analytics summary error', { error });

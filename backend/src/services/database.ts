@@ -1,5 +1,6 @@
 import { Pool, PoolClient } from 'pg';
 import bcrypt from 'bcryptjs';
+import type { UserGrowthSummary } from '../types/services';
 
 export class DatabaseService {
   private static pool: Pool;
@@ -353,6 +354,25 @@ export class DatabaseService {
       totalReports: 0,
       pendingReports: 0,
       totalSessions: 0
+    };
+  }
+
+  static async getUserGrowthMetrics(start: Date, end: Date): Promise<UserGrowthSummary> {
+    console.warn('⚠️ getUserGrowthMetrics called on PostgreSQL - use MongoDB for analytics');
+    void start;
+    void end;
+    return {
+      window: {
+        start: '',
+        end: '',
+        days: 0
+      },
+      totals: {
+        newUsers: 0,
+        returningUsers: 0,
+        totalUsers: 0
+      },
+      daily: []
     };
   }
 

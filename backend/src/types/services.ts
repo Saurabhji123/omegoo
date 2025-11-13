@@ -85,6 +85,9 @@ export interface DatabaseService {
   setUserOnline(userId: string, socketId: string): Promise<void>;
   setUserOffline(userId: string): Promise<void>;
   getOnlineUsers(): Promise<User[]>;
+
+  // Analytics helpers
+  getUserGrowthMetrics?(start: Date, end: Date): Promise<UserGrowthSummary>;
 }
 
 export interface RedisService {
@@ -118,4 +121,25 @@ export interface RedisService {
   getAdminSession?(sessionId: string): Promise<any | null>;
   deleteAdminSession?(sessionId: string): Promise<void>;
   refreshAdminSession?(sessionId: string, ttlSeconds: number): Promise<any | null>;
+}
+
+export interface UserGrowthDay {
+  date: string;
+  newUsers: number;
+  returningUsers: number;
+  totalUsers: number;
+}
+
+export interface UserGrowthSummary {
+  window: {
+    start: string;
+    end: string;
+    days: number;
+  };
+  totals: {
+    newUsers: number;
+    returningUsers: number;
+    totalUsers: number;
+  };
+  daily: UserGrowthDay[];
 }

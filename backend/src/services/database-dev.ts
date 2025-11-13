@@ -1,5 +1,34 @@
 // Simple in-memory database service for development
 import bcrypt from 'bcryptjs';
+import type { UserGrowthSummary } from '../types/services';
+
+const toDateKey = (value?: Date | string | null): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().split('T')[0];
+};
+
+const buildDateRange = (start: Date, end: Date): string[] => {
+  const cursor = new Date(start.getTime());
+  cursor.setUTCHours(0, 0, 0, 0);
+
+  const range: string[] = [];
+  const endMs = end.getTime();
+
+  while (cursor.getTime() <= endMs) {
+    range.push(toDateKey(cursor)!);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return range;
+};
 
 interface User {
   id: string;
@@ -797,6 +826,81 @@ export class DatabaseService {
       totalReports: 0,
       pendingReports: 0,
       totalSessions: this.sessions.size
+    };
+  }
+
+  static async getUserGrowthMetrics(start: Date, end: Date): Promise<UserGrowthSummary> {
+    const normalizedStart = new Date(start.getTime());
+    normalizedStart.setUTCHours(0, 0, 0, 0);
+    const normalizedEnd = new Date(end.getTime());
+    normalizedEnd.setUTCHours(0, 0, 0, 0);
+
+    if (Number.isNaN(normalizedStart.getTime()) || Number.isNaN(normalizedEnd.getTime()) || normalizedStart > normalizedEnd) {
+      throw new Error('Invalid date range for user growth metrics');
+    }
+
+    const dateKeys = buildDateRange(normalizedStart, normalizedEnd);
+    const dateSet = new Set(dateKeys);
+
+    const newByDay = new Map<string, Set<string>>();
+    const returningByDay = new Map<string, Set<string>>();
+    const uniqueRangeUsers = new Set<string>();
+    const uniqueNewUsers = new Set<string>();
+    const uniqueReturningUsers = new Set<string>();
+
+    for (const user of this.users.values()) {
+      const createdKey = toDateKey(user.createdAt);
+      const activityKey = toDateKey(user.lastActiveAt || user.updatedAt || user.createdAt);
+
+      if (createdKey && dateSet.has(createdKey)) {
+        if (!newByDay.has(createdKey)) {
+          newByDay.set(createdKey, new Set());
+        }
+        newByDay.get(createdKey)!.add(user.id);
+        uniqueNewUsers.add(user.id);
+        uniqueRangeUsers.add(user.id);
+      }
+
+      if (activityKey && dateSet.has(activityKey)) {
+        const createdBeforeActivity = !createdKey || createdKey < activityKey;
+        if (createdBeforeActivity) {
+          if (!returningByDay.has(activityKey)) {
+            returningByDay.set(activityKey, new Set());
+          }
+          returningByDay.get(activityKey)!.add(user.id);
+          uniqueReturningUsers.add(user.id);
+          uniqueRangeUsers.add(user.id);
+        }
+      }
+    }
+
+    const daily = dateKeys.map((date) => {
+      const newUsersSet = newByDay.get(date) || new Set<string>();
+      const returningUsersSet = returningByDay.get(date) || new Set<string>();
+      const totalUsersSet = new Set<string>([...newUsersSet, ...returningUsersSet]);
+
+      totalUsersSet.forEach((id) => uniqueRangeUsers.add(id));
+
+      return {
+        date,
+        newUsers: newUsersSet.size,
+        returningUsers: returningUsersSet.size,
+        totalUsers: totalUsersSet.size
+      };
+    });
+
+    return {
+      window: {
+        start: dateKeys[0] ?? toDateKey(normalizedStart) ?? '',
+        end: dateKeys[dateKeys.length - 1] ?? toDateKey(normalizedEnd) ?? '',
+        days: dateKeys.length
+      },
+      totals: {
+        newUsers: uniqueNewUsers.size,
+        returningUsers: uniqueReturningUsers.size,
+        totalUsers: uniqueRangeUsers.size
+      },
+      daily
     };
   }
 

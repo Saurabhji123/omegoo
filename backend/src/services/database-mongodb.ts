@@ -1,6 +1,35 @@
 // database.service.ts
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import type { UserGrowthSummary } from '../types/services';
+
+const toGrowthDateKey = (value?: Date | string | null): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().split('T')[0];
+};
+
+const buildGrowthDateRange = (start: Date, end: Date): string[] => {
+  const cursor = new Date(start.getTime());
+  cursor.setUTCHours(0, 0, 0, 0);
+
+  const range: string[] = [];
+  const endMs = end.getTime();
+
+  while (cursor.getTime() <= endMs) {
+    range.push(toGrowthDateKey(cursor)!);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return range;
+};
 /* -------------------------
    Interfaces (Mongoose docs)
    ------------------------- */
@@ -2612,6 +2641,112 @@ export class DatabaseService {
       pendingReports: 0,
       totalSessions: 0
     };
+  }
+
+  static async getUserGrowthMetrics(start: Date, end: Date): Promise<UserGrowthSummary> {
+    const startDay = new Date(start.getTime());
+    startDay.setUTCHours(0, 0, 0, 0);
+    const endDay = new Date(end.getTime());
+    endDay.setUTCHours(0, 0, 0, 0);
+
+    if (Number.isNaN(startDay.getTime()) || Number.isNaN(endDay.getTime()) || startDay > endDay) {
+      throw new Error('Invalid date range for user growth metrics');
+    }
+
+    const endOfDay = new Date(endDay.getTime());
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const dateKeys = buildGrowthDateRange(startDay, endDay);
+    const dateSet = new Set(dateKeys);
+
+    const computeSummary = (records: Array<{ id: string; createdAt?: Date; lastActiveAt?: Date; updatedAt?: Date }>): UserGrowthSummary => {
+      const newByDay = new Map<string, Set<string>>();
+      const returningByDay = new Map<string, Set<string>>();
+      const uniqueRangeUsers = new Set<string>();
+      const uniqueNewUsers = new Set<string>();
+      const uniqueReturningUsers = new Set<string>();
+
+      records.forEach((record) => {
+        const createdKey = toGrowthDateKey(record.createdAt ?? null);
+        const activityKey = toGrowthDateKey(record.lastActiveAt ?? record.updatedAt ?? record.createdAt ?? null);
+
+        if (createdKey && dateSet.has(createdKey)) {
+          if (!newByDay.has(createdKey)) {
+            newByDay.set(createdKey, new Set());
+          }
+          newByDay.get(createdKey)!.add(record.id);
+          uniqueNewUsers.add(record.id);
+          uniqueRangeUsers.add(record.id);
+        }
+
+        if (activityKey && dateSet.has(activityKey)) {
+          const createdBeforeActivity = !createdKey || createdKey < activityKey;
+          if (createdBeforeActivity) {
+            if (!returningByDay.has(activityKey)) {
+              returningByDay.set(activityKey, new Set());
+            }
+            returningByDay.get(activityKey)!.add(record.id);
+            uniqueReturningUsers.add(record.id);
+            uniqueRangeUsers.add(record.id);
+          }
+        }
+      });
+
+      const daily = dateKeys.map((date) => {
+        const newUsersSet = newByDay.get(date) || new Set<string>();
+        const returningUsersSet = returningByDay.get(date) || new Set<string>();
+        const totalUsersSet = new Set<string>([...newUsersSet, ...returningUsersSet]);
+
+        totalUsersSet.forEach((id) => uniqueRangeUsers.add(id));
+
+        return {
+          date,
+          newUsers: newUsersSet.size,
+          returningUsers: returningUsersSet.size,
+          totalUsers: totalUsersSet.size
+        };
+      });
+
+      return {
+        window: {
+          start: dateKeys[0] ?? toGrowthDateKey(startDay) ?? '',
+          end: dateKeys[dateKeys.length - 1] ?? toGrowthDateKey(endDay) ?? '',
+          days: dateKeys.length
+        },
+        totals: {
+          newUsers: uniqueNewUsers.size,
+          returningUsers: uniqueReturningUsers.size,
+          totalUsers: uniqueRangeUsers.size
+        },
+        daily
+      };
+    };
+
+    if (this.isConnected) {
+      const records = await UserModel.find(
+        {
+          $or: [
+            { createdAt: { $gte: startDay, $lte: endOfDay } },
+            { lastActiveAt: { $gte: startDay, $lte: endOfDay } }
+          ]
+        },
+        { id: 1, createdAt: 1, lastActiveAt: 1, updatedAt: 1 }
+      ).lean();
+
+      return computeSummary(records.map((record) => ({
+        id: record.id,
+        createdAt: record.createdAt,
+        lastActiveAt: record.lastActiveAt,
+        updatedAt: record.updatedAt
+      })));
+    }
+
+    return computeSummary(Array.from(this.users.values()).map((user: any) => ({
+      id: user.id,
+      createdAt: user.createdAt,
+      lastActiveAt: user.lastActiveAt,
+      updatedAt: user.updatedAt
+    })));
   }
 
   /**
