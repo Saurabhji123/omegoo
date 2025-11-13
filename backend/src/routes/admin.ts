@@ -27,6 +27,7 @@ if (!process.env.OWNER_ADMIN_EMAIL) {
 
 const OWNER_SUPER_ADMIN_EMAIL = process.env.OWNER_ADMIN_EMAIL.trim().toLowerCase();
 const OWNER_SUPER_ADMIN_PASSWORD = process.env.OWNER_ADMIN_PASSWORD?.trim();
+const OWNER_SUPER_ADMIN_PASSWORD_HASH = process.env.OWNER_ADMIN_PASSWORD_HASH?.trim();
 
 type MaybeUserRecord = {
   role?: string;
@@ -55,6 +56,50 @@ const resolveVerificationStatus = (user?: MaybeUserRecord): 'guest' | 'verified'
 
 const resolveSubscriptionLevel = (user?: MaybeUserRecord): 'normal' | 'premium' => {
   return user?.subscriptionLevel === 'premium' ? 'premium' : 'normal';
+};
+
+type OwnerPasswordCheckResult = {
+  matches: boolean;
+  matchedSource: 'plain' | 'hash' | null;
+  hashFromEnv?: string;
+};
+
+const checkOwnerPassword = async (candidate: string): Promise<OwnerPasswordCheckResult> => {
+  if (!candidate) {
+    return {
+      matches: false,
+      matchedSource: null
+    };
+  }
+
+  if (OWNER_SUPER_ADMIN_PASSWORD && candidate === OWNER_SUPER_ADMIN_PASSWORD) {
+    return {
+      matches: true,
+      matchedSource: 'plain'
+    };
+  }
+
+  if (OWNER_SUPER_ADMIN_PASSWORD_HASH) {
+    try {
+      const hash = OWNER_SUPER_ADMIN_PASSWORD_HASH;
+      if (hash.startsWith('$2') && (await bcrypt.compare(candidate, hash))) {
+        return {
+          matches: true,
+          matchedSource: 'hash',
+          hashFromEnv: hash
+        };
+      }
+    } catch (err) {
+      log.warn('Owner admin env hash comparison failed', {
+        error: err instanceof Error ? err.message : err
+      });
+    }
+  }
+
+  return {
+    matches: false,
+    matchedSource: null
+  };
 };
 
 
@@ -261,6 +306,11 @@ router.post('/login', async (req: Request, res: Response) => {
     const identifierRaw = String(username).trim();
     const normalizedIdentifier = identifierRaw.toLowerCase();
 
+    const bcryptRounds = Number.parseInt(process.env.BCRYPT_ROUNDS || '12', 10);
+    const resolvedRounds = Number.isFinite(bcryptRounds) && bcryptRounds >= 4 ? bcryptRounds : 12;
+    const ownerPasswordCheck = await checkOwnerPassword(password);
+    const isOwnerEnvLoginAttempt = normalizedIdentifier === OWNER_SUPER_ADMIN_EMAIL && ownerPasswordCheck.matches;
+
     let admin = await DatabaseService.findAdminByUsername(identifierRaw);
     if (!admin && normalizedIdentifier !== identifierRaw) {
       admin = await DatabaseService.findAdminByUsername(normalizedIdentifier);
@@ -303,6 +353,41 @@ router.post('/login', async (req: Request, res: Response) => {
         linkedUser.id,
         linkedUserRole as 'admin' | 'super_admin'
       );
+    }
+
+    if ((!admin || !admin.isActive) && isOwnerEnvLoginAttempt) {
+      try {
+        let ownerPasswordHash = ownerPasswordCheck.hashFromEnv;
+        if (!ownerPasswordHash) {
+          ownerPasswordHash = await bcrypt.hash(password, resolvedRounds);
+        }
+
+        if (!admin) {
+          admin = await DatabaseService.createAdmin({
+            username: identifierRaw.includes('@') ? identifierRaw.split('@')[0] : identifierRaw,
+            email: normalizedIdentifier,
+            passwordHash: ownerPasswordHash,
+            role: 'super_admin',
+            permissions: ['all'],
+            isOwner: true,
+            isActive: true
+          } as any) || await DatabaseService.findAdminByEmail(normalizedIdentifier);
+        } else if (!admin.passwordHash || (ownerPasswordCheck.hashFromEnv && admin.passwordHash !== ownerPasswordCheck.hashFromEnv)) {
+          await DatabaseService.updateAdminPassword(admin.id || admin.email || normalizedIdentifier, ownerPasswordHash, {
+            removeLegacyPassword: true
+          });
+          admin.passwordHash = ownerPasswordHash;
+        }
+
+        if (admin) {
+          admin.isActive = true;
+          admin.role = 'super_admin';
+          admin.permissions = Array.isArray(admin.permissions) && admin.permissions.length > 0 ? admin.permissions : ['all'];
+          admin.isOwner = true;
+        }
+      } catch (ownerBootstrapError) {
+        log.error('Owner admin bootstrap failed', { error: ownerBootstrapError });
+      }
     }
 
     if (!admin || !admin.isActive) {
@@ -357,9 +442,6 @@ router.post('/login', async (req: Request, res: Response) => {
     if (linkedUser?.passwordHash) {
       storedHashes.push({ hash: linkedUser.passwordHash, source: 'user' });
     }
-    const bcryptRounds = Number.parseInt(process.env.BCRYPT_ROUNDS || '12', 10);
-    const resolvedRounds = Number.isFinite(bcryptRounds) && bcryptRounds >= 4 ? bcryptRounds : 12;
-
     const attemptCompare = async (hash: string): Promise<boolean> => {
       try {
         return await bcrypt.compare(password, hash);
@@ -399,14 +481,13 @@ router.post('/login', async (req: Request, res: Response) => {
       needsUpgrade = true;
     }
 
-    if (
-      !isValidPassword &&
-      OWNER_SUPER_ADMIN_PASSWORD &&
-      normalizedIdentifier === OWNER_SUPER_ADMIN_EMAIL &&
-      password === OWNER_SUPER_ADMIN_PASSWORD
-    ) {
+    if (!isValidPassword && isOwnerEnvLoginAttempt) {
       isValidPassword = true;
-      needsUpgrade = true;
+      if (!ownerPasswordCheck.hashFromEnv) {
+        needsUpgrade = true;
+      } else if (!admin?.passwordHash || admin.passwordHash !== ownerPasswordCheck.hashFromEnv) {
+        needsUpgrade = true;
+      }
     }
 
     if (!isValidPassword) {
@@ -449,7 +530,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
     if (needsUpgrade) {
       try {
-        const newHash = await bcrypt.hash(password, resolvedRounds);
+        const newHash = ownerPasswordCheck.hashFromEnv || (await bcrypt.hash(password, resolvedRounds));
         await DatabaseService.updateAdminPassword(adminId, newHash, {
           removeLegacyPassword: true
         });
