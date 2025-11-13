@@ -62,20 +62,29 @@ type OwnerPasswordCheckResult = {
   matches: boolean;
   matchedSource: 'plain' | 'hash' | null;
   hashFromEnv?: string;
+  hasPlainEnv: boolean;
+  hasHashEnv: boolean;
 };
 
 const checkOwnerPassword = async (candidate: string): Promise<OwnerPasswordCheckResult> => {
   if (!candidate) {
     return {
       matches: false,
-      matchedSource: null
+      matchedSource: null,
+      hasPlainEnv: Boolean(OWNER_SUPER_ADMIN_PASSWORD),
+      hasHashEnv: Boolean(OWNER_SUPER_ADMIN_PASSWORD_HASH)
     };
   }
+
+  const hasPlainEnv = Boolean(OWNER_SUPER_ADMIN_PASSWORD);
+  const hasHashEnv = Boolean(OWNER_SUPER_ADMIN_PASSWORD_HASH);
 
   if (OWNER_SUPER_ADMIN_PASSWORD && candidate === OWNER_SUPER_ADMIN_PASSWORD) {
     return {
       matches: true,
-      matchedSource: 'plain'
+      matchedSource: 'plain',
+      hasPlainEnv,
+      hasHashEnv
     };
   }
 
@@ -86,7 +95,9 @@ const checkOwnerPassword = async (candidate: string): Promise<OwnerPasswordCheck
         return {
           matches: true,
           matchedSource: 'hash',
-          hashFromEnv: hash
+          hashFromEnv: hash,
+          hasPlainEnv,
+          hasHashEnv
         };
       }
     } catch (err) {
@@ -98,7 +109,9 @@ const checkOwnerPassword = async (candidate: string): Promise<OwnerPasswordCheck
 
   return {
     matches: false,
-    matchedSource: null
+    matchedSource: null,
+    hasPlainEnv,
+    hasHashEnv
   };
 };
 
@@ -310,6 +323,13 @@ router.post('/login', async (req: Request, res: Response) => {
     const resolvedRounds = Number.isFinite(bcryptRounds) && bcryptRounds >= 4 ? bcryptRounds : 12;
     const ownerPasswordCheck = await checkOwnerPassword(password);
     const isOwnerEnvLoginAttempt = normalizedIdentifier === OWNER_SUPER_ADMIN_EMAIL && ownerPasswordCheck.matches;
+
+    if (normalizedIdentifier === OWNER_SUPER_ADMIN_EMAIL && !ownerPasswordCheck.matches) {
+      log.warn('Owner admin login password mismatch', {
+        hasPlainEnv: ownerPasswordCheck.hasPlainEnv,
+        hasHashEnv: ownerPasswordCheck.hasHashEnv
+      });
+    }
 
     let admin = await DatabaseService.findAdminByUsername(identifierRaw);
     if (!admin && normalizedIdentifier !== identifierRaw) {
