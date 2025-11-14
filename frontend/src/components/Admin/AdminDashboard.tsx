@@ -1501,35 +1501,38 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
     ? statusSummary.connectedUsers
     : null;
 
+  const minuteFormatter = useMemo(
+    () => new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }),
+    []
+  );
+
   const realtimeUserSeries = useMemo(() => {
     if (!Array.isArray(statusSummary?.realtimeUsers)) {
-      return [] as Array<{ minuteIso: string; label: string; connected: number }>;
+      return [] as Array<{ minuteIso: string; displayLabel: string; entries: number }>;
     }
-
-    const formatter = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
 
     return (statusSummary.realtimeUsers as any[]).map((point) => {
       const minute = new Date(point?.minute ?? point?.timestamp ?? point?.time ?? Date.now());
-      const connected = typeof point?.connected === 'number'
-        ? point.connected
-        : Number(point?.count ?? point?.value ?? 0) || 0;
+      const entries = typeof point?.entries === 'number'
+        ? point.entries
+        : Number(point?.count ?? point?.value ?? point?.connected ?? 0) || 0;
 
       return {
         minuteIso: minute.toISOString(),
-        label: formatter.format(minute),
-        connected: Math.max(0, Math.round(connected))
+        displayLabel: minuteFormatter.format(minute),
+        entries: Math.max(0, Math.round(entries))
       };
     });
-  }, [statusSummary?.realtimeUsers]);
+  }, [minuteFormatter, statusSummary?.realtimeUsers]);
 
   const realtimeUserStats = useMemo(() => {
     if (!realtimeUserSeries.length) {
       return { peak: 0, average: 0 };
     }
 
-    const peak = realtimeUserSeries.reduce((max, entry) => Math.max(max, entry.connected), 0);
+    const peak = realtimeUserSeries.reduce((max, entry) => Math.max(max, entry.entries), 0);
     const average = Math.round(
-      realtimeUserSeries.reduce((sum, entry) => sum + entry.connected, 0) / realtimeUserSeries.length
+      realtimeUserSeries.reduce((sum, entry) => sum + entry.entries, 0) / realtimeUserSeries.length
     );
 
     return { peak, average };
@@ -2700,7 +2703,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                     <div className="mt-4 h-48 sm:h-56">
                       {realtimeUserSeries.length ? (
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={realtimeUserSeries} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
+                          <BarChart data={realtimeUserSeries} margin={{ top: 12, right: 16, left: -20, bottom: 8 }}>
                             <defs>
                               <linearGradient id="realtimeUsersGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.9} />
@@ -2708,12 +2711,26 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                               </linearGradient>
                             </defs>
                             <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="label" stroke="#cbd5f5" tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.2)' }} interval={4} />
+                            <XAxis
+                              dataKey="minuteIso"
+                              stroke="#cbd5f5"
+                              tickLine={false}
+                              axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                              tickMargin={8}
+                              minTickGap={24}
+                              tickFormatter={(value) => {
+                                const date = new Date(value);
+                                return date.getMinutes() % 5 === 0 ? minuteFormatter.format(date) : '';
+                              }}
+                            />
                             <YAxis allowDecimals={false} stroke="#cbd5f5" tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.2)' }} width={36} />
                             <Tooltip
                               cursor={{ fill: 'rgba(14,165,233,0.12)' }}
-                              labelFormatter={(label) => `Minute ${label}`}
-                              formatter={(value: number) => [`${value} users`, 'Connected']}
+                              labelFormatter={(label) => {
+                                const date = new Date(label);
+                                return minuteFormatter.format(date);
+                              }}
+                              formatter={(value: number) => [`${value} users`, 'New entries']}
                               contentStyle={{
                                 backgroundColor: 'rgba(15,23,42,0.95)',
                                 borderRadius: 12,
@@ -2722,7 +2739,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                               }}
                               labelStyle={{ color: '#bae6fd' }}
                             />
-                            <Bar dataKey="connected" fill="url(#realtimeUsersGradient)" radius={[6, 6, 0, 0]} />
+                            <Bar dataKey="entries" fill="url(#realtimeUsersGradient)" radius={[6, 6, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
                       ) : (

@@ -1,5 +1,6 @@
 import { RedisService } from './serviceFactory';
 import { SocketService } from './socket';
+import { RealtimeUserTracker, RealtimeEntryPoint } from './realtimeMetrics';
 
 export type IncidentSeverity = 'info' | 'warning' | 'critical';
 
@@ -15,10 +16,7 @@ export interface ActiveIncident {
   audience?: 'all' | 'web' | 'mobile';
 }
 
-export interface RealtimeUserPoint {
-  minute: string;
-  connected: number;
-}
+export interface RealtimeUserPoint extends RealtimeEntryPoint {}
 
 export interface StatusSummary {
   uptimeSeconds: number;
@@ -39,8 +37,6 @@ export interface StatusSummary {
 const INCIDENT_KEY = 'status:incident:current';
 const INCIDENT_DEFAULT_TTL_SECONDS = 60 * 60 * 6; // 6 hours
 const INCIDENT_MAX_TTL_SECONDS = 60 * 60 * 48; // 48 hours buffer for scheduled incidents
-const REALTIME_SAMPLE_INTERVAL_MS = 60 * 1000;
-const REALTIME_SAMPLE_HISTORY = 30; // 30 minutes of history
 
 const parseDate = (value?: string): Date | null => {
   if (!value) {
@@ -65,8 +61,6 @@ const isIncidentLive = (incident: ActiveIncident, now = new Date()): boolean => 
 };
 
 export class StatusService {
-  private static realtimeSamples: Array<{ minute: number; connected: number }> = [];
-  private static realtimeSampler: NodeJS.Timeout | null = null;
 
   private static async getIncidentRecord(): Promise<ActiveIncident | null> {
     const incident = await RedisService.get(INCIDENT_KEY);
@@ -117,54 +111,8 @@ export class StatusService {
     await RedisService.set(INCIDENT_KEY, incident, boundedTtlSeconds);
   }
 
-  private static startRealtimeSampler(): void {
-    if (this.realtimeSampler) {
-      return;
-    }
-
-    this.realtimeSampler = setInterval(() => {
-      this.recordRealtimeSample();
-    }, REALTIME_SAMPLE_INTERVAL_MS);
-
-    this.realtimeSampler.unref?.();
-  }
-
-  private static recordRealtimeSample(referenceDate: Date = new Date()): void {
-    const minuteBucket = Math.floor(referenceDate.getTime() / REALTIME_SAMPLE_INTERVAL_MS) * REALTIME_SAMPLE_INTERVAL_MS;
-    const connected = SocketService.getConnectedUserCount();
-    const existingIndex = this.realtimeSamples.findIndex((entry) => entry.minute === minuteBucket);
-
-    if (existingIndex >= 0) {
-      this.realtimeSamples[existingIndex] = { minute: minuteBucket, connected };
-    } else {
-      this.realtimeSamples.push({ minute: minuteBucket, connected });
-    }
-
-    this.realtimeSamples.sort((a, b) => a.minute - b.minute);
-
-    const cutoff = minuteBucket - (REALTIME_SAMPLE_HISTORY - 1) * REALTIME_SAMPLE_INTERVAL_MS;
-    this.realtimeSamples = this.realtimeSamples.filter((entry) => entry.minute >= cutoff);
-  }
-
   private static getRealtimeSeries(referenceDate: Date = new Date()): RealtimeUserPoint[] {
-    const baselineMinute = Math.floor(referenceDate.getTime() / REALTIME_SAMPLE_INTERVAL_MS) * REALTIME_SAMPLE_INTERVAL_MS;
-    const sampleMap = new Map<number, number>(this.realtimeSamples.map((entry) => [entry.minute, entry.connected]));
-    const series: RealtimeUserPoint[] = [];
-    let lastValue = 0;
-
-    for (let offset = REALTIME_SAMPLE_HISTORY - 1; offset >= 0; offset -= 1) {
-      const minute = baselineMinute - offset * REALTIME_SAMPLE_INTERVAL_MS;
-      if (sampleMap.has(minute)) {
-        lastValue = sampleMap.get(minute) ?? lastValue;
-      }
-
-      series.push({
-        minute: new Date(minute).toISOString(),
-        connected: Math.max(0, lastValue)
-      });
-    }
-
-    return series;
+    return RealtimeUserTracker.getSeries(referenceDate);
   }
 
   static async getSummary(): Promise<StatusSummary> {
@@ -180,9 +128,6 @@ export class StatusService {
     const rawIncident = await this.getIncidentRecord();
     const activeIncident = rawIncident && isIncidentLive(rawIncident) ? rawIncident : null;
     const upcomingIncident = rawIncident && !activeIncident ? rawIncident : null;
-
-    this.startRealtimeSampler();
-    this.recordRealtimeSample();
 
     return {
       uptimeSeconds,

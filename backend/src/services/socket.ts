@@ -2,6 +2,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { DatabaseService, RedisService } from './serviceFactory';
 import { RedisService as DevRedisService } from './redis-dev';
+import { RealtimeUserTracker } from './realtimeMetrics';
 
 type ChatMode = 'text' | 'audio' | 'video';
 
@@ -162,10 +163,15 @@ export class SocketService {
       
       // Multi-device support: Add this socket to user's connected devices
       const existingSocketIds = this.connectedUsers.get(socket.userId!) || [];
+      const isFirstActiveDevice = existingSocketIds.length === 0;
       if (!existingSocketIds.includes(socket.id)) {
         existingSocketIds.push(socket.id);
         this.connectedUsers.set(socket.userId!, existingSocketIds);
         console.log(`✅ [Multi-Device] User ${socket.userId} connected. Total devices: ${existingSocketIds.length}`);
+      }
+
+      if (isFirstActiveDevice) {
+        RealtimeUserTracker.recordUserEntry(socket.userId!);
       }
       
       // Clear any pending disconnection timer for this user
