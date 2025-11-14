@@ -7,7 +7,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  Legend
+  Legend,
+  BarChart,
+  Bar
 } from 'recharts';
 import adminApi from '../../services/adminApi';
 import { API_BASE_URL } from '../../services/api';
@@ -1499,6 +1501,40 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
     ? statusSummary.connectedUsers
     : null;
 
+  const realtimeUserSeries = useMemo(() => {
+    if (!Array.isArray(statusSummary?.realtimeUsers)) {
+      return [] as Array<{ minuteIso: string; label: string; connected: number }>;
+    }
+
+    const formatter = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
+
+    return (statusSummary.realtimeUsers as any[]).map((point) => {
+      const minute = new Date(point?.minute ?? point?.timestamp ?? point?.time ?? Date.now());
+      const connected = typeof point?.connected === 'number'
+        ? point.connected
+        : Number(point?.count ?? point?.value ?? 0) || 0;
+
+      return {
+        minuteIso: minute.toISOString(),
+        label: formatter.format(minute),
+        connected: Math.max(0, Math.round(connected))
+      };
+    });
+  }, [statusSummary?.realtimeUsers]);
+
+  const realtimeUserStats = useMemo(() => {
+    if (!realtimeUserSeries.length) {
+      return { peak: 0, average: 0 };
+    }
+
+    const peak = realtimeUserSeries.reduce((max, entry) => Math.max(max, entry.connected), 0);
+    const average = Math.round(
+      realtimeUserSeries.reduce((sum, entry) => sum + entry.connected, 0) / realtimeUserSeries.length
+    );
+
+    return { peak, average };
+  }, [realtimeUserSeries]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-900 py-8 px-4">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -2634,17 +2670,67 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                   )}
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
-                  <h3 className="text-lg font-semibold text-white">Realtime snapshot</h3>
-                  <p className="text-xs uppercase tracking-wide text-white/50">
-                    {statusLastUpdatedLabel ? `Updated ${statusLastUpdatedLabel}` : 'Waiting for telemetry'}
-                  </p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <StatChip label="Connected users" value={connectedUsersValue ?? '—'} />
-                    <StatChip label="Queue total" value={queueTotals.total ?? '—'} />
-                    <StatChip label="Text queue" value={queueTotals.text ?? '—'} />
-                    <StatChip label="Audio queue" value={queueTotals.audio ?? '—'} />
-                    <StatChip label="Video queue" value={queueTotals.video ?? '—'} />
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
+                    <h3 className="text-lg font-semibold text-white">Realtime snapshot</h3>
+                    <p className="text-xs uppercase tracking-wide text-white/50">
+                      {statusLastUpdatedLabel ? `Updated ${statusLastUpdatedLabel}` : 'Waiting for telemetry'}
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <StatChip label="Connected users" value={connectedUsersValue ?? '—'} />
+                      <StatChip label="Queue total" value={queueTotals.total ?? '—'} />
+                      <StatChip label="Text queue" value={queueTotals.text ?? '—'} />
+                      <StatChip label="Audio queue" value={queueTotals.audio ?? '—'} />
+                      <StatChip label="Video queue" value={queueTotals.video ?? '—'} />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">Realtime users</h3>
+                        <p className="text-xs uppercase tracking-wide text-white/50">30-minute view · 1-minute buckets</p>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs uppercase tracking-wide text-white/60">
+                        <span>Peak {realtimeUserStats.peak}</span>
+                        <span className="hidden sm:inline">·</span>
+                        <span>Avg {realtimeUserStats.average}</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 h-48 sm:h-56">
+                      {realtimeUserSeries.length ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={realtimeUserSeries} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="realtimeUsersGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.9} />
+                                <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.3} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="label" stroke="#cbd5f5" tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.2)' }} interval={4} />
+                            <YAxis allowDecimals={false} stroke="#cbd5f5" tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.2)' }} width={36} />
+                            <Tooltip
+                              cursor={{ fill: 'rgba(14,165,233,0.12)' }}
+                              labelFormatter={(label) => `Minute ${label}`}
+                              formatter={(value: number) => [`${value} users`, 'Connected']}
+                              contentStyle={{
+                                backgroundColor: 'rgba(15,23,42,0.95)',
+                                borderRadius: 12,
+                                border: '1px solid rgba(56,189,248,0.25)',
+                                color: '#e0f2fe'
+                              }}
+                              labelStyle={{ color: '#bae6fd' }}
+                            />
+                            <Bar dataKey="connected" fill="url(#realtimeUsersGradient)" radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex h-full items-center justify-center rounded-xl bg-white/5 px-4 py-3 text-sm text-white/60">
+                          Waiting for realtime telemetry…
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
