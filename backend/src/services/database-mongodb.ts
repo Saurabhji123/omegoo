@@ -759,7 +759,12 @@ CoinAdjustmentSchema.index({ userId: 1, createdAt: -1 });
 const CoinAdjustmentModel: Model<ICoinAdjustmentDoc> = mongoose.model<ICoinAdjustmentDoc>('CoinAdjustment', CoinAdjustmentSchema);
 
 const GoalDefinitionSchema = new Schema<IGoalDefinitionDoc>({
-  id: { type: String, required: true, unique: true },
+  id: {
+    type: String,
+    required: true,
+    unique: true,
+    default: () => `goal-${new mongoose.Types.ObjectId().toString()}`
+  },
   key: { type: String, required: true, unique: true, index: true },
   name: { type: String, required: true },
   description: { type: String },
@@ -1338,8 +1343,14 @@ export class DatabaseService {
     this.goalSnapshots.set(snapshot.goalKey, trimmed);
   }
 
-  private static normalizeGoalKey(key: string): string {
-    return key
+  private static normalizeGoalKey(key?: string | null): string {
+    const base = typeof key === 'string'
+      ? key
+      : key !== undefined && key !== null
+        ? String(key)
+        : '';
+
+    return base
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '_')
@@ -1930,7 +1941,31 @@ export class DatabaseService {
       ? await GoalDefinitionModel.find({}).lean()
       : Array.from(this.goalDefinitions.values()).map((value) => this.cloneGoalDefinition(value));
 
-    const existingKeys = new Set(existingDefinitions.map((definition: any) => this.normalizeGoalKey(definition.key)));
+    if (this.isConnected) {
+      const backfillTargets = (existingDefinitions as Array<{ _id?: mongoose.Types.ObjectId | string; id?: string; key?: string }>).filter((definition) => !definition.id);
+      if (backfillTargets.length) {
+        for (const definition of backfillTargets) {
+          const generatedId = this.generateId('goal-');
+          try {
+            const filter = definition._id
+              ? { _id: definition._id }
+              : definition.key
+                ? { key: definition.key }
+                : null;
+
+            if (filter) {
+              await GoalDefinitionModel.updateOne(filter, { $set: { id: generatedId } });
+            }
+
+            definition.id = generatedId;
+          } catch (error) {
+            console.error('Failed to backfill goal definition id', { key: definition?.key, error });
+          }
+        }
+      }
+    }
+
+    const existingKeys = new Set(existingDefinitions.map((definition: any) => this.normalizeGoalKey(definition?.key)));
 
     for (const definition of defaults) {
       const normalizedKey = this.normalizeGoalKey(definition.key);
@@ -1961,6 +1996,7 @@ export class DatabaseService {
 
       if (this.isConnected) {
         await GoalDefinitionModel.create({
+          id: goal.id,
           key: goal.key,
           name: goal.name,
           description: goal.description,
@@ -5508,6 +5544,7 @@ export class DatabaseService {
           { id: stored.id },
           {
             $set: {
+              id: stored.id,
               key: stored.key,
               name: stored.name,
               description: stored.description,
@@ -5523,6 +5560,7 @@ export class DatabaseService {
               updatedAt: stored.updatedAt
             },
             $setOnInsert: {
+              id: stored.id,
               createdAt: stored.createdAt
             }
           },
