@@ -165,6 +165,40 @@ const toPercentage = (numerator: number, denominator: number): number => {
 
 const GOAL_DEFAULT_WARN_THRESHOLD = 80;
 
+const DEFAULT_DAILY_COIN_REFILL = 50;
+
+const resolveDailyRefillAmount = (): number => {
+  const candidates = [
+    process.env.DAILY_COIN_REFILL,
+    process.env.DAILY_COINS_BASE,
+    process.env.DAILY_COIN_BASE,
+    process.env.DAILY_COINS_ALLOWANCE
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate === undefined) {
+      continue;
+    }
+
+    const parsed = Number(candidate);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return Math.floor(parsed);
+    }
+  }
+
+  return DEFAULT_DAILY_COIN_REFILL;
+};
+
+const DAILY_REFILL_COINS = resolveDailyRefillAmount();
+
+const sanitizeCoinBalance = (value: unknown, fallback = 0): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return Math.max(0, fallback);
+  }
+  return Math.max(parsed, 0);
+};
+
 const toProgressPercent = (value: number, target: number): number => {
   if (!Number.isFinite(value) || !Number.isFinite(target) || target <= 0) {
     return 0;
@@ -2176,8 +2210,11 @@ export class DatabaseService {
       return user;
     }
 
+    const currentCoins = sanitizeCoinBalance(user.coins);
+    const refillTarget = Math.max(currentCoins, DAILY_REFILL_COINS);
+
     const updates = {
-      coins: 50,
+      coins: refillTarget,
       dailyChats: 0,
       lastCoinClaim: now,
       updatedAt: now
@@ -2590,6 +2627,15 @@ export class DatabaseService {
     previous?: { coins: number; totalChats: number; dailyChats: number; lastCoinClaim?: Date };
     reason?: 'NOT_FOUND' | 'INSUFFICIENT_COINS';
   }> {
+    const spendAmountRaw = Number(cost);
+    if (!Number.isFinite(spendAmountRaw)) {
+      console.error('spendCoinsForMatch received invalid cost', { userId, cost });
+      return { success: false, reason: 'INSUFFICIENT_COINS' };
+    }
+
+    const spendAmount = Math.max(0, Math.floor(spendAmountRaw));
+    const shouldCharge = spendAmount > 0;
+
     if (this.isConnected) {
       try {
         let userDoc = await UserModel.findOne({ id: userId }).lean();
@@ -2601,8 +2647,8 @@ export class DatabaseService {
         if (!userDoc) {
           return { success: false, reason: 'NOT_FOUND' };
         }
-        const availableCoins = userDoc.coins ?? 0;
-        if (availableCoins < cost) {
+        const availableCoins = sanitizeCoinBalance(userDoc.coins);
+        if (shouldCharge && availableCoins < spendAmount) {
           return { success: false, reason: 'INSUFFICIENT_COINS' };
         }
 
@@ -2613,17 +2659,24 @@ export class DatabaseService {
           lastCoinClaim: userDoc.lastCoinClaim
         };
 
-        const updatedDoc = await UserModel.findOneAndUpdate(
-          { id: userId, coins: { $gte: cost } },
-          {
-            $inc: { coins: -cost, totalChats: 1, dailyChats: 1 },
-            $set: { updatedAt: new Date(), lastActiveAt: new Date() }
+        const filter: Record<string, any> = { id: userId };
+        if (shouldCharge) {
+          filter.coins = { $gte: spendAmount };
+        }
+
+        const update: Record<string, any> = {
+          $inc: {
+            totalChats: 1,
+            dailyChats: 1,
+            ...(shouldCharge ? { coins: -spendAmount } : {})
           },
-          { new: true }
-        ).lean();
+          $set: { updatedAt: new Date(), lastActiveAt: new Date() }
+        };
+
+        const updatedDoc = await UserModel.findOneAndUpdate(filter, update, { new: true }).lean();
 
         if (!updatedDoc) {
-          return { success: false, reason: 'INSUFFICIENT_COINS' };
+          return { success: false, reason: shouldCharge ? 'INSUFFICIENT_COINS' : 'NOT_FOUND' };
         }
 
         return { success: true, user: this.mongoUserToUser(updatedDoc), previous };
@@ -2642,8 +2695,8 @@ export class DatabaseService {
     if (!normalized) {
       return { success: false, reason: 'NOT_FOUND' };
     }
-    const availableCoins = normalized.coins ?? 0;
-    if (availableCoins < cost) {
+    const availableCoins = sanitizeCoinBalance(normalized.coins);
+    if (shouldCharge && availableCoins < spendAmount) {
       return { success: false, reason: 'INSUFFICIENT_COINS' };
     }
 
@@ -2656,7 +2709,7 @@ export class DatabaseService {
 
     const updated = {
       ...normalized,
-      coins: availableCoins - cost,
+      coins: shouldCharge ? availableCoins - spendAmount : availableCoins,
       totalChats: previous.totalChats + 1,
       dailyChats: previous.dailyChats + 1,
       updatedAt: new Date(),
@@ -2733,7 +2786,7 @@ export class DatabaseService {
         }
 
         userDoc = await this.ensureDailyReset(userDoc);
-        const previousCoins = userDoc?.coins ?? 0;
+        const previousCoins = sanitizeCoinBalance(userDoc?.coins);
         const newCoins = Math.max(previousCoins + delta, 0);
 
         const updatedDoc = await UserModel.findOneAndUpdate(
@@ -2784,7 +2837,7 @@ export class DatabaseService {
     }
 
     const normalized = await this.ensureDailyReset(user);
-    const previousCoins = normalized?.coins ?? 0;
+    const previousCoins = sanitizeCoinBalance(normalized?.coins);
     const newCoins = Math.max(previousCoins + delta, 0);
 
     const updated = {
