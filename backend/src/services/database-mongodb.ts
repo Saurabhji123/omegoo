@@ -895,7 +895,6 @@ export class DatabaseService {
       console.error('❌ MongoDB connection failed, falling back to in-memory:', error);
       this.isConnected = false;
       this.initializeInMemory();
-      await this.seedOwnerAdmin();
       await this.seedDefaultGoals();
     }
   }
@@ -957,7 +956,6 @@ export class DatabaseService {
     };
     this.users.set(testUser.id, testUser);
     this.coinAdjustments.clear();
-    this.admins.clear();
     this.goalDefinitions.clear();
     this.goalSnapshots.clear();
     this.goalRecomputeTimers.forEach((timer) => clearTimeout(timer));
@@ -3465,54 +3463,13 @@ export class DatabaseService {
     username: string;
     passwordHash: string;
   }): Promise<IUserDoc | null> {
+    if (!this.isConnected) {
+      console.warn('MongoDB not connected, cannot ensure owner user account');
+      return null;
+    }
+
     const normalizedEmail = params.email.trim().toLowerCase();
     const now = new Date();
-
-    if (!this.isConnected) {
-      const existingEntry = Array.from(this.users.values()).find((user: any) => user.email?.toLowerCase() === normalizedEmail);
-
-      if (existingEntry) {
-        const updated = {
-          ...existingEntry,
-          email: normalizedEmail,
-          username: params.username || existingEntry.username || normalizedEmail,
-          passwordHash: params.passwordHash || existingEntry.passwordHash,
-          role: 'super_admin',
-          subscriptionLevel: 'normal',
-          verificationStatus: 'verified',
-          status: 'active',
-          isVerified: true,
-          updatedAt: now,
-          lastActiveAt: now
-        };
-
-        this.users.set(updated.id, updated);
-        return { ...updated } as IUserDoc;
-      }
-
-      const fallbackUser: Partial<IUserDoc> & { id: string; deviceId: string } = {
-        id: this.generateId('user-'),
-        deviceId: this.generateId('device-'),
-        email: normalizedEmail,
-        username: params.username || normalizedEmail,
-        passwordHash: params.passwordHash,
-        role: 'super_admin',
-        subscriptionLevel: 'normal',
-        verificationStatus: 'verified',
-        status: 'active',
-        isVerified: true,
-        coins: 0,
-        totalChats: 0,
-        dailyChats: 0,
-        createdAt: now,
-        updatedAt: now,
-        lastActiveAt: now
-      };
-
-      this.users.set(fallbackUser.id, fallbackUser);
-      console.log('👑 Ensured owner user account exists (in-memory)');
-      return { ...fallbackUser } as IUserDoc;
-    }
 
     const existing = await UserModel.findOne({ email: normalizedEmail });
     if (existing) {
@@ -3583,6 +3540,10 @@ export class DatabaseService {
   }
 
   private static async seedOwnerAdmin(): Promise<void> {
+    if (!this.isConnected) {
+      return;
+    }
+
     try {
       const configuredEmailRaw = process.env.OWNER_ADMIN_EMAIL || process.env.DEV_ADMIN_EMAIL;
       const email = (configuredEmailRaw || '').trim().toLowerCase();
@@ -3648,10 +3609,7 @@ export class DatabaseService {
 
       const desiredPassword = resolveDesiredPassword();
 
-      const memoryAdminEntry = Array.from(this.admins.entries()).find(([, admin]) => admin.email?.toLowerCase() === email);
-      const ownerAdmin = this.isConnected
-        ? await AdminModel.findOne({ email }).lean()
-        : memoryAdminEntry?.[1] ?? null;
+      const ownerAdmin = await AdminModel.findOne({ email }).lean();
       const passwordResolution = await ensurePasswordHash(ownerAdmin?.passwordHash ?? null, desiredPassword);
       const effectiveHash = passwordResolution.nextHash || ownerAdmin?.passwordHash || null;
 
@@ -3671,7 +3629,6 @@ export class DatabaseService {
           role: 'super_admin',
           isOwner: true,
           isActive: true,
-          permissions: this.getDefaultPermissions('super_admin'),
           updatedAt: new Date()
         };
 
@@ -3694,29 +3651,17 @@ export class DatabaseService {
         }
 
         if (requiresUpdate) {
-          if (this.isConnected && ownerAdmin && (ownerAdmin as any)._id) {
-            const updatePayload: any = { $set: setFields };
-            if (Object.keys(unsetFields).length > 0) {
-              updatePayload.$unset = unsetFields;
-            }
-            await AdminModel.updateOne({ _id: (ownerAdmin as any)._id }, updatePayload);
-          } else if (memoryAdminEntry) {
-            const [, storedAdmin] = memoryAdminEntry;
-            const updatedAdmin = {
-              ...storedAdmin,
-              ...setFields,
-              passwordHash: setFields.passwordHash || storedAdmin.passwordHash,
-              updatedAt: setFields.updatedAt
-            };
-            this.admins.set(memoryAdminEntry[0], updatedAdmin);
+          const updatePayload: any = { $set: setFields };
+          if (Object.keys(unsetFields).length > 0) {
+            updatePayload.$unset = unsetFields;
           }
+          await AdminModel.updateOne({ _id: ownerAdmin._id }, updatePayload);
         }
         return;
       }
 
-      const now = new Date();
       const adminData = {
-        id: memoryAdminEntry?.[0] || this.generateId('admin-'),
+        id: this.generateId('admin-'),
         username,
         email,
         passwordHash: effectiveHash,
@@ -3737,16 +3682,12 @@ export class DatabaseService {
         ],
         isActive: true,
         isOwner: true,
-        createdAt: now,
-        updatedAt: now
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
 
-      if (this.isConnected) {
-        await AdminModel.create(adminData);
-      } else {
-        this.admins.set(adminData.id, adminData);
-      }
-      console.log('👑 Seeded owner admin account:', `${username}${this.isConnected ? '' : ' (in-memory)'}`);
+      await AdminModel.create(adminData);
+      console.log('👑 Seeded owner admin account:', username);
 
       // No warning needed; password must come via environment.
     } catch (error) {
@@ -3758,30 +3699,12 @@ export class DatabaseService {
    * Create admin user
    */
   static async createAdmin(adminData: { username: string; email: string; passwordHash: string; role?: string }): Promise<any | null> {
+    if (!this.isConnected) {
+      console.warn('MongoDB not connected, cannot create admin');
+      return null;
+    }
+
     try {
-      if (!this.isConnected) {
-        const now = new Date();
-        const ownerEmail = (process.env.OWNER_ADMIN_EMAIL || process.env.DEV_ADMIN_EMAIL || '').trim().toLowerCase();
-        const normalizedEmail = adminData.email.trim().toLowerCase();
-        const role = (adminData.role as any) || 'moderator';
-
-        const adminObj = {
-          id: this.generateId('admin-'),
-          username: adminData.username,
-          email: normalizedEmail,
-          passwordHash: adminData.passwordHash,
-          role,
-          permissions: this.getDefaultPermissions(role),
-          isActive: true,
-          isOwner: Boolean(ownerEmail && ownerEmail === normalizedEmail),
-          createdAt: now,
-          updatedAt: now
-        };
-
-        this.admins.set(adminObj.id, adminObj);
-        return { ...adminObj };
-      }
-
       const adminObj = {
         id: this.generateId('admin-'),
         username: adminData.username,
@@ -3810,28 +3733,7 @@ export class DatabaseService {
     passwordHash: string,
     options?: { removeLegacyPassword?: boolean }
   ): Promise<void> {
-    if (!adminId) {
-      return;
-    }
-
-    if (!this.isConnected) {
-      const now = new Date();
-      for (const [storedId, admin] of this.admins.entries()) {
-        if (storedId === adminId || admin.id === adminId || admin.email === adminId) {
-          const updated = {
-            ...admin,
-            passwordHash,
-            updatedAt: now
-          };
-
-          if (options?.removeLegacyPassword && 'password' in updated) {
-            delete (updated as any).password;
-          }
-
-          this.admins.set(storedId, updated);
-          break;
-        }
-      }
+    if (!this.isConnected || !adminId) {
       return;
     }
 
@@ -3869,16 +3771,6 @@ export class DatabaseService {
         console.error('MongoDB findAdminByUsername failed:', err);
       }
     }
-    const search = typeof username === 'string' ? username.trim().toLowerCase() : '';
-    if (!search) {
-      return null;
-    }
-
-    for (const admin of this.admins.values()) {
-      if (admin.username?.toLowerCase() === search && admin.isActive !== false) {
-        return { ...admin };
-      }
-    }
     return null;
   }
 
@@ -3891,16 +3783,6 @@ export class DatabaseService {
         return await AdminModel.findOne({ email, isActive: true }).lean();
       } catch (err) {
         console.error('MongoDB findAdminByEmail failed:', err);
-      }
-    }
-    const search = typeof email === 'string' ? email.trim().toLowerCase() : '';
-    if (!search) {
-      return null;
-    }
-
-    for (const admin of this.admins.values()) {
-      if (admin.email?.toLowerCase() === search && admin.isActive !== false) {
-        return { ...admin };
       }
     }
     return null;
@@ -3924,19 +3806,6 @@ export class DatabaseService {
       } catch (err) {
         console.error('MongoDB updateAdminLastLogin failed:', err);
       }
-      return;
-    }
-
-    const now = new Date();
-    for (const [storedId, admin] of this.admins.entries()) {
-      if (storedId === adminId || admin.id === adminId) {
-        this.admins.set(storedId, {
-          ...admin,
-          lastLoginAt: now,
-          updatedAt: now
-        });
-        break;
-      }
     }
   }
 
@@ -3951,7 +3820,7 @@ export class DatabaseService {
         console.error('MongoDB getAllAdmins failed:', err);
       }
     }
-    return Array.from(this.admins.values()).map((admin) => ({ ...admin }));
+    return [];
   }
 
   /**

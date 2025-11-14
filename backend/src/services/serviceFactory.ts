@@ -1,17 +1,33 @@
 // Service factory to provide the correct services based on environment
 import { DatabaseService as MongoDBDatabaseService } from './database-mongodb';
-import { RedisService as ProductionRedisService } from './redis';
 import { DatabaseService as DevDatabaseService } from './database-dev';
 import { RedisService as DevRedisService } from './redis-dev';
 
+const resolveShouldUseMongo = (): boolean => {
+  const rawFlag = (process.env.USE_MONGODB || '').trim().toLowerCase();
+  if (rawFlag === 'true') {
+    return true;
+  }
+  if (rawFlag === 'false') {
+    return false;
+  }
+  return Boolean((process.env.MONGODB_URI || '').trim());
+};
+
 export class ServiceFactory {
-  // Check if MongoDB should be used (from environment variable)
-  private static _isDevelopment = process.env.USE_MONGODB !== 'true';
+  private static _useMongo = resolveShouldUseMongo();
 
   static get DatabaseService() {
-    console.log(`🔧 ServiceFactory: NODE_ENV=${process.env.NODE_ENV}, USE_MONGODB=${process.env.USE_MONGODB}, isDevelopment=${this._isDevelopment}`);
-    const service = this._isDevelopment ? DevDatabaseService : MongoDBDatabaseService;
-    console.log(`🔧 ServiceFactory: Using ${this._isDevelopment ? 'In-Memory Development' : 'MongoDB Production'} DatabaseService`);
+    const logContext = {
+      NODE_ENV: process.env.NODE_ENV,
+      USE_MONGODB: process.env.USE_MONGODB,
+      MONGODB_URI_PRESENT: Boolean((process.env.MONGODB_URI || '').trim()),
+      useMongo: this._useMongo
+    };
+    console.log('🔧 ServiceFactory: Database resolution', logContext);
+
+    const service = this._useMongo ? MongoDBDatabaseService : DevDatabaseService;
+    console.log(`🔧 ServiceFactory: Using ${this._useMongo ? 'MongoDB Production' : 'In-Memory Development'} DatabaseService`);
     return service;
   }
 
@@ -19,12 +35,12 @@ export class ServiceFactory {
     // Always use development Redis (in-memory) for now
     // Production Redis requires separate Redis server setup
     const service = DevRedisService;
-    console.log(`🔧 ServiceFactory: Using Development RedisService (in-memory)`);
+    console.log('🔧 ServiceFactory: Using Development RedisService (in-memory)');
     return service;
   }
 
   static setEnvironment(isDevelopment: boolean) {
-    this._isDevelopment = isDevelopment;
+    this._useMongo = !isDevelopment;
   }
 }
 
