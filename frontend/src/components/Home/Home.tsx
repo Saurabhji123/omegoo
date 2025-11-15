@@ -195,6 +195,7 @@ const Home: React.FC = () => {
       <div className="text-center mb-8 sm:mb-12 px-4 py-8 sm:py-16 text-white">
         {/* Hero Headline */}
         <div className="mb-6">
+          <p className="text-sm sm:text-base text-white/70 tracking-widest mb-3">Made for LPU</p>
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text drop-shadow-2xl tracking-wider">
             Random Chat · Video · Voice · Text
           </h1>

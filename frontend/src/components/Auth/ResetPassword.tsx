@@ -142,7 +142,7 @@ const ResetPassword: React.FC = () => {
                 <p className="font-semibold">Reset link unavailable</p>
                 <p className="mt-1 leading-relaxed">{error || 'This link no longer works. Request a fresh password reset to continue.'}</p>
                 <p className="mt-2 text-xs text-purple-200">
-                  Still stuck? Contact <a className="text-white font-medium" href="mailto:support@omegoo.com">support@omegoo.com</a> and we&apos;ll help you out.
+                  Still stuck? Contact <a className="text-white font-medium" href="mailto:omegoochat@gmail.com">omegoochat@gmail.com</a> and we&apos;ll help you out.
                 </p>
                 <p className="mt-2 text-xs text-purple-200">
                   Need a new link?{' '}

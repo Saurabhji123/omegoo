@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  EnvelopeIcon, 
-  // PhoneIcon, // Reserved for phone contact display
-  // MapPinIcon, // Reserved for address display
+import {
+  EnvelopeIcon,
   ChatBubbleLeftRightIcon,
-  ExclamationTriangleIcon,
-  QuestionMarkCircleIcon
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import { StaticPageLayout, SectionCard, InfoPill } from './StaticPageLayout';
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -52,238 +50,248 @@ const Contact: React.FC = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex items-center justify-center">
-        <div className="max-w-md w-full text-center">
-          <div className="bg-green-500 bg-opacity-20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 backdrop-blur-sm border border-green-400 border-opacity-30">
-            <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Message Sent!</h2>
-          <p className="text-gray-300">
-            Thank you for contacting us. We'll get back to you within 24 hours.
+      <StaticPageLayout
+        eyebrow="Thank you"
+        title="Message received"
+        subtitle="We reply to every conversation within a day. Keep an eye on your inbox for updates from the Omegoo crew."
+        heroIcon={
+          <svg className="h-8 w-8 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        }
+      >
+        <SectionCard>
+          <p className="text-center text-sm text-white/70">
+            Need to add more detail? Hit reply on our confirmation email or drop a note to{' '}
+            <a href="mailto:omegoochat@gmail.com" className="text-sky-300 underline">
+              omegoochat@gmail.com
+            </a>
+            .
           </p>
-        </div>
-      </div>
+        </SectionCard>
+      </StaticPageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
-      {/* Header */}
-      <div className="py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">Contact Us</h1>
-          <p className="text-xl lg:text-2xl text-gray-200 max-w-3xl mx-auto">
-            We're here to help! Reach out to us with any questions or concerns
-          </p>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid lg:grid-cols-2 gap-12">
-          {/* Contact Form */}
-          <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-white border-opacity-20">
-            <h2 className="text-2xl font-bold text-white mb-6">Send us a Message</h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Your Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white placeholder-gray-300"
-                    placeholder="Enter your name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white placeholder-gray-300"
-                    placeholder="your.email@example.com"
-                  />
-                </div>
-              </div>
-
+    <StaticPageLayout
+      eyebrow="Support"
+      title="Contact Omegoo"
+      subtitle="Our team is spread across time zones, but we share one inbox. Choose the channel that works best for you and we will jump in."
+      heroIcon={
+        <svg className="h-8 w-8 text-sky-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h6m-7 8h8a2 2 0 002-2v-8l-4-4H7a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      }
+    >
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <SectionCard title="Send us a message" className="h-full">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-200 mb-2">
-                  Category
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white"
-                >
-                  <option value="general" className="text-gray-900">General Inquiry</option>
-                  <option value="technical" className="text-gray-900">Technical Support</option>
-                  <option value="safety" className="text-gray-900">Safety & Moderation</option>
-                  <option value="feedback" className="text-gray-900">Feedback & Suggestions</option>
-                  <option value="partnership" className="text-gray-900">Partnership</option>
-                  <option value="press" className="text-gray-900">Press & Media</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-200 mb-2">
-                  Subject
-                </label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-white/60">Your name</label>
                 <input
                   type="text"
-                  name="subject"
-                  value={formData.subject}
+                  name="name"
+                  value={formData.name}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white placeholder-gray-300"
-                  placeholder="Brief subject of your message"
+                  className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                  placeholder="Enter your name"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-200 mb-2">
-                  Message
-                </label>
-                <textarea
-                  name="message"
-                  value={formData.message}
+                <label className="block text-xs font-semibold uppercase tracking-wide text-white/60">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
                   onChange={handleInputChange}
                   required
-                  rows={6}
-                  className="w-full px-4 py-3 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white bg-opacity-10 backdrop-blur-sm text-white placeholder-gray-300 resize-none"
-                  placeholder="Tell us more about your inquiry..."
+                  className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                  placeholder="your.email@example.com"
                 />
               </div>
+            </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 transform hover:scale-105 disabled:transform-none shadow-lg"
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-white/60">Category</label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm text-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
               >
-                {isSubmitting ? 'Sending...' : 'Send Message'}
-              </button>
-            </form>
+                <option value="general" className="text-slate-900">General inquiry</option>
+                <option value="technical" className="text-slate-900">Technical support</option>
+                <option value="safety" className="text-slate-900">Safety & moderation</option>
+                <option value="feedback" className="text-slate-900">Feedback & suggestions</option>
+                <option value="partnership" className="text-slate-900">Partnership</option>
+                <option value="press" className="text-slate-900">Press & media</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-white/60">Subject</label>
+              <input
+                type="text"
+                name="subject"
+                value={formData.subject}
+                onChange={handleInputChange}
+                required
+                className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                placeholder="What's this about?"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-white/60">Message</label>
+              <textarea
+                name="message"
+                value={formData.message}
+                onChange={handleInputChange}
+                required
+                rows={6}
+                className="mt-2 w-full resize-none rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                placeholder="Tell us what you need help with"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full rounded-lg bg-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-900/40 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-600"
+            >
+              {isSubmitting ? 'Sending…' : 'Send message'}
+            </button>
+          </form>
+        </SectionCard>
+
+        <div className="space-y-6">
+          <SectionCard>
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10">
+                  <ChatBubbleLeftRightIcon className="h-6 w-6 text-sky-300" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-base font-semibold text-white">Live chat</h3>
+                  <p className="text-sm text-white/70">Need quick guidance? Ping us from the dashboard and a moderator will join the conversation.</p>
+                  <InfoPill>Response in minutes</InfoPill>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10">
+                  <EnvelopeIcon className="h-6 w-6 text-emerald-300" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-base font-semibold text-white">Email</h3>
+                  <p className="text-sm text-white/70">For longer reports or attachments, email us anytime. We aim to reply within 24 hours.</p>
+                  <a href="mailto:omegoochat@gmail.com" className="text-sm font-medium text-emerald-300 hover:text-emerald-200">
+                    omegoochat@gmail.com
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-rose-300" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-base font-semibold text-white">Report abuse</h3>
+                  <p className="text-sm text-white/70">Flag urgent safety issues directly from the chat or send us context here.</p>
+                  <a href="mailto:omegoochat@gmail.com" className="text-sm font-medium text-rose-300 hover:text-rose-200">
+                    omegoochat@gmail.com
+                  </a>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="FAQs" description="Answers to questions we hear most often.">
+            <div className="space-y-4 text-sm text-white/70">
+              <div>
+                <h4 className="text-sm font-semibold text-white">Is Omegoo free?</h4>
+                <p>Yes. Daily coins reset automatically—no upsells or hidden charges.</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">How do you keep people safe?</h4>
+                <p>Realtime AI moderation, community reporting, and a human safety team work together.</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Can I stay anonymous?</h4>
+                <p>Absolutely. Omegoo does not expose your personal details to other users.</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Where do you post updates?</h4>
+                <p>All public announcements ship via Instagram <span className="font-medium text-white">@omegoo.chat</span> and the status page so you always know what changed.</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Do you offer campus partnerships?</h4>
+                <p>Email <a href="mailto:omegoochat@gmail.com" className="text-sky-300 underline">omegoochat@gmail.com</a> with “Campus Program” in the subject to set up verified clubs, study rooms, or mental health drop-ins.</p>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+      </div>
+
+      <SectionCard title="Support hours">
+        <div className="grid gap-4 text-sm text-white/70 sm:grid-cols-3">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-white/40">Weekdays</p>
+            <p className="mt-1 text-sm font-medium text-white">9:00 AM – 6:00 PM PST</p>
           </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-white/40">Weekends</p>
+            <p className="mt-1 text-sm font-medium text-white">10:00 AM – 4:00 PM PST</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-white/40">Safety escalation</p>
+            <p className="mt-1 text-sm font-medium text-white">Monitored 24/7</p>
+          </div>
+        </div>
+      </SectionCard>
 
-          {/* Contact Information */}
-          <div className="space-y-8">
-            {/* Quick Contact Cards */}
-            <div className="grid gap-6">
-              <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-20">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <ChatBubbleLeftRightIcon className="w-8 h-8 text-purple-300" />
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-white mb-2">Live Chat Support</h3>
-                    <p className="text-gray-300 mb-3">
-                      Get instant help from our support team
-                    </p>
-                    <button className="text-purple-300 hover:text-purple-200 font-medium transition-colors">
-                      Start Live Chat →
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-20">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <EnvelopeIcon className="w-8 h-8 text-blue-300" />
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-white mb-2">Email Support</h3>
-                    <p className="text-gray-300 mb-3">
-                      Send us an email and we'll respond within 24 hours
-                    </p>
-                    <a href="mailto:omegoochat@gmail.com" className="text-blue-300 hover:text-blue-200 font-medium transition-colors">
-                      omegoochat@gmail.com
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-20">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <ExclamationTriangleIcon className="w-8 h-8 text-red-300" />
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-white mb-2">Report Abuse</h3>
-                    <p className="text-gray-300 mb-3">
-                      Report inappropriate behavior or safety concerns
-                    </p>
-                    <a href="mailto:omegoochat@gmail.com" className="text-red-300 hover:text-red-200 font-medium transition-colors">
-                      omegoochat@gmail.com
-                    </a>
-                  </div>
-                </div>
-              </div>
+      <SectionCard title="Regional support & status" description="Where to find updates if something feels off.">
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            Service updates appear inside the Omegoo dashboard banner and on Instagram <span className="font-semibold text-white">@omegoo.chat</span>. Check those channels for transparent timelines, recovery notes, and release recaps.
+          </p>
+          <div className="grid gap-4 md:grid-cols-3 text-xs">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/40">India & APAC</p>
+              <p className="mt-2 text-white/70">Watch @omegoo.chat Instagram stories for maintenance windows, campus collaborations, and live Q&amp;A slots tailored to IST evenings.</p>
             </div>
-
-            {/* FAQ Section */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6">
-              <div className="flex items-center mb-4">
-                <QuestionMarkCircleIcon className="w-6 h-6 text-primary-600 mr-2" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Frequently Asked Questions</h3>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-1">Is Omegoo completely free?</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Yes! Omegoo is completely free to use with no hidden charges.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-1">How do you ensure user safety?</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    We use AI-powered moderation, community reporting, and human oversight.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-1">Can I remain anonymous?</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Absolutely! No personal information is required or stored.
-                  </p>
-                </div>
-              </div>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/40">Europe</p>
+              <p className="mt-2 text-white/70">We publish weekly reels on @omegoo.chat recapping latency improvements, feature rollouts, and community meetups scheduled for CET.</p>
             </div>
-
-            {/* Business Hours */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Support Hours</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Monday - Friday</span>
-                  <span className="text-gray-900 dark:text-white font-medium">9:00 AM - 6:00 PM PST</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Saturday - Sunday</span>
-                  <span className="text-gray-900 dark:text-white font-medium">10:00 AM - 4:00 PM PST</span>
-                </div>
-                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Emergency safety issues are monitored 24/7
-                  </p>
-                </div>
-              </div>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/40">Americas</p>
+              <p className="mt-2 text-white/70">Check @omegoo.chat feed posts and pinned highlights for deployment notices, creator spotlights, and student ambassador programs in EST/PST.</p>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </SectionCard>
+
+      <SectionCard title="Support playbook" description="What happens after you reach out.">
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            Our triage team tags every ticket within minutes. Here is the lifecycle your request follows once you click “Send”.
+          </p>
+          <ol className="list-decimal list-inside space-y-2 text-xs text-white/70">
+            <li>Auto-acknowledgement email confirms we received your message.</li>
+            <li>Support specialists classify it as safety, product feedback, billing, or campus partnership.</li>
+            <li>Relevant squads jump on calls if needed; safety issues may trigger moderator shadowing on your next session.</li>
+            <li>We send resolution notes plus preventative tips, and log the insight for future roadmap prioritisation.</li>
+          </ol>
+          <p>
+            Complex investigations include follow-up check-ins to ensure the fix worked. Never hesitate to re-open a thread—inbox continuity helps us keep context.
+          </p>
+        </div>
+      </SectionCard>
+    </StaticPageLayout>
   );
 };
 

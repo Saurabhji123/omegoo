@@ -1,542 +1,597 @@
 import React from 'react';
-import { DocumentTextIcon, ExclamationTriangleIcon, ShieldCheckIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import {
+  DocumentTextIcon,
+  ExclamationTriangleIcon,
+  ShieldCheckIcon,
+  UserGroupIcon
+} from '@heroicons/react/24/outline';
+import { StaticPageLayout, SectionCard } from './StaticPageLayout';
 
 const TermsOfService: React.FC = () => {
-  return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl mx-4 mt-8 text-white py-12 sm:py-16 lg:py-20">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-        
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-4 -right-4 w-72 h-72 bg-gradient-to-br from-primary-400/30 to-blue-400/30 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-8 -left-8 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-primary-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+  const corePrinciples = [
+    {
+      icon: <ShieldCheckIcon className="h-6 w-6 text-emerald-300" />,
+      title: 'Safety first',
+      description: 'Zero tolerance for harassment, abuse, or harmful content.'
+    },
+    {
+      icon: <UserGroupIcon className="h-6 w-6 text-sky-300" />,
+      title: 'Respectful community',
+      description: 'Treat every conversation partner with dignity and kindness.'
+    },
+    {
+      icon: <DocumentTextIcon className="h-6 w-6 text-indigo-300" />,
+      title: 'Transparent guidelines',
+      description: 'Clear policies keep expectations aligned for everyone on Omegoo.'
+    },
+    {
+      icon: <ExclamationTriangleIcon className="h-6 w-6 text-amber-300" />,
+      title: 'Fair enforcement',
+      description: 'Policy violations lead to consistent actions with space for appeals.'
+    }
+  ];
+
+  const prohibitedContent = [
+    'Nudity or sexually explicit content',
+    'Harassment, bullying, or intimidation',
+    'Hate speech or discriminatory language',
+    'Violence, threats, or self-harm encouragement',
+    'Sharing or soliciting illegal content'
+  ];
+
+  const prohibitedAbuse = [
+    'Spamming or mass messaging',
+    'Impersonation or identity theft',
+    'Commercial solicitation without Omegoo approval',
+    'Sharing personal information of others',
+    'Circumventing moderation or safety systems'
+  ];
+
+  const coinRules = [
+    'Coins reset automatically to 50 every day at midnight UTC.',
+    'No manual claiming is required—balances refresh on their own.',
+    'Unused coins do not roll over into the next day.',
+    'Omegoo remains free; coins simply pace engagement.',
+    'You must be logged in to spend coins and access chat modes.',
+    'Respectful use keeps the economy fair for everyone.'
+  ];
+
+  const reportingTriggers = [
+    'Nudity, sexually explicit, or exploitative content',
+    'Harassment, bullying, hate speech, or intimidation',
+    'Threats, promotion of violence, or self-harm encouragement',
+    'Spam, scams, or unauthorized commercial activity',
+    'Impersonation, fraud, or sharing illegal material'
+  ];
+
+  const termsSections: Array<{
+    badge: string;
+    title: string;
+    content: React.ReactNode;
+  }> = [
+    {
+      badge: '1',
+      title: 'Acceptance of Terms',
+      content: (
+        <p className="text-sm text-white/70">
+          By accessing or using Omegoo ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these
+          Terms, you may not access or use the Service.
+        </p>
+      )
+    },
+    {
+      badge: '2',
+      title: 'Description of Service',
+      content: (
+        <div className="space-y-3 text-sm text-white/70">
+          <p>
+            Omegoo is a random video, audio, and text chat platform that connects people worldwide in a moderated, safe environment. Our goal is to make
+            anonymous, respectful conversations possible in seconds.
+          </p>
+          <p className="font-medium text-white/80">Key features include:</p>
+          <ul className="list-disc list-inside space-y-2">
+            <li>Instant matching for text, audio, and video conversations</li>
+            <li>Integrated user reporting and layered moderation tools</li>
+            <li>Interest-based matchmaking options</li>
+            <li>Privacy controls that keep personal details hidden</li>
+            <li>Analytics that improve service quality without profiling individuals</li>
+          </ul>
         </div>
-        
-        <div className="relative container mx-auto px-4 text-center">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
-            <DocumentTextIcon className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
-          </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
-            Terms of Service
-          </h1>
-          <div className="max-w-2xl mx-auto">
-            <p className="text-lg sm:text-xl text-blue-100 mb-6 leading-relaxed">
-              Building safe connections through clear guidelines and mutual respect
+      )
+    },
+    {
+      badge: '3',
+      title: 'Eligibility',
+      content: (
+        <div className="space-y-3 text-sm text-white/70">
+          <p>
+            <span className="font-medium text-white">Age requirements:</span> You must be at least 18 years old to use Omegoo. Users aged 13–17 may participate only with explicit
+            parental consent and supervision.
+          </p>
+          <p>
+            <span className="font-medium text-white">Legal capacity:</span> You must have the authority to enter into binding agreements in your jurisdiction.
+          </p>
+          <p>
+            <span className="font-medium text-white">Geographic restrictions:</span> Local laws and regulations may limit availability in certain countries or territories.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '3.5',
+      title: 'Data Collection and Privacy',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5">
+            <h4 className="text-sm font-semibold text-emerald-200">🔒 Your data, your privacy</h4>
+            <p className="mt-2">
+              We collect only the essentials required for authentication and service reliability. Everything else stays with you.
             </p>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-              <p className="text-sm text-blue-100">
-                <strong className="text-white">Effective Date:</strong> {' '}
-                Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/80">What we collect</p>
+                <ul className="mt-2 space-y-1 text-xs">
+                  <li>• Email address for secure login</li>
+                  <li>• Display name or username</li>
+                  <li>• Encrypted password credentials</li>
+                </ul>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-200/80">What stays private</p>
+                <ul className="mt-2 space-y-1 text-xs">
+                  <li>• Your email is never shared with other users</li>
+                  <li>• Usernames remain hidden during chats</li>
+                  <li>• Sessions are anonymous end to end</li>
+                </ul>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-200/80">Why we use it</p>
+                <ul className="mt-2 space-y-1 text-xs">
+                  <li>• Authenticate logins securely</li>
+                  <li>• Send critical account alerts</li>
+                  <li>• Track coin balances and chat stats</li>
+                  <li>• Protect the platform from abuse</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-xs text-white/70">
+              🛡️ <span className="font-semibold text-white">Anonymous by design:</span> Strangers never see your email, username, or personal information during a session.
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      badge: '4',
+      title: 'User Conduct & Community Guidelines',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            <span className="font-medium text-white">Acceptable use:</span> Omegoo thrives when everyone contributes to a welcoming environment. Keep conversations respectful, relevant,
+            and safe.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 p-5">
+              <h5 className="text-sm font-semibold text-rose-100">Content violations</h5>
+              <ul className="mt-3 space-y-2 text-xs">
+                {prohibitedContent.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-5">
+              <h5 className="text-sm font-semibold text-amber-100">Platform abuse</h5>
+              <ul className="mt-3 space-y-2 text-xs">
+                {prohibitedAbuse.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      badge: '5',
+      title: 'Coin Economy System',
+      content: (
+        <div className="space-y-3 text-sm text-white/70">
+          <p>
+            <span className="font-medium text-white">Daily coin allocation:</span> Every registered user receives <span className="text-yellow-300">50 coins</span> daily. Balances renew automatically at
+            midnight UTC.
+          </p>
+          <p>
+            <span className="font-medium text-white">Chat session cost:</span> Initiating any chat mode deducts <span className="text-yellow-300">1 coin</span>. Deductions occur when you start a conversation.
+          </p>
+          <div className="rounded-xl border border-yellow-400/20 bg-yellow-500/10 p-5">
+            <h5 className="text-sm font-semibold text-yellow-100">Coin system rules</h5>
+            <ul className="mt-3 space-y-2 text-xs">
+              {coinRules.map((rule) => (
+                <li key={rule}>• {rule}</li>
+              ))}
+            </ul>
+          </div>
+          <p>
+            <span className="font-medium text-white">Anonymous browsing:</span> Guests can explore Omegoo without coins. A login is required only when you are ready to start chatting.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '6',
+      title: 'Privacy & Data Protection',
+      content: (
+        <div className="space-y-3 text-sm text-white/70">
+          <p>Your privacy matters. Review our Privacy Policy to understand how we collect, store, and protect information.</p>
+          <p>
+            <span className="font-medium text-white">Data collection:</span> We gather only the minimum data necessary to operate Omegoo, including usage analytics that never identify
+            individual users.
+          </p>
+          <p>
+            <span className="font-medium text-white">Data retention:</span> Personal data stays only as long as required for service provision or legal obligations.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '7',
+      title: 'Safety & Moderation',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            <span className="font-medium text-white">Automated moderation:</span> AI-powered systems monitor conversations for policy violations in real time without storing transcripts.
+          </p>
+          <p>
+            <span className="font-medium text-white">Human review:</span> Reports are reviewed by trained moderators within 24 hours to ensure fair enforcement.
+          </p>
+          <p>
+            <span className="font-medium text-white">User reporting:</span> Report tools are available during and after sessions so you can flag harmful behaviour instantly.
+          </p>
+          <div className="rounded-xl border border-sky-400/30 bg-sky-500/10 p-5">
+            <h5 className="text-sm font-semibold text-sky-100">Safety features</h5>
+            <ul className="mt-3 space-y-2 text-xs">
+              <li>• One-tap disconnect and reporting</li>
+              <li>• Automated detection of inappropriate content</li>
+              <li>• Interest-based matching to improve compatibility</li>
+              <li>• Community guidelines surfaced inside the product</li>
+              <li>• 24/7 safety escalation coverage</li>
+            </ul>
+          </div>
+        </div>
+      )
+    },
+    {
+      badge: '7.5',
+      title: 'Reporting System & Automatic Ban Policy',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            <span className="font-medium text-white">User empowerment:</span> Every report counts. Repeat offenders are removed quickly to protect the community.
+          </p>
+          <div className="space-y-5 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-6">
+            <div>
+              <h5 className="text-base font-semibold text-rose-100">⚠️ Automatic ban system</h5>
+              <p className="mt-2 text-sm text-white/75">
+                Three unique reports trigger an automatic suspension. Severe violations or five reports lead to permanent removal.
+              </p>
+              <ul className="mt-4 grid gap-3 text-xs sm:grid-cols-3">
+                <li className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  <span className="font-semibold text-white">1st report</span>
+                  <p className="mt-1 text-white/70">User receives a warning notification.</p>
+                </li>
+                <li className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  <span className="font-semibold text-white">2nd report</span>
+                  <p className="mt-1 text-white/70">Final warning issued and behaviour logged.</p>
+                </li>
+                <li className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  <span className="font-semibold text-white">3rd report</span>
+                  <p className="mt-1 text-white/70">Automatic suspension and removal from Omegoo.</p>
+                </li>
+              </ul>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+                <h6 className="text-sm font-semibold text-white">Temporary bans</h6>
+                <p className="mt-2 text-xs">
+                  Three reports trigger a 7-day lockout. Accounts cannot log in or access features until the ban expires. A notification is sent to the registered
+                  email.
+                </p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+                <h6 className="text-sm font-semibold text-white">Permanent bans</h6>
+                <p className="mt-2 text-xs">
+                  Severe incidents or five reports result in permanent termination, data deletion, and device/IP blocking. Reinstatement is not available.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <h6 className="text-sm font-semibold text-white">What triggers a report?</h6>
+              <ul className="mt-2 space-y-2 text-xs">
+                {reportingTriggers.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <h6 className="text-sm font-semibold text-white">Appeals process</h6>
+              <p className="mt-2 text-xs">
+                Appeal within seven days by emailing <span className="font-semibold">omegoochat@gmail.com</span> with your account details and any supporting evidence. Reviews are completed
+                within 48 hours.
               </p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="relative">
-        {/* Core Principles */}
-        <div className="py-8 sm:py-12 lg:py-16">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 sm:p-6 rounded-xl border border-white border-opacity-20">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-primary-500 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
-                    <ShieldCheckIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <h3 className="font-bold text-white mb-2 text-sm sm:text-base">Safety First</h3>
-                  <p className="text-gray-200 text-xs sm:text-sm">Zero tolerance for harassment, abuse, or harmful content</p>
-                </div>
-                <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 sm:p-6 rounded-xl border border-white border-opacity-20">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
-                    <UserGroupIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <h3 className="font-bold text-white mb-2 text-sm sm:text-base">Respectful Community</h3>
-                  <p className="text-gray-200 text-xs sm:text-sm">Treating all users with dignity and kindness</p>
-                </div>
-                <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 sm:p-6 rounded-xl border border-white border-opacity-20">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
-                    <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <h3 className="font-bold text-white mb-2 text-sm sm:text-base">Clear Guidelines</h3>
-                  <p className="text-gray-200 text-xs sm:text-sm">Transparent rules that protect everyone's experience</p>
-                </div>
-                <div className="bg-white bg-opacity-10 backdrop-blur-md p-4 sm:p-6 rounded-xl border border-white border-opacity-20">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
-                    <ExclamationTriangleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <h3 className="font-bold text-white mb-2 text-sm sm:text-base">Fair Enforcement</h3>
-                  <p className="text-gray-200 text-xs sm:text-sm">Consistent application of rules with appeals process</p>
-                </div>
-              </div>
+            <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <h6 className="text-sm font-semibold text-white">Keeping your account in good standing</h6>
+              <ul className="mt-2 space-y-2 text-xs">
+                <li>• Follow all Omegoo policies</li>
+                <li>• Treat others with respect and kindness</li>
+                <li>• Avoid sharing explicit, violent, or hateful content</li>
+                <li>• Report violations instead of escalating conflicts</li>
+                <li>• Use Omegoo for genuine, human conversations</li>
+              </ul>
             </div>
           </div>
         </div>
-
-        {/* Terms Content */}
-        <div className="py-8 sm:py-12">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-xl border border-white border-opacity-20 overflow-hidden">
-                <div className="p-6 sm:p-8 lg:p-12">
-                  <div className="flex items-center mb-6 sm:mb-8">
-                    <div className="w-2 h-6 sm:h-8 bg-gradient-to-b from-primary-400 to-blue-400 rounded-full mr-3 sm:mr-4"></div>
-                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Comprehensive Terms of Service</h2>
-                  </div>
-                  
-                  <div className="prose prose-sm sm:prose-lg max-w-none">
-                    {/* 1. Acceptance of Terms */}
-                    <div className="mb-6 sm:mb-8">
-                      <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4 flex items-center">
-                        <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-primary-400 to-blue-400 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold mr-2 sm:mr-3">1</span>
-                        Acceptance of Terms
-                      </h3>
-                      <div className="space-y-3 sm:space-y-4 text-gray-200 text-sm sm:text-base">
-                        <p>
-                          By accessing or using Omegoo ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, you may not access the Service.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 2. Description of Service */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">2</span>
-                        Description of Service
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          Omegoo is a random video chat platform that connects users with strangers for conversations through video, audio, and text. The Service is designed to facilitate connections between people worldwide in a safe and respectful environment.
-                        </p>
-                        <p>
-                          <strong className="text-white">Key Features:</strong>
-                        </p>
-                        <ul className="list-disc list-inside space-y-2 ml-4">
-                          <li>Random video and audio chat matching</li>
-                          <li>Text-based messaging capabilities</li>
-                          <li>User reporting and moderation tools</li>
-                          <li>Interest-based matching options</li>
-                          <li>Privacy controls and safety features</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    {/* 3. Eligibility */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">3</span>
-                        Eligibility
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          <strong className="text-white">Age Requirements:</strong> You must be at least 18 years old to use Omegoo. Users between 13-17 years old may only use the Service with explicit parental consent and supervision.
-                        </p>
-                        <p>
-                          <strong className="text-white">Legal Capacity:</strong> You must have the legal capacity to enter into this agreement in your jurisdiction.
-                        </p>
-                        <p>
-                          <strong className="text-white">Geographic Restrictions:</strong> The Service may not be available in all countries or regions due to local laws and regulations.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 3.5. Data Collection and Privacy */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3">3.5</span>
-                        Data Collection and Privacy
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                          <h4 className="font-bold text-green-800 dark:text-green-200 mb-3">🔒 Your Data, Your Privacy</h4>
-                          
-                          <div className="space-y-3">
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                              <h5 className="font-semibold text-green-800 dark:text-green-200 text-sm mb-2">What We Collect</h5>
-                              <p className="text-green-700 dark:text-green-300 text-sm">
-                                We collect <strong>only the essential information</strong> required for authentication:
-                              </p>
-                              <ul className="text-green-700 dark:text-green-300 text-xs space-y-1 mt-2 ml-4">
-                                <li>• Email address (for account creation and login)</li>
-                                <li>• Username (for display purposes)</li>
-                                <li>• Password (encrypted and never shared)</li>
-                              </ul>
-                            </div>
-
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                              <h5 className="font-semibold text-blue-800 dark:text-blue-200 text-sm mb-2">What We DON'T Share</h5>
-                              <p className="text-blue-700 dark:text-blue-300 text-sm font-bold">
-                                ⚠️ ZERO data is shared with other users during chat sessions!
-                              </p>
-                              <ul className="text-blue-700 dark:text-blue-300 text-xs space-y-1 mt-2 ml-4">
-                                <li>✓ Your email is NEVER visible to chat partners</li>
-                                <li>✓ Your username is NEVER shared with strangers</li>
-                                <li>✓ All chats are completely anonymous</li>
-                                <li>✓ No personal data is exposed during conversations</li>
-                              </ul>
-                            </div>
-
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                              <h5 className="font-semibold text-purple-800 dark:text-purple-200 text-sm mb-2">How We Use Your Data</h5>
-                              <p className="text-purple-700 dark:text-purple-300 text-sm">
-                                Your data is used <strong>exclusively</strong> for:
-                              </p>
-                              <ul className="text-purple-700 dark:text-purple-300 text-xs space-y-1 mt-2 ml-4">
-                                <li>• Account authentication and login verification</li>
-                                <li>• Sending important account notifications</li>
-                                <li>• Tracking your coin balance and chat statistics</li>
-                                <li>• Ensuring platform security and preventing abuse</li>
-                              </ul>
-                            </div>
-
-                            <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-3 border border-indigo-300 dark:border-indigo-700">
-                              <p className="text-indigo-800 dark:text-indigo-200 text-sm font-semibold">
-                                🛡️ <strong>Anonymous by Design:</strong> When you chat with strangers, they see NOTHING about you - no email, no username, no personal information. Your identity remains completely private.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 4. User Conduct and Community Guidelines */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">4</span>
-                        User Conduct and Community Guidelines
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          <strong className="text-white">Acceptable Use:</strong> Users are expected to maintain respectful, appropriate behavior during all interactions.
-                        </p>
-                        
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                          <h4 className="font-bold text-red-800 dark:text-red-200 mb-2">🚫 Prohibited Conduct</h4>
-                          <p className="text-red-700 dark:text-red-300 text-sm mb-3">The following behaviors are strictly prohibited and will result in immediate account suspension or termination:</p>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <h5 className="font-semibold text-red-800 dark:text-red-200 text-sm mb-2">Content Violations</h5>
-                              <ul className="text-red-700 dark:text-red-300 text-xs space-y-1">
-                                <li>• Nudity or sexually explicit content</li>
-                                <li>• Harassment, bullying, or intimidation</li>
-                                <li>• Hate speech or discriminatory language</li>
-                                <li>• Violence or threats of violence</li>
-                                <li>• Sharing of illegal content</li>
-                              </ul>
-                            </div>
-                            <div>
-                              <h5 className="font-semibold text-red-800 dark:text-red-200 text-sm mb-2">Platform Abuse</h5>
-                              <ul className="text-red-700 dark:text-red-300 text-xs space-y-1">
-                                <li>• Spamming or excessive messaging</li>
-                                <li>• Impersonation of others</li>
-                                <li>• Commercial solicitation without permission</li>
-                                <li>• Sharing personal information of others</li>
-                                <li>• Circumventing safety measures</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 5. Coin Economy System */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">5</span>
-                        Coin Economy System
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          <strong className="text-white">Daily Coin Allocation:</strong> Every registered user receives <strong className="text-yellow-400">50 coins daily</strong>, automatically renewed at midnight (UTC).
-                        </p>
-                        <p>
-                          <strong className="text-white">Chat Session Cost:</strong> Each chat session (video, audio, or text) costs <strong className="text-yellow-400">1 coin</strong> to initiate. The coin is deducted when you start a new conversation.
-                        </p>
-                        
-                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                          <h4 className="font-bold text-yellow-800 dark:text-yellow-200 mb-2">💰 Coin System Rules</h4>
-                          <ul className="text-yellow-700 dark:text-yellow-300 text-sm space-y-2">
-                            <li>• <strong>Auto-Renewal:</strong> Coins automatically reset to 50 every day at midnight UTC</li>
-                            <li>• <strong>No Manual Claiming:</strong> Coins are added automatically; no need to claim them manually</li>
-                            <li>• <strong>No Rollover:</strong> Unused coins do not carry over to the next day</li>
-                            <li>• <strong>Free Service:</strong> All users get free daily coins; no purchase required</li>
-                            <li>• <strong>Login Required:</strong> You must be logged in to use coins and access chat features</li>
-                            <li>• <strong>Fair Usage:</strong> The coin system ensures fair distribution of chat opportunities across all users</li>
-                          </ul>
-                        </div>
-
-                        <p>
-                          <strong className="text-white">Anonymous Browsing:</strong> Guests can explore the platform, view pages, and learn about features without using coins. Login is required only when starting a chat session.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 6. Privacy and Data Protection */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">6</span>
-                        Privacy and Data Protection  
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and protect your information.
-                        </p>
-                        <p>
-                          <strong className="text-white">Data Collection:</strong> We collect only the minimum data necessary to provide the Service, including basic usage analytics and safety-related information.
-                        </p>
-                        <p>
-                          <strong className="text-white">Data Retention:</strong> Personal data is retained only as long as necessary for service provision and legal compliance.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 7. Safety and Moderation */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">7</span>
-                        Safety and Moderation
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          <strong className="text-white">Automated Moderation:</strong> We employ AI-powered content moderation to detect and prevent inappropriate content in real-time.
-                        </p>
-                        <p>
-                          <strong className="text-white">Human Review:</strong> Reported content is reviewed by trained moderators within 24 hours.
-                        </p>
-                        <p>
-                          <strong className="text-white">User Reporting:</strong> Users can report inappropriate behavior through in-app reporting tools available during and after conversations.
-                        </p>
-                        
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                          <h4 className="font-bold text-blue-800 dark:text-blue-200 mb-2">🛡️ Safety Features</h4>
-                          <ul className="text-blue-700 dark:text-blue-300 text-sm space-y-1">
-                            <li>• One-click disconnect and report functionality</li>
-                            <li>• Automatic inappropriate content detection</li>
-                            <li>• Interest-based matching to improve compatibility</li>
-                            <li>• Community guidelines prominently displayed</li>
-                            <li>• 24/7 safety team availability</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 7.5. Reporting System & Automatic Ban Policy */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3">7.5</span>
-                        Reporting System & Automatic Ban Policy
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          <strong className="text-white">User Empowerment:</strong> Every user has the right to report inappropriate behavior. Reports are taken seriously and trigger immediate protective actions.
-                        </p>
-
-                        <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
-                          <h4 className="font-bold text-red-800 dark:text-red-200 mb-4 text-lg">⚠️ Automatic Ban System</h4>
-                          
-                          <div className="space-y-4">
-                            <div className="bg-red-100 dark:bg-red-900/30 rounded-lg p-4">
-                              <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2 flex items-center">
-                                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                3-Report Rule
-                              </h5>
-                              <p className="text-red-700 dark:text-red-300 text-sm mb-3">
-                                When a user receives <strong>3 reports</strong> from different users, they are automatically banned from the platform. This protects our community from repeat offenders.
-                              </p>
-                              <ul className="text-red-700 dark:text-red-300 text-sm space-y-2">
-                                <li className="flex items-start">
-                                  <span className="font-bold mr-2">1st Report:</span> User receives a warning notification
-                                </li>
-                                <li className="flex items-start">
-                                  <span className="font-bold mr-2">2nd Report:</span> User receives a final warning; behavior logged
-                                </li>
-                                <li className="flex items-start">
-                                  <span className="font-bold mr-2">3rd Report:</span> <strong>Automatic account suspension</strong> — immediate platform ban
-                                </li>
-                              </ul>
-                            </div>
-
-                            <div className="bg-orange-100 dark:bg-orange-900/30 rounded-lg p-4">
-                              <h5 className="font-semibold text-orange-800 dark:text-orange-200 mb-2">Ban Duration & Types</h5>
-                              <div className="space-y-3">
-                                <div>
-                                  <p className="text-orange-800 dark:text-orange-200 font-semibold text-sm mb-1">🕐 Temporary Ban (3 Reports)</p>
-                                  <p className="text-orange-700 dark:text-orange-300 text-sm">
-                                    • Duration: <strong>7 days</strong> from ban date<br />
-                                    • User cannot login or access any features<br />
-                                    • Account automatically reinstated after 7 days if no additional violations<br />
-                                    • Ban notification sent via email
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-red-800 dark:text-red-200 font-semibold text-sm mb-1">🚫 Permanent Ban (5+ Reports or Severe Violations)</p>
-                                  <p className="text-red-700 dark:text-red-300 text-sm">
-                                    • <strong>Permanent</strong> account termination<br />
-                                    • All user data deleted immediately<br />
-                                    • Device and IP blocked from creating new accounts<br />
-                                    • No reinstatement possible
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                              <h5 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 flex items-center">
-                                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                What Triggers a Report?
-                              </h5>
-                              <ul className="text-yellow-700 dark:text-yellow-300 text-sm space-y-1">
-                                <li>• Nudity or sexual content</li>
-                                <li>• Harassment, bullying, or threats</li>
-                                <li>• Hate speech or discrimination</li>
-                                <li>• Spam or commercial solicitation</li>
-                                <li>• Impersonation or fraud</li>
-                                <li>• Sharing illegal content</li>
-                              </ul>
-                            </div>
-
-                            <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                              <h5 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Appeals Process</h5>
-                              <p className="text-blue-700 dark:text-blue-300 text-sm">
-                                If you believe your ban was issued in error, you may appeal within <strong>7 days</strong> by contacting 
-                                <span className="font-semibold"> omegoochat@gmail.com</span> with:
-                              </p>
-                              <ul className="text-blue-700 dark:text-blue-300 text-sm space-y-1 mt-2">
-                                <li>• Your account email/username</li>
-                                <li>• Ban date and reason (if provided)</li>
-                                <li>• Explanation of why ban should be lifted</li>
-                                <li>• Any evidence supporting your claim</li>
-                              </ul>
-                              <p className="text-blue-700 dark:text-blue-300 text-sm mt-3">
-                                Appeals are reviewed within 48 hours. Decision is final.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
-                          <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2">✅ How to Avoid Getting Banned</h5>
-                          <ul className="text-green-700 dark:text-green-300 text-sm space-y-1">
-                            <li>• Follow all community guidelines and terms of service</li>
-                            <li>• Treat other users with respect and kindness</li>
-                            <li>• Avoid sharing inappropriate content (nudity, violence, hate speech)</li>
-                            <li>• Report violations instead of engaging with violators</li>
-                            <li>• Use the platform for its intended purpose: genuine connections</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 8. Account Termination */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">8</span>
-                        Account Termination
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          <strong className="text-white">Voluntary Termination:</strong> You may discontinue using the Service at any time.
-                        </p>
-                        <p>
-                          <strong className="text-white">Involuntary Termination:</strong> We reserve the right to suspend or terminate accounts that violate these Terms or pose a risk to user safety.
-                        </p>
-                        <p>
-                          <strong className="text-white">Appeals Process:</strong> Users may appeal termination decisions through our support system within 30 days.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 9. Limitation of Liability */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">9</span>
-                        Limitation of Liability
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          The Service is provided "as is" without warranties of any kind. We are not liable for user-generated content or interactions between users.
-                        </p>
-                        <p>
-                          <strong className="text-white">Disclaimer:</strong> While we implement safety measures, users interact at their own risk and should exercise caution when sharing personal information.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 10. Changes to Terms */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">10</span>
-                        Changes to Terms
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          We may update these Terms periodically. Users will be notified of significant changes through the platform or email.
-                        </p>
-                        <p>
-                          <strong className="text-white">Effective Date:</strong> Changes become effective 30 days after notification unless otherwise specified.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 11. Contact Information */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">11</span>
-                        Contact Information
-                      </h3>
-                      <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                        <p>
-                          For questions about these Terms or to report violations, please contact us:
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                            <p>
-                              <strong className="text-white">General Inquiries:</strong> omegoochat@gmail.com
-                            </p>
-                          </div>
-                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                            <p>
-                              <strong className="text-white">Safety Reports:</strong> omegoochat@gmail.com
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                  </div>
-                </div>
-                
-                <div className="bg-gradient-to-r from-primary-50 via-blue-50 to-purple-50 dark:from-primary-900/20 dark:via-blue-900/20 dark:to-purple-900/20 p-6 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-gray-700 dark:text-gray-300">
-                    <strong className="text-white">Legal Disclaimer:</strong> These terms are governed by applicable law and jurisdiction requirements.
-                  </p>
-                  <p>
-                    <strong className="text-white">Safety Concerns:</strong> Contact us at omegoochat@gmail.com
-                  </p>
-                  <p>
-                    <strong className="text-white">Terms Updates:</strong> We may update these terms from time to time. Continued use of the service constitutes acceptance of updated terms.
-                  </p>
-                  
-                  <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4 mt-6">
-                    <p className="text-primary-800 dark:text-primary-200 text-sm">
-                      <strong>Remember:</strong> By using Omegoo, you agree to these terms and commit to maintaining a safe, respectful environment for all users. Thank you for being part of our community!
-                    </p>
-                  </div>
-                </div>
-              </div>
+      )
+    },
+    {
+      badge: '8',
+      title: 'Account Termination',
+      content: (
+        <div className="space-y-3 text-sm text-white/70">
+          <p>
+            <span className="font-medium text-white">Voluntary termination:</span> You can leave Omegoo at any time by ceasing use of the service and deleting your account.
+          </p>
+          <p>
+            <span className="font-medium text-white">Involuntary termination:</span> Accounts that violate Terms or endanger community safety may be suspended or removed.
+          </p>
+          <p>
+            <span className="font-medium text-white">Appeals:</span> Submit an appeal through our support channels within 30 days for review.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '9',
+      title: 'Limitation of Liability',
+      content: (
+        <div className="space-y-3 text-sm text-white/70">
+          <p>
+            Omegoo is provided "as is" without warranties of any kind. We are not liable for user-generated content or interactions between users.
+          </p>
+          <p>
+            While we prioritise safety, you engage at your own risk and should never disclose personal information during chats.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '10',
+      title: 'Changes to Terms',
+      content: (
+        <div className="space-y-3 text-sm text-white/70">
+          <p>We may update these Terms periodically. Significant changes are announced via in-app notices or email.</p>
+          <p>
+            <span className="font-medium text-white">Effective date:</span> Updates take effect 30 days after notification unless a different timeline is specified.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '11',
+      title: 'Dispute Resolution & Governing Law',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            <span className="font-medium text-white">Good-faith dialogue first:</span> If a disagreement arises, contact us within fifteen days at{' '}
+            <a href="mailto:omegoochat@gmail.com" className="text-sky-300 hover:text-sky-200">omegoochat@gmail.com</a>. Most conflicts resolve through a quick conversation with the founding team.
+          </p>
+          <p>
+            <span className="font-medium text-white">Escalation process:</span> Should an amicable resolution fail, disputes fall under the jurisdiction of the courts in Chandigarh, India. International users agree to this venue and waive class-action rights.
+          </p>
+          <p>
+            <span className="font-medium text-white">Arbitration option:</span> For commercial partners, binding arbitration through a mutually agreed provider keeps cases private and faster than court proceedings.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '12',
+      title: 'Security Commitments & Responsible Disclosure',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            Omegoo implements layered security—from rate-limited APIs and isolated signalling servers to encrypted WebRTC relays. When we patch vulnerabilities, changelog notes appear inside the dashboard so power users can review the fix timeline.
+          </p>
+          <ul className="space-y-2 text-xs text-white/70">
+            <li>• Keep access tokens secret and avoid sharing sessions; suspicious logins trigger an automatic reset.</li>
+            <li>• Researchers can report security issues by emailing <a href="mailto:omegoochat@gmail.com" className="text-sky-300 hover:text-sky-200">omegoochat@gmail.com</a> with subject “Responsible Disclosure”.</li>
+            <li>• Critical reports acknowledged within 24 hours receive priority handling plus shout-outs (if desired) after remediation.</li>
+          </ul>
+          <p>
+            Testing must never impact real users: avoid mass scanning, refrain from accessing personal data, and follow applicable laws. We reserve the right to pursue action against malicious activity masquerading as research.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '13',
+      title: 'Community Contributions & Feedback',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            Omegoo thrives on community insight. Feature ideas, bug reports, and curated prompts help shape upcoming releases. Contributors receive early access to pilot features and detailed changelog notes.
+          </p>
+          <ul className="space-y-2 text-xs text-white/70">
+            <li>• Join quarterly roadmap calls by emailing <a href="mailto:omegoochat@gmail.com" className="text-sky-300 hover:text-sky-200">omegoochat@gmail.com</a> with subject “Roadmap”.</li>
+            <li>• Submit detailed feedback through the in-app widget or the contact page for faster triage.</li>
+            <li>• Open-source integrations appear on our GitHub once vetted for privacy and safety alignment.</li>
+          </ul>
+          <p>
+            By sharing feedback you grant Omegoo a non-exclusive licence to implement suggestions without owing compensation, while we continue crediting community champions publicly when updates launch.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '14',
+      title: 'Service Availability & Maintenance Windows',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            Omegoo targets 99.9% uptime, yet scheduled maintenance or emergency fixes may require brief downtime. We announce windows inside the dashboard banner and on the Instagram handle <span className="font-semibold text-white">@omegoo.chat</span>.
+          </p>
+          <ul className="space-y-2 text-xs text-white/70">
+            <li>• Planned maintenance typically runs under 30 minutes and happens during off-peak regional hours.</li>
+            <li>• Critical security patches may roll out immediately; expect live notifications and staggered reconnects.</li>
+            <li>• During outages, coin balances and conversations remain intact—sessions resume when services return.</li>
+          </ul>
+          <p>
+            If downtime exceeds one hour, we provide incident summaries outlining root cause, remediation steps, and prevention commitments.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '15',
+      title: 'Future Features, Monetisation & Virtual Goods',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            Omegoo coins are free today, but we may introduce optional memberships or purchasable boosts later. Any change will retain a free tier and will be communicated at least 30 days in advance.
+          </p>
+          <ul className="space-y-2 text-xs text-white/70">
+            <li>• Paid upgrades will never bypass safety requirements or reporting duties.</li>
+            <li>• Virtual items remain non-transferable and carry no cash value unless regulations force otherwise.</li>
+            <li>• Refund policies, regional taxes, and parental controls will be detailed before launch.</li>
+          </ul>
+          <p>
+            Beta testers who try revenue experiments agree to share feedback and understand features may be discontinued without compensation once pilots end.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '16',
+      title: 'Regional Regulations & Localised Policies',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>
+            Omegoo operates as an international random video, audio, and text chat platform. We map our Terms to region-specific frameworks so that students, travellers, and professionals can trust the service across borders.
+          </p>
+          <ul className="space-y-2 text-xs text-white/70">
+            <li>• India: Compliance with IT Act, CERT guidelines, and intermediary due diligence reports filed twice a year.</li>
+            <li>• United Kingdom & European Union: Online Safety Act and GDPR obligations drive data minimisation, consent prompts, and appeal pathways.</li>
+            <li>• United States & Canada: COPPA safeguards block under-13 usage, while state-level privacy laws inform data retention disclosures.</li>
+            <li>• Middle East & Southeast Asia: Localised community standards enforce cultural sensitivity and require explicit consent before sensitive topics.</li>
+          </ul>
+          <p>
+            Users agree to follow their local laws in addition to these Terms. When regulations change, we roll out updated onboarding notices and keep the changelog searchable for SEO transparency.
+          </p>
+        </div>
+      )
+    },
+    {
+      badge: '17',
+      title: 'Contact Information',
+      content: (
+        <div className="space-y-4 text-sm text-white/70">
+          <p>Have questions, suggestions, or feel unsafe? Reach out anytime.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/50">General inquiries</p>
+              <p className="mt-1 text-sm font-medium text-white">omegoochat@gmail.com</p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/50">Safety escalations</p>
+              <p className="mt-1 text-sm font-medium text-white">omegoochat@gmail.com</p>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      )
+    }
+  ];
+
+  return (
+    <StaticPageLayout
+      eyebrow="Policies"
+      title="Terms of Service"
+      subtitle="Building safe connections through clear guidelines and mutual respect."
+      heroIcon={<DocumentTextIcon className="h-10 w-10 text-white" />}
+    >
+      <SectionCard className="space-y-4 text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
+          <DocumentTextIcon className="h-8 w-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-semibold text-white sm:text-3xl">Welcome to Omegoo</h2>
+        <p className="text-sm text-white/70 sm:text-base">
+          These Terms explain how Omegoo works, the standards we maintain, and the responsibilities every user accepts when joining the community. Whether you launch a random video chat, host an audio hangout, or stick to text-only conversations, the same safety-first rules apply.
+        </p>
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-white/60">
+          <span className="font-semibold text-white">Effective date:</span>
+          <span>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Core principles" className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {corePrinciples.map((principle) => (
+            <div
+              key={principle.title}
+              className="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 p-5 shadow-lg shadow-indigo-950/20"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/10">
+                {principle.icon}
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-white">{principle.title}</h3>
+                <p className="text-sm text-white/70">{principle.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Comprehensive terms" className="space-y-10">
+        {termsSections.map((section) => (
+          <div key={section.title} className="space-y-4">
+            <h3 className="flex items-center gap-3 text-lg font-semibold text-white sm:text-xl">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 text-sm font-bold text-white shadow-lg shadow-indigo-900/40">
+                {section.badge}
+              </span>
+              {section.title}
+            </h3>
+            {section.content}
+          </div>
+        ))}
+        <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">
+          <p>
+            <span className="font-semibold text-white">Legal disclaimer:</span> These Terms are governed by applicable laws and jurisdictional requirements. Continued use of Omegoo signifies
+            acceptance of future updates.
+          </p>
+          <p className="mt-3">
+            <span className="font-semibold text-white">Safety concerns:</span> Contact{' '}
+            <a href="mailto:omegoochat@gmail.com" className="text-sky-300 hover:text-sky-200">
+              omegoochat@gmail.com
+            </a>{' '}
+            if you feel unsafe or need immediate assistance.
+          </p>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Need help or want to appeal?" className="space-y-3 text-sm text-white/70">
+        <p>
+          Reach the Omegoo safety desk or support team anytime at{' '}
+          <a href="mailto:omegoochat@gmail.com" className="text-sky-300 hover:text-sky-200">
+            omegoochat@gmail.com
+          </a>
+          .
+        </p>
+        <p>
+          Appeals should include your account email, the ban reason (if provided), and context explaining why the action should be reconsidered. We reply within 48
+          hours.
+        </p>
+      </SectionCard>
+    </StaticPageLayout>
   );
 };
 
