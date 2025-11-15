@@ -190,13 +190,13 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+    <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8" role="main">
       {/* Welcome Section */}
-      <div className="text-center mb-8 sm:mb-12 px-4 py-8 sm:py-16 text-white">
+      <section className="text-center mb-8 sm:mb-12 px-4 py-8 sm:py-16 text-white" aria-labelledby="home-hero-heading">
         {/* Hero Headline */}
         <div className="mb-6">
           <p className="text-sm sm:text-base text-white/70 tracking-widest mb-3">Made for LPU</p>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text drop-shadow-2xl tracking-wider">
+          <h1 id="home-hero-heading" className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text drop-shadow-2xl tracking-wider">
             Random Chat · Video · Voice · Text
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 mt-3 uppercase tracking-[0.35rem]">
@@ -296,7 +296,7 @@ const Home: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Chat Options */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 px-4 max-w-6xl mx-auto">
@@ -712,6 +712,99 @@ const Home: React.FC = () => {
           </div>
         </section>
 
+        {/* Getting Started Guide */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
+            How to start a random chat on Omegoo in under a minute
+          </h2>
+          <ol className="space-y-4 text-left text-gray-100 text-sm sm:text-base leading-relaxed bg-white/5 border border-white/15 rounded-3xl p-6 sm:p-8 backdrop-blur">
+            <li>
+              <span className="font-semibold text-white">1. Create or log in to your free account.</span> Use any trusted email address to join. Guests can explore instantly, while verified users unlock every Omegle-style mode with bonus coins.
+            </li>
+            <li>
+              <span className="font-semibold text-white">2. Pick the chat vibe.</span> Choose between <strong className="text-white">text chat</strong> for low-key conversations, <strong className="text-white">voice chat</strong> for spontaneous debates, or <strong className="text-white">video chat</strong> when you want the full Omegle alternative experience.
+            </li>
+            <li>
+              <span className="font-semibold text-white">3. Add a short intro and hit match.</span> Tell the community what you are looking for—study partner, language buddy, or chill strangers—and our queues connect you in seconds.
+            </li>
+            <li>
+              <span className="font-semibold text-white">4. Stay respectful and earn coins.</span> Great conversations mean more positive reports, higher visibility, and extra coins dropped into your wallet every midnight (IST).
+            </li>
+            <li>
+              <span className="font-semibold text-white">5. Explore advanced tools.</span> Switch devices seamlessly, invite friends via unique links, and revisit saved matches—features you won’t find on legacy Omegle clones.
+            </li>
+          </ol>
+        </section>
+
+        {/* City Landing Keywords */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
+            Local random chat communities across India
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[{
+              city: 'Delhi NCR random chat',
+              blurb: 'Join students from Delhi University, IP University, and Noida campuses who rely on Omegoo as a safe Omegle alternative for late-night brainstorming and cultural exchanges.'
+            }, {
+              city: 'Mumbai video chat rooms',
+              blurb: 'Connect with content creators, film students, and startup founders based in Mumbai suburbs. Omegoo’s moderated video chat makes spontaneous collaborations easier than on classic Omegle.'
+            }, {
+              city: 'Bengaluru tech meetups',
+              blurb: 'Discover hackathon partners and product mentors from Koramangala, Indiranagar, and Whitefield using Omegoo’s random voice chat—perfect for the city’s remote-first tech crowd.'
+            }, {
+              city: 'Hyderabad student hangouts',
+              blurb: 'Students from IIIT-H, Osmania University, and BITS Pilani Hyderabad use Omegoo to practice interviews and language skills in a moderated Omegle-like setting.'
+            }, {
+              city: 'Kolkata cultural exchanges',
+              blurb: 'Meet artists, musicians, and literature lovers from Jadavpur University and Presidency College through friendly text chat queues tailored for Eastern India.'
+            }, {
+              city: 'Chennai global connections',
+              blurb: 'SRM, VIT Chennai, and Anna University learners hop into Omegoo’s random stranger chat to find project teammates across time zones without dealing with Omegle VPN issues.'
+            }].map((location) => (
+              <article key={location.city} className="bg-white/10 border border-white/15 rounded-2xl p-6 text-gray-100 backdrop-blur-md shadow-lg">
+                <h3 className="text-lg font-semibold text-white mb-2">{location.city}</h3>
+                <p className="text-sm sm:text-base leading-relaxed">{location.blurb}</p>
+                <p className="mt-3 text-xs uppercase tracking-wider text-indigo-200">
+                  Keywords: {location.city.toLowerCase()}, Omegle alternative {location.city.split(' ')[0]}, campus chat {location.city.split(' ')[0]}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* Global Communities */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
+            A global Omegle alternative for respectful random chat
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-100 text-sm sm:text-base leading-relaxed">
+            {[{
+              region: 'North America & Europe',
+              text: 'Creators and students from New York, Toronto, London, and Berlin use Omegoo for cross-cultural language exchanges without the unpredictability that defined Omegle. Real-time moderation lets them host community jams and podcast sessions safely.'
+            }, {
+              region: 'Middle East & Africa',
+              text: 'Remote workers from Dubai, Riyadh, Nairobi, and Cape Town jump into Omegoo voice rooms to meet collaborators across time zones. Our random chat queues keep conversations respectful, unlike the legacy Omegle rooms they tried before.'
+            }, {
+              region: 'South East Asia & Oceania',
+              text: 'Students in Singapore, Manila, Jakarta, Sydney, and Auckland rely on Omegoo as a low-latency Omegle replacement for group study sessions and late-night hangouts.'
+            }, {
+              region: 'Latin America',
+              text: 'Universities in São Paulo, Mexico City, Bogotá, and Buenos Aires incorporate Omegoo into cultural exchange clubs, promoting safe stranger chat that still feels spontaneous and Omegle-like.'
+            }].map((item) => (
+              <article key={item.region} className="bg-white/10 border border-white/15 rounded-2xl p-6 backdrop-blur-md shadow-lg">
+                <h3 className="text-lg font-semibold text-white mb-2">{item.region}</h3>
+                <p>{item.text}</p>
+                <p className="mt-3 text-xs uppercase tracking-wider text-indigo-200">
+                  Global keywords: Omegle alternative worldwide, safe Omegle replacement, random chat international
+                </p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-xs sm:text-sm text-gray-200">
+            Omegoo keeps the spirit of Omegle alive for global audiences while adding verification, coins, and regional filters so every random chat feels intentional.
+          </p>
+        </section>
+
       {/* GitHub Star Section - Centered */}
       <div className="text-center mb-6 sm:mb-8 px-4">
         <a
@@ -824,7 +917,7 @@ const Home: React.FC = () => {
         </div>
       )}
 
-    </div>
+    </main>
   );
 };
 
