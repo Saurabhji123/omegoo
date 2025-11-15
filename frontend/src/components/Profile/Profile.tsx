@@ -57,7 +57,7 @@ const Profile: React.FC = () => {
       user?.preferences?.authProvider === 'google' &&
       !user?.preferences?.genderConfirmed
     ) {
-  setGenderSelection(null);
+      setGenderSelection(null);
       setShowGenderModal(true);
     } else {
       setShowGenderModal(false);
@@ -169,7 +169,7 @@ const Profile: React.FC = () => {
     try {
       setGenderSaving(true);
       setGenderError('');
-  await userAPI.confirmGender({ gender: genderSelection });
+      await userAPI.confirmGender({ gender: genderSelection });
       await refreshUser();
       setShowGenderModal(false);
     } catch (error: any) {
@@ -183,60 +183,66 @@ const Profile: React.FC = () => {
   // Anonymous user view
   if (!user) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6 px-4 sm:px-6 lg:px-0">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Profile</h1>
         
         {/* Anonymous Profile Card */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-6 sm:p-8 text-center">
-          <UserCircleIcon className="w-24 h-24 text-gray-400 mx-auto mb-4" />
-          
-          <h2 className="text-2xl font-bold text-white mb-2">Anonymous User</h2>
-          <p className="text-gray-300 mb-6">
-            You're currently browsing as a guest. Login or register to save your preferences and access all features.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-            <button
-              onClick={() => navigate('/login')}
-              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-medium rounded-lg transition-all shadow-lg"
-            >
-              Login / Register
-            </button>
-            <button
-              onClick={() => navigate('/')}
-              className="w-full sm:w-auto px-6 py-3 bg-white bg-opacity-10 hover:bg-opacity-20 text-white font-medium rounded-lg transition-all border border-white border-opacity-20"
-            >
-              Continue Browsing
-            </button>
+        <div className="relative overflow-hidden rounded-3xl border border-white border-opacity-20 bg-white/10 backdrop-blur-xl p-6 sm:p-8 text-center shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-blue-500/15 to-transparent" aria-hidden="true" />
+          <div className="relative z-10">
+            <UserCircleIcon className="w-24 h-24 text-gray-300 mx-auto mb-4" />
+
+            <h2 className="text-2xl font-bold text-white mb-2">Anonymous User</h2>
+            <p className="text-white/70 mb-6 text-sm sm:text-base">
+              You're currently browsing as a guest. Sign in to sync your chat preferences, access all modes, and pick up conversations across devices.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full sm:w-auto rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 bg-gradient-to-r from-purple-500 via-purple-600 to-blue-600 hover:from-purple-500 hover:via-blue-600 hover:to-indigo-600"
+              >
+                Login / Register
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="w-full sm:w-auto rounded-full px-6 py-3 text-sm font-semibold text-white/80 transition-colors border border-white/30 bg-white/5 hover:bg-white/10"
+              >
+                Continue Browsing
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Features Preview */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">What you'll get with an account:</h3>
-          
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <CurrencyDollarIcon className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" />
-              <div>
-                <h4 className="font-medium text-white">50 Daily Coins</h4>
-                <p className="text-sm text-gray-300">Auto-renewed every day to chat with others</p>
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/15 via-blue-500/10 to-transparent" aria-hidden="true" />
+          <div className="relative z-10 space-y-4">
+            <h3 className="text-lg font-semibold text-white">What you'll get with an account:</h3>
+
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <CurrencyDollarIcon className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h4 className="font-medium text-white">50 Daily Coins</h4>
+                  <p className="text-sm text-gray-300">Auto-renewed every day to chat with others</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <VideoCameraIcon className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
-              <div>
-                <h4 className="font-medium text-white">Video, Audio & Text Chat</h4>
-                <p className="text-sm text-gray-300">Connect with people from around the world</p>
+
+              <div className="flex items-start space-x-3">
+                <VideoCameraIcon className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h4 className="font-medium text-white">Video, Audio & Text Chat</h4>
+                  <p className="text-sm text-gray-300">Connect with people from around the world</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <ShieldCheckIcon className="w-6 h-6 text-green-400 flex-shrink-0 mt-1" />
-              <div>
-                <h4 className="font-medium text-white">Safe & Anonymous</h4>
-                <p className="text-sm text-gray-300">Your privacy is protected at all times</p>
+
+              <div className="flex items-start space-x-3">
+                <ShieldCheckIcon className="w-6 h-6 text-green-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h4 className="font-medium text-white">Safe & Anonymous</h4>
+                  <p className="text-sm text-gray-300">Your privacy is protected at all times</p>
+                </div>
               </div>
             </div>
           </div>
@@ -247,64 +253,77 @@ const Profile: React.FC = () => {
 
   // Logged-in user view
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Your Profile</h1>
-        <button
-          onClick={handleLogout}
-          className="flex items-center space-x-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-        >
-          <ArrowRightOnRectangleIcon className="w-5 h-5" />
-          <span className="hidden sm:inline">Logout</span>
-        </button>
+    <div className="max-w-5xl mx-auto space-y-6 px-4 sm:px-6 lg:px-0">
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-purple-900/80 via-blue-900/70 to-indigo-900/80 px-6 py-6 sm:py-8 shadow-2xl">
+        <div className="absolute -top-24 -right-6 h-44 w-44 rounded-full bg-purple-400/20 blur-3xl" aria-hidden="true" />
+        <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-blue-400/10 blur-3xl" aria-hidden="true" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-white/60">Profile Center</p>
+            <h1 className="text-3xl font-semibold text-white sm:text-4xl">Your Profile</h1>
+            <p className="mt-2 max-w-xl text-sm text-white/70 sm:text-base">
+              Fine-tune your Omegoo presence, monitor session stats, and keep your account ready for the next match.
+            </p>
+          </div>
+          <div className="flex flex-col items-stretch gap-3 sm:items-end">
+            <div className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white/80">
+              <CurrencyDollarIcon className="h-5 w-5 text-yellow-300" />
+              <span>{user?.coins ?? 0} coins</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
+            >
+              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
       </div>
       
       {/* Profile Card */}
-      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
-          <div className="relative">
-            <UserCircleIcon className="w-24 h-24 text-gray-400" />
-            <div className={`absolute -bottom-2 -right-2 ${tierBadge.color} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold`}>
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-purple-500/5 to-blue-500/10" aria-hidden="true" />
+        <div className="relative flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
+          <div className="relative flex items-center justify-center">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/20 bg-white/10 backdrop-blur">
+              <UserCircleIcon className="h-16 w-16 text-white/60" />
+            </div>
+            <div className={`absolute -bottom-2 -right-2 ${tierBadge.color} text-white rounded-full w-9 h-9 flex items-center justify-center text-base font-bold border border-white/40 shadow-lg`}>
               {tierBadge.icon}
             </div>
           </div>
           
-          <div className="flex-1 text-center sm:text-left">
-            <div className="flex flex-col sm:flex-row items-center sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
-              <h2 className="text-xl font-bold text-white">
+          <div className="flex-1 text-center sm:text-left space-y-3">
+            <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-start">
+              <h2 className="text-2xl font-semibold text-white sm:text-3xl">
                 {user?.username || 'Anonymous User'}
               </h2>
-              <span className={`${tierBadge.color} text-white px-2 py-1 rounded text-sm font-medium`}>
+              <span className={`${tierBadge.color} text-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide rounded-full`}>
                 {tierBadge.text}
               </span>
             </div>
-            
-            <p className="text-gray-300 mb-2 text-sm sm:text-base">
+
+            <p className="text-sm text-white/70 sm:text-base">
               {user?.email || 'No email'}
             </p>
-            
-            <div className="flex items-center justify-center sm:justify-start space-x-2 text-sm text-gray-400">
-              <CurrencyDollarIcon className="w-5 h-5 text-yellow-400" />
-              <span className="font-bold text-yellow-400">{user?.coins || 0}</span>
-              <span>coins</span>
-            </div>
 
-            {(user?.gender || user?.preferences?.genderPreference) && (
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-300">
-                {user?.gender && (
-                  <div className="flex items-center justify-center sm:justify-start gap-1">
-                    <span className="font-semibold text-white">Gender:</span>
-                    <span>{formatGender(user.gender)}</span>
-                  </div>
-                )}
-                {user?.preferences?.genderPreference && (
-                  <div className="flex items-center justify-center sm:justify-start gap-1">
-                    <span className="font-semibold text-white">Looking for:</span>
-                    <span>{formatGenderPreference(user.preferences.genderPreference)}</span>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start text-sm">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-white/80">
+                <CurrencyDollarIcon className="h-4 w-4 text-yellow-300" />
+                <span>{user?.coins ?? 0} coins</span>
+              </span>
+              {user?.gender && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70">
+                  Gender: {formatGender(user.gender)}
+                </span>
+              )}
+              {user?.preferences?.genderPreference && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70">
+                  Looking for: {formatGenderPreference(user.preferences.genderPreference)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -349,132 +368,155 @@ const Profile: React.FC = () => {
 
       {/* Statistics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
-          <VideoCameraIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 mx-auto mb-2" />
-          <div className="text-xl sm:text-2xl font-bold text-white">{user?.totalChats || 0}</div>
-          <div className="text-xs sm:text-sm text-gray-300">Total Chats</div>
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6 text-center shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/15 via-blue-500/5 to-transparent" aria-hidden="true" />
+          <div className="relative z-10">
+            <VideoCameraIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-300 mx-auto mb-3" />
+            <div className="text-xl sm:text-2xl font-bold text-white">{user?.totalChats || 0}</div>
+            <div className="text-xs sm:text-sm text-white/70">Total Chats</div>
+          </div>
         </div>
 
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
-          <ShieldCheckIcon className="w-6 h-6 sm:w-8 sm:h-8 text-green-400 mx-auto mb-2" />
-          <div className="text-xl sm:text-2xl font-bold text-white">{user?.dailyChats || 0}</div>
-          <div className="text-xs sm:text-sm text-gray-300">Today's Chats</div>
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6 text-center shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-400/15 via-green-400/5 to-transparent" aria-hidden="true" />
+          <div className="relative z-10">
+            <ShieldCheckIcon className="w-6 h-6 sm:w-8 sm:h-8 text-green-300 mx-auto mb-3" />
+            <div className="text-xl sm:text-2xl font-bold text-white">{user?.dailyChats || 0}</div>
+            <div className="text-xs sm:text-sm text-white/70">Today's Chats</div>
+          </div>
         </div>
 
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
-          <CurrencyDollarIcon className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400 mx-auto mb-2" />
-          <div className="text-xl sm:text-2xl font-bold text-white">{user?.coins || 0}</div>
-          <div className="text-xs sm:text-sm text-gray-300">Total Coins</div>
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6 text-center shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/15 via-yellow-400/5 to-transparent" aria-hidden="true" />
+          <div className="relative z-10">
+            <CurrencyDollarIcon className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-300 mx-auto mb-3" />
+            <div className="text-xl sm:text-2xl font-bold text-white">{user?.coins || 0}</div>
+            <div className="text-xs sm:text-sm text-white/70">Total Coins</div>
+          </div>
         </div>
 
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6 text-center">
-          <span className={`inline-block w-6 h-6 sm:w-8 sm:h-8 ${tierBadge.color} rounded-full mx-auto mb-2 flex items-center justify-center text-lg`}>
-            {tierBadge.icon}
-          </span>
-          <div className="text-sm sm:text-base font-bold text-white">{tierBadge.text}</div>
-          <div className="text-xs sm:text-sm text-gray-300">Account Status</div>
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6 text-center shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/5 to-transparent" aria-hidden="true" />
+          <div className="relative z-10">
+            <span className={`inline-flex h-8 w-8 sm:h-10 sm:w-10 ${tierBadge.color} rounded-full mx-auto mb-3 items-center justify-center text-lg font-semibold text-white shadow-md`}>
+              {tierBadge.icon}
+            </span>
+            <div className="text-sm sm:text-base font-bold text-white">{tierBadge.text}</div>
+            <div className="text-xs sm:text-sm text-white/70">Account Status</div>
+          </div>
         </div>
       </div>
 
       {/* Safety & Privacy */}
-      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Safety & Privacy</h3>
-        
-        <div className="space-y-3 sm:space-y-4">
-          <div className="flex items-center justify-between p-3 sm:p-4 bg-white bg-opacity-5 rounded-lg">
-            <div>
-              <h4 className="font-medium text-white text-sm sm:text-base">Anonymous Mode</h4>
-              <p className="text-xs sm:text-sm text-gray-300">Your identity is always protected</p>
-            </div>
-            <div className="text-green-400">
-              <ShieldCheckIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-transparent" aria-hidden="true" />
+        <div className="relative">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-lg font-semibold text-white">Safety & Privacy</h3>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70">
+              Verified protections
+            </span>
           </div>
 
-          <div className="flex items-center justify-between p-3 sm:p-4 bg-white bg-opacity-5 rounded-lg">
-            <div>
-              <h4 className="font-medium text-white text-sm sm:text-base">Age Verification</h4>
-              <p className="text-xs sm:text-sm text-gray-300">Confirmed 18+ years old</p>
+          <div className="mt-4 grid gap-3 sm:gap-4">
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3 py-3 sm:px-4 sm:py-4">
+              <div>
+                <h4 className="font-medium text-white text-sm sm:text-base">Anonymous Mode</h4>
+                <p className="text-xs sm:text-sm text-white/60">Your identity stays private on every match</p>
+              </div>
+              <ShieldCheckIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-300" />
             </div>
-            <div className="text-green-400">
-              <ShieldCheckIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between p-3 sm:p-4 bg-white bg-opacity-5 rounded-lg">
-            <div>
-              <h4 className="font-medium text-white text-sm sm:text-base">Data Protection</h4>
-              <p className="text-xs sm:text-sm text-gray-300">Conversations are not stored</p>
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3 py-3 sm:px-4 sm:py-4">
+              <div>
+                <h4 className="font-medium text-white text-sm sm:text-base">Age Verification</h4>
+                <p className="text-xs sm:text-sm text-white/60">We confirm all members are 18+ before entry</p>
+              </div>
+              <ShieldCheckIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-300" />
             </div>
-            <div className="text-green-400">
-              <ShieldCheckIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3 py-3 sm:px-4 sm:py-4">
+              <div>
+                <h4 className="font-medium text-white text-sm sm:text-base">Data Protection</h4>
+                <p className="text-xs sm:text-sm text-white/60">Chat sessions stay ephemeral and unrecorded</p>
+              </div>
+              <ShieldCheckIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-300" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Account Actions */}
-      <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-xl border border-white border-opacity-20 p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Account</h3>
-        
-        <div className="space-y-3">
-          <button 
-            onClick={() => setShowPasswordModal(true)}
-            className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium text-white text-sm sm:text-base group-hover:text-blue-400 transition-colors">
-                  Change Password
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-purple-500/5 to-transparent" aria-hidden="true" />
+        <div className="relative">
+          <h3 className="text-lg font-semibold text-white">Account</h3>
+          <p className="mt-1 text-sm text-white/60">Manage access, security, and privacy preferences in one place.</p>
+          
+          <div className="mt-4 space-y-3">
+            <button 
+              onClick={() => setShowPasswordModal(true)}
+              className="group w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left transition hover:border-white/30 hover:bg-white/10"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-white text-sm sm:text-base group-hover:text-blue-300">
+                    Change Password
+                  </div>
+                  <div className="text-xs sm:text-sm text-white/60">
+                    {user?.hasPassword ? 'Update your password' : 'Set a password (OAuth user)'}
+                  </div>
                 </div>
-                <div className="text-xs sm:text-sm text-gray-300">
-                  {user?.hasPassword ? 'Update your password' : 'Set a password (OAuth user)'}
-                </div>
+                <svg className="h-5 w-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
               </div>
-              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-            </div>
-          </button>
+            </button>
 
-          <button 
-            onClick={handleLogout}
-            className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium text-white text-sm sm:text-base group-hover:text-red-400 transition-colors">
-                  Logout
+            <button 
+              onClick={handleLogout}
+              className="group w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left transition hover:border-white/30 hover:bg-white/10"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-white text-sm sm:text-base group-hover:text-red-300">
+                    Logout
+                  </div>
+                  <div className="text-xs sm:text-sm text-white/60">Sign out from your account</div>
                 </div>
-                <div className="text-xs sm:text-sm text-gray-300">Sign out from your account</div>
+                <ArrowRightOnRectangleIcon className="h-5 w-5 text-red-300" />
               </div>
-              <ArrowRightOnRectangleIcon className="w-5 h-5 text-red-400" />
-            </div>
-          </button>
+            </button>
 
-          <button 
-            onClick={() => navigate('/settings')}
-            className="w-full text-left p-3 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors"
-          >
-            <div className="font-medium text-white text-sm sm:text-base">Privacy Settings</div>
-            <div className="text-xs sm:text-sm text-gray-300">Manage your privacy preferences</div>
-          </button>
+            <button 
+              onClick={() => navigate('/settings')}
+              className="group w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left transition hover:border-white/30 hover:bg-white/10"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-white text-sm sm:text-base group-hover:text-blue-300">Privacy Settings</div>
+                  <div className="text-xs sm:text-sm text-white/60">Manage your privacy preferences</div>
+                </div>
+                <ShieldCheckIcon className="h-5 w-5 text-blue-300" />
+              </div>
+            </button>
 
-          <button
-            onClick={handleDeleteAccount}
-            disabled={isDeleting}
-            className={`w-full text-left p-3 rounded-lg transition-colors text-red-400 ${isDeleting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-white hover:bg-opacity-10'}`}
-          >
-            <div className="font-medium text-sm sm:text-base">Delete Account</div>
-            <div className="text-xs sm:text-sm">
-              {isDeleting ? 'Deleting account...' : 'Permanently remove your account'}
-            </div>
-          </button>
-          {deleteError && (
-            <div className="text-xs sm:text-sm text-red-300 mt-1">
-              {deleteError}
-            </div>
-          )}
+            <button
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className={`w-full rounded-2xl border border-red-400/40 px-4 py-4 text-left transition ${isDeleting ? 'cursor-not-allowed opacity-60 bg-red-500/10' : 'bg-red-500/5 hover:bg-red-500/10'}`}
+            >
+              <div className="font-medium text-sm sm:text-base text-red-200">Delete Account</div>
+              <div className="text-xs sm:text-sm text-red-200/80">
+                {isDeleting ? 'Deleting account...' : 'Permanently remove your account'}
+              </div>
+            </button>
+            {deleteError && (
+              <div className="text-xs sm:text-sm text-red-300">
+                {deleteError}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
