@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useReducer, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useReducer, useCallback, useRef, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { debugLog, debugWarn } from '../utils/debugLogger';
@@ -104,6 +104,7 @@ const SocketContext = createContext<SocketContextType | null>(null);
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(socketReducer, initialState);
   const { token } = useAuth();
+  const connectionTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     debugLog('Socket effect triggered', { hasToken: !!token });
@@ -113,6 +114,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (state.socket) {
         debugLog('Cleaning up socket connection');
         state.socket.disconnect();
+        connectionTokenRef.current = null;
         dispatch({ type: 'SET_SOCKET', payload: null });
         dispatch({ type: 'SET_CONNECTED', payload: false });
         dispatch({ type: 'SET_CONNECTING', payload: false });
@@ -126,15 +128,28 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, []);
 
   function connect() {
-    if (state.socket && state.socket.connected) {
-      debugLog('Socket already active, skipping new connection');
+    const desiredToken = token || 'dev-guest-token';
+
+    const currentToken = connectionTokenRef.current;
+    const isSameTokenActive = currentToken === desiredToken && state.socket && state.socket.connected;
+
+    if (isSameTokenActive) {
+      debugLog('Socket already active with desired token, skipping new connection');
       return;
     }
 
     if (state.socket) {
-      state.socket.disconnect();
+      debugLog('Disposing previous socket before reconnect');
+      try {
+        state.socket.disconnect();
+      } catch (error) {
+        debugWarn('Error while disconnecting previous socket', { message: (error as Error)?.message });
+      }
+      dispatch({ type: 'SET_SOCKET', payload: null });
+      dispatch({ type: 'SET_CONNECTED', payload: false });
     }
 
+    connectionTokenRef.current = desiredToken;
     dispatch({ type: 'SET_CONNECTING', payload: true });
 
     const isLocalhost =
@@ -168,7 +183,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const socket = io(backendUrl, {
       auth: {
-        token: token || 'dev-guest-token'
+        token: desiredToken
       },
       transports: ['polling', 'websocket'],
       timeout: 15000,
@@ -178,6 +193,8 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000
     });
+
+    (socket as Socket & { authToken?: string }).authToken = desiredToken;
 
     debugLog('Socket instance created, waiting for connection');
 
@@ -306,6 +323,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         });
       }
       state.socket.disconnect();
+      connectionTokenRef.current = null;
       dispatch({ type: 'SET_SOCKET', payload: null });
       dispatch({ type: 'SET_CONNECTED', payload: false });
       dispatch({ type: 'SET_CONNECTING', payload: false });
