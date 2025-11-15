@@ -257,26 +257,13 @@ const Profile: React.FC = () => {
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-purple-900/80 via-blue-900/70 to-indigo-900/80 px-6 py-6 sm:py-8 shadow-2xl">
         <div className="absolute -top-24 -right-6 h-44 w-44 rounded-full bg-purple-400/20 blur-3xl" aria-hidden="true" />
         <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-blue-400/10 blur-3xl" aria-hidden="true" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex flex-col gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.35em] text-white/60">Profile Center</p>
             <h1 className="text-3xl font-semibold text-white sm:text-4xl">Your Profile</h1>
             <p className="mt-2 max-w-xl text-sm text-white/70 sm:text-base">
               Fine-tune your Omegoo presence, monitor session stats, and keep your account ready for the next match.
             </p>
-          </div>
-          <div className="flex flex-col items-stretch gap-3 sm:items-end">
-            <div className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white/80">
-              <CurrencyDollarIcon className="h-5 w-5 text-yellow-300" />
-              <span>{user?.coins ?? 0} coins</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-              <span>Logout</span>
-            </button>
           </div>
         </div>
       </div>
@@ -407,6 +394,16 @@ const Profile: React.FC = () => {
         </div>
       </div>
 
+      <div className="mt-4 sm:mt-6 flex justify-end">
+        <button
+          onClick={handleLogout}
+          className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base font-semibold text-white transition hover:border-red-300/60 hover:bg-red-500/10"
+        >
+          <ArrowRightOnRectangleIcon className="h-5 w-5 text-red-300" />
+          <span>Logout</span>
+        </button>
+      </div>
+
       {/* Safety & Privacy */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-transparent" aria-hidden="true" />
@@ -470,21 +467,6 @@ const Profile: React.FC = () => {
                 <svg className="h-5 w-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
-              </div>
-            </button>
-
-            <button 
-              onClick={handleLogout}
-              className="group w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left transition hover:border-white/30 hover:bg-white/10"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-white text-sm sm:text-base group-hover:text-red-300">
-                    Logout
-                  </div>
-                  <div className="text-xs sm:text-sm text-white/60">Sign out from your account</div>
-                </div>
-                <ArrowRightOnRectangleIcon className="h-5 w-5 text-red-300" />
               </div>
             </button>
 
