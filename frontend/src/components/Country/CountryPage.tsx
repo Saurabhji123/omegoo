@@ -242,11 +242,11 @@ const CountryPage: React.FC = () => {
         </section>
 
         {/* Features Section */}
-        <section className="container mx-auto px-4 py-16 bg-gray-800/30">
+        <section className="container mx-auto px-4 py-16">
           <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
             Features of Omegoo for {country.name} Users
           </h2>
-          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+          <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-blue-400/50 transition-all duration-300 shadow-lg transition-all duration-300">
               <div className="text-5xl mb-4">🚀</div>
               <h3 className="text-2xl font-bold mb-4 text-blue-400">No Login Required</h3>
@@ -286,11 +286,11 @@ const CountryPage: React.FC = () => {
         </section>
 
         {/* Why Better than Omegle */}
-        <section className="container mx-auto px-4 py-16">
+        <section className="container mx-auto px-4 py-16 bg-white/5">
           <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-yellow-400">
             Why Omegoo is a Better Omegle Alternative in {country.name}
           </h2>
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl p-6 border border-blue-500/30 text-center">
                 <div className="text-4xl mb-3">⚡</div>
@@ -330,11 +330,11 @@ const CountryPage: React.FC = () => {
         </section>
 
         {/* How It Works */}
-        <section className="container mx-auto px-4 py-16 bg-gray-800/30">
+        <section className="container mx-auto px-4 py-16">
           <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
             Random Video Chat for {country.name} — How It Works
           </h2>
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="space-y-6">
               <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
                 <div className="bg-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mr-6 flex-shrink-0">1</div>
@@ -379,11 +379,11 @@ const CountryPage: React.FC = () => {
         </section>
 
         {/* FAQ Section */}
-        <section className="container mx-auto px-4 py-16">
+        <section className="container mx-auto px-4 py-16 bg-white/5">
           <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
             Frequently Asked Questions (FAQs)
           </h2>
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
               <h3 className="text-xl font-bold mb-3 text-blue-400">Is Omegoo safe in {country.name}?</h3>
               <p className="text-gray-300">

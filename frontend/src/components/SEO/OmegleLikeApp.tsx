@@ -47,7 +47,7 @@ const OmegleLikeApp: React.FC = () => {
           <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
             Why Omegoo is the Best Omegle-Like App in 2025
           </h2>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-orange-500/50 transition-all duration-300">
               <div className="text-5xl mb-4">⚡</div>
               <h3 className="text-2xl font-bold mb-4 text-orange-400">Faster Than Omegle Ever Was</h3>
@@ -251,7 +251,7 @@ const OmegleLikeApp: React.FC = () => {
           <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
             Omegle-Like App FAQ
           </h2>
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6">
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
               <h3 className="text-xl font-bold mb-3 text-orange-400">Is Omegoo really like Omegle?</h3>
               <p className="text-gray-300">
