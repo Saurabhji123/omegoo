@@ -25,7 +25,7 @@ const OmegleLikeApp: React.FC = () => {
         <meta name="twitter:description" content="Looking for an Omegle-like app? Omegoo is the best Omegle alternative." />
       </Helmet>
 
-      <div className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 text-white min-h-screen">
         {/* Hero Section */}
         <section className="container mx-auto px-4 pt-8 pb-16 text-center">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-400 to-pink-400">
