@@ -117,9 +117,9 @@ const CountryPage: React.FC = () => {
         </Helmet>
       </SEOHead>
 
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
         {/* Hero Section */}
-        <section className="container mx-auto px-4 pt-24 pb-16">
+        <section className="container mx-auto px-4 pt-8 pb-16">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
               Random Video Chat in {country.name} — Talk to Strangers Instantly

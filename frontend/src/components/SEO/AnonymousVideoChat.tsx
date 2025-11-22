@@ -25,9 +25,9 @@ const AnonymousVideoChat: React.FC = () => {
         <meta name="twitter:description" content="100% anonymous video chat with strangers. No registration, no personal data required. Private, secure, and completely free random video chat." />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
         {/* Hero Section */}
-        <section className="container mx-auto px-4 pt-24 pb-16 text-center">
+        <section className="container mx-auto px-4 pt-8 pb-16 text-center">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
             Anonymous Video Chat
           </h1>

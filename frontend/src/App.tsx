@@ -146,15 +146,37 @@ const AppRoutes: React.FC = () => {
         } />
         
         {/* SEO Money Keyword Pages - Public Access */}
-        <Route path="/no-login-video-chat" element={<NoLoginVideoChat />} />
-        <Route path="/anonymous-video-chat" element={<AnonymousVideoChat />} />
-        <Route path="/stranger-cam-chat" element={<StrangerCamChat />} />
-        <Route path="/omegle-like-app" element={<OmegleLikeApp />} />
-        <Route path="/random-chat-no-registration" element={<RandomChatNoRegistration />} />
+        <Route path="/no-login-video-chat" element={
+          <Layout>
+            <NoLoginVideoChat />
+          </Layout>
+        } />
+        <Route path="/anonymous-video-chat" element={
+          <Layout>
+            <AnonymousVideoChat />
+          </Layout>
+        } />
+        <Route path="/stranger-cam-chat" element={
+          <Layout>
+            <StrangerCamChat />
+          </Layout>
+        } />
+        <Route path="/omegle-like-app" element={
+          <Layout>
+            <OmegleLikeApp />
+          </Layout>
+        } />
+        <Route path="/random-chat-no-registration" element={
+          <Layout>
+            <RandomChatNoRegistration />
+          </Layout>
+        } />
         
         {/* Country SEO Pages - Public Access */}
         <Route path="/country/:countrySlug" element={
-          <CountryPage />
+          <Layout>
+            <CountryPage />
+          </Layout>
         } />
         
         {/* Home - Public Access (No login required) */}

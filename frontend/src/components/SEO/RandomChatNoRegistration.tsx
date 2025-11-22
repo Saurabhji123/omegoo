@@ -25,9 +25,9 @@ const RandomChatNoRegistration: React.FC = () => {
         <meta name="twitter:description" content="Start random video chat without registration. No signup, no email, no personal data required." />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
         {/* Hero Section */}
-        <section className="container mx-auto px-4 pt-24 pb-16 text-center">
+        <section className="container mx-auto px-4 pt-8 pb-16 text-center">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-green-400 to-purple-400">
             Random Chat Without Registration
           </h1>

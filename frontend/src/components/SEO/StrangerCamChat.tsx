@@ -25,9 +25,9 @@ const StrangerCamChat: React.FC = () => {
         <meta name="twitter:description" content="Free stranger cam chat with random people worldwide. Instant webcam chat with strangers, no registration required. Safe, fast, and fun random cam chat." />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
         {/* Hero Section */}
-        <section className="container mx-auto px-4 pt-24 pb-16 text-center">
+        <section className="container mx-auto px-4 pt-8 pb-16 text-center">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-400 to-purple-400">
             Stranger Cam Chat
           </h1>
