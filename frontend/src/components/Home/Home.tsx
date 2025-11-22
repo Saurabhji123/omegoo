@@ -35,6 +35,14 @@ const Home: React.FC = () => {
 
   const [statusSummary, setStatusSummary] = useState<StatusSummaryRecord | null>(null);
   const [showTooltip, setShowTooltip] = useState<'text' | 'audio' | 'video' | null>(null);
+  const [totalOnlineUsers, setTotalOnlineUsers] = useState<number>(0);
+
+  // Calculate total online users from mode counts
+  useEffect(() => {
+    const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
+    setTotalOnlineUsers(total);
+    console.log('👥 Total online users:', total, 'Breakdown:', modeUserCounts);
+  }, [modeUserCounts]);
 
   useEffect(() => {
     trackEvent('home_view');
@@ -468,7 +476,7 @@ const Home: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm text-white">
             <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
               <div className="text-white/70">Online Now</div>
-              <div className="text-lg sm:text-xl font-bold">{statusSummary.connectedUsers}</div>
+              <div className="text-lg sm:text-xl font-bold">{totalOnlineUsers || statusSummary.connectedUsers}</div>
             </div>
             <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
               <div className="text-white/70">In Queue</div>

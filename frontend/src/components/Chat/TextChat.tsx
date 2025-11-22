@@ -367,10 +367,15 @@ const TextChat: React.FC = () => {
       
       // START NEW SEARCH
       setTimeout(() => {
-        if (socket) {
+        if (socket && socketConnected) {
           debugLog('🔍 Starting search for new text chat partner');
+          debugLog('Socket ID:', socket.id, 'User ID:', user?.id);
           socket.emit('join_text_queue');
-          debugLog('✅ New text chat partner search started');
+          debugLog('✅ join_text_queue event emitted successfully');
+        } else {
+          console.error('❌ Cannot start search - socket not available or not connected');
+          addSystemMessage('Connection error. Please refresh the page.');
+          setIsSearching(false);
         }
       }, 100);
     } catch (error) {

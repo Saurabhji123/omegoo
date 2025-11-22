@@ -8,13 +8,27 @@ import { generateCountrySEO } from '../../config/seo.config';
 const CountryPage: React.FC = () => {
   const { countrySlug } = useParams<{ countrySlug: string }>();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = React.useState(true);
   const country = countrySlug ? getCountryBySlug(countrySlug) : null;
 
   useEffect(() => {
+    setIsLoading(false);
     if (!country) {
-      navigate('/');
+      console.error(`Country not found: ${countrySlug}`);
+      setTimeout(() => navigate('/'), 3000);
     }
-  }, [country, navigate]);
+  }, [country, navigate, countrySlug]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!country) {
     return (
