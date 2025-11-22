@@ -17,7 +17,14 @@ const CountryPage: React.FC = () => {
   }, [country, navigate]);
 
   if (!country) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">Country not found</h1>
+          <p className="text-gray-400 mb-8">Redirecting to homepage...</p>
+        </div>
+      </div>
+    );
   }
 
   const relatedCountries = getPopularCountries().filter(c => c.slug !== country.slug).slice(0, 5);
