@@ -48,24 +48,36 @@ const OmegleLikeApp: React.FC = () => {
             Why Omegoo is the Best Omegle-Like App in 2025
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-orange-500/50 transition-all duration-300">
-              <div className="text-5xl mb-4">⚡</div>
-              <h3 className="text-2xl font-bold mb-4 text-orange-400">Faster Than Omegle Ever Was</h3>
-              <p className="text-gray-300 leading-relaxed">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-orange-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-orange-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-orange-300">Faster Than Omegle Ever Was</h3>
+              <p className="text-gray-200 leading-relaxed">
                 Matching in under 2 seconds vs Omegle's 5-10 seconds. Advanced algorithm ensures you're always connected to active users instantly.
               </p>
             </div>
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300">
-              <div className="text-5xl mb-4">🤖</div>
-              <h3 className="text-2xl font-bold mb-4 text-red-400">No Bots Like Old Omegle</h3>
-              <p className="text-gray-300 leading-relaxed">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-red-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-red-300">No Bots Like Old Omegle</h3>
+              <p className="text-gray-200 leading-relaxed">
                 Omegle was plagued with bots. We use AI detection to block fake users before they ever reach you. Real humans only.
               </p>
             </div>
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-pink-500/50 transition-all duration-300">
-              <div className="text-5xl mb-4">🛡️</div>
-              <h3 className="text-2xl font-bold mb-4 text-pink-400">Safer Than Omegle</h3>
-              <p className="text-gray-300 leading-relaxed">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-pink-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-pink-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-pink-300">Safer Than Omegle</h3>
+              <p className="text-gray-200 leading-relaxed">
                 Omegle shut down due to safety issues. We learned from that. AI moderation, instant reporting, and proactive monitoring keep you safe.
               </p>
             </div>

@@ -194,46 +194,69 @@ const CountryPage: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
-                  <span className="text-3xl mr-4">🇨🇳</span>
+                  <div className="flex-shrink-0 w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mr-4">
+                    <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-blue-400">Meet Locals from {country.name}</h3>
-                    <p className="text-gray-300">Connect with real people from cities across {country.name} and discover local culture.</p>
+                    <h3 className="text-xl font-bold mb-2 text-blue-300">Meet Locals from {country.name}</h3>
+                    <p className="text-gray-200">Connect with real people from cities across {country.name} and discover local culture.</p>
                   </div>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
-                  <span className="text-3xl mr-4">😊</span>
+                  <div className="flex-shrink-0 w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mr-4">
+                    <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-purple-400">Have Fun & Casual Conversations</h3>
-                    <p className="text-gray-300">Break the ice with random strangers. No pressure, just genuine human connections.</p>
+                    <h3 className="text-xl font-bold mb-2 text-purple-300">Have Fun & Casual Conversations</h3>
+                    <p className="text-gray-200">Break the ice with random strangers. No pressure, just genuine human connections.</p>
                   </div>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
-                  <span className="text-3xl mr-4">📚</span>
+                  <div className="flex-shrink-0 w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center mr-4">
+                    <svg className="w-7 h-7 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                      <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                    </svg>
+                  </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-pink-400">Improve Language Skills</h3>
-                    <p className="text-gray-300">Practice {country.languages[0]} or English with native speakers in real conversations.</p>
+                    <h3 className="text-xl font-bold mb-2 text-pink-300">Improve Language Skills</h3>
+                    <p className="text-gray-200">Practice {country.languages[0]} or English with native speakers in real conversations.</p>
                   </div>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
-                  <span className="text-3xl mr-4">🌏</span>
+                  <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mr-4">
+                    <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-green-400">Explore Different Cultures</h3>
-                    <p className="text-gray-300">Learn about {country.name}'s traditions, food, lifestyle directly from locals.</p>
+                    <h3 className="text-xl font-bold mb-2 text-green-300">Explore Different Cultures</h3>
+                    <p className="text-gray-200">Learn about {country.name}'s traditions, food, lifestyle directly from locals.</p>
                   </div>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
-                  <span className="text-3xl mr-4">🤝</span>
+                  <div className="flex-shrink-0 w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mr-4">
+                    <svg className="w-7 h-7 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-yellow-400">Make Friends from Around the World</h3>
-                    <p className="text-gray-300">Whether you're bored or curious, Omegoo gives you real people, real-time.</p>
+                    <h3 className="text-xl font-bold mb-2 text-yellow-300">Make Friends from Around the World</h3>
+                    <p className="text-gray-200">Whether you're bored or curious, Omegoo gives you real people, real-time.</p>
                   </div>
                 </div>
               </div>
@@ -247,31 +270,47 @@ const CountryPage: React.FC = () => {
             Features of Omegoo for {country.name} Users
           </h2>
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-blue-400/50 transition-all duration-300 shadow-lg transition-all duration-300">
-              <div className="text-5xl mb-4">🚀</div>
-              <h3 className="text-2xl font-bold mb-4 text-blue-400">No Login Required</h3>
-              <p className="text-gray-300 leading-relaxed">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-blue-400/50 transition-all duration-300 shadow-lg">
+              <div className="flex-shrink-0 w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-blue-300">No Login Required</h3>
+              <p className="text-gray-200 leading-relaxed">
                 Just open and start chatting instantly. 0% friction. No email, no phone number, no social media connection. Pure anonymous access.
               </p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
-              <div className="text-5xl mb-4">🔒</div>
-              <h3 className="text-2xl font-bold mb-4 text-purple-400">Completely Anonymous</h3>
-              <p className="text-gray-300 leading-relaxed">
+              <div className="flex-shrink-0 w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-purple-300">Completely Anonymous</h3>
+              <p className="text-gray-200 leading-relaxed">
                 We never store personal data. Your identity stays private. No chat logs, no browsing history, zero tracking.
               </p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-green-400/50 transition-all duration-300 shadow-lg">
-              <div className="text-5xl mb-4">⚡</div>
-              <h3 className="text-2xl font-bold mb-4 text-green-400">Fast Matching System</h3>
-              <p className="text-gray-300 leading-relaxed">
+              <div className="flex-shrink-0 w-14 h-14 bg-green-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-green-300">Fast Matching System</h3>
+              <p className="text-gray-200 leading-relaxed">
                 Our smart routing connects you only to active users in under 2 seconds. No waiting, just instant connections.
               </p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-pink-400/50 transition-all duration-300 shadow-lg">
-              <div className="text-5xl mb-4">🛡️</div>
-              <h3 className="text-2xl font-bold mb-4 text-pink-400">Anti-Bot Protection</h3>
-              <p className="text-gray-300 leading-relaxed">
+              <div className="flex-shrink-0 w-14 h-14 bg-pink-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-pink-300">Anti-Bot Protection</h3>
+              <p className="text-gray-200 leading-relaxed">
                 Better than Omegle. Better than OmeTV. Real humans — not bots. Advanced AI filters out fake users instantly.
               </p>
             </div>

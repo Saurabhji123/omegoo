@@ -48,24 +48,36 @@ const RandomChatNoRegistration: React.FC = () => {
             Why Random Chat Without Registration Works Better
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-green-500/50 transition-all duration-300">
-              <div className="text-5xl mb-4">⚡</div>
-              <h3 className="text-2xl font-bold mb-4 text-green-400">Instant Access</h3>
-              <p className="text-gray-300 leading-relaxed">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-green-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-green-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-green-300">Instant Access</h3>
+              <p className="text-gray-200 leading-relaxed">
                 No registration means you can start chatting in 2 seconds. No waiting for verification emails or approval. Just click and chat.
               </p>
             </div>
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300">
-              <div className="text-5xl mb-4">🔒</div>
-              <h3 className="text-2xl font-bold mb-4 text-blue-400">Maximum Privacy</h3>
-              <p className="text-gray-300 leading-relaxed">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-blue-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-blue-300">Maximum Privacy</h3>
+              <p className="text-gray-200 leading-relaxed">
                 No signup means no data collection. Your email, phone, and personal details stay yours. Pure anonymous random chat experience.
               </p>
             </div>
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300">
-              <div className="text-5xl mb-4">🚫</div>
-              <h3 className="text-2xl font-bold mb-4 text-purple-400">No Spam Ever</h3>
-              <p className="text-gray-300 leading-relaxed">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-purple-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-purple-300">No Spam Ever</h3>
+              <p className="text-gray-200 leading-relaxed">
                 Since we don't ask for email or phone, you'll never receive promotional messages or spam. Clean, ad-free experience.
               </p>
             </div>
