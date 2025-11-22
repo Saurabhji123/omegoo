@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getCountryBySlug, getPopularCountries } from '../../data/countries';
 import { Helmet } from 'react-helmet-async';
-import SEOHead from '../SEO/SEOHead';
 import { generateCountrySEO } from '../../config/seo.config';
 
 const CountryPage: React.FC = () => {
@@ -46,76 +45,103 @@ const CountryPage: React.FC = () => {
 
   return (
     <>
-      <SEOHead {...seoConfig}>
+      <Helmet>
+        <title>{seoConfig.title}</title>
+        <meta name="description" content={seoConfig.description} />
+        <link rel="canonical" href={seoConfig.canonical} />
+        
+        {/* Open Graph */}
+        {seoConfig.openGraph && (
+          <>
+            <meta property="og:title" content={seoConfig.openGraph.title} />
+            <meta property="og:description" content={seoConfig.openGraph.description} />
+            <meta property="og:url" content={seoConfig.openGraph.url} />
+            <meta property="og:type" content={seoConfig.openGraph.type} />
+          </>
+        )}
+        
+        {/* Twitter Card */}
+        {seoConfig.twitter && (
+          <>
+            <meta name="twitter:card" content={seoConfig.twitter.cardType} />
+            <meta name="twitter:site" content={seoConfig.twitter.site} />
+            <meta name="twitter:title" content={seoConfig.title} />
+            <meta name="twitter:description" content={seoConfig.description} />
+          </>
+        )}
+        
+        {/* Additional Meta Tags */}
+        {seoConfig.additionalMetaTags?.map((tag, index) => (
+          <meta key={index} {...tag} />
+        ))}
+        
         {/* Schema.org Structured Data */}
-        <Helmet>
-          <script type="application/ld+json">
-            {JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebPage",
-              "name": `Random Video Chat in ${country.name}`,
-              "description": `Meet new people in ${country.name} with Omegoo's free random video chat. No login, anonymous, fast matching, and safe chatting.`,
-              "url": `https://www.omegoo.chat/country/${country.slug}`,
-              "inLanguage": "en",
-              "publisher": {
-                "@type": "Organization",
-                "name": "Omegoo",
-                "url": "https://www.omegoo.chat"
-              }
-            })}
-          </script>
-          
-          {/* FAQ Schema */}
-          <script type="application/ld+json">
-            {JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              "mainEntity": [
-                {
-                  "@type": "Question",
-                  "name": `Is Omegoo safe in ${country.name}?`,
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Yes. We offer anonymous chatting with no data storage. Our AI moderation and instant reporting keeps you safe."
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": "Do I need to create an account?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "No login, no registration. Fully free. Just open and start chatting instantly."
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": `Can I chat with only ${country.name} users?`,
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": `Yes. Our algorithm prioritizes local matching for ${country.name} users when available.`
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": "Is it better than Omegle?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Yes — faster connections, cleaner UI, bot-free experience, and better safety features."
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": "Can I use it on mobile?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Yes, fully optimized for Android, iPhone, tablets, and all devices."
-                  }
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": `Random Video Chat in ${country.name}`,
+            "description": `Meet new people in ${country.name} with Omegoo's free random video chat. No login, anonymous, fast matching, and safe chatting.`,
+            "url": `https://www.omegoo.chat/country/${country.slug}`,
+            "inLanguage": "en",
+            "publisher": {
+              "@type": "Organization",
+              "name": "Omegoo",
+              "url": "https://www.omegoo.chat"
+            }
+          })}
+        </script>
+        
+        {/* FAQ Schema */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": `Is Omegoo safe in ${country.name}?`,
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. We offer anonymous chatting with no data storage. Our AI moderation and instant reporting keeps you safe."
                 }
-              ]
-            })}
-          </script>
-        </Helmet>
-      </SEOHead>
+              },
+              {
+                "@type": "Question",
+                "name": "Do I need to create an account?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No login, no registration. Fully free. Just open and start chatting instantly."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": `Can I chat with only ${country.name} users?`,
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": `Yes. Our algorithm prioritizes local matching for ${country.name} users when available.`
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is it better than Omegle?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes — faster connections, cleaner UI, bot-free experience, and better safety features."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I use it on mobile?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, fully optimized for Android, iPhone, tablets, and all devices."
+                }
+              }
+            ]
+          })}
+        </script>
+      </Helmet>
 
       <div className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
         {/* Hero Section */}
