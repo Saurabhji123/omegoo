@@ -205,7 +205,7 @@ const PrivacyPolicy: React.FC = () => {
             <ul className="mt-2 space-y-2 text-xs">
               <li>• No social media integrations or login providers</li>
               <li>• No advertising networks, affiliates, or data brokers</li>
-              <li>• No payment processors (Omegoo coins are free)</li>
+              <li>• No payment processors (Omegoo is 100% free)</li>
               <li>• No CDN tracking or external analytics</li>
             </ul>
           </div>
@@ -237,7 +237,7 @@ const PrivacyPolicy: React.FC = () => {
               <h5 className="text-sm font-semibold text-emerald-100">Anonymity by default</h5>
               <ul className="mt-2 space-y-2 text-xs">
                 <li>• Explore without creating an account</li>
-                <li>• Authentication required only to spend coins</li>
+                <li>• Authentication optional for saving preferences and future premium features</li>
                 <li>• Your identity never surfaces to chat partners</li>
                 <li>• Device fingerprints are not stored or monetised</li>
               </ul>
@@ -378,7 +378,7 @@ const PrivacyPolicy: React.FC = () => {
           <div className="grid gap-4 sm:grid-cols-3 text-xs">
             <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4">
               <p className="font-semibold text-emerald-100">Primary (Mumbai, India)</p>
-              <p className="mt-2 text-white/70">Authentication, coin ledger, and moderation queues live here with strict physical security.</p>
+              <p className="mt-2 text-white/70">Authentication, user preferences, and moderation queues live here with strict physical security.</p>
             </div>
             <div className="rounded-xl border border-sky-400/30 bg-sky-500/10 p-4">
               <p className="font-semibold text-sky-100">Secondary (Frankfurt, EU)</p>
@@ -409,7 +409,7 @@ const PrivacyPolicy: React.FC = () => {
               <ul className="mt-2 space-y-2">
                 <li>• Auto-deletes after delivery—no transcript storage.</li>
                 <li>• AI nudges flag harmful language without logging content.</li>
-                <li>• Coin refunds trigger when both sides downvote a session.</li>
+                <li>• Session ratings help improve matching quality.</li>
               </ul>
             </div>
             <div className="rounded-xl border border-sky-400/30 bg-sky-500/10 p-4">
@@ -444,7 +444,7 @@ const PrivacyPolicy: React.FC = () => {
             Although Omegoo stores very little, you still control what exists. Submit requests by emailing <a href="mailto:omegoochat@gmail.com" className="text-sky-300 underline">omegoochat@gmail.com</a> with the subject “Data Request”.
           </p>
           <ul className="space-y-2 text-xs text-white/70">
-            <li>• Access: We send a summary of the minimal account metadata (email, coin balance history) within 48 hours.</li>
+            <li>• Access: We send a summary of the minimal account metadata (email, usage history) within 48 hours.</li>
             <li>• Export: Data ships in JSON and CSV formats, covering authentication logs and moderator decisions tied to your account.</li>
             <li>• Deletion: We queue erasure immediately and confirm once authentication tokens, device fingerprints, and historical flags are scrubbed.</li>
           </ul>
@@ -467,7 +467,7 @@ const PrivacyPolicy: React.FC = () => {
               <p className="font-semibold text-white">Automated actions</p>
               <ul className="mt-2 space-y-2">
                 <li>• Temporary disconnects when AI hears policy-violating language.</li>
-                <li>• Coin deductions and refunds triggered by session outcomes.</li>
+                <li>• Session quality ratings help improve matching algorithms.</li>
                 <li>• Queue throttling when devices show suspicious multi-login patterns.</li>
               </ul>
             </div>

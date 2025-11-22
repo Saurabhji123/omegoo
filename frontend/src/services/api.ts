@@ -14,6 +14,7 @@ export interface ApiResponse<T = any> {
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
+  private guestId: string | null = null;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -21,6 +22,10 @@ class ApiService {
 
   setToken(token: string | null) {
     this.token = token;
+  }
+
+  setGuestId(guestId: string | null) {
+    this.guestId = guestId;
   }
 
   private async request<T>(
@@ -33,6 +38,7 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        ...(this.guestId && { 'X-Guest-Id': this.guestId }),
         ...options.headers,
       },
       ...options,
@@ -293,6 +299,43 @@ export const adminAPI = {
   getAnalytics: async (dateRange?: { start: string; end: string }) => {
     const params = dateRange ? `?start=${dateRange.start}&end=${dateRange.end}` : '';
     return apiService.get<any>(`/api/admin/analytics${params}`);
+  }
+};
+
+// Guest API
+export const guestAPI = {
+  // Verify guest ID with server
+  verifyGuest: async (guestId: string, deviceMeta: any) => {
+    return apiService.post<{ 
+      success: boolean; 
+      guest: any; 
+      isNew: boolean;
+      message?: string;
+    }>('/api/guest/verify', { guestId, deviceMeta });
+  },
+
+  // Reset guest identity (generate new ID)
+  resetGuest: async (oldGuestId: string) => {
+    return apiService.post<{ 
+      success: boolean; 
+      message: string;
+    }>('/api/guest/reset', { oldGuestId });
+  },
+
+  // Delete all guest data (GDPR compliance)
+  deleteGuestData: async (guestId: string) => {
+    return apiService.delete<{ 
+      success: boolean; 
+      message: string;
+    }>(`/api/guest/delete-data/${guestId}`);
+  },
+
+  // Get guest stats
+  getGuestStats: async () => {
+    return apiService.get<{ 
+      success: boolean; 
+      stats: any;
+    }>('/api/guest/stats');
   }
 };
 

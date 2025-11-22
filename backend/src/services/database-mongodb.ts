@@ -566,6 +566,29 @@ interface IReportedChatTranscriptDoc extends Document {
   messages: IReportedChatMessage[];
   createdAt: Date;
 }
+
+/* Shadow Login Guest User */
+interface IGuestUserDoc extends Document {
+  guestId: string; // SHA-256 fingerprint hash (unique identifier)
+  deviceMeta: {
+    version: string;
+    timestamp: number;
+    userAgent: string;
+    language: string;
+    timezone: string;
+    screenResolution: string;
+    colorDepth: number;
+    platform: string;
+    doNotTrack: boolean;
+    fingerprintMethod: 'fpjs' | 'basic' | 'random';
+  };
+  sessions: number; // Total visit count
+  lastSeen: Date;
+  createdAt: Date;
+  status: 'active' | 'deleted';
+  notes?: string;
+}
+
 /* -------------------------
    Schemas
    ------------------------- */
@@ -702,7 +725,7 @@ const AdminSchema = new Schema<IAdminDoc>({
 });
 
 const DeletedAccountSchema = new Schema<IDeletedAccountDoc>({
-  userId: { type: String, required: true, index: true },
+  userId: { type: String, required: true },
   reason: { type: String, default: 'user_request' },
   deletedBy: { type: String },
   deletedAt: { type: Date, default: Date.now },
@@ -716,7 +739,7 @@ DeletedAccountSchema.index({ userId: 1 }, { unique: false });
 DeletedAccountSchema.index({ deletedAt: 1 });
 
 const AdminDeletedAccountSchema = new Schema<IAdminDeletedAccountDoc>({
-  userId: { type: String, required: true, index: true },
+  userId: { type: String, required: true },
   reason: { type: String, default: 'admin_delete' },
   deletedBy: { type: String },
   adminId: { type: String },
@@ -755,6 +778,37 @@ const ReportedChatTranscriptSchema = new Schema<IReportedChatTranscriptDoc>({
 
 ReportedChatTranscriptSchema.index({ createdAt: 1 });
 const ReportedChatTranscriptModel: Model<IReportedChatTranscriptDoc> = mongoose.model<IReportedChatTranscriptDoc>('ReportedChatTranscript', ReportedChatTranscriptSchema);
+
+/* Shadow Login Guest Schema */
+const GuestUserSchema = new Schema<IGuestUserDoc>({
+  guestId: { type: String, required: true, unique: true, index: true }, // SHA-256 hash
+  deviceMeta: {
+    version: { type: String, required: true },
+    timestamp: { type: Number, required: true },
+    userAgent: { type: String, required: true },
+    language: { type: String, required: true },
+    timezone: { type: String, required: true },
+    screenResolution: { type: String, required: true },
+    colorDepth: { type: Number, required: true },
+    platform: { type: String, required: true },
+    doNotTrack: { type: Boolean, required: true },
+    fingerprintMethod: { type: String, enum: ['fpjs', 'basic', 'random'], required: true }
+  },
+  sessions: { type: Number, default: 1 },
+  lastSeen: { type: Date, default: () => new Date(), index: true },
+  createdAt: { type: Date, default: () => new Date(), index: true },
+  status: { type: String, enum: ['active', 'deleted'], default: 'active', index: true },
+  notes: { type: String }
+}, {
+  collection: 'guest_users',
+  versionKey: false
+});
+
+// Indexes for guest queries
+GuestUserSchema.index({ guestId: 1, status: 1 });
+GuestUserSchema.index({ lastSeen: -1 });
+GuestUserSchema.index({ createdAt: -1 });
+const GuestUserModel: Model<IGuestUserDoc> = mongoose.model<IGuestUserDoc>('GuestUser', GuestUserSchema);
 
 // Indexes for better query performance
 BanHistorySchema.index({ userId: 1, isActive: 1 });
@@ -3044,6 +3098,147 @@ export class DatabaseService {
     return filtered[Math.floor(Math.random() * filtered.length)];
   }
 
+  /* ---------- Shadow Login Guest System ---------- */
+  static async createGuest(guestData: { guestId: string; deviceMeta: any }): Promise<any> {
+    const guestObj = {
+      guestId: guestData.guestId,
+      deviceMeta: guestData.deviceMeta,
+      sessions: 1,
+      lastSeen: new Date(),
+      createdAt: new Date(),
+      status: 'active'
+    };
+
+    if (this.isConnected) {
+      try {
+        const doc = new GuestUserModel(guestObj);
+        await doc.save();
+        console.log(`✅ Guest created: ${guestData.guestId.substring(0, 12)}...`);
+        return doc.toObject();
+      } catch (err: any) {
+        if (err.code === 11000) {
+          // Duplicate guestId - guest already exists
+          console.warn(`⚠️ Guest already exists: ${guestData.guestId.substring(0, 12)}...`);
+          return await this.getGuestById(guestData.guestId);
+        }
+        console.error('MongoDB createGuest failed:', err);
+        throw err;
+      }
+    }
+
+    // Fallback (in-memory - not persistent, but works for dev)
+    const existing = Array.from(this.users.values()).find((u: any) => u.guestId === guestData.guestId);
+    if (existing) return existing;
+
+    const guestUser = { id: this.generateId('guest-'), ...guestObj };
+    this.users.set(guestUser.id, guestUser);
+    return guestUser;
+  }
+
+  static async getGuestById(guestId: string): Promise<any | null> {
+    if (this.isConnected) {
+      try {
+        const doc = await GuestUserModel.findOne({ guestId, status: 'active' }).lean();
+        return doc || null;
+      } catch (err) {
+        console.error('MongoDB getGuestById failed:', err);
+        return null;
+      }
+    }
+
+    // Fallback
+    const found = Array.from(this.users.values()).find((u: any) => u.guestId === guestId && u.status === 'active');
+    return found || null;
+  }
+
+  static async updateGuestLastSeen(guestId: string): Promise<boolean> {
+    if (this.isConnected) {
+      try {
+        const result = await GuestUserModel.updateOne(
+          { guestId, status: 'active' },
+          {
+            $set: { lastSeen: new Date() },
+            $inc: { sessions: 1 }
+          }
+        );
+        return result.modifiedCount > 0;
+      } catch (err) {
+        console.error('MongoDB updateGuestLastSeen failed:', err);
+        return false;
+      }
+    }
+
+    // Fallback
+    const found = Array.from(this.users.values()).find((u: any) => u.guestId === guestId);
+    if (!found) return false;
+    found.lastSeen = new Date();
+    found.sessions = (found.sessions || 0) + 1;
+    return true;
+  }
+
+  static async deleteGuest(guestId: string): Promise<boolean> {
+    if (this.isConnected) {
+      try {
+        // Soft delete
+        const result = await GuestUserModel.updateOne(
+          { guestId },
+          { $set: { status: 'deleted' } }
+        );
+        console.log(`🗑️ Guest deleted (soft): ${guestId.substring(0, 12)}...`);
+        return result.modifiedCount > 0;
+      } catch (err) {
+        console.error('MongoDB deleteGuest failed:', err);
+        return false;
+      }
+    }
+
+    // Fallback
+    const found = Array.from(this.users.values()).find((u: any) => u.guestId === guestId);
+    if (!found) return false;
+    found.status = 'deleted';
+    return true;
+  }
+
+  static async getGuestStats(): Promise<any> {
+    if (this.isConnected) {
+      try {
+        const totalGuests = await GuestUserModel.countDocuments({ status: 'active' });
+        const todayStart = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+        const activeToday = await GuestUserModel.countDocuments({
+          status: 'active',
+          lastSeen: { $gte: todayStart }
+        });
+        
+        // Unique device count (approximate - based on unique guestIds)
+        const uniqueDevices = await GuestUserModel.distinct('guestId', { status: 'active' });
+
+        return {
+          totalGuests,
+          activeToday,
+          uniqueDevices: uniqueDevices.length,
+          timestamp: new Date()
+        };
+      } catch (err) {
+        console.error('MongoDB getGuestStats failed:', err);
+        return { totalGuests: 0, activeToday: 0, uniqueDevices: 0 };
+      }
+    }
+
+    // Fallback
+    const guests = Array.from(this.users.values()).filter((u: any) => u.guestId && u.status === 'active');
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const activeToday = guests.filter((g: any) => g.lastSeen >= todayStart);
+
+    return {
+      totalGuests: guests.length,
+      activeToday: activeToday.length,
+      uniqueDevices: guests.length,
+      timestamp: new Date()
+    };
+  }
+
   /* ---------- Chat session operations ---------- */
   static async createChatSession(sessionData: { user1Id: string; user2Id: string; mode?: string }): Promise<any> {
     const sessionObj = {
@@ -3426,6 +3621,167 @@ export class DatabaseService {
     console.log('🗄️ Reported chat transcript stored in-memory fallback', {
       sessionId: payload.sessionId,
       messages: normalizedMessages.length
+    });
+    return payload;
+  }
+
+  /**
+   * Save text chat report with last 30 messages
+   */
+  static async saveTextChatReport(data: {
+    roomId: string;
+    reporterId: string;
+    reportedUserId: string;
+    violationType: 'harassment' | 'spam' | 'inappropriate' | 'other';
+    description: string;
+    messages: Array<{
+      messageId: string;
+      senderId: string;
+      content: string;
+      timestamp: number;
+    }>;
+  }): Promise<any | null> {
+    const normalizedMessages = (data.messages || []).map((msg) => ({
+      messageId: msg.messageId,
+      senderId: msg.senderId,
+      content: msg.content,
+      timestamp: typeof msg.timestamp === 'number' ? new Date(msg.timestamp) : msg.timestamp
+    }));
+
+    const payload = {
+      reportId: this.generateId('text-report-'),
+      roomId: data.roomId,
+      reporterId: data.reporterId,
+      reportedUserId: data.reportedUserId,
+      violationType: data.violationType,
+      description: data.description,
+      messages: normalizedMessages,
+      status: 'pending',
+      createdAt: new Date()
+    };
+
+    if (this.isConnected) {
+      try {
+        // Use existing ReportedChatTranscriptModel or create new collection
+        const doc = await ReportedChatTranscriptModel.create({
+          sessionId: payload.roomId,
+          reporterUserId: payload.reporterId,
+          reportedUserId: payload.reportedUserId,
+          mode: 'text',
+          violationType: payload.violationType,
+          description: payload.description,
+          messages: normalizedMessages,
+          createdAt: payload.createdAt
+        });
+        
+        console.log('🗄️ Text chat report saved (MongoDB)', {
+          roomId: payload.roomId,
+          reporterId: payload.reporterId,
+          messages: normalizedMessages.length
+        });
+        
+        return doc?.toObject?.() ?? doc;
+      } catch (error) {
+        console.error('❌ Failed to save text chat report (MongoDB):', error);
+        return null;
+      }
+    }
+
+    // In-memory fallback
+    const key = `${payload.roomId}:${Date.now()}`;
+    this.reportedChatTranscripts.set(key, payload);
+    console.log('🗄️ Text chat report stored in-memory fallback', {
+      roomId: payload.roomId,
+      messages: normalizedMessages.length
+    });
+    return payload;
+  }
+
+  /**
+   * Save voice chat report with call metadata
+   */
+  static async saveVoiceChatReport(data: {
+    roomId: string;
+    reporterId: string;
+    reportedUserId: string;
+    violationType: 'harassment' | 'spam' | 'inappropriate' | 'other';
+    description: string;
+    session: {
+      roomId: string;
+      user1Id: string;
+      user2Id: string;
+      startedAt: number;
+      endedAt?: number;
+      duration: number;
+      metrics: {
+        callConnectTime?: number;
+        packetLoss?: number;
+        jitter?: number;
+        averageBitrate?: number;
+        currentBitrate?: number;
+        callDuration: number;
+        reconnectAttempts: number;
+        iceConnectionState?: string;
+        lastUpdated: number;
+      };
+      disconnectReason?: string;
+    };
+    reportedAt: number;
+  }): Promise<any | null> {
+    const payload = {
+      reportId: this.generateId('voice-report-'),
+      roomId: data.roomId,
+      reporterId: data.reporterId,
+      reportedUserId: data.reportedUserId,
+      violationType: data.violationType,
+      description: data.description,
+      session: {
+        ...data.session,
+        startedAt: new Date(data.session.startedAt),
+        endedAt: data.session.endedAt ? new Date(data.session.endedAt) : undefined,
+        metrics: {
+          ...data.session.metrics,
+          lastUpdated: new Date(data.session.metrics.lastUpdated)
+        }
+      },
+      status: 'pending',
+      reportedAt: new Date(data.reportedAt),
+      createdAt: new Date()
+    };
+
+    if (this.isConnected) {
+      try {
+        const doc = await ReportedChatTranscriptModel.create({
+          sessionId: payload.roomId,
+          reporterUserId: payload.reporterId,
+          reportedUserId: payload.reportedUserId,
+          mode: 'audio',
+          violationType: payload.violationType,
+          description: payload.description,
+          session: payload.session,
+          createdAt: payload.createdAt
+        });
+        
+        console.log('🗄️ Voice chat report saved (MongoDB)', {
+          roomId: payload.roomId,
+          reporterId: payload.reporterId,
+          duration: data.session.duration,
+          metrics: data.session.metrics
+        });
+        
+        return doc?.toObject?.() ?? doc;
+      } catch (error) {
+        console.error('❌ Failed to save voice chat report (MongoDB):', error);
+        return null;
+      }
+    }
+
+    // In-memory fallback
+    const key = `${payload.roomId}:${Date.now()}`;
+    this.reportedChatTranscripts.set(key, payload);
+    console.log('🗄️ Voice chat report stored in-memory fallback', {
+      roomId: payload.roomId,
+      duration: data.session.duration
     });
     return payload;
   }

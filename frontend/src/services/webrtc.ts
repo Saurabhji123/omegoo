@@ -10,20 +10,88 @@ class WebRTCService {
   private currentMatchUserId: string | null = null;
   private currentSessionId: string | null = null;
 
-  // Enhanced STUN/TURN servers for better NAT traversal
-  private iceServers = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-    // Additional backup STUN servers
-    { urls: 'stun:stun.relay.metered.ca:80' },
-    { urls: 'stun:global.stun.twilio.com:3478' },
-  ];
+  // NO TURN/STUN servers - Direct P2P only (matches EnhancedWebRTCService)
+  private iceServers: RTCIceServer[] = [];
+  // Previously used STUN servers (disabled for direct P2P):
+  // { urls: 'stun:stun.l.google.com:19302' },
+  // { urls: 'stun:stun1.l.google.com:19302' },
+  // etc.
+
+  private statsIntervalId: number | null = null;
+  private onStatsUpdate: ((stats: any) => void) | null = null;
 
   constructor() {
     this.initializePeerConnection();
+  }
+
+  // Optimize SDP for Opus codec with low bandwidth
+  private optimizeOpusInSDP(sdp: string): string {
+    console.log('🎵 Optimizing SDP for Opus codec');
+    
+    // Prefer opus codec and set to stereo mode with 48kHz
+    const lines = sdp.split('\r\n');
+    const opusPayloadType = lines.find(line => line.includes('opus/48000'))?.match(/:(\d+) opus/)?.[1];
+    
+    if (opusPayloadType) {
+      // Move Opus to first position in m=audio line
+      const audioLineIndex = lines.findIndex(line => line.startsWith('m=audio'));
+      if (audioLineIndex !== -1) {
+        const audioLine = lines[audioLineIndex];
+        const parts = audioLine.split(' ');
+        const payloadTypes = parts.slice(3);
+        
+        // Remove opus from current position and add to front
+        const filteredTypes = payloadTypes.filter(pt => pt !== opusPayloadType);
+        parts.splice(3, payloadTypes.length, opusPayloadType, ...filteredTypes);
+        lines[audioLineIndex] = parts.join(' ');
+        
+        console.log('✅ Opus codec prioritized in SDP');
+      }
+      
+      // Add Opus-specific parameters for stereo and bandwidth
+      const fmtpIndex = lines.findIndex(line => line.includes(`a=fmtp:${opusPayloadType}`));
+      if (fmtpIndex !== -1) {
+        // Enhance existing fmtp line
+        lines[fmtpIndex] = `a=fmtp:${opusPayloadType} minptime=10;stereo=1;sprop-stereo=1;useinbandfec=1;maxaveragebitrate=64000`;
+      } else {
+        // Add new fmtp line after rtpmap
+        const rtpmapIndex = lines.findIndex(line => line.includes(`a=rtpmap:${opusPayloadType} opus/48000`));
+        if (rtpmapIndex !== -1) {
+          lines.splice(rtpmapIndex + 1, 0, 
+            `a=fmtp:${opusPayloadType} minptime=10;stereo=1;sprop-stereo=1;useinbandfec=1;maxaveragebitrate=64000`);
+        }
+      }
+      
+      console.log('✅ Opus parameters configured: stereo=1, maxbitrate=64kbps, FEC enabled');
+    }
+    
+    return lines.join('\r\n');
+  }
+
+  // Set bitrate limitations on audio senders for low bandwidth
+  private async setBitrateLimits() {
+    if (!this.peerConnection) return;
+    
+    const senders = this.peerConnection.getSenders();
+    const audioSender = senders.find(sender => sender.track?.kind === 'audio');
+    
+    if (audioSender) {
+      const parameters = audioSender.getParameters();
+      
+      if (!parameters.encodings) {
+        parameters.encodings = [{}];
+      }
+      
+      // Set max bitrate to 64 kbps for 2G/3G compatibility
+      parameters.encodings[0].maxBitrate = 64000;
+      
+      try {
+        await audioSender.setParameters(parameters);
+        console.log('✅ Audio bitrate limited to 64 kbps for low bandwidth');
+      } catch (error) {
+        console.warn('⚠️ Failed to set bitrate limits:', error);
+      }
+    }
   }
 
   private initializePeerConnection() {
@@ -184,8 +252,17 @@ class WebRTCService {
       offerToReceiveVideo: true,
     });
 
+    // Optimize SDP for Opus codec
+    if (offer.sdp) {
+      offer.sdp = this.optimizeOpusInSDP(offer.sdp);
+    }
+
     await this.peerConnection.setLocalDescription(offer);
-    console.log('📞 Created and set local description (offer)');
+    
+    // Set bitrate limits after local description is set
+    await this.setBitrateLimits();
+    
+    console.log('📞 Created and set local description (offer) with Opus optimization');
     return offer;
   }
 
@@ -219,8 +296,18 @@ class WebRTCService {
     }
     
     const answer = await this.peerConnection.createAnswer();
+    
+    // Optimize SDP for Opus codec
+    if (answer.sdp) {
+      answer.sdp = this.optimizeOpusInSDP(answer.sdp);
+    }
+    
     await this.peerConnection.setLocalDescription(answer);
-    console.log('📞 Created and set local description (answer)');
+    
+    // Set bitrate limits after local description is set
+    await this.setBitrateLimits();
+    
+    console.log('📞 Created and set local description (answer) with Opus optimization');
     
     return answer;
   }
@@ -650,13 +737,93 @@ class WebRTCService {
 
   // Session management
   nextMatch(): void {
+    this.stopStatsMonitoring();
     this.close();
     this.currentMatchUserId = null;
     this.currentSessionId = null;
   }
 
+  // Start monitoring WebRTC stats for quality metrics
+  startStatsMonitoring(intervalMs: number = 2000): void {
+    if (this.statsIntervalId) {
+      console.log('⚠️ Stats monitoring already running');
+      return;
+    }
+    
+    console.log('📊 Starting WebRTC stats monitoring');
+    
+    this.statsIntervalId = window.setInterval(async () => {
+      if (!this.peerConnection) return;
+      
+      try {
+        const stats = await this.peerConnection.getStats();
+        const metrics: any = {
+          timestamp: Date.now(),
+          packetLoss: 0,
+          jitter: 0,
+          bitrate: 0,
+          roundTripTime: 0
+        };
+        
+        stats.forEach((report: any) => {
+          // Inbound RTP (receiving audio/video)
+          if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+            metrics.packetsLost = report.packetsLost || 0;
+            metrics.packetsReceived = report.packetsReceived || 0;
+            metrics.jitter = report.jitter || 0;
+            metrics.bytesReceived = report.bytesReceived || 0;
+            
+            // Calculate packet loss percentage
+            if (metrics.packetsReceived > 0) {
+              metrics.packetLoss = (metrics.packetsLost / (metrics.packetsLost + metrics.packetsReceived)) * 100;
+            }
+          }
+          
+          // Outbound RTP (sending audio/video)
+          if (report.type === 'outbound-rtp' && report.kind === 'audio') {
+            metrics.bytesSent = report.bytesSent || 0;
+            metrics.packetsSent = report.packetsSent || 0;
+          }
+          
+          // Candidate pair for RTT
+          if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+            metrics.roundTripTime = report.currentRoundTripTime || 0;
+          }
+        });
+        
+        // Calculate bitrate (bytes per second to kbps)
+        if (metrics.bytesReceived) {
+          metrics.bitrate = Math.round((metrics.bytesReceived * 8) / 1000); // kbps
+        }
+        
+        // Emit stats to callback
+        if (this.onStatsUpdate) {
+          this.onStatsUpdate(metrics);
+        }
+        
+      } catch (error) {
+        console.warn('⚠️ Failed to collect WebRTC stats:', error);
+      }
+    }, intervalMs);
+  }
+  
+  stopStatsMonitoring(): void {
+    if (this.statsIntervalId) {
+      clearInterval(this.statsIntervalId);
+      this.statsIntervalId = null;
+      console.log('🛑 Stopped WebRTC stats monitoring');
+    }
+  }
+  
+  onStatsUpdated(callback: (stats: any) => void): void {
+    this.onStatsUpdate = callback;
+  }
+
   cleanup(): void {
     console.log('🧹 WebRTC cleanup started');
+    
+    // Stop stats monitoring
+    this.stopStatsMonitoring();
     
     // Clear session info first
     this.currentMatchUserId = null;
@@ -670,6 +837,7 @@ class WebRTCService {
     this.onRemoteStream = null;
     this.onConnectionStateChange = null;
     this.onIceCandidateGenerated = null;
+    this.onStatsUpdate = null;
     
     console.log('✅ WebRTC cleanup completed');
   }

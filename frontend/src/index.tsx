@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { registerServiceWorker } from './serviceWorkerRegistration';
+import reportWebVitals, { sendToAnalytics } from './reportWebVitals';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -14,3 +15,6 @@ root.render(
 );
 
 registerServiceWorker();
+
+// Report web vitals to analytics
+reportWebVitals(sendToAnalytics);

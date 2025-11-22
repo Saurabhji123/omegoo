@@ -150,7 +150,7 @@ const safetySections = [
       {
         title: 'Text mode filters',
         content:
-          'Language models block slurs, doxxing attempts, or explicit demands instantly. Persistent offenders lose coin access until reviewed.'
+          'Language models block slurs, doxxing attempts, or explicit demands instantly. Persistent offenders may face temporary suspensions until reviewed.'
       },
       {
         title: 'Audio calm-down tools',

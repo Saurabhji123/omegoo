@@ -40,7 +40,7 @@ interface Message {
 const TextChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
-  const { updateUser, user } = useAuth();
+  const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -76,6 +76,28 @@ const TextChat: React.FC = () => {
     };
   }, [setActiveMode]);
 
+  // Mobile viewport handling - prevent keyboard from covering input
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+
+    const handleViewportResize = () => {
+      if (window.visualViewport) {
+        const viewport = window.visualViewport;
+        const chatContainer = document.querySelector('.text-chat-main') as HTMLElement;
+        if (chatContainer) {
+          chatContainer.style.height = `${viewport.height}px`;
+        }
+        // Scroll to bottom when keyboard opens
+        setTimeout(scrollToBottom, 100);
+      }
+    };
+
+    window.visualViewport.addEventListener('resize', handleViewportResize);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleViewportResize);
+    };
+  }, []);
+
   // Add message helper function
   const addMessage = useCallback((content: string, isOwnMessage: boolean, replyTo?: Message['replyTo']) => {
     const newMessage: Message = {
@@ -98,129 +120,113 @@ const TextChat: React.FC = () => {
     setMessages(prev => [...prev, systemMessage]);
   }, []);
 
-  // Main socket event listeners - following AudioChat pattern
+  // Main socket event listeners - ultra-fast text chat events
   useEffect(() => {
     if (!socket) return;
 
-    // Socket event listeners - exact AudioChat pattern
-    socket.on('match-found', async (data: { 
-      sessionId: string; 
-      matchUserId: string; 
-      isInitiator: boolean;
-      coins?: number;
-      totalChats?: number;
-      dailyChats?: number;
+    // Text queue joined
+    socket.on('text_queue_joined', (data: { position: number; estimatedWaitTime: number }) => {
+      debugLog('💬 Joined text queue:', data);
+      setIsSearching(true);
+    });
+
+    // Text match found - ultra-fast pairing
+    socket.on('text_match_found', async (data: { 
+      roomId: string; 
+      partnerId: string;
     }) => {
       try {
-  debugLog('💬 Text chat match found:', data);
-  debugLog('📊 Match data received:', {
-          coins: data.coins,
-          totalChats: data.totalChats,
-          dailyChats: data.dailyChats,
-          hasCoinsData: data.coins !== undefined
-        });
+        debugLog('✅ Text match found:', data);
         
-        // Update user coins and chat counts from backend response
-        if (data.coins !== undefined) {
-          debugLog('🔄 CALLING updateUser with:', { 
-            coins: data.coins,
-            totalChats: data.totalChats || 0,
-            dailyChats: data.dailyChats || 0
-          });
-          
-          updateUser({ 
-            coins: data.coins,
-            totalChats: data.totalChats || 0,
-            dailyChats: data.dailyChats || 0
-          });
-          
-          debugLog(`✅ updateUser CALLED - New values: coins=${data.coins}, totalChats=${data.totalChats}, dailyChats=${data.dailyChats}`);
-        } else {
-          debugWarn('⚠️ No coins data in match-found event!');
-        }
-        
-        setSessionId(data.sessionId);
-        setPartnerId(data.matchUserId); // Track partner ID for reporting
+        setSessionId(data.roomId);
+        setPartnerId(data.partnerId);
         setIsSearching(false);
         setMessages([]);
-        
         setIsMatchConnected(true);
+        
         addSystemMessage('Connected! Say hello to your new friend.');
       } catch (error) {
-        console.error('❌ Error handling match-found event:', error);
+        console.error('❌ Error handling text_match_found event:', error);
         addSystemMessage('Connection established but some data may be outdated.');
       }
     });
 
-    socket.on('searching', (data: { position: number; totalWaiting: number }) => {
-  debugLog('🔍 Searching for text chat partner:', data);
-      setIsSearching(true);
-    });
-
-    socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string; replyTo?: Message['replyTo'] }) => {
+    // Text message received
+    socket.on('text_message_received', (data: { 
+      messageId: string;
+      senderId: string; 
+      content: string; 
+      timestamp: number;
+      roomId: string;
+    }) => {
       try {
-  debugLog('📝 RECEIVED MESSAGE IN TEXTCHAT:', data);
-  debugLog('🔍 Reply data received:', {
-          hasReplyTo: !!data.replyTo,
-          replyTo: data.replyTo,
-          messageContent: data.content
-        });
+        debugLog('📝 Text message received:', data);
         
-        if (data.sessionId === sessionId) {
+        if (data.roomId === sessionId) {
           if (!data.content || typeof data.content !== 'string') {
             console.error('Invalid message content received:', data);
             return;
           }
           
-          debugLog('✅ Adding message with reply:', data.replyTo);
-          addMessage(data.content, false, data.replyTo);
-          setPartnerTyping(false);
+          // Determine if own message
+          const isOwn = data.senderId === user?.id || data.senderId === user?.deviceId;
+          
+          addMessage(data.content, isOwn);
+          
+          // Clear partner typing if they sent message
+          if (!isOwn) {
+            setPartnerTyping(false);
+          }
         }
       } catch (error) {
-        console.error('❌ Error handling chat_message event:', error);
+        console.error('❌ Error handling text_message_received event:', error);
       }
     });
 
-    socket.on('typing', (data: { isTyping: boolean; sessionId?: string; userId?: string }) => {
+    // Partner typing indicators
+    socket.on('text_partner_typing', () => {
+      debugLog('⌨️ Partner started typing');
+      setPartnerTyping(true);
+    });
+
+    socket.on('text_partner_stopped_typing', () => {
+      debugLog('⌨️ Partner stopped typing');
+      setPartnerTyping(false);
+    });
+
+    // Room ended
+    socket.on('text_room_ended', (data: { reason?: string }) => {
       try {
-  debugLog('⌨️ RECEIVED TYPING EVENT:', data);
-  debugLog('📊 Current session:', sessionId);
-  debugLog('🔄 Partner typing state will change to:', data.isTyping);
+        debugLog('❌ Text room ended:', data);
+        setIsMatchConnected(false);
+        setSessionId(null);
+        setPartnerTyping(false);
         
-        if (typeof data.isTyping === 'boolean') {
-          setPartnerTyping(data.isTyping);
-          debugLog('✅ Partner typing state updated:', data.isTyping);
-        } else {
-          debugWarn('Invalid typing indicator data:', data);
-        }
+        const reasonMessages: Record<string, string> = {
+          user_left: 'You left the chat',
+          partner_left: 'Partner left the chat',
+          partner_disconnected: 'Partner disconnected',
+          timeout: 'Chat timed out due to inactivity'
+        };
+        
+        addSystemMessage(reasonMessages[data.reason || ''] || 'Chat ended');
       } catch (error) {
-        console.error('❌ Error handling typing event:', error);
+        console.error('❌ Error handling text_room_ended event:', error);
+        setIsMatchConnected(false);
+        setSessionId(null);
       }
     });
 
-    socket.on('session_ended', (data: { reason?: string }) => {
-      try {
-  debugLog('❌ Text chat session ended:', data);
-        setIsMatchConnected(false);
-        setSessionId(null);
-        
-        addSystemMessage('Your partner has left the chat.');
-        
-        // Auto-search if partner left
-        if (data.reason === 'partner_left' && socket) {
-          setIsSearching(true);
-          setTimeout(() => {
-            if (socket) {
-              socket.emit('find_match', { mode: 'text' });
-            }
-          }, 2000);
-        }
-      } catch (error) {
-        console.error('❌ Error handling session_ended event:', error);
-        // Ensure state is reset even on error
-        setIsMatchConnected(false);
-        setSessionId(null);
-      }
+    // Rate limit exceeded
+    socket.on('rate_limit_exceeded', (data: { message: string; remaining: number }) => {
+      debugWarn('⚠️ Rate limit exceeded:', data);
+      addSystemMessage('⚠️ Slow down! Too many messages.');
+    });
+
+    // Text chat error
+    socket.on('text_chat_error', (data: { message: string }) => {
+      console.error('❌ Text chat error:', data);
+      addSystemMessage(`Error: ${data.message}`);
     });
 
     // Cleanup on unmount
@@ -230,11 +236,14 @@ const TextChat: React.FC = () => {
         clearTimeout(typingTimeoutRef.current);
       }
       
-      socket?.off('match-found');
-      socket?.off('searching');
-      socket?.off('chat_message');
-      socket?.off('typing');
-      socket?.off('session_ended');
+      socket?.off('text_queue_joined');
+      socket?.off('text_match_found');
+      socket?.off('text_message_received');
+      socket?.off('text_partner_typing');
+      socket?.off('text_partner_stopped_typing');
+      socket?.off('text_room_ended');
+      socket?.off('rate_limit_exceeded');
+      socket?.off('text_chat_error');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, sessionId, addMessage, addSystemMessage]);
@@ -344,16 +353,7 @@ const TextChat: React.FC = () => {
       // INSTANT DISCONNECT: End current session first if exists
       if (sessionId && isMatchConnected) {
   debugLog('🔚 Ending current text session immediately:', sessionId);
-        socket.emit('end_session', { 
-          sessionId: sessionId,
-          duration: Date.now() 
-        });
-        
-        // Notify partner immediately
-        socket.emit('session_ended', { 
-          sessionId: sessionId,
-          reason: 'user_clicked_next' 
-        });
+        socket.emit('leave_text_room');
       }
       
       // INSTANT STATE RESET
@@ -369,7 +369,7 @@ const TextChat: React.FC = () => {
       setTimeout(() => {
         if (socket) {
           debugLog('🔍 Starting search for new text chat partner');
-          socket.emit('find_match', { mode: 'text' });
+          socket.emit('join_text_queue');
           debugLog('✅ New text chat partner search started');
         }
       }, 100);
@@ -406,7 +406,7 @@ const TextChat: React.FC = () => {
     try {
       // Clean up current session
       if (sessionId && socket) {
-        socket.emit('end_session', { sessionId });
+        socket.emit('leave_text_room');
       }
       
       // Clear multi-device session tracking on exit
@@ -469,14 +469,11 @@ const TextChat: React.FC = () => {
       addMessage(content, true, replyData);
       
       // Send message to backend - matching AudioChat pattern
-      socket.emit('chat_message', {
-        sessionId,
-        content,
-        timestamp: Date.now(),
-        ...(replyData && { replyTo: replyData })
+      socket.emit('send_text_message', {
+        content
       });
       
-      console.log('✅ Message sent with reply data:', replyData);
+      console.log('✅ Message sent');
       
       // Clear typing timeout
       if (typingTimeoutRef.current) {
@@ -492,8 +489,8 @@ const TextChat: React.FC = () => {
   requestAnimationFrame(() => adjustInputHeight());
       
       // Stop typing indicator
-      socket.emit('typing', { sessionId, isTyping: false });
-      console.log('📤 SENT typing=false after message sent');
+      socket.emit('text_typing_stop', {});
+      console.log('📤 SENT typing_stop after message sent');
     } catch (error) {
       console.error('❌ Error sending message:', error);
       // Show user-friendly error
@@ -523,22 +520,22 @@ const TextChat: React.FC = () => {
       if (value.length > 0) {
         if (!isTyping) {
           setIsTyping(true);
-          socket.emit('typing', { sessionId, isTyping: true });
-          console.log('📤 SENT typing=true to backend');
+          socket.emit('text_typing_start', {});
+          console.log('📤 SENT typing_start to backend');
         }
         
         // Auto-stop typing after 2 seconds of no input
         typingTimeoutRef.current = setTimeout(() => {
           setIsTyping(false);
-          socket.emit('typing', { sessionId, isTyping: false });
-          console.log('📤 SENT typing=false to backend (timeout)');
+          socket.emit('text_typing_stop', {});
+          console.log('📤 SENT typing_stop to backend (timeout)');
         }, 2000);
       } else {
         // Stop typing indicator when input is cleared
         if (isTyping) {
           setIsTyping(false);
-          socket.emit('typing', { sessionId, isTyping: false });
-          console.log('📤 SENT typing=false to backend (cleared input)');
+          socket.emit('text_typing_stop', {});
+          console.log('📤 SENT typing_stop to backend (cleared input)');
         }
       }
     } catch (error) {

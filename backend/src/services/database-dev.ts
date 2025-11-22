@@ -1361,6 +1361,72 @@ export class DatabaseService {
     return this.bans.get(deviceHash) || null;
   }
 
+  /* ---------- Shadow Login Guest System ---------- */
+  private static guestUsers = new Map<string, any>();
+
+  static async createGuest(guestData: { guestId: string; deviceMeta: any }): Promise<any> {
+    const existing = this.guestUsers.get(guestData.guestId);
+    if (existing) {
+      console.warn(`⚠️ [DEV] Guest already exists: ${guestData.guestId.substring(0, 12)}...`);
+      return existing;
+    }
+
+    const guestObj = {
+      id: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      guestId: guestData.guestId,
+      deviceMeta: guestData.deviceMeta,
+      sessions: 1,
+      lastSeen: new Date(),
+      createdAt: new Date(),
+      status: 'active'
+    };
+
+    this.guestUsers.set(guestData.guestId, guestObj);
+    console.log(`✅ [DEV] Guest created: ${guestData.guestId.substring(0, 12)}...`);
+    return guestObj;
+  }
+
+  static async getGuestById(guestId: string): Promise<any | null> {
+    const guest = this.guestUsers.get(guestId);
+    return (guest && guest.status === 'active') ? guest : null;
+  }
+
+  static async updateGuestLastSeen(guestId: string): Promise<boolean> {
+    const guest = this.guestUsers.get(guestId);
+    if (!guest || guest.status !== 'active') return false;
+
+    guest.lastSeen = new Date();
+    guest.sessions = (guest.sessions || 0) + 1;
+    this.guestUsers.set(guestId, guest);
+    return true;
+  }
+
+  static async deleteGuest(guestId: string): Promise<boolean> {
+    const guest = this.guestUsers.get(guestId);
+    if (!guest) return false;
+
+    guest.status = 'deleted';
+    this.guestUsers.set(guestId, guest);
+    console.log(`🗑️ [DEV] Guest deleted (soft): ${guestId.substring(0, 12)}...`);
+    return true;
+  }
+
+  static async getGuestStats(): Promise<any> {
+    const allGuests = Array.from(this.guestUsers.values());
+    const activeGuests = allGuests.filter((g) => g.status === 'active');
+    
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const activeToday = activeGuests.filter((g) => g.lastSeen >= todayStart);
+
+    return {
+      totalGuests: activeGuests.length,
+      activeToday: activeToday.length,
+      uniqueDevices: activeGuests.length,
+      timestamp: new Date()
+    };
+  }
+
   // Chat session methods
   static async createChatSession(sessionData: { user1Id: string; user2Id: string; mode: string }): Promise<ChatSession> {
     const session: ChatSession = {
@@ -3667,5 +3733,19 @@ export class DatabaseService {
       messages: normalizedMessages.length
     });
     return payload;
+  }
+
+  static async saveVoiceChatReport(data: any): Promise<any | null> {
+    console.log('🗄️ Voice chat report saved (dev mode - no persistence)', {
+      roomId: data.roomId,
+      reporterId: data.reporterId,
+      reportedUserId: data.reportedUserId,
+      violationType: data.violationType
+    });
+    return {
+      reportId: `voice-report-${Date.now()}`,
+      ...data,
+      createdAt: new Date()
+    };
   }
 }

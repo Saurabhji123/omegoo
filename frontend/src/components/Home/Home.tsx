@@ -5,13 +5,7 @@ import axios from 'axios';
 import { useSocket } from '../../contexts/SocketContext';
 import { API_BASE_URL } from '../../services/api';
 import { trackEvent } from '../../services/analyticsClient';
-
-// Coin costs for each mode
-const COIN_COSTS = {
-  text: 1,
-  audio: 1,
-  video: 1
-};
+import LazyImage from '../UI/LazyImage';
 
 type IncidentRecord = {
   message: string;
@@ -40,6 +34,7 @@ const Home: React.FC = () => {
   const [resendingOTP, setResendingOTP] = useState(false);
 
   const [statusSummary, setStatusSummary] = useState<StatusSummaryRecord | null>(null);
+  const [showTooltip, setShowTooltip] = useState<'text' | 'audio' | 'video' | null>(null);
 
   useEffect(() => {
     trackEvent('home_view');
@@ -104,34 +99,11 @@ const Home: React.FC = () => {
 
   // No redirect - allow browsing without login
   const handleStartChat = (mode: 'text' | 'audio' | 'video') => {
-    // Check if user is logged in
-    if (!user) {
-      // Redirect to login page with return URL
-      console.log('🔒 User not logged in, redirecting to login...');
-      navigate('/login', { state: { returnTo: '/', chatMode: mode } });
-      return;
-    }
-
-    // 📧 Check if user email is verified
-    if (!user.isVerified) {
-      console.log('⚠️  User email not verified, showing popup');
-      setShowVerificationPopup(true);
-      return;
-    }
-
-    const cost = COIN_COSTS[mode];
-    
-    // Check if user has enough coins (frontend validation)
-    if ((user.coins || 0) < cost) {
-      alert(`Not enough coins! You need ${cost} coin for ${mode} chat. You have ${user?.coins || 0} coins.`);
-      return;
-    }
-
-    console.log(`🚀 Starting ${mode} chat search...`);
+    console.log(`🚀 Starting ${mode} chat as guest...`);
     setIsMatching(true);
     
-    // Navigate to appropriate chat interface based on mode
-    // Backend will deduct coins when match is found
+    // Navigate directly to chat interface
+    // Guest users get instant access, coins deducted only for premium features
     setTimeout(() => {
       switch (mode) {
         case 'text':
@@ -146,7 +118,15 @@ const Home: React.FC = () => {
         default:
           navigate('/chat/video');
       }
-    }, 1500);
+    }, 800);
+  };
+
+  // Keyboard navigation handler
+  const handleKeyPress = (e: React.KeyboardEvent, mode: 'text' | 'audio' | 'video') => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleStartChat(mode);
+    }
   };
 
   // Show loading while checking authentication
@@ -165,10 +145,12 @@ const Home: React.FC = () => {
           <div className="relative">
             <div className="animate-spin rounded-full h-32 w-32 border-4 border-purple-200 border-t-purple-600 mx-auto mb-8"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <img 
+              <LazyImage 
                 src="/logo512.png" 
-                alt="Omegoo" 
+                alt="Omegoo - Matching you with a stranger" 
                 className="w-12 h-12 rounded-full shadow-lg animate-pulse object-cover"
+                width={48}
+                height={48}
               />
             </div>
           </div>
@@ -195,13 +177,25 @@ const Home: React.FC = () => {
       <section className="text-center mb-8 sm:mb-12 px-4 py-8 sm:py-16 text-white" aria-labelledby="home-hero-heading">
         {/* Hero Headline */}
         <div className="mb-6">
-          <p className="text-sm sm:text-base text-white/70 tracking-widest mb-3">Made for LPU</p>
+          <p className="text-sm sm:text-base text-white/70 tracking-widest mb-3">100% FREE Random Chat</p>
           <h1 id="home-hero-heading" className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text drop-shadow-2xl tracking-wider">
-            Random Chat · Video · Voice · Text
+            Random · Video · Voice · Text
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 mt-3 uppercase tracking-[0.35rem]">
-            Meet new people in seconds
+            Talk to strangers
           </p>
+        </div>
+
+        {/* Privacy Notice - Prominent */}
+        <div className="max-w-2xl mx-auto mb-6">
+          <div className="inline-flex items-center bg-green-500/20 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-green-400/50 shadow-lg">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="text-xs sm:text-sm text-white font-medium">
+              100% Anonymous — No signup required. <button onClick={() => navigate('/privacy')} className="underline hover:text-green-300 transition-colors">Privacy</button>
+            </span>
+          </div>
         </div>
 
         {(() => {
@@ -249,87 +243,91 @@ const Home: React.FC = () => {
           );
         })()}
 
-        {/* User Status & Coins - Only show if logged in */}
-        {user ? (
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6">
-            <div className="inline-flex items-center bg-white bg-opacity-10 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-white border-opacity-30">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-xs sm:text-sm font-medium text-white whitespace-nowrap">
-                  {user?.tier === 'guest' ? 'Guest User' : 'Verified User'}
-                </span>
-                {user?.isVerified && (
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </div>
-            </div>
 
-            {/* Coins Display - Mobile Responsive */}
-            <div className="w-full sm:w-auto">
-              <div className="inline-flex flex-col sm:flex-row items-center bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl sm:rounded-full px-4 sm:px-6 py-3 sm:py-3 border-2 border-yellow-400 shadow-lg w-full sm:w-auto">
-                <div className="flex items-center space-x-2 mb-2 sm:mb-0">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-sm sm:text-base font-bold text-white whitespace-nowrap">
-                    {user?.coins || 0} Coins
-                  </span>
-                </div>
-                <div className="text-xs text-white text-center sm:text-left sm:ml-2 sm:pl-2 sm:border-l sm:border-yellow-300">
-                  🔄 Resets to 50 at 12 AM
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="mb-6">
-            <div className="inline-flex items-center bg-blue-500 bg-opacity-20 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-blue-400 border-opacity-50 shadow-lg">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-xs sm:text-sm text-white font-medium text-center">
-                👋 Welcome to Omegoo! Login to unlock your 50 daily coins
-              </span>
-            </div>
-          </div>
-        )}
       </section>
+
+      {/* Total Online Users Counter - Above Cards */}
+      <div className="flex justify-center mb-6 px-4">
+        <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-md border border-purple-400/30 shadow-xl">
+          <div className="relative flex items-center justify-center">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75 animate-ping" style={{ animationDuration: '2s' }}></span>
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/30 border border-purple-400/50">
+              <svg className="w-6 h-6 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-purple-200 font-medium uppercase tracking-wide">Live Users</p>
+            <p className="text-2xl font-bold text-white animate-pulse" style={{ animationDuration: '3s' }}>
+              {(() => {
+                const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
+                const multiplied = total * 3;
+                return multiplied > 0 ? `${multiplied.toLocaleString()}+` : '0';
+              })()}
+            </p>
+          </div>
+          <div className="text-xs text-purple-200/70">online now</div>
+        </div>
+      </div>
 
       {/* Chat Options */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 px-4 max-w-6xl mx-auto">
         {/* Text Chat */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all">
+        <div 
+          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-200 relative"
+          role="article"
+          aria-labelledby="text-chat-title"
+        >
+          {/* Info Icon with Tooltip */}
+          <div className="absolute top-4 right-4">
+            <button
+              onMouseEnter={() => setShowTooltip('text')}
+              onMouseLeave={() => setShowTooltip(null)}
+              onClick={() => setShowTooltip(showTooltip === 'text' ? null : 'text')}
+              className="w-6 h-6 rounded-full bg-blue-500/30 hover:bg-blue-500/50 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+              aria-label="Information about text chat"
+            >
+              <svg className="w-4 h-4 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </button>
+            {showTooltip === 'text' && (
+              <div className="absolute top-8 right-0 w-52 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-10 border border-blue-400/30">
+                <p className="font-semibold mb-1">✨ Text Chat</p>
+                <p className="text-gray-300">Connect instantly. No signup needed.</p>
+              </div>
+            )}
+          </div>
+          
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 bg-opacity-20 rounded-full mb-4 sm:mb-6 backdrop-blur-sm border border-blue-400 border-opacity-30">
-            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">
+          <h3 id="text-chat-title" className="text-lg sm:text-xl font-bold mb-2 text-white">
             Text Chat
           </h3>
-          <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Quick anonymous conversations. Say hello and keep it light.
+          <p className="text-base sm:text-lg font-semibold text-blue-300 mb-2">
+            Fast & Anonymous
           </p>
+          <p className="text-sm text-gray-300 mb-4">
+            Quick text chats with strangers
+          </p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/50 text-green-100 text-sm font-bold mb-4">
+            Random Match • <span className="text-green-300">100% FREE</span>
+          </div>
           <button
             onClick={() => handleStartChat('text')}
-            disabled={!!(user && (user?.coins || 0) < COIN_COSTS.text)}
-            className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base ${
-              user && (user?.coins || 0) < COIN_COSTS.text ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            onKeyDown={(e) => handleKeyPress(e, 'text')}
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50"
+            aria-label="Start free text chat"
           >
-            {user ? 'Start Text Chat' : '🔒 Login to Start Text Chat'}
+            Start Free Text Chat
           </button>
-          {user && (
-            <p className="text-xs sm:text-sm text-yellow-400 mt-2">
-              💰 {COIN_COSTS.text} coins per session
-            </p>
-          )}
           <div className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-100 text-xs sm:text-sm font-semibold animate-pulse">
-              <span className="relative flex h-2 w-2">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-100 text-xs sm:text-sm font-semibold animate-pulse" aria-live="polite">
+              <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
@@ -339,35 +337,60 @@ const Home: React.FC = () => {
         </div>
 
         {/* Audio Chat */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all">
+        <div 
+          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-200 relative"
+          role="article"
+          aria-labelledby="voice-chat-title"
+        >
+          {/* Info Icon with Tooltip */}
+          <div className="absolute top-4 right-4">
+            <button
+              onMouseEnter={() => setShowTooltip('audio')}
+              onMouseLeave={() => setShowTooltip(null)}
+              onClick={() => setShowTooltip(showTooltip === 'audio' ? null : 'audio')}
+              className="w-6 h-6 rounded-full bg-green-500/30 hover:bg-green-500/50 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+              aria-label="Information about voice chat"
+            >
+              <svg className="w-4 h-4 text-green-200" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </button>
+            {showTooltip === 'audio' && (
+              <div className="absolute top-8 right-0 w-52 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-10 border border-green-400/30">
+                <p className="font-semibold mb-1">🎤 Voice Chat</p>
+                <p className="text-gray-300">Free voice chat. Mic access needed.</p>
+              </div>
+            )}
+          </div>
+          
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-green-500 bg-opacity-20 rounded-full mb-4 sm:mb-6 backdrop-blur-sm border border-green-400 border-opacity-30">
-            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
           </div>
-          <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">
+          <h3 id="voice-chat-title" className="text-lg sm:text-xl font-bold mb-2 text-white">
             Voice Chat
           </h3>
-          <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Drop into real-time voice rooms for more natural chats.
+          <p className="text-base sm:text-lg font-semibold text-green-300 mb-2">
+            Talk to Strangers
           </p>
+          <p className="text-sm text-gray-300 mb-4">
+            Talk with strangers live
+          </p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/50 text-green-100 text-sm font-bold mb-4">
+            Random Match • <span className="text-green-300">100% FREE</span>
+          </div>
           <button
             onClick={() => handleStartChat('audio')}
-            disabled={!!(user && (user?.coins || 0) < COIN_COSTS.audio)}
-            className={`bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base ${
-              user && (user?.coins || 0) < COIN_COSTS.audio ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            onKeyDown={(e) => handleKeyPress(e, 'audio')}
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px] focus:outline-none focus:ring-4 focus:ring-green-400/50"
+            aria-label="Start free voice chat"
           >
-            {user ? 'Start Voice Chat' : '🔒 Login to Start Voice Chat'}
+            Start Free Voice Chat
           </button>
-          {user && (
-            <p className="text-xs sm:text-sm text-yellow-400 mt-2">
-              💰 {COIN_COSTS.audio} coins per session
-            </p>
-          )}
           <div className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/40 text-green-100 text-xs sm:text-sm font-semibold animate-pulse">
-              <span className="relative flex h-2 w-2">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/40 text-green-100 text-xs sm:text-sm font-semibold animate-pulse" aria-live="polite">
+              <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
@@ -377,35 +400,60 @@ const Home: React.FC = () => {
         </div>
 
         {/* Video Chat */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all">
+        <div 
+          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-200 relative"
+          role="article"
+          aria-labelledby="video-chat-title"
+        >
+          {/* Info Icon with Tooltip */}
+          <div className="absolute top-4 right-4">
+            <button
+              onMouseEnter={() => setShowTooltip('video')}
+              onMouseLeave={() => setShowTooltip(null)}
+              onClick={() => setShowTooltip(showTooltip === 'video' ? null : 'video')}
+              className="w-6 h-6 rounded-full bg-purple-500/30 hover:bg-purple-500/50 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400"
+              aria-label="Information about video chat"
+            >
+              <svg className="w-4 h-4 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </button>
+            {showTooltip === 'video' && (
+              <div className="absolute top-8 right-0 w-52 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-10 border border-purple-400/30">
+                <p className="font-semibold mb-1">🎥 Video Chat</p>
+                <p className="text-gray-300">Random video chat. Camera preview.</p>
+              </div>
+            )}
+          </div>
+          
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-purple-500 bg-opacity-20 rounded-full mb-4 sm:mb-6 backdrop-blur-sm border border-purple-400 border-opacity-30">
-            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </div>
-          <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">
+          <h3 id="video-chat-title" className="text-lg sm:text-xl font-bold mb-2 text-white">
             Video Chat
           </h3>
-          <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6">
-            Meet face-to-face with verified matches in secure rooms.
+          <p className="text-base sm:text-lg font-semibold text-purple-300 mb-2">
+            Face to Face
           </p>
+          <p className="text-sm text-gray-300 mb-4">
+            Face-to-face video chats
+          </p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/50 text-green-100 text-sm font-bold mb-4">
+            Random Match • <span className="text-green-300">100% FREE</span>
+          </div>
           <button
             onClick={() => handleStartChat('video')}
-            disabled={!!(user && (user?.coins || 0) < COIN_COSTS.video)}
-            className={`bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base ${
-              user && (user?.coins || 0) < COIN_COSTS.video ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            onKeyDown={(e) => handleKeyPress(e, 'video')}
+            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px] focus:outline-none focus:ring-4 focus:ring-purple-400/50"
+            aria-label="Start free video chat"
           >
-            {user ? 'Start Video Chat' : '🔒 Login to Start Video Chat'}
+            Start Free Video Chat
           </button>
-          {user && (
-            <p className="text-xs sm:text-sm text-yellow-400 mt-2">
-              💰 {COIN_COSTS.video} coins per session
-            </p>
-          )}
           <div className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-100 text-xs sm:text-sm font-semibold animate-pulse">
-              <span className="relative flex h-2 w-2">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-100 text-xs sm:text-sm font-semibold animate-pulse" aria-live="polite">
+              <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
@@ -438,32 +486,32 @@ const Home: React.FC = () => {
         </div>
       )}
 
-    {/* Coin System & SEO Content */}
+    {/* Free Instant Access & SEO Content */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 sm:p-10 text-white shadow-xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-start">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-                  How the Omegoo coin system powers a safer Omegle alternative
+                  How Omegoo delivers 100% FREE instant random chat
                 </h2>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
-                  Receive <strong className="text-yellow-300">50 free coins every midnight (IST)</strong> and spend them on text, voice, or video sessions for just <strong className="text-yellow-300">1 coin each</strong>. This balanced economy turns Omegoo into a trusted <strong className="text-white">Omegle alternative for India</strong>: coins limit spam, reward verified users, and make every match feel valuable—whether you are joining from an IIT hostel, an Indian university dorm, a community college, or connecting from overseas.
+                  Start chatting <strong className="text-green-300">instantly without signup or payment</strong>. Omegoo is a truly <strong className="text-white">free Omegle alternative for India</strong> where you can jump into text, voice, or video sessions with just one tap. Our anonymous guest system keeps you safe while eliminating barriers—perfect for students from IIT hostels, university dorms, community colleges, or anyone connecting worldwide.
                 </p>
                 <ul className="mt-4 space-y-2 text-sm sm:text-base text-gray-200 list-disc list-inside">
-                  <li>Earn bonus coins by verifying your email, staying active, and hosting respectful sessions.</li>
-                  <li>Switch between chat modes without losing your queue position, just like Omegle but with smarter controls.</li>
-                  <li>Upcoming: invite friends from any campus worldwide and unlock extra coins while growing our safe Omegle-style network.</li>
+                  <li>No credit card, no subscription—100% free forever for basic random chat modes.</li>
+                  <li>Switch between text, voice, and video seamlessly without losing your session.</li>
+                  <li>Optional login unlocks premium features like saved preferences and chat history, but guest access is always FREE.</li>
                 </ul>
               </div>
               <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/20 rounded-2xl p-6 flex flex-col gap-4">
-                <h3 className="text-xl font-semibold">Why students pick this Omegle alternative</h3>
+                <h3 className="text-xl font-semibold">Why users choose Omegoo as their go-to Omegle alternative</h3>
                 <div className="space-y-3 text-sm sm:text-base text-gray-100">
-                  <p>• Match with peers from IITs, NITs, DU, SRM, MIT, and global universities on a moderated random chat platform.</p>
-                  <p>• Safer than Omegle thanks to instant reporting, verified badges, and AI-powered moderation prompts.</p>
-                  <p>• Perfect for language practice, hackathon teaming, or meeting new travel buddies without worrying about bots.</p>
+                  <p>• Match with peers from IITs, NITs, DU, SRM, MIT, and global universities on a moderated free chat platform.</p>
+                  <p>• Safer than Omegle with instant reporting, AI moderation, and anonymous guest tracking for accountability.</p>
+                  <p>• Perfect for language practice, finding study partners, or meeting travel buddies without bots or spam.</p>
                 </div>
                 <div className="mt-auto text-xs text-gray-200">
-                  Popular searches we rank for: <span className="font-semibold text-white">"Omegle alternative India", "random video chat for students", "safe Omegle like site", "anonymous campus chat".</span>
+                  Popular searches: <span className="font-semibold text-white">"free Omegle alternative India", "random video chat no signup", "safe anonymous chat", "instant stranger chat".</span>
                 </div>
               </div>
             </div>
@@ -508,25 +556,25 @@ const Home: React.FC = () => {
           <div className="bg-white/10 border border-white/15 rounded-3xl p-6 sm:p-10 text-white backdrop-blur-md shadow-xl">
             <h2 className="text-2xl sm:text-3xl font-bold mb-4">Searching for a safe Omegle alternative for random stranger chat?</h2>
             <p className="text-sm sm:text-base text-gray-200 leading-relaxed mb-6">
-              Omegoo is a fresh alternative to classic stranger chat platforms like Omegle. You can start a <strong className="text-white">random chat with strangers</strong>, match for <strong className="text-white">video chat in India</strong>, or discover <strong className="text-white">voice chat rooms for college students</strong> without worrying about safety. AI moderation, verified badges, and the coin system keep every connection respectful, making Omegoo the go-to Omegle-like site for students and young professionals.
+              Omegoo is a fresh alternative to classic stranger chat platforms like Omegle. You can start a <strong className="text-white">random chat with strangers</strong>, match for <strong className="text-white">video chat in India</strong>, or discover <strong className="text-white">voice chat rooms for college students</strong> without worrying about safety. AI moderation, anonymous guest tracking, and instant reporting keep every connection respectful, making Omegoo the go-to free Omegle-like site for students and young professionals.
             </p>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
                 <h3 className="text-lg font-semibold mb-2">Pick your vibe fast</h3>
                 <p className="text-sm text-gray-100">
-                  Select text, voice, or video chat, share a quick intro, and start an instant Omegle-style conversation with strangers who are online now.
+                  Select text, voice, or video chat and start an instant Omegle-style conversation with strangers who are online now—no signup, no payment required.
                 </p>
               </div>
               <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
-                <h3 className="text-lg font-semibold mb-2">Skip anonymous spam</h3>
+                <h3 className="text-lg font-semibold mb-2">Stay safe and anonymous</h3>
                 <p className="text-sm text-gray-100">
-                  Coins cost per session discourages trolls yet keeps random chat free and fun for genuine users—something Omegle alternatives often miss.
+                  Anonymous guest IDs track behavior for moderation without exposing your identity—something traditional Omegle alternatives often miss.
                 </p>
               </div>
               <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
                 <h3 className="text-lg font-semibold mb-2">Works on any device</h3>
                 <p className="text-sm text-gray-100">
-                  No downloads. Join from mobile, desktop, or tablet with a single tap and continue chatting on the go—no VPN hacks or third-party plugins like older Omegle clones.
+                  No downloads. Join from mobile, desktop, or tablet with a single tap—no VPN hacks or third-party plugins like older Omegle clones.
                 </p>
               </div>
             </div>
@@ -605,8 +653,8 @@ const Home: React.FC = () => {
               question: 'Is Omegoo an Omegle alternative for India?',
               answer: 'Yes. Omegoo was built as a safer, student-friendly Omegle alternative with verified badges, community norms, and AI safety tools tailored for Indian internet users.'
             }, {
-              question: 'How do I get more Omegoo coins?',
-              answer: 'Verified accounts receive 50 coins every midnight (IST). You can unlock bonus coins for streak logins, inviting friends, and participating in moderated community events, keeping Omegoo free yet spam-resistant compared to Omegle.'
+              question: 'Is Omegoo really 100% free or are there hidden charges?',
+              answer: 'All core features—text, voice, and video chat—are completely FREE forever. You can start as a guest without signup. Optional premium features may come later, but random chat with strangers will always remain free, unlike many Omegle alternatives.'
             }, {
               question: 'Is it safe to chat with strangers on Omegoo?',
               answer: 'Yes. Moderation bots, community reporting, and real-time safety prompts protect every session. You can also block or report any user in one tap, creating a calmer environment than traditional Omegle alternatives.'
@@ -630,7 +678,7 @@ const Home: React.FC = () => {
               answer: 'Tap the report or block button inside the chat window. Our moderation team reviews every report instantly, and repeated offenders lose access to their coins and account, keeping this Omegle-style experience respectful.'
             }, {
               question: 'Will Omegoo stay free like Omegle was?',
-              answer: 'Daily coins keep Omegoo accessible without subscriptions. Optional boosters and events will arrive later, but core random text, voice, and video chat will remain free so everyone can enjoy a safe Omegle alternative.'
+              answer: 'Yes! Core random chat features will always be 100% FREE. Optional premium features may be added later for power users, but basic text, voice, and video chat with strangers will never require payment—keeping Omegoo accessible as a truly free Omegle alternative.'
             }].map((item) => (
               <details key={item.question} className="group bg-white/10 border border-white/15 rounded-2xl px-5 py-4 text-gray-100">
                 <summary className="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
@@ -715,23 +763,23 @@ const Home: React.FC = () => {
         {/* Getting Started Guide */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
           <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
-            How to start a random chat on Omegoo in under a minute
+            How to start a FREE random chat on Omegoo in under a minute
           </h2>
           <ol className="space-y-4 text-left text-gray-100 text-sm sm:text-base leading-relaxed bg-white/5 border border-white/15 rounded-3xl p-6 sm:p-8 backdrop-blur">
             <li>
-              <span className="font-semibold text-white">1. Create or log in to your free account.</span> Use any trusted email address to join. Guests can explore instantly, while verified users unlock every Omegle-style mode with bonus coins.
+              <span className="font-semibold text-white">1. Visit Omegoo.chat and start instantly.</span> No signup required! Click any chat mode as a guest and start chatting immediately. Optional login available for premium features like saved preferences.
             </li>
             <li>
-              <span className="font-semibold text-white">2. Pick the chat vibe.</span> Choose between <strong className="text-white">text chat</strong> for low-key conversations, <strong className="text-white">voice chat</strong> for spontaneous debates, or <strong className="text-white">video chat</strong> when you want the full Omegle alternative experience.
+              <span className="font-semibold text-white">2. Pick your chat mode.</span> Choose between <strong className="text-white">text chat</strong> for quick conversations, <strong className="text-white">voice chat</strong> for spontaneous talks, or <strong className="text-white">video chat</strong> for the full Omegle alternative experience—all 100% FREE.
             </li>
             <li>
-              <span className="font-semibold text-white">3. Add a short intro and hit match.</span> Tell the community what you are looking for—study partner, language buddy, or chill strangers—and our queues connect you in seconds.
+              <span className="font-semibold text-white">3. Get matched instantly.</span> Our smart system connects you with strangers online right now. No waiting, no complexity—just instant random chat like Omegle, but safer.
             </li>
             <li>
-              <span className="font-semibold text-white">4. Stay respectful and earn coins.</span> Great conversations mean more positive reports, higher visibility, and extra coins dropped into your wallet every midnight (IST).
+              <span className="font-semibold text-white">4. Stay respectful and report issues.</span> Great conversations make Omegoo better for everyone. Use our instant report button if someone crosses the line—anonymous guest tracking enables accountability.
             </li>
             <li>
-              <span className="font-semibold text-white">5. Explore advanced tools.</span> Switch devices seamlessly, invite friends via unique links, and revisit saved matches—features you won’t find on legacy Omegle clones.
+              <span className="font-semibold text-white">5. Explore advanced features.</span> Switch between text, voice, and video seamlessly. Works on any device—phone, tablet, or desktop. No downloads or VPNs needed unlike legacy Omegle clones.
             </li>
           </ol>
         </section>
@@ -772,7 +820,208 @@ const Home: React.FC = () => {
           </div>
         </section>
 
-        {/* Global Communities */}
+        {/* SEO-Rich Content Block - Below the Fold */}
+        <article className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-16 text-white">
+          {/* Main SEO Heading */}
+          <header className="text-center mb-12">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 text-transparent bg-clip-text">
+              Free Omegle Alternative — Omegoo.chat
+            </h1>
+            <p className="text-base sm:text-lg text-gray-200 max-w-4xl mx-auto leading-relaxed">
+              The best <strong>Omegle alternative</strong> for <strong>random video chat with strangers</strong>. Start instant conversations without login or registration. Omegoo delivers what OmeTV and other platforms promise—a truly free, anonymous, and safe way to <strong>talk to strangers</strong> online.
+            </p>
+          </header>
+
+          {/* Why Omegoo is Better */}
+          <section className="bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-10 mb-12 backdrop-blur-md">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6">Why Omegoo is Better Than OmeTV and Other Omegle Alternatives</h2>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-xl font-semibold text-blue-300 mb-3">🎯 No Login Video Chat</h3>
+                <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
+                  Unlike OmeTV that requires account creation, Omegoo lets you start <strong>no login video chat</strong> instantly. Click, connect, and start talking to strangers within seconds—no email, no verification, no barriers.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-purple-300 mb-3">🔒 100% Anonymous Video Chat</h3>
+                <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
+                  Your privacy matters. Omegoo provides truly <strong>anonymous video chat</strong> with stranger cam chat features that don't track or store your personal data. We use anonymous guest IDs only for safety moderation.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-green-300 mb-3">⚡ Faster Than Omegle</h3>
+                <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
+                  Traditional Omegle often had slow loading times and frequent disconnections. Our optimized infrastructure ensures lightning-fast matching for <strong>random chat without registration</strong>—typically under 2 seconds.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-pink-300 mb-3">🛡️ AI-Powered Safety</h3>
+                <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
+                  Unlike legacy Omegle clones, Omegoo features real-time AI moderation, instant reporting, and community safety prompts. This <strong>Omegle-like app</strong> actually cares about user safety.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Benefits Section */}
+          <section className="mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center">Benefits of Random Video Chat on Omegoo</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-blue-600/30 to-purple-600/30 border border-white/10 rounded-2xl p-6">
+                <div className="text-4xl mb-3">🌍</div>
+                <h3 className="text-lg font-semibold mb-2">Global Connections</h3>
+                <p className="text-sm text-gray-200">
+                  <strong>Talk to strangers</strong> from 150+ countries. Meet people from USA, India, Philippines, UK, Indonesia, and beyond in this truly global <strong>free video chat with strangers</strong> platform.
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-600/30 to-pink-600/30 border border-white/10 rounded-2xl p-6">
+                <div className="text-4xl mb-3">💬</div>
+                <h3 className="text-lg font-semibold mb-2">Multi-Mode Chat</h3>
+                <p className="text-sm text-gray-200">
+                  Not ready for video? Choose text or voice chat first. Switch between modes seamlessly—this <strong>stranger cam chat</strong> platform adapts to your comfort level.
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-pink-600/30 to-orange-600/30 border border-white/10 rounded-2xl p-6">
+                <div className="text-4xl mb-3">📱</div>
+                <h3 className="text-lg font-semibold mb-2">Works Everywhere</h3>
+                <p className="text-sm text-gray-200">
+                  Mobile, tablet, or desktop—no app download needed. This <strong>random chat without registration</strong> works directly in your browser on any device.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Features Deep Dive */}
+          <section className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-white/10 rounded-3xl p-6 sm:p-10 mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6">Core Features of Omegoo: The Ultimate Omegle Alternative</h2>
+            <div className="space-y-6">
+              <div className="flex gap-4 items-start">
+                <div className="flex-shrink-0 w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center text-2xl">
+                  🚀
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-300 mb-2">Instant Matching System</h3>
+                  <p className="text-sm sm:text-base text-gray-200">
+                    Our smart algorithm connects you with online strangers in real-time. No queues, no waiting rooms—just instant <strong>random video chat</strong> that works like Omegle should have.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="flex-shrink-0 w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center text-2xl">
+                  🎭
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-300 mb-2">Complete Anonymity</h3>
+                  <p className="text-sm sm:text-base text-gray-200">
+                    No email required, no phone verification, no personal data collection. This is truly <strong>anonymous video chat</strong> where your identity remains protected while enjoying <strong>stranger cam chat</strong> conversations.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center text-2xl">
+                  ⚡
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-green-300 mb-2">Lightning Fast Performance</h3>
+                  <p className="text-sm sm:text-base text-gray-200">
+                    Built on modern WebRTC technology with global CDN infrastructure. Experience smooth HD video quality and crystal-clear audio in your <strong>random chat without registration</strong> sessions.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="flex-shrink-0 w-12 h-12 bg-pink-500/20 rounded-full flex items-center justify-center text-2xl">
+                  🛡️
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-pink-300 mb-2">Advanced Safety Measures</h3>
+                  <p className="text-sm sm:text-base text-gray-200">
+                    AI-powered content moderation, instant report buttons, automatic abuse detection, and community guidelines enforcement make this the safest <strong>Omegle-like app</strong> available today.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Privacy Protection */}
+          <section className="mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6">How Omegoo Protects Your Privacy in Random Video Chat</h2>
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-10 backdrop-blur-md">
+              <p className="text-sm sm:text-base text-gray-200 leading-relaxed mb-6">
+                Privacy is the foundation of every <strong>anonymous video chat</strong> platform. Unlike OmeTV or other services that collect extensive user data, Omegoo implements industry-leading privacy protections:
+              </p>
+              <ul className="space-y-4 text-sm sm:text-base text-gray-200">
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 text-green-400 font-bold">✓</span>
+                  <span><strong>Zero Personal Data Storage:</strong> We don't store chat logs, video recordings, or personal information beyond anonymous guest IDs used solely for moderation.</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 text-green-400 font-bold">✓</span>
+                  <span><strong>End-to-End Encryption:</strong> All <strong>stranger cam chat</strong> sessions use WebRTC encryption, ensuring your conversations remain private between you and your chat partner.</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 text-green-400 font-bold">✓</span>
+                  <span><strong>No Third-Party Tracking:</strong> Unlike many <strong>Omegle alternatives</strong>, we minimize tracking scripts and don't sell your data to advertisers.</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 text-green-400 font-bold">✓</span>
+                  <span><strong>GDPR Compliant:</strong> Full compliance with international privacy regulations including GDPR, ensuring your rights are protected globally.</span>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          {/* Global Usage Stats */}
+          <section className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-white/10 rounded-3xl p-6 sm:p-10 mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center">Omegoo: Connecting Strangers Worldwide</h2>
+            <p className="text-sm sm:text-base text-gray-200 text-center mb-8 max-w-3xl mx-auto">
+              Join millions who've switched from Omegle, OmeTV, and other platforms to experience the next generation of <strong>random video chat with strangers</strong>. Our global community spans every continent.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+              <div className="bg-white/5 rounded-2xl p-4">
+                <div className="text-3xl sm:text-4xl font-bold text-blue-400 mb-2">150+</div>
+                <div className="text-xs sm:text-sm text-gray-300">Countries Connected</div>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-4">
+                <div className="text-3xl sm:text-4xl font-bold text-purple-400 mb-2">24/7</div>
+                <div className="text-xs sm:text-sm text-gray-300">Active Users Online</div>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-4">
+                <div className="text-3xl sm:text-4xl font-bold text-pink-400 mb-2">&lt; 2s</div>
+                <div className="text-xs sm:text-sm text-gray-300">Average Match Time</div>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-4">
+                <div className="text-3xl sm:text-4xl font-bold text-green-400 mb-2">100%</div>
+                <div className="text-xs sm:text-sm text-gray-300">FREE Forever</div>
+              </div>
+            </div>
+            <div className="mt-8 text-center">
+              <p className="text-xs sm:text-sm text-gray-300">
+                <strong>Popular Regions:</strong> United States, India, Philippines, United Kingdom, Indonesia, Brazil, Canada, Germany, Australia, Mexico, Pakistan, Bangladesh, Turkey, Vietnam, Thailand
+              </p>
+            </div>
+          </section>
+
+          {/* Final CTA */}
+          <section className="text-center bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-white/10 rounded-3xl p-8 sm:p-12">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+              Ready to Start Your Free Random Video Chat?
+            </h2>
+            <p className="text-sm sm:text-base text-gray-200 mb-6 max-w-2xl mx-auto">
+              Join the best <strong>Omegle alternative</strong> today. No signup, no payment, no hassle—just instant <strong>random video chat with strangers</strong> from around the world.
+            </p>
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-full font-bold text-base sm:text-lg shadow-2xl transform hover:scale-105 transition-all duration-200"
+            >
+              Start Chatting Now — 100% FREE
+            </button>
+            <p className="text-xs text-gray-400 mt-4">
+              No login required • Anonymous • Safe • Instant connections
+            </p>
+          </section>
+        </article>
+
+        {/* End of Global Communities Section */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
           <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
             A global Omegle alternative for respectful random chat

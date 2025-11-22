@@ -37,9 +37,14 @@ const AudioChat: React.FC = () => {
   const [isMicOn, setIsMicOn] = useState(true);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [micBlocked, setMicBlocked] = useState(false);
+  const [micPermissionError, setMicPermissionError] = useState<string | null>(null);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [micLevel, setMicLevel] = useState(0); // Audio level 0-100
+  const [remoteMicLevel, setRemoteMicLevel] = useState(0); // Remote audio level 0-100
   const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('excellent');
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [callStartTime, setCallStartTime] = useState<number | null>(null);
+  const [qualityMetrics, setQualityMetrics] = useState({ packetLoss: 0, jitter: 0, bitrate: 0 });
   const audioOnlineCount = modeUserCounts.audio;
 
   useEffect(() => {
@@ -94,12 +99,35 @@ const AudioChat: React.FC = () => {
         document.addEventListener('click', playPromise, { once: true });
       });
       
-      console.log('🎤 Remote audio setup completed');
+      // Monitor remote audio level
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const remoteAnalyser = audioContext.createAnalyser();
+      const remoteSource = audioContext.createMediaStreamSource(stream);
+      
+      remoteAnalyser.fftSize = 256;
+      remoteSource.connect(remoteAnalyser);
+      
+      const remoteDataArray = new Uint8Array(remoteAnalyser.frequencyBinCount);
+      
+      const updateRemoteLevel = () => {
+        remoteAnalyser.getByteFrequencyData(remoteDataArray);
+        const average = remoteDataArray.reduce((a, b) => a + b) / remoteDataArray.length;
+        const level = Math.round((average / 255) * 100);
+        setRemoteMicLevel(level);
+        
+        if (isMatchConnected) {
+          requestAnimationFrame(updateRemoteLevel);
+        }
+      };
+      
+      updateRemoteLevel();
+      
+      console.log('🎤 Remote audio setup completed with level monitoring');
     }
     
     setIsMatchConnected(true);
     setIsSearching(false);
-  }, []);
+  }, [isMatchConnected]);
 
   // Initialize audio level monitoring
   const startAudioLevelMonitoring = useCallback((stream: MediaStream) => {
@@ -205,6 +233,7 @@ const AudioChat: React.FC = () => {
         setSessionId(data.sessionId);
         setPartnerId(data.matchUserId); // Track partner ID for reporting
         setIsSearching(false);
+        setCallStartTime(Date.now());
         
         if (webRTCRef.current) {
           console.log('🔄 Setting up fresh WebRTC connection');
@@ -213,11 +242,57 @@ const AudioChat: React.FC = () => {
           webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
           webRTCRef.current.setSocket(socket, data.sessionId, data.matchUserId);
           
+          // Setup stats monitoring
+          webRTCRef.current.onStatsUpdated((stats) => {
+            setQualityMetrics({
+              packetLoss: Math.round(stats.packetLoss * 10) / 10,
+              jitter: Math.round(stats.jitter * 1000), // ms
+              bitrate: stats.bitrate
+            });
+            
+            // Update connection quality
+            if (stats.packetLoss > 10) {
+              setConnectionQuality('poor');
+            } else if (stats.packetLoss > 3) {
+              setConnectionQuality('good');
+            } else {
+              setConnectionQuality('excellent');
+            }
+            
+            // Emit metrics to backend
+            socket.emit('audio-metrics', {
+              sessionId: data.sessionId,
+              packetLoss: stats.packetLoss,
+              jitter: stats.jitter,
+              bitrate: stats.bitrate,
+              roundTripTime: stats.roundTripTime,
+              timestamp: Date.now()
+            });
+          });
+          
+          // Start stats monitoring
+          webRTCRef.current.startStatsMonitoring(2000);
+          
           try {
             await startLocalAudio();
             console.log('🎤 Local audio ready for connection');
+            
+            // Emit call connected event
+            socket.emit('audio-metrics', {
+              sessionId: data.sessionId,
+              eventType: 'call_connected',
+              timestamp: Date.now()
+            });
           } catch (error) {
             console.error('❌ Failed to start local audio:', error);
+            
+            // Emit call failed event
+            socket.emit('audio-metrics', {
+              sessionId: data.sessionId,
+              eventType: 'call_failed',
+              error: error instanceof Error ? error.message : 'Unknown error',
+              timestamp: Date.now()
+            });
             return;
           }
           
@@ -301,6 +376,12 @@ const AudioChat: React.FC = () => {
           await webRTCRef.current.handleIceCandidate(data.candidate);
         }
       });
+      
+      // Listen for peer mute status
+      socket.on('audio-muted', (data: { isMuted: boolean }) => {
+        console.log('🔇 Peer mute status changed:', data.isMuted);
+        // Could show indicator that peer is muted
+      });
     }
 
     // Copy refs to local variables for cleanup to avoid stale closure warnings
@@ -315,6 +396,7 @@ const AudioChat: React.FC = () => {
       socket?.off('webrtc-offer');
       socket?.off('webrtc-answer');
       socket?.off('ice-candidate');
+      socket?.off('audio-muted');
       
       stopAudioLevelMonitoring();
       
@@ -391,6 +473,8 @@ const AudioChat: React.FC = () => {
   const startLocalAudio = async () => {
     try {
       setIsProcessingAudio(true);
+      setMicPermissionError(null);
+      setShowPermissionModal(false);
       console.log('🎤 Initializing fresh audio stream');
       
       // CRITICAL: Stop any existing streams first for multiple device cleanup
@@ -403,15 +487,22 @@ const AudioChat: React.FC = () => {
         localStreamRef.current = null;
       }
       
+      // Enhanced audio constraints for voice optimization
       const constraints = {
         video: false,
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          // Enhanced audio constraints
-          sampleRate: 44100,
-          channelCount: 1
+          // Opus-optimized settings
+          sampleRate: 48000, // Opus native sample rate
+          channelCount: 2, // Stereo for better quality
+          latency: 0.01, // 10ms latency target
+          // Additional constraints for mobile
+          ...(navigator.userAgent.match(/Android|iPhone/i) && {
+            noiseSuppression: { ideal: true },
+            echoCancellation: { ideal: true }
+          })
         }
       };
       
@@ -439,14 +530,25 @@ const AudioChat: React.FC = () => {
             label: track.label,
             enabled: track.enabled,
             muted: track.muted,
-            readyState: track.readyState
+            readyState: track.readyState,
+            settings: track.getSettings()
           });
         });
         
         // Initialize UI mic to ON state (tracks are enabled by default)
         const firstTrack = audioTracks[0];
         setIsMicOn(true);
+        setMicBlocked(false);
         console.log('🎤 INITIALIZATION: Stream ready, UI set to ON, first track enabled =', firstTrack?.enabled);
+        
+        // Emit success event to backend
+        if (socket && sessionId) {
+          socket.emit('audio-metrics', {
+            sessionId,
+            eventType: 'mic_permission_granted',
+            timestamp: Date.now()
+          });
+        }
         
         setIsProcessingAudio(false);
         return stream;
@@ -456,11 +558,41 @@ const AudioChat: React.FC = () => {
     } catch (error: any) {
       setIsProcessingAudio(false);
       console.error('❌ Enhanced audio setup failed:', error);
+      setMicBlocked(true);
       
-      if (error.name === 'NotAllowedError') {
-        setMicBlocked(true);
-        throw new Error('Microphone access denied');
+      // Comprehensive error handling
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        const errorMsg = 'Microphone access denied. Please allow microphone permission to use voice chat.';
+        setMicPermissionError(errorMsg);
+        setShowPermissionModal(true);
+        
+        // Emit error event to backend
+        if (socket) {
+          socket.emit('audio-metrics', {
+            sessionId: sessionId || 'unknown',
+            eventType: 'mic_permission_denied',
+            timestamp: Date.now(),
+            error: error.name
+          });
+        }
+        
+        console.error('🚫 Microphone permission denied by user');
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        const errorMsg = 'No microphone found. Please connect a microphone device.';
+        setMicPermissionError(errorMsg);
+        setShowPermissionModal(true);
+        console.error('🚫 No microphone device found');
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        const errorMsg = 'Microphone is already in use by another application. Please close other apps using the microphone.';
+        setMicPermissionError(errorMsg);
+        setShowPermissionModal(true);
+        console.error('🚫 Microphone already in use');
+      } else {
+        const errorMsg = `Failed to access microphone: ${error.message}`;
+        setMicPermissionError(errorMsg);
+        setShowPermissionModal(true);
       }
+      
       throw error;
     }
   };
@@ -649,10 +781,20 @@ const AudioChat: React.FC = () => {
         // Update UI state
         setIsMicOn(newState);
         
+        // Notify peer about mute status
+        if (socket && sessionId) {
+          socket.emit('audio-muted', {
+            sessionId,
+            isMuted: !newState,
+            timestamp: Date.now()
+          });
+        }
+        
         console.log('✅ Mic toggle:', {
           newState,
           trackEnabled: audioTrack.enabled,
-          trackId: audioTrack.id
+          trackId: audioTrack.id,
+          notifiedPeer: true
         });
         
       } else {
@@ -705,13 +847,22 @@ const AudioChat: React.FC = () => {
     }
   };
 
-  // Connection quality indicator
+  // Connection quality indicator with details
   const getQualityColor = () => {
     switch (connectionQuality) {
       case 'excellent': return 'text-green-400';
       case 'good': return 'text-yellow-400';
       case 'poor': return 'text-red-400';
       default: return 'text-gray-400';
+    }
+  };
+  
+  const getQualityBadgeColor = () => {
+    switch (connectionQuality) {
+      case 'excellent': return 'bg-green-500/20 border-green-400/30 text-green-100';
+      case 'good': return 'bg-yellow-500/20 border-yellow-400/30 text-yellow-100';
+      case 'poor': return 'bg-red-500/20 border-red-400/30 text-red-100';
+      default: return 'bg-gray-500/20 border-gray-400/30 text-gray-100';
     }
   };
 
@@ -845,9 +996,38 @@ const AudioChat: React.FC = () => {
             </div>
             
             <h2 className="text-xl sm:text-2xl mb-2 font-semibold">Connected!</h2>
-            <p className="text-gray-300 mb-6 sm:mb-8 text-sm sm:text-base">
+            <p className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base flex items-center gap-2 justify-center">
               You're now in a voice conversation with a stranger
+              {/* Remote peer speaking indicator */}
+              {remoteMicLevel > 15 && (
+                <span className="inline-flex items-center gap-1 text-xs text-green-400">
+                  <span className="animate-pulse">🎤</span>
+                  <span>Speaking</span>
+                </span>
+              )}
             </p>
+            
+            {/* Connection Quality Badge */}
+            {isMatchConnected && (
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm mb-4 ${getQualityBadgeColor()}`}>
+                <SignalIcon className="w-4 h-4" />
+                <span className="font-medium capitalize">{connectionQuality}</span>
+                {qualityMetrics.bitrate > 0 && (
+                  <span className="text-xs opacity-80">• {qualityMetrics.bitrate} kbps</span>
+                )}
+              </div>
+            )}
+            
+            {/* Quality Metrics (Debug Info - can be hidden) */}
+            {isMatchConnected && process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-gray-400 mb-4 space-y-1">
+                <div>Packet Loss: {qualityMetrics.packetLoss.toFixed(1)}%</div>
+                <div>Jitter: {qualityMetrics.jitter}ms</div>
+                {callStartTime && (
+                  <div>Duration: {Math.floor((Date.now() - callStartTime) / 1000)}s</div>
+                )}
+              </div>
+            )}
             
             {/* Compact Audio Controls */}
             <div className="flex gap-4 justify-center mb-6 sm:mb-8">
@@ -920,8 +1100,57 @@ const AudioChat: React.FC = () => {
         <audio ref={remoteAudioRef} autoPlay playsInline />
       </div>
 
-      {/* Enhanced Microphone blocked modal */}
-      {micBlocked && (
+      {/* Enhanced Microphone Permission Modal */}
+      {showPermissionModal && micPermissionError && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 p-6 rounded-xl max-w-md w-full">
+            <div className="text-center">
+              <MicrophoneSlashIcon className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-4">Microphone Issue</h3>
+              <p className="text-gray-300 mb-6">
+                {micPermissionError}
+              </p>
+              <div className="bg-gray-700 p-4 rounded-lg text-left mb-6">
+                <p className="text-sm text-gray-300 mb-2 font-semibold">How to fix:</p>
+                <ul className="text-sm text-gray-400 space-y-1 list-disc list-inside">
+                  <li>Click the lock/info icon in your browser's address bar</li>
+                  <li>Allow microphone access for this site</li>
+                  <li>Refresh the page and try again</li>
+                </ul>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    setShowPermissionModal(false);
+                    setMicPermissionError(null);
+                    try {
+                      await startLocalAudio();
+                    } catch (error) {
+                      console.error('Retry failed:', error);
+                    }
+                  }}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPermissionModal(false);
+                    setMicPermissionError(null);
+                    exitChat();
+                  }}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Legacy Microphone blocked modal */}
+      {micBlocked && !showPermissionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-800 p-6 rounded-xl max-w-md w-full">
             <div className="text-center">

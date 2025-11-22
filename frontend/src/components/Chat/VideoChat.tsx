@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
 import ReportModal from './ReportModal';
+import { PreviewModal } from './PreviewModal';
 
 interface Message {
   id: string;
@@ -67,6 +68,8 @@ const VideoChat: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showPreview, setShowPreview] = useState(false); // Optional preview modal
+  const [isAudioOnly, setIsAudioOnly] = useState(false); // Track audio-only mode
   const videoOnlineCount = modeUserCounts.video;
 
   const micStateRef = useRef<boolean>(isMicOn);
@@ -585,26 +588,26 @@ const VideoChat: React.FC = () => {
         console.log('Disconnected from server');
       });
 
-      socket.on('connect_error', (error) => {
+      socket.on('connect_error', (error: Error) => {
         console.error('🚨 Socket connection error:', error);
         console.error('Connection error: ' + error.message);
       });
 
       // Debug specific events
-      socket.on('match-found', (data) => {
+      socket.on('match-found', (data: any) => {
         console.log('🎯 MATCH-FOUND EVENT RECEIVED:', data);
       });
 
-      socket.on('searching', (data) => {
+      socket.on('searching', (data: any) => {
         console.log('🔍 SEARCHING EVENT RECEIVED:', data);
       });
 
-      socket.on('error', (data) => {
+      socket.on('error', (data: any) => {
         console.log('🚨 ERROR EVENT RECEIVED:', data);
       });
 
       // Handle multi-device connection replacement
-      socket.on('connection_replaced', (data) => {
+      socket.on('connection_replaced', (data: any) => {
         console.log('🔄 Connection replaced by new device:', data);
         alert('This session was replaced by a new device connection. Please refresh to reconnect.');
         // Clean up current session
@@ -1096,6 +1099,41 @@ const VideoChat: React.FC = () => {
     }
   };
 
+  // Preview Modal handlers
+  const handlePreviewStart = (stream: MediaStream) => {
+    console.log('[VideoChat] Preview confirmed, starting match with stream');
+    setShowPreview(false);
+    // Use the preview stream for local video
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
+    localStreamRef.current = stream;
+    // Now start finding match
+    if (socket) {
+      setIsSearching(true);
+      setCurrentState('finding');
+      socket.emit('find_match', { mode: 'video' });
+      console.log('[VideoChat] Finding match with preview stream');
+    }
+  };
+
+  const handlePreviewCancel = () => {
+    console.log('[VideoChat] Preview cancelled');
+    setShowPreview(false);
+    navigate('/');
+  };
+
+  // Check if remote stream is audio-only
+  useEffect(() => {
+    const stream = remoteStreamRef.current;
+    if (stream) {
+      const hasVideo = stream.getVideoTracks().length > 0 && 
+                       stream.getVideoTracks().some(track => track.enabled);
+      setIsAudioOnly(!hasVideo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMatchConnected]); // Re-check when match connection changes
+
   const handleReport = () => {
     try {
       if (partnerId && sessionId) {
@@ -1448,6 +1486,35 @@ const VideoChat: React.FC = () => {
           reporterUserId={user.id}
           chatMode="video"
         />
+      )}
+
+      {/* Preview Modal - Optional camera preview before matching */}
+      {showPreview && (
+        <PreviewModal
+          onStart={handlePreviewStart}
+          onCancel={handlePreviewCancel}
+        />
+      )}
+
+      {/* Audio-Only Mode Banner */}
+      {isMatchConnected && isAudioOnly && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
+          <div className="bg-orange-500 border-2 border-orange-600 rounded-lg shadow-2xl p-4 animate-slide-down">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-semibold text-sm">Audio-Only Mode</h3>
+                <p className="text-white text-xs mt-1 opacity-90">
+                  Video unavailable. You're connected in audio-only mode. The connection may improve shortly.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

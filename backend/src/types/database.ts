@@ -4,6 +4,29 @@ export type VerificationStatus = 'guest' | 'verified';
 export type SubscriptionLevel = 'normal' | 'premium';
 export type UserRole = 'user' | 'admin' | 'super_admin';
 
+// Shadow Login Guest User
+export interface GuestUser {
+  id: string; // MongoDB ObjectId or UUID
+  guestId: string; // SHA-256 fingerprint hash (64 chars)
+  deviceMeta: {
+    version: string;
+    timestamp: number;
+    userAgent: string;
+    language: string;
+    timezone: string;
+    screenResolution: string;
+    colorDepth: number;
+    platform: string;
+    doNotTrack: boolean;
+    fingerprintMethod: 'fpjs' | 'basic' | 'random';
+  };
+  sessions: number; // Total number of visits
+  lastSeen: Date;
+  createdAt: Date;
+  status: 'active' | 'deleted'; // For soft delete / GDPR compliance
+  notes?: string; // Admin notes if any
+}
+
 export interface User {
   id: string;
   deviceId: string;

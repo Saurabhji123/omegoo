@@ -156,9 +156,9 @@ const About: React.FC = () => {
       <SectionCard title="Why students and creators pick Omegoo">
         <div className="space-y-6">
           <div className="space-y-3">
-            <InfoPill tone="positive">Coin-powered trust</InfoPill>
+            <InfoPill tone="positive">100% FREE Access</InfoPill>
             <p className="text-sm text-white/70">
-              A daily coin reward reinforces respectful behaviour. Every user receives 50 coins that reset at midnight (IST), keeping chats accessible while discouraging spam. The coin economy works hand-in-hand with moderation, so positive habits get rewarded automatically.
+              Omegoo is completely free to use—no coins, no subscriptions, no hidden charges. We believe meaningful conversations should be accessible to everyone. Login is optional and only needed for premium features in the future. Start chatting instantly as a guest!
             </p>
           </div>
 

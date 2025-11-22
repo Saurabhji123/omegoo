@@ -101,13 +101,14 @@ function socketReducer(state: SocketState, action: SocketAction): SocketState {
 }
 
 const SocketContext = createContext<SocketContextType | null>(null);
-export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const SocketProvider: React.FC<{ children: ReactNode; guestId?: string | null }> = ({ children, guestId }) => {
   const [state, dispatch] = useReducer(socketReducer, initialState);
   const { token } = useAuth();
   const connectionTokenRef = useRef<string | null>(null);
+  const connectionGuestRef = useRef<string | null>(null);
 
   useEffect(() => {
-    debugLog('Socket effect triggered', { hasToken: !!token });
+    debugLog('Socket effect triggered', { hasToken: !!token, hasGuestId: !!guestId });
     connect();
 
     return () => {
@@ -115,13 +116,14 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         debugLog('Cleaning up socket connection');
         state.socket.disconnect();
         connectionTokenRef.current = null;
+        connectionGuestRef.current = null;
         dispatch({ type: 'SET_SOCKET', payload: null });
         dispatch({ type: 'SET_CONNECTED', payload: false });
         dispatch({ type: 'SET_CONNECTING', payload: false });
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, guestId]);
 
   const setActiveMode = useCallback((mode: ChatMode | null) => {
     dispatch({ type: 'SET_ACTIVE_MODE', payload: mode });
@@ -129,12 +131,17 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   function connect() {
     const desiredToken = token || 'dev-guest-token';
+    const desiredGuest = guestId || null;
 
     const currentToken = connectionTokenRef.current;
-    const isSameTokenActive = currentToken === desiredToken && state.socket && state.socket.connected;
+    const currentGuest = connectionGuestRef.current;
+    const isSameConnection = currentToken === desiredToken && 
+                            currentGuest === desiredGuest && 
+                            state.socket && 
+                            state.socket.connected;
 
-    if (isSameTokenActive) {
-      debugLog('Socket already active with desired token, skipping new connection');
+    if (isSameConnection) {
+      debugLog('Socket already active with desired credentials, skipping new connection');
       return;
     }
 
@@ -150,6 +157,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     connectionTokenRef.current = desiredToken;
+    connectionGuestRef.current = desiredGuest;
     dispatch({ type: 'SET_CONNECTING', payload: true });
 
     const isLocalhost =
@@ -161,7 +169,8 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       hostname: window.location.hostname,
       isLocalhost,
       nodeEnv: process.env.NODE_ENV,
-      hasToken: !!token
+      hasToken: !!token,
+      hasGuestId: !!guestId
     });
 
     const wakeBackend = async () => {
@@ -183,7 +192,8 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const socket = io(backendUrl, {
       auth: {
-        token: desiredToken
+        token: desiredToken,
+        guestId: desiredGuest
       },
       transports: ['polling', 'websocket'],
       timeout: 15000,
@@ -194,7 +204,8 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       reconnectionDelayMax: 5000
     });
 
-    (socket as Socket & { authToken?: string }).authToken = desiredToken;
+    (socket as Socket & { authToken?: string; guestId?: string | null }).authToken = desiredToken;
+    (socket as Socket & { authToken?: string; guestId?: string | null }).guestId = desiredGuest;
 
     debugLog('Socket instance created, waiting for connection');
 

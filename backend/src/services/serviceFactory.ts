@@ -47,3 +47,8 @@ export class ServiceFactory {
 // Export the services with the correct implementation
 export const DatabaseService = ServiceFactory.DatabaseService;
 export const RedisService = ServiceFactory.RedisService;
+
+// Helper function to get database service instance
+export function getDatabase() {
+  return ServiceFactory.DatabaseService;
+}

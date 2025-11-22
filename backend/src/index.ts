@@ -22,10 +22,12 @@ import adminRoutes from './routes/admin';
 import reportsRoutes from './routes/reports';
 import statusRoutes from './routes/status';
 import analyticsRoutes from './routes/analytics';
+import guestRoutes from './routes/guest'; // Shadow Login guest routes
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
 import { authenticateToken, requireVerification } from './middleware/auth';
+import { guestAuth } from './middleware/guestAuth'; // Shadow Login middleware
 
 // Import services (AFTER dotenv.config)
 import { SocketService } from './services/socket';
@@ -208,6 +210,7 @@ const adminLimiter = rateLimit({
 });
 
 app.use('/api/admin', adminLimiter);
+app.use('/api/guest', guestAuth, guestRoutes); // Shadow Login routes (no auth required, uses guestAuth middleware)
 app.use('/api/auth', authRoutes);
 app.use('/api/status', statusRoutes);
 app.use('/api/analytics', analyticsRoutes);

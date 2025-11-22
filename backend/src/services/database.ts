@@ -265,6 +265,43 @@ export class DatabaseService {
     return result.rows[0];
   }
 
+  /* ---------- Shadow Login Guest System ---------- */
+  static async createGuest(guestData: {
+    guestId: string;
+    deviceMeta: any;
+  }): Promise<any> {
+    console.warn('⚠️ createGuest called on PostgreSQL - use MongoDB for guest system');
+    void guestData;
+    return null;
+  }
+
+  static async getGuestById(guestId: string): Promise<any | null> {
+    console.warn('⚠️ getGuestById called on PostgreSQL - use MongoDB for guest system');
+    void guestId;
+    return null;
+  }
+
+  static async updateGuestLastSeen(guestId: string): Promise<boolean> {
+    console.warn('⚠️ updateGuestLastSeen called on PostgreSQL - use MongoDB for guest system');
+    void guestId;
+    return false;
+  }
+
+  static async deleteGuest(guestId: string): Promise<boolean> {
+    console.warn('⚠️ deleteGuest called on PostgreSQL - use MongoDB for guest system');
+    void guestId;
+    return false;
+  }
+
+  static async getGuestStats(): Promise<any> {
+    console.warn('⚠️ getGuestStats called on PostgreSQL - use MongoDB for guest system');
+    return {
+      totalGuests: 0,
+      activeToday: 0,
+      uniqueDevices: 0
+    };
+  }
+
   /* ---------- Ban & Report System (Stub - Use MongoDB) ---------- */
   // These methods are stubs - actual implementation is in database-mongodb.ts
   // PostgreSQL schema would need migrations for full support
@@ -489,6 +526,12 @@ export class DatabaseService {
 
   static async updateUserPassword(userId: string, passwordHash: string): Promise<any | null> {
     console.warn('⚠️ updateUserPassword called on PostgreSQL - use MongoDB or dev database');
+    return null;
+  }
+
+  static async saveVoiceChatReport(data: any): Promise<any | null> {
+    console.warn('⚠️ saveVoiceChatReport called on PostgreSQL - use MongoDB for voice chat reports');
+    void data;
     return null;
   }
 }

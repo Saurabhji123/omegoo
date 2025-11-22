@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { GuestProvider, useGuest } from './contexts/GuestContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import apiService from './services/api';
+import SEOHead from './components/SEO/SEOHead';
+import { defaultSEO } from './config/seo.config';
 
 // Components
 import Layout from './components/Layout/Layout';
@@ -15,14 +19,11 @@ import PhoneVerification from './components/Auth/PhoneVerification';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import ResetPassword from './components/Auth/ResetPassword';
 import Home from './components/Home/Home';
-import Chat from './components/Chat/Chat';
-import TextChat from './components/Chat/TextChat';
-import AudioChat from './components/Chat/AudioChat';
-import VideoChat from './components/Chat/VideoChat';
 import Profile from './components/Profile/Profile';
 import Settings from './components/Settings/Settings';
 import Admin from './components/Admin/Admin';
 import LoadingSpinner from './components/UI/LoadingSpinner';
+import PrivacyNotice from './components/UI/PrivacyNotice';
 
 // New Pages
 import About from './components/Pages/About';
@@ -30,6 +31,20 @@ import Contact from './components/Pages/Contact';
 import PrivacyPolicy from './components/Pages/PrivacyPolicy';
 import TermsOfService from './components/Pages/TermsOfService';
 import SafetyGuidelines from './components/Pages/SafetyGuidelines';
+import CountryPage from './components/Country/CountryPage';
+
+// SEO Money Keyword Pages
+import NoLoginVideoChat from './components/SEO/NoLoginVideoChat';
+import AnonymousVideoChat from './components/SEO/AnonymousVideoChat';
+import StrangerCamChat from './components/SEO/StrangerCamChat';
+import OmegleLikeApp from './components/SEO/OmegleLikeApp';
+import RandomChatNoRegistration from './components/SEO/RandomChatNoRegistration';
+
+// Lazy load chat components for better performance
+const Chat = lazy(() => import('./components/Chat/Chat'));
+const TextChat = lazy(() => import('./components/Chat/TextChat'));
+const AudioChat = lazy(() => import('./components/Chat/AudioChat'));
+const VideoChat = lazy(() => import('./components/Chat/VideoChat'));
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; requiresVerification?: boolean }> = ({ 
@@ -54,12 +69,21 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiresVerification
   return <>{children}</>;
 };
 
-// App Routes Component
+// App Routes Component - Now syncs guest ID with API service
 const AppRoutes: React.FC = () => {
   const { hasAcceptedTerms, loading } = useAuth();
+  const { guestId, isInitialized } = useGuest();
 
-  // Show loading spinner while initializing auth
-  if (loading) {
+  // Sync guest ID with API service whenever it changes
+  useEffect(() => {
+    if (guestId && isInitialized) {
+      apiService.setGuestId(guestId);
+      console.log('[App] Guest ID synced with API service:', guestId.substring(0, 12) + '...');
+    }
+  }, [guestId, isInitialized]);
+
+  // Show loading spinner while initializing auth or guest
+  if (loading || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <div className="text-center">
@@ -78,10 +102,14 @@ const AppRoutes: React.FC = () => {
 
   // Allow browsing without login - login required only for chat features
   return (
-    <Router>
-      <Routes>
-        {/* Login/Register route */}
-        <Route path="/login" element={<LoginRegister />} />
+    <>
+      {/* Default SEO for all pages */}
+      <SEOHead {...defaultSEO} />
+      
+      <Router>
+        <Routes>
+          {/* Login/Register route */}
+          <Route path="/login" element={<LoginRegister />} />
 
   {/* Password reset routes */}
   <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -117,6 +145,18 @@ const AppRoutes: React.FC = () => {
           </Layout>
         } />
         
+        {/* SEO Money Keyword Pages - Public Access */}
+        <Route path="/no-login-video-chat" element={<NoLoginVideoChat />} />
+        <Route path="/anonymous-video-chat" element={<AnonymousVideoChat />} />
+        <Route path="/stranger-cam-chat" element={<StrangerCamChat />} />
+        <Route path="/omegle-like-app" element={<OmegleLikeApp />} />
+        <Route path="/random-chat-no-registration" element={<RandomChatNoRegistration />} />
+        
+        {/* Country SEO Pages - Public Access */}
+        <Route path="/country/:countrySlug" element={
+          <CountryPage />
+        } />
+        
         {/* Home - Public Access (No login required) */}
         <Route path="/" element={
           <Layout>
@@ -146,30 +186,57 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Chat routes */}
+        {/* Chat routes - Guest access allowed, login optional for premium features */}
         <Route path="/chat" element={
-          <ProtectedRoute requiresVerification>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-white text-lg">Loading chat...</p>
+              </div>
+            </div>
+          }>
             <Chat />
-          </ProtectedRoute>
+          </Suspense>
         } />
         
-        {/* Chat routes - Protected (Login required) */}
         <Route path="/chat/text" element={
-          <ProtectedRoute requiresVerification>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-white text-lg">Loading text chat...</p>
+              </div>
+            </div>
+          }>
             <TextChat />
-          </ProtectedRoute>
+          </Suspense>
         } />
         
         <Route path="/chat/audio" element={
-          <ProtectedRoute requiresVerification>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-white text-lg">Loading voice chat...</p>
+              </div>
+            </div>
+          }>
             <AudioChat />
-          </ProtectedRoute>
+          </Suspense>
         } />
         
         <Route path="/chat/video" element={
-          <ProtectedRoute requiresVerification>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-white text-lg">Loading video chat...</p>
+              </div>
+            </div>
+          }>
             <VideoChat />
-          </ProtectedRoute>
+          </Suspense>
         } />
         
         {/* Admin routes - Protected */}
@@ -182,6 +249,10 @@ const AppRoutes: React.FC = () => {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
+    
+    {/* Privacy Notice - Shows at bottom of all pages */}
+    <PrivacyNotice />
+  </>
   );
 };
 
@@ -194,16 +265,29 @@ const App: React.FC = () => {
     <HelmetProvider>
       <GoogleOAuthProvider clientId={googleClientId}>
         <ThemeProvider>
-          <AuthProvider>
-            <SocketProvider>
-              <div className="App min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-                <AppRoutes />
-              </div>
-            </SocketProvider>
-          </AuthProvider>
+          <GuestProvider>
+            <AuthProvider>
+              <SocketProviderWrapper>
+                <div className="App min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                  <AppRoutes />
+                </div>
+              </SocketProviderWrapper>
+            </AuthProvider>
+          </GuestProvider>
         </ThemeProvider>
       </GoogleOAuthProvider>
     </HelmetProvider>
+  );
+};
+
+// Wrapper component to pass guestId to SocketProvider
+const SocketProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { guestId } = useGuest();
+  
+  return (
+    <SocketProvider guestId={guestId}>
+      {children}
+    </SocketProvider>
   );
 };
 

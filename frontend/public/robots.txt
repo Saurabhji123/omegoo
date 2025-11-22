@@ -1,9 +1,85 @@
 # https://www.robotstxt.org/robotstxt.html
+# Omegoo - Random Video Chat Platform
+# Last Updated: November 22, 2025
+
+# Allow all major search engines
 User-agent: *
+Allow: /
+
+# Explicitly allow SEO pages
+Allow: /country/*
+Allow: /no-login-video-chat
+Allow: /anonymous-video-chat
+Allow: /stranger-cam-chat
+Allow: /omegle-like-app
+Allow: /random-chat-no-registration
+Allow: /about
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /safety
+
+# Allow static assets
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.webp$
+Allow: /logo*.png
+Allow: /favicon*
 Disallow: /admin
 Disallow: /omegoo-admin
 Disallow: /verify
 Disallow: /verify-otp
+Disallow: /reset-password
+Disallow: /forgot-password
 Disallow: /chat
+Disallow: /profile
+Disallow: /settings
+Disallow: /api/
 
+# Sitemaps
 Sitemap: https://www.omegoo.chat/sitemap.xml
+
+# Crawl-delay (in seconds)
+Crawl-delay: 1
+
+# Specific bot instructions for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Googlebot-Image
+Allow: /
+Allow: /*.png$
+Allow: /*.jpg$
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 1
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: dotbot
+Disallow: /
+

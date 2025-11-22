@@ -149,7 +149,7 @@ const TermsOfService: React.FC = () => {
                 <ul className="mt-2 space-y-1 text-xs">
                   <li>• Authenticate logins securely</li>
                   <li>• Send critical account alerts</li>
-                  <li>• Track coin balances and chat stats</li>
+                  <li>• View chat history and preferences</li>
                   <li>• Protect the platform from abuse</li>
                 </ul>
               </div>
@@ -443,7 +443,7 @@ const TermsOfService: React.FC = () => {
           <ul className="space-y-2 text-xs text-white/70">
             <li>• Planned maintenance typically runs under 30 minutes and happens during off-peak regional hours.</li>
             <li>• Critical security patches may roll out immediately; expect live notifications and staggered reconnects.</li>
-            <li>• During outages, coin balances and conversations remain intact—sessions resume when services return.</li>
+            <li>• During outages, conversations remain intact—sessions resume when services return.</li>
           </ul>
           <p>
             If downtime exceeds one hour, we provide incident summaries outlining root cause, remediation steps, and prevention commitments.
@@ -457,7 +457,7 @@ const TermsOfService: React.FC = () => {
       content: (
         <div className="space-y-4 text-sm text-white/70">
           <p>
-            Omegoo coins are free today, but we may introduce optional memberships or purchasable boosts later. Any change will retain a free tier and will be communicated at least 30 days in advance.
+            Omegoo is completely free today. We may introduce optional premium features or memberships in the future. Any change will keep a generous free tier and will be communicated at least 30 days in advance. The core chat experience will always remain free.
           </p>
           <ul className="space-y-2 text-xs text-white/70">
             <li>• Paid upgrades will never bypass safety requirements or reporting duties.</li>

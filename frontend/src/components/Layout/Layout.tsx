@@ -1,7 +1,7 @@
 import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import SeoHead from '../../seo/SeoHead';
+import LazyImage from '../UI/LazyImage';
 // Theme context available but not currently used
 // import { useTheme } from '../../contexts/ThemeContext';
 
@@ -42,7 +42,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      <SeoHead />
       {/* Header */}
       <header className="backdrop-blur-md sticky top-0 z-50 bg-black bg-opacity-20 border-b border-white border-opacity-20">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
@@ -52,10 +51,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => navigate('/')}
             >
-              <img 
+              <LazyImage 
                 src="/logo512.png" 
-                alt="Omegoo Logo" 
+                alt="Omegoo - Free Random Video Chat | Best Omegle Alternative" 
                 className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl mr-2 sm:mr-3 shadow-sm object-cover"
+                width={32}
+                height={32}
               />
               <h1 className="text-lg sm:text-xl font-bold text-white">
                 Omegoo

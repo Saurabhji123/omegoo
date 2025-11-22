@@ -1,0 +1,22 @@
+# humanstxt.org/
+# The humans responsible & technology colophon
+
+# TEAM
+
+    Developer -- Omegoo Team
+    Site -- omegoo.chat
+    Location -- Global
+
+# THANKS
+
+    To all our users worldwide
+
+# TECHNOLOGY COLOPHON
+
+    React 19
+    TypeScript 5.7
+    TailwindCSS 4
+    Socket.IO
+    WebRTC
+    Node.js
+    Express

@@ -42,10 +42,16 @@ export class RedisService {
         clearTimeout(previousTimer);
       }
 
+      // Node.js setTimeout max is 2147483647 ms (~24.8 days)
+      // Cap the timeout to this maximum to avoid integer overflow warnings
+      const MAX_TIMEOUT_MS = 2147483647;
+      const ttlMs = ttl * 1000;
+      const timeoutMs = Math.min(ttlMs, MAX_TIMEOUT_MS);
+
       const timer = setTimeout(() => {
         this.storage.delete(key);
         this.ttlTimers.delete(key);
-      }, ttl * 1000);
+      }, timeoutMs);
 
       this.ttlTimers.set(key, timer);
     }

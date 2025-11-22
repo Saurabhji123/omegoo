@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import { DatabaseService, RedisService } from './serviceFactory';
 import { RedisService as DevRedisService } from './redis-dev';
 import { RealtimeUserTracker } from './realtimeMetrics';
+import { TextChatQueueService } from './textChatQueue';
+import { TextChatRoomService } from './textChatRoom';
+import { TextChatMessage, TypingEvent } from '../types/textChat';
 
 type ChatMode = 'text' | 'audio' | 'video';
 
@@ -72,11 +75,17 @@ export class SocketService {
   static initialize(io: SocketIOServer) {
     this.io = io;
 
+    // Initialize text chat cleanup intervals
+    TextChatQueueService.startCleanup();
+    TextChatRoomService.startCleanup();
+    console.log('✅ Text chat services initialized with cleanup intervals');
+
     // Authentication middleware - check JWT token first
     io.use(async (socket: AuthenticatedSocket, next) => {
       console.log(`🔐 Socket auth attempt from: ${socket.handshake.address} with origin: ${socket.handshake.headers.origin}`);
       const token = socket.handshake.auth.token;
-      console.log(`🔑 Token received: ${token ? 'YES' : 'NO'}`);
+      const guestId = socket.handshake.auth.guestId; // Shadow Login guest ID
+      console.log(`🔑 Token received: ${token ? 'YES' : 'NO'}, Guest ID: ${guestId ? guestId.substring(0, 12) + '...' : 'NO'}`);
       
       // Try to verify JWT token first
       if (token) {
@@ -108,12 +117,50 @@ export class SocketService {
         }
       }
       
-      // Fallback: Create guest user for development/testing
-      const guestId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      socket.userId = guestId;
+      // Shadow Login: Check for guest ID
+      if (guestId && typeof guestId === 'string' && /^[a-f0-9]{64}$/i.test(guestId)) {
+        try {
+          // Update guest last seen
+          await DatabaseService.updateGuestLastSeen(guestId);
+          
+          // Create a guest user object for socket context
+          const guestUser = await DatabaseService.getGuestById(guestId);
+          if (guestUser) {
+            socket.userId = `guest-${guestId.substring(0, 16)}`;
+            socket.user = {
+              id: socket.userId,
+              deviceId: guestId,
+              tier: 'guest',
+              status: 'active',
+              isVerified: false,
+              coins: 0,
+              gender: 'others',
+              preferences: {
+                language: 'en',
+                interests: [],
+                genderPreference: 'any'
+              },
+              subscription: {
+                type: 'none'
+              },
+              createdAt: guestUser.createdAt,
+              updatedAt: new Date(),
+              lastActiveAt: new Date()
+            };
+            console.log(`👤 Shadow Login guest connected: ${guestId.substring(0, 12)}...`);
+            return next();
+          }
+        } catch (error) {
+          console.error(`❌ Shadow Login guest lookup failed:`, error);
+        }
+      }
+      
+      // Fallback: Create temporary guest user for development/testing
+      const tempGuestId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      socket.userId = tempGuestId;
       socket.user = {
-        id: guestId,
-        deviceId: guestId,
+        id: tempGuestId,
+        deviceId: tempGuestId,
         tier: 'guest',
         status: 'active',
         isVerified: false,
@@ -131,7 +178,7 @@ export class SocketService {
         updatedAt: new Date(),
         lastActiveAt: new Date()
       };
-      console.log(`🔓 Guest user created: ${guestId}`);
+      console.log(`🔓 Temporary guest user created: ${tempGuestId}`);
       next();
     });
 
@@ -251,6 +298,16 @@ export class SocketService {
             await DevRedisService.removeFromMatchQueue(socket.userId!, 'text');
             await DevRedisService.removeFromMatchQueue(socket.userId!, 'audio');
             await DevRedisService.removeFromMatchQueue(socket.userId!, 'video');
+            
+            // Handle text chat disconnect cleanup
+            const textChatResult = TextChatQueueService.handleDisconnect(socket.userId!);
+            if (textChatResult.wasInRoom && textChatResult.partnerId) {
+              console.log(`💬 User ${socket.userId} disconnected from text chat room, notifying partner ${textChatResult.partnerId}`);
+              const partnerSocketIds = this.connectedUsers.get(textChatResult.partnerId) || [];
+              partnerSocketIds.forEach(sid => {
+                this.io.to(sid).emit('text_room_ended', { reason: 'partner_disconnected' });
+              });
+            }
             
             // Remove from in-memory queue too
             const queuePosition = this.waitingQueue.indexOf(socket.userId!);
@@ -440,6 +497,23 @@ export class SocketService {
       this.handleWebRTCSignaling(socket, 'webrtc_ice_candidate', data);
     });
 
+    // Audio quality metrics and events
+    socket.on('audio-metrics', (data) => {
+      try {
+        this.handleAudioMetrics(socket, data);
+      } catch (error) {
+        console.error('❌ Audio metrics error:', error);
+      }
+    });
+
+    socket.on('audio-muted', (data) => {
+      try {
+        this.handleAudioMuted(socket, data);
+      } catch (error) {
+        console.error('❌ Audio muted event error:', error);
+      }
+    });
+
     // Moderation handlers
     socket.on('report_user', async (data) => {
       try {
@@ -454,6 +528,74 @@ export class SocketService {
         await this.handleEndSession(socket, data);
       } catch (error) {
         socket.emit('error', { message: 'Failed to end session' });
+      }
+    });
+
+    // Text Chat handlers
+    socket.on('join_text_queue', async () => {
+      try {
+        await this.handleJoinTextQueue(socket);
+      } catch (error) {
+        console.error('❌ Join text queue error:', error);
+        socket.emit('text_chat_error', { message: 'Failed to join text chat queue' });
+      }
+    });
+
+    socket.on('leave_text_queue', () => {
+      try {
+        this.handleLeaveTextQueue(socket);
+      } catch (error) {
+        console.error('❌ Leave text queue error:', error);
+      }
+    });
+
+    socket.on('send_text_message', async (data) => {
+      try {
+        await this.handleSendTextMessage(socket, data);
+      } catch (error) {
+        console.error('❌ Send text message error:', error);
+        socket.emit('text_chat_error', { message: 'Failed to send message' });
+      }
+    });
+
+    socket.on('text_typing_start', (data) => {
+      try {
+        this.handleTextTyping(socket, data, true);
+      } catch (error) {
+        console.error('❌ Text typing start error:', error);
+      }
+    });
+
+    socket.on('text_typing_stop', (data) => {
+      try {
+        this.handleTextTyping(socket, data, false);
+      } catch (error) {
+        console.error('❌ Text typing stop error:', error);
+      }
+    });
+
+    socket.on('leave_text_room', () => {
+      try {
+        this.handleLeaveTextRoom(socket);
+      } catch (error) {
+        console.error('❌ Leave text room error:', error);
+      }
+    });
+
+    socket.on('report_text_chat', async (data) => {
+      try {
+        await this.handleReportUser(socket, data);
+      } catch (error) {
+        console.error('❌ Report text chat error:', error);
+        socket.emit('text_chat_error', { message: 'Failed to submit report' });
+      }
+    });
+
+    socket.on('attempt_text_reconnect', () => {
+      try {
+        this.handleTextReconnect(socket);
+      } catch (error) {
+        console.error('❌ Text reconnect error:', error);
       }
     });
   }
@@ -1232,4 +1374,291 @@ export class SocketService {
       console.error(`❌ Error during session cleanup for ${userId}:`, error);
     }
   }
+
+  // ==================== TEXT CHAT HANDLERS ====================
+
+  private static async handleJoinTextQueue(socket: AuthenticatedSocket) {
+    if (!socket.userId) {
+      socket.emit('text_chat_error', { message: 'Authentication required' });
+      return;
+    }
+
+    console.log(`💬 User ${socket.userId} joining text chat queue`);
+
+    // Add to queue
+    const result = await TextChatQueueService.joinQueue({
+      userId: socket.userId,
+      socketId: socket.id,
+      guestId: socket.user?.guestId,
+      joinedAt: Date.now()
+    });
+
+    // Emit queue position
+    socket.emit('text_queue_joined', {
+      position: result.position,
+      estimatedWaitTime: result.estimatedWaitTime
+    });
+
+    // Check for match
+    const room = TextChatQueueService.getRoomForUser(socket.userId);
+    if (room) {
+      // Match found!
+      const partner = TextChatQueueService.getPartner(room.roomId, socket.userId);
+      if (!partner) return;
+
+      console.log(`✅ Text match found: ${socket.userId} <-> ${partner.userId} in room ${room.roomId}`);
+
+      // Emit to both users
+      socket.emit('text_match_found', {
+        roomId: room.roomId,
+        partnerId: partner.userId
+      });
+
+      this.io.to(partner.socketId).emit('text_match_found', {
+        roomId: room.roomId,
+        partnerId: socket.userId
+      });
+
+      // Update activity
+      TextChatQueueService.updateActivity(room.roomId);
+    }
+  }
+
+  private static handleLeaveTextQueue(socket: AuthenticatedSocket) {
+    if (!socket.userId) return;
+
+    console.log(`💬 User ${socket.userId} leaving text chat queue`);
+    const removed = TextChatQueueService.leaveQueue(socket.userId);
+
+    if (removed) {
+      socket.emit('text_queue_left');
+    }
+  }
+
+  private static async handleSendTextMessage(socket: AuthenticatedSocket, data: { content: string }) {
+    if (!socket.userId) {
+      socket.emit('text_chat_error', { message: 'Authentication required' });
+      return;
+    }
+
+    const { content } = data;
+
+    // Validate message
+    if (!content || typeof content !== 'string') {
+      socket.emit('text_chat_error', { message: 'Invalid message content' });
+      return;
+    }
+
+    if (content.length > 1000) {
+      socket.emit('text_chat_error', { message: 'Message too long (max 1000 characters)' });
+      return;
+    }
+
+    // Get room
+    const room = TextChatQueueService.getRoomForUser(socket.userId);
+    if (!room) {
+      socket.emit('text_chat_error', { message: 'No active text chat room' });
+      return;
+    }
+
+    // Create message
+    const message: TextChatMessage = {
+      messageId: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      roomId: room.roomId,
+      senderId: socket.userId,
+      content: content.trim(),
+      timestamp: Date.now(),
+      delivered: false
+    };
+
+    // Add to room with rate limiting
+    const result = TextChatRoomService.addMessage(room, message);
+    if (!result.success) {
+      socket.emit('rate_limit_exceeded', {
+        message: result.error,
+        remaining: result.remaining
+      });
+      return;
+    }
+
+    // Mark as delivered
+    message.delivered = true;
+
+    // Get partner
+    const partner = TextChatQueueService.getPartner(room.roomId, socket.userId);
+    if (!partner) {
+      socket.emit('text_chat_error', { message: 'Partner not found' });
+      return;
+    }
+
+    console.log(`💬 Message in room ${room.roomId}: ${socket.userId} -> ${partner.userId}`);
+
+    // Emit to both users
+    socket.emit('text_message_received', message);
+    this.io.to(partner.socketId).emit('text_message_received', message);
+
+    // Update activity
+    TextChatQueueService.updateActivity(room.roomId);
+
+    // Clear partner's typing state
+    TextChatRoomService.setTyping(room.roomId, socket.userId, false);
+  }
+
+  private static handleTextTyping(socket: AuthenticatedSocket, data: any, isTyping: boolean) {
+    if (!socket.userId) return;
+
+    // Get room
+    const room = TextChatQueueService.getRoomForUser(socket.userId);
+    if (!room) return;
+
+    // Update typing state
+    TextChatRoomService.setTyping(room.roomId, socket.userId, isTyping);
+
+    // Get partner
+    const partner = TextChatQueueService.getPartner(room.roomId, socket.userId);
+    if (!partner) return;
+
+    // Emit to partner
+    const typingEvent: TypingEvent = {
+      roomId: room.roomId,
+      userId: socket.userId,
+      isTyping,
+      timestamp: Date.now()
+    };
+
+    this.io.to(partner.socketId).emit(isTyping ? 'text_partner_typing' : 'text_partner_stopped_typing', typingEvent);
+  }
+
+  private static handleLeaveTextRoom(socket: AuthenticatedSocket) {
+    if (!socket.userId) return;
+
+    console.log(`💬 User ${socket.userId} leaving text chat room`);
+
+    // Get room
+    const room = TextChatQueueService.getRoomForUser(socket.userId);
+    if (!room) return;
+
+    // Get partner
+    const partner = TextChatQueueService.getPartner(room.roomId, socket.userId);
+
+    // End room
+    TextChatQueueService.endRoom(room.roomId, 'user_left');
+    TextChatRoomService.cleanupRoom(room);
+
+    // Notify users
+    socket.emit('text_room_ended', { reason: 'user_left' });
+    if (partner) {
+      this.io.to(partner.socketId).emit('text_room_ended', { reason: 'partner_left' });
+    }
+
+    console.log(`💬 Text room ${room.roomId} ended`);
+  }
+
+  private static handleTextReconnect(socket: AuthenticatedSocket) {
+    if (!socket.userId) {
+      socket.emit('text_chat_error', { message: 'Authentication required' });
+      return;
+    }
+
+    console.log(`🔄 Attempting text chat reconnect for user ${socket.userId}`);
+
+    const reconnectResult = TextChatQueueService.attemptReconnect(socket.userId, socket.id);
+
+    if (reconnectResult.success && reconnectResult.roomId && reconnectResult.partnerId) {
+      console.log(`✅ Text chat reconnected: ${socket.userId} to room ${reconnectResult.roomId}`);
+
+      // Emit reconnection success with room state
+      socket.emit('text_reconnected', {
+        roomId: reconnectResult.roomId,
+        partnerId: reconnectResult.partnerId,
+        messages: reconnectResult.messages || []
+      });
+
+      // Notify partner
+      const room = TextChatQueueService.getRoom(reconnectResult.roomId);
+      if (room) {
+        const partner = TextChatQueueService.getPartner(reconnectResult.roomId, socket.userId);
+        if (partner) {
+          this.io.to(partner.socketId).emit('text_partner_reconnected', {
+            partnerId: socket.userId
+          });
+        }
+      }
+    } else {
+      console.log(`💬 Text chat reconnect failed for ${socket.userId}`);
+      socket.emit('text_reconnect_failed', {
+        reason: 'Session expired or room no longer exists'
+      });
+    }
+  }
+
+  // Audio quality metrics handler
+  private static handleAudioMetrics(socket: AuthenticatedSocket, data: any) {
+    if (!socket.userId) return;
+
+    const { sessionId, eventType, packetLoss, jitter, bitrate, roundTripTime, timestamp, error } = data;
+
+    // Log quality metrics
+    if (eventType) {
+      console.log(`🎤 Audio Event [${sessionId}]: ${eventType}`, {
+        userId: socket.userId,
+        timestamp: timestamp || Date.now(),
+        error: error || 'none'
+      });
+
+      // Log specific events
+      switch (eventType) {
+        case 'call_connected':
+          console.log(`✅ Audio call connected: User ${socket.userId} in session ${sessionId}`);
+          break;
+        case 'mic_permission_granted':
+          console.log(`🎤 Mic permission granted: User ${socket.userId}`);
+          break;
+        case 'mic_permission_denied':
+          console.log(`🚫 Mic permission denied: User ${socket.userId}, Error: ${error}`);
+          break;
+        case 'call_failed':
+          console.log(`❌ Audio call failed: User ${socket.userId}, Error: ${error}`);
+          break;
+      }
+    } else {
+      // Regular quality metrics
+      console.log(`📊 Audio Quality [${sessionId}]:`, {
+        userId: socket.userId,
+        packetLoss: packetLoss?.toFixed(2) + '%',
+        jitter: jitter?.toFixed(2) + 'ms',
+        bitrate: bitrate + ' kbps',
+        rtt: roundTripTime?.toFixed(2) + 'ms'
+      });
+
+      // Log warning for poor quality
+      if (packetLoss > 10) {
+        console.warn(`⚠️ High packet loss (${packetLoss.toFixed(1)}%) for user ${socket.userId} in session ${sessionId}`);
+      }
+    }
+  }
+
+  // Audio muted event handler
+  private static handleAudioMuted(socket: AuthenticatedSocket, data: any) {
+    if (!socket.userId) return;
+
+    const { sessionId, isMuted, timestamp } = data;
+
+    console.log(`🔇 Audio mute status: User ${socket.userId} ${isMuted ? 'muted' : 'unmuted'} in session ${sessionId}`);
+
+    // Find partner and notify
+    const session = this.activeSessions.get(sessionId);
+    if (session) {
+      const partnerId = session.user1 === socket.userId ? session.user2 : session.user1;
+      
+      // Emit to all partner devices
+      this.emitToAllUserDevices(partnerId, 'audio-muted', {
+        isMuted,
+        timestamp: timestamp || Date.now()
+      });
+
+      console.log(`✅ Notified partner ${partnerId} about mute status: ${isMuted}`);
+    }
+  }
 }
+

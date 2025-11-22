@@ -213,7 +213,7 @@ const Contact: React.FC = () => {
             <div className="space-y-4 text-sm text-white/70">
               <div>
                 <h4 className="text-sm font-semibold text-white">Is Omegoo free?</h4>
-                <p>Yes. Daily coins reset automatically—no upsells or hidden charges.</p>
+                <p>Yes. Omegoo is 100% free—no charges, subscriptions, or hidden fees. Start chatting instantly as a guest.</p>
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-white">How do you keep people safe?</h4>
