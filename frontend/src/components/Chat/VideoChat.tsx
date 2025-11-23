@@ -1588,11 +1588,7 @@ const VideoChat: React.FC = () => {
   };
 
   const blurEnabled = blurState === 'active' || blurState === 'manual';
-  const blurButtonTooltip = blurEnabled
-    ? blurState === 'manual'
-      ? 'Your video is hidden. Tap to reveal.'
-      : `Auto reveal in ${Math.max(revealCountdown, 0)}s. Tap to show now.`
-    : 'Blur your video before revealing yourself.';
+  const blurButtonAriaLabel = blurEnabled ? 'Reveal my video' : 'Blur my video';
 
   return (
     <div className="fixed inset-0 bg-gray-900 flex flex-col lg:flex-row">
@@ -1699,17 +1695,6 @@ const VideoChat: React.FC = () => {
                   </div>
                 )}
                 
-                {/* Omegoo Watermark - Floating with animation */}
-                <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg-black bg-opacity-40 backdrop-blur-sm px-3 py-2 rounded-xl border border-white border-opacity-20 animate-pulse">
-                  <img 
-                    src="/logo512.png" 
-                    alt="Omegoo" 
-                    className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg shadow-sm object-cover opacity-90"
-                  />
-                  <span className="text-white text-sm sm:text-base font-bold tracking-wider opacity-90 drop-shadow-lg">
-                    Omegoo
-                  </span>
-                </div>
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-500 p-4">
@@ -1726,6 +1711,18 @@ const VideoChat: React.FC = () => {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Omegoo Watermark - always visible */}
+          <div className="pointer-events-none absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg-black bg-opacity-40 backdrop-blur-sm px-3 py-2 rounded-xl border border-white border-opacity-20 animate-pulse">
+            <img 
+              src="/logo512.png" 
+              alt="Omegoo" 
+              className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg shadow-sm object-cover opacity-90"
+            />
+            <span className="text-white text-sm sm:text-base font-bold tracking-wider opacity-90 drop-shadow-lg">
+              Omegoo
+            </span>
           </div>
 
           {/* Local Video - FIXED: Consistent aspect ratio across all devices */}
@@ -1903,29 +1900,6 @@ const VideoChat: React.FC = () => {
                 )}
               </div>
 
-              {/* Blur Toggle */}
-              <div className="relative">
-                <button
-                  onClick={blurEnabled ? handleRevealVideo : enableManualBlur}
-                  className={`p-2 lg:p-3 rounded-full ${
-                    blurEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600'
-                  } text-white transition-colors touch-manipulation`}
-                  title={blurButtonTooltip}
-                  aria-label={blurEnabled ? 'Reveal my video' : 'Blur my video'}
-                >
-                  {blurEnabled ? (
-                    <EyeSlashIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-                  ) : (
-                    <EyeIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-                  )}
-                </button>
-
-                {blurEnabled && (
-                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] lg:text-xs px-2 py-1 rounded-full shadow-lg whitespace-nowrap">
-                    {blurState === 'manual' ? 'Video Hidden' : `Reveal in ${Math.max(revealCountdown, 0)}s`}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>
@@ -1933,7 +1907,7 @@ const VideoChat: React.FC = () => {
         {/* Bottom Actions - Mobile Responsive */}
         <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-3 py-3 lg:px-4 lg:py-4 safe-area-bottom">
           {/* Main Action Buttons - Simplified */}
-          <div className="flex justify-center space-x-3 lg:space-x-4 mb-3">
+          <div className="flex flex-wrap justify-center items-center gap-3 lg:gap-4 mb-3">
             {!isMatchConnected ? (
               <button
                 onClick={() => setShowFaceMaskPicker(true)}
@@ -1965,6 +1939,21 @@ const VideoChat: React.FC = () => {
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 lg:px-6 lg:py-3 rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base touch-manipulation"
             >
               Exit
+            </button>
+
+            <button
+              onClick={blurEnabled ? handleRevealVideo : enableManualBlur}
+              className={`p-3 lg:p-3.5 rounded-full border border-white/10 shadow-lg transition-colors ${
+                blurEnabled ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'
+              }`}
+              aria-pressed={blurEnabled}
+              aria-label={blurButtonAriaLabel}
+            >
+              {blurEnabled ? (
+                <EyeSlashIcon className="w-5 h-5" />
+              ) : (
+                <EyeIcon className="w-5 h-5" />
+              )}
             </button>
           </div>
 
