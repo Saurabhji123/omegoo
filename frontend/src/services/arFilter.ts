@@ -354,17 +354,16 @@ class ARFilterService {
       const startTime = performance.now();
       
       try {
-        // Apply canvas filter to element for instant preview
+        // Apply filter to canvas CONTEXT (not element) so it affects what's drawn
         if (this.currentMask !== 'none') {
-          this.applyCanvasFilter(this.currentMask);
+          const filterString = this.getFilterString(this.currentMask);
+          this.ctx.filter = filterString;
+          console.log(`🎨 Applied ${this.currentMask} filter to canvas context for remote streaming`);
         } else {
-          // Reset filter when no mask
-          if (this.canvas instanceof HTMLCanvasElement) {
-            (this.canvas as HTMLCanvasElement).style.filter = 'none';
-          }
+          this.ctx.filter = 'none';
         }
         
-        // Draw video frame to canvas (filter already applied to element)
+        // Draw video frame to canvas with filter applied
         this.ctx.drawImage(
           this.videoElement,
           0,
@@ -372,6 +371,9 @@ class ARFilterService {
           this.canvas.width,
           this.canvas.height
         );
+        
+        // Reset filter after drawing (important for blur)
+        this.ctx.filter = 'none';
         
         // Apply blur if active
         if (this.blurState === 'active' && this.blurIntensity > 0) {
@@ -418,6 +420,24 @@ class ARFilterService {
   }
 
   /**
+   * Get CSS filter string for a mask type
+   */
+  private getFilterString(filterType: FaceMaskType): string {
+    switch (filterType) {
+      case 'sunglasses':
+        return 'hue-rotate(210deg) brightness(1.1) contrast(1.2)';
+      case 'dog_ears':
+        return 'sepia(0.7) brightness(1.05) contrast(1.1)';
+      case 'cat_ears':
+        return 'contrast(1.4) saturate(1.2) brightness(1.05)';
+      case 'party_hat':
+        return 'saturate(1.8) brightness(1.1) contrast(1.15) hue-rotate(10deg)';
+      default:
+        return 'none';
+    }
+  }
+
+  /**
    * Apply simple canvas filter using CSS filter property (FAST!)
    * NEW: Apply to canvas element directly for instant preview visibility
    */
@@ -425,35 +445,9 @@ class ARFilterService {
     if (!this.ctx || !this.canvas) return;
     
     // Apply CSS filter DIRECTLY to canvas element for instant visual effect
-    let filterString = 'none';
+    const filterString = this.getFilterString(filterType);
     
-    switch (filterType) {
-      case 'sunglasses':
-        // Cool blue tint - using hue rotation and brightness
-        filterString = 'hue-rotate(210deg) brightness(1.1) contrast(1.2)';
-        console.log('🎨 Applied sunglasses filter (cool blue)');
-        break;
-        
-      case 'dog_ears':
-        // Warm sepia tone
-        filterString = 'sepia(0.7) brightness(1.05) contrast(1.1)';
-        console.log('🎨 Applied dog ears filter (warm sepia)');
-        break;
-        
-      case 'cat_ears':
-        // High contrast with slight saturation
-        filterString = 'contrast(1.4) saturate(1.2) brightness(1.05)';
-        console.log('🎨 Applied cat ears filter (high contrast)');
-        break;
-        
-      case 'party_hat':
-        // Vibrant saturation boost
-        filterString = 'saturate(1.8) brightness(1.1) contrast(1.15) hue-rotate(10deg)';
-        console.log('🎨 Applied party hat filter (vibrant)');
-        break;
-    }
-    
-    // Apply filter DIRECTLY to canvas element (not context) for instant preview
+    // Apply to canvas element for preview (doesn't affect stream)
     if (this.canvas instanceof HTMLCanvasElement) {
       (this.canvas as HTMLCanvasElement).style.filter = filterString;
     }
