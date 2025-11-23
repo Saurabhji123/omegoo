@@ -576,27 +576,36 @@ class ARFilterService {
   private drawSunglasses(keypoints: any[], image: HTMLImageElement, scaleX: number, scaleY: number): void {
     if (!this.ctx) return;
     
-    // Get eye landmarks
-    const leftEye = keypoints[AR_CONSTANTS.LANDMARKS.LEFT_EYE_OUTER];
-    const rightEye = keypoints[AR_CONSTANTS.LANDMARKS.RIGHT_EYE_OUTER];
+    // Get eye landmarks - use center points for better accuracy
+    const leftEyeOuter = keypoints[33]; // Left eye outer corner
+    const rightEyeOuter = keypoints[263]; // Right eye outer corner
+    const leftEyeInner = keypoints[133]; // Left eye inner corner  
+    const rightEyeInner = keypoints[362]; // Right eye inner corner
     
-    if (!leftEye || !rightEye) return;
+    if (!leftEyeOuter || !rightEyeOuter || !leftEyeInner || !rightEyeInner) return;
+    
+    // Calculate center between all eye points for better positioning
+    const leftEyeX = (leftEyeOuter.x + leftEyeInner.x) / 2;
+    const leftEyeY = (leftEyeOuter.y + leftEyeInner.y) / 2;
+    const rightEyeX = (rightEyeOuter.x + rightEyeInner.x) / 2;
+    const rightEyeY = (rightEyeOuter.y + rightEyeInner.y) / 2;
     
     const eyeDistance = Math.hypot(
-      (rightEye.x - leftEye.x) * scaleX,
-      (rightEye.y - leftEye.y) * scaleY
+      (rightEyeX - leftEyeX) * scaleX,
+      (rightEyeY - leftEyeY) * scaleY
     );
     
-    const centerX = ((leftEye.x + rightEye.x) / 2) * scaleX;
-    const centerY = ((leftEye.y + rightEye.y) / 2) * scaleY;
+    const centerX = ((leftEyeX + rightEyeX) / 2) * scaleX;
+    const centerY = ((leftEyeY + rightEyeY) / 2) * scaleY;
     
     const angle = Math.atan2(
-      (rightEye.y - leftEye.y) * scaleY,
-      (rightEye.x - leftEye.x) * scaleX
+      (rightEyeY - leftEyeY) * scaleY,
+      (rightEyeX - leftEyeX) * scaleX
     );
     
-    const width = eyeDistance * 2.5 * this.maskScale;
-    const height = width * 0.4;
+    // Larger size for better visibility
+    const width = eyeDistance * 3.2 * this.maskScale;
+    const height = width * 0.5;
     
     this.ctx.save();
     this.ctx.translate(centerX, centerY);
@@ -612,22 +621,26 @@ class ARFilterService {
   private drawEars(keypoints: any[], image: HTMLImageElement, scaleX: number, scaleY: number): void {
     if (!this.ctx) return;
     
-    const headTop = keypoints[AR_CONSTANTS.LANDMARKS.HEAD_TOP];
-    const leftEar = keypoints[AR_CONSTANTS.LANDMARKS.LEFT_EAR];
-    const rightEar = keypoints[AR_CONSTANTS.LANDMARKS.RIGHT_EAR];
+    // Use forehead and temple points for better ear positioning
+    const foreheadLeft = keypoints[21]; // Left temple area
+    const foreheadRight = keypoints[251]; // Right temple area
+    const foreheadCenter = keypoints[10]; // Center forehead
+    const leftCheek = keypoints[234]; // Left cheek
+    const rightCheek = keypoints[454]; // Right cheek
     
-    if (!headTop || !leftEar || !rightEar) return;
+    if (!foreheadCenter || !foreheadLeft || !foreheadRight || !leftCheek || !rightCheek) return;
     
     const headWidth = Math.hypot(
-      (rightEar.x - leftEar.x) * scaleX,
-      (rightEar.y - leftEar.y) * scaleY
+      (rightCheek.x - leftCheek.x) * scaleX,
+      (rightCheek.y - leftCheek.y) * scaleY
     );
     
-    const centerX = ((leftEar.x + rightEar.x) / 2) * scaleX;
-    const centerY = headTop.y * scaleY - headWidth * 0.3;
+    const centerX = ((foreheadLeft.x + foreheadRight.x) / 2) * scaleX;
+    const centerY = foreheadCenter.y * scaleY - headWidth * 0.15;
     
-    const width = headWidth * 1.5 * this.maskScale;
-    const height = width * 1.2;
+    // Bigger ears for better visibility
+    const width = headWidth * 1.8 * this.maskScale;
+    const height = width * 1.3;
     
     this.ctx.save();
     this.ctx.globalAlpha = this.maskOpacity;
@@ -641,17 +654,25 @@ class ARFilterService {
   private drawPartyHat(keypoints: any[], image: HTMLImageElement, scaleX: number, scaleY: number): void {
     if (!this.ctx) return;
     
-    const headTop = keypoints[AR_CONSTANTS.LANDMARKS.HEAD_TOP];
-    const chin = keypoints[AR_CONSTANTS.LANDMARKS.CHIN];
+    const foreheadCenter = keypoints[10]; // Center forehead
+    const chin = keypoints[152]; // Chin point
+    const leftTemple = keypoints[21];
+    const rightTemple = keypoints[251];
     
-    if (!headTop || !chin) return;
+    if (!foreheadCenter || !chin || !leftTemple || !rightTemple) return;
     
-    const headHeight = Math.abs((headTop.y - chin.y) * scaleY);
-    const centerX = headTop.x * scaleX;
-    const centerY = headTop.y * scaleY;
+    const headHeight = Math.abs((foreheadCenter.y - chin.y) * scaleY);
+    const headWidth = Math.hypot(
+      (rightTemple.x - leftTemple.x) * scaleX,
+      (rightTemple.y - leftTemple.y) * scaleY
+    );
     
-    const width = headHeight * 0.8 * this.maskScale;
-    const height = width * 1.5;
+    const centerX = foreheadCenter.x * scaleX;
+    const centerY = foreheadCenter.y * scaleY - headHeight * 0.1;
+    
+    // Bigger hat for visibility
+    const width = headWidth * 1.0 * this.maskScale;
+    const height = width * 1.6;
     
     this.ctx.save();
     this.ctx.globalAlpha = this.maskOpacity;
