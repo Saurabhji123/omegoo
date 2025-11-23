@@ -95,7 +95,7 @@ const VideoChat: React.FC = () => {
   const autoTypingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastMessageTimeRef = useRef<number>(Date.now());
   
-  const videoOnlineCount = modeUserCounts.video;
+  const videoOnlineCount = modeUserCounts.video * 3; // 3x multiplier for retention psychology
 
   const micStateRef = useRef<boolean>(isMicOn);
   const speakerStateRef = useRef<boolean>(isSpeakerOn);

@@ -162,15 +162,24 @@ export class RedisService {
   }
 
   private static isGenderCompatible(req1: MatchRequest, req2: MatchRequest): boolean {
+    // If either user has no gender info, allow matching (graceful handling for guests)
+    if (!req1.userGender || !req2.userGender) {
+      console.log('✅ Gender check: One or both users have no gender, allowing match');
+      return true;
+    }
+
     const req1Preference = req1.preferences?.genderPreference || 'any';
     const req2Preference = req2.preferences?.genderPreference || 'any';
     const req1Gender = req1.userGender;
     const req2Gender = req2.userGender;
 
-    const req1AcceptsReq2 = req1Preference === 'any' || (req2Gender !== undefined && req2Gender === req1Preference);
-    const req2AcceptsReq1 = req2Preference === 'any' || (req1Gender !== undefined && req1Gender === req2Preference);
+    const req1AcceptsReq2 = req1Preference === 'any' || req2Gender === req1Preference;
+    const req2AcceptsReq1 = req2Preference === 'any' || req1Gender === req2Preference;
 
-    return req1AcceptsReq2 && req2AcceptsReq1;
+    const compatible = req1AcceptsReq2 && req2AcceptsReq1;
+    console.log(`🎭 Gender check: ${req1Gender} (wants ${req1Preference}) + ${req2Gender} (wants ${req2Preference}) = ${compatible ? '✅ Compatible' : '❌ Not compatible'}`);
+    
+    return compatible;
   }
 
   // Session management

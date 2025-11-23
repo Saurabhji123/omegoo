@@ -110,7 +110,7 @@ const TextChat: React.FC = () => {
   
   // Connection quality state (reserved for future implementation)
   // const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('good');
-  const textOnlineCount = modeUserCounts.text;
+  const textOnlineCount = modeUserCounts.text * 3; // 3x multiplier for retention psychology
 
   useEffect(() => {
     setActiveMode('text');
