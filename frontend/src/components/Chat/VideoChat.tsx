@@ -16,6 +16,9 @@ import {
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
 import ReportModal from './ReportModal';
 import { PreviewModal } from './PreviewModal';
+import FaceMaskPicker from './FaceMaskPicker';
+import { useARFilter } from '../../contexts/ARFilterContext';
+import { FACE_MASK_PRESETS, FaceMaskType, BlurState } from '../../types/arFilters';
 
 interface Message {
   id: string;
@@ -28,12 +31,15 @@ const VideoChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
+  const { selectedMask, blurState, revealCountdown, getProcessedStream, revealVideo, initialize: initializeAR, setMask } = useARFilter();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null); // Track local stream for mic control
   const remoteStreamRef = useRef<MediaStream | null>(null); // Track remote stream for speaker control
+  const prevBlurStateRef = useRef<BlurState>('disabled'); // Track previous blur state for auto-reveal detection
+  
   const getStoredBoolean = (key: string, fallback: boolean): boolean => {
     if (typeof window === 'undefined') {
       return fallback;
@@ -70,10 +76,102 @@ const VideoChat: React.FC = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false); // Optional preview modal
   const [isAudioOnly, setIsAudioOnly] = useState(false); // Track audio-only mode
+  const [showFaceMaskPicker, setShowFaceMaskPicker] = useState(false);
+  const [showMaskMenu, setShowMaskMenu] = useState(false);
+  
+  // Swipe gesture states
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState<number>(0);
+  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const [showSwipeHint, setShowSwipeHint] = useState<'left' | 'right' | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false); // Track if typing in message input
+  const lastTapTimeRef = useRef<number>(0);
+  
+  // Auto-typing indicator states (for retention boost)
+  const [isAutoTyping, setIsAutoTyping] = useState(false); // Fake typing indicator
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoTypingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastMessageTimeRef = useRef<number>(Date.now());
+  
   const videoOnlineCount = modeUserCounts.video;
 
   const micStateRef = useRef<boolean>(isMicOn);
   const speakerStateRef = useRef<boolean>(isSpeakerOn);
+
+  // Helper function to check if swipe gestures should be enabled
+  const isSwipeEnabled = useCallback(() => {
+    // 🔐 Edge Case 1: Disable during typing
+    if (isInputFocused) {
+      console.log('🚫 Swipe disabled: User is typing');
+      return false;
+    }
+    
+    // 🔐 Edge Case 2: Disable during modal/popup states
+    if (showReportModal || showLoginModal || showPreview || showFaceMaskPicker || showMaskMenu) {
+      console.log('🚫 Swipe disabled: Modal/popup is open');
+      return false;
+    }
+    
+    // 🔐 Edge Case 4: Disable during network issues
+    if (!socketConnected || socketConnecting) {
+      console.log('🚫 Swipe disabled: Network reconnecting');
+      return false;
+    }
+    
+    // ✅ All conditions passed - swipes enabled
+    return true;
+  }, [isInputFocused, showReportModal, showLoginModal, showPreview, showFaceMaskPicker, showMaskMenu, socketConnected, socketConnecting]);
+
+  // 🎯 Auto-Typing Indicator System (Retention Boost)
+  const startInactivityTimer = useCallback(() => {
+    // Clear any existing timers
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    if (autoTypingTimerRef.current) {
+      clearTimeout(autoTypingTimerRef.current);
+    }
+    
+    // Start 4-second inactivity timer
+    inactivityTimerRef.current = setTimeout(() => {
+      console.log('💭 4 seconds of inactivity - showing auto-typing indicator');
+      setIsAutoTyping(true);
+      
+      // Auto-typing will turn off after 2.5 seconds
+      autoTypingTimerRef.current = setTimeout(() => {
+        console.log('⏰ Auto-typing indicator duration ended');
+        setIsAutoTyping(false);
+        
+        // Restart the cycle if still no message
+        if (isMatchConnected && Date.now() - lastMessageTimeRef.current > 6500) {
+          startInactivityTimer();
+        }
+      }, 2500);
+    }, 4000);
+  }, [isMatchConnected]);
+  
+  const cancelAutoTyping = useCallback(() => {
+    console.log('🚫 Canceling auto-typing (real activity detected)');
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    if (autoTypingTimerRef.current) {
+      clearTimeout(autoTypingTimerRef.current);
+      autoTypingTimerRef.current = null;
+    }
+    setIsAutoTyping(false);
+  }, []);
+  
+  const resetMessageTimer = useCallback(() => {
+    lastMessageTimeRef.current = Date.now();
+    cancelAutoTyping();
+    if (isMatchConnected) {
+      startInactivityTimer();
+    }
+  }, [isMatchConnected, cancelAutoTyping, startInactivityTimer]);
 
   const applyMicState = useCallback(() => {
     const currentMicState = micStateRef.current;
@@ -86,6 +184,22 @@ const VideoChat: React.FC = () => {
     }
     webRTCRef.current?.updateAudioSenders(currentMicState);
   }, []);
+
+  // Start auto-typing timer when match connects
+  useEffect(() => {
+    if (isMatchConnected) {
+      console.log('✅ Match connected - starting auto-typing timer system');
+      lastMessageTimeRef.current = Date.now();
+      startInactivityTimer();
+    } else {
+      // Cleanup timers when disconnected
+      cancelAutoTyping();
+    }
+    
+    return () => {
+      cancelAutoTyping();
+    };
+  }, [isMatchConnected, startInactivityTimer, cancelAutoTyping]);
 
   const applySpeakerState = useCallback(() => {
     const currentSpeakerState = speakerStateRef.current;
@@ -133,6 +247,43 @@ const VideoChat: React.FC = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Close mask menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showMaskMenu) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.mask-menu-container')) {
+          setShowMaskMenu(false);
+        }
+      }
+    };
+
+    if (showMaskMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMaskMenu]);
+
+  // Track blur state changes and emit socket event for auto-reveal
+  useEffect(() => {
+    // Detect auto-reveal (transition from 'active' to 'revealed')
+    if (prevBlurStateRef.current === 'active' && blurState === 'revealed' && revealCountdown === 0) {
+      console.log('⏰ Auto-reveal detected, emitting socket event...');
+      
+      if (socket && sessionId) {
+        socket.emit('reveal_video', {
+          sessionId,
+          maskType: selectedMask,
+          isAutoReveal: true,
+          timestamp: Date.now()
+        });
+        console.log('✅ Auto-reveal event emitted to backend');
+      }
+    }
+    
+    prevBlurStateRef.current = blurState;
+  }, [blurState, revealCountdown, socket, sessionId, selectedMask]);
 
   // Define reusable remote stream handler
   const handleRemoteStream = useCallback((stream: MediaStream) => {
@@ -354,6 +505,9 @@ const VideoChat: React.FC = () => {
         
         // Display clean message without username
         addMessage(data.content, false);
+        
+        // 🔄 Reset auto-typing timer (stranger sent a message)
+        resetMessageTimer();
       });
 
       socket.on('session_ended', (data: { reason?: string }) => {
@@ -650,11 +804,31 @@ const VideoChat: React.FC = () => {
       };
       
       console.log('🎥 Requesting user media with constraints:', constraints);
-      const stream = await webRTCRef.current?.initializeMedia(constraints);
+      const rawStream = await webRTCRef.current?.initializeMedia(constraints);
       
-      if (stream && localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-        localStreamRef.current = stream; // Store stream reference for mic control
+      if (!rawStream) {
+        throw new Error('Failed to get media stream');
+      }
+      
+      // Apply AR filters if mask selected or blur active
+      let processedStream = rawStream;
+      if (selectedMask !== 'none' || blurState === 'active') {
+        try {
+          console.log('🎭 Applying AR filters...', { selectedMask, blurState });
+          // Initialize AR service if not already done
+          await initializeAR();
+          processedStream = await getProcessedStream(rawStream);
+          console.log('✅ AR filters applied successfully');
+        } catch (error) {
+          console.error('❌ Failed to apply AR filters:', error);
+          // Fallback to raw stream
+          processedStream = rawStream;
+        }
+      }
+      
+      if (processedStream && localVideoRef.current) {
+        localVideoRef.current.srcObject = processedStream;
+        localStreamRef.current = processedStream; // Store stream reference for mic control
         setCameraBlocked(false);
         console.log('✅ Local video stream set to video element');
         
@@ -666,7 +840,7 @@ const VideoChat: React.FC = () => {
           trackEnabled: localStreamRef.current?.getAudioTracks()[0]?.enabled
         });
 
-        const videoTrack = stream.getVideoTracks()[0];
+        const videoTrack = processedStream.getVideoTracks()[0];
         if (videoTrack) {
           videoTrack.enabled = isCameraOn;
           console.log('🎥 Applied camera state to fresh stream:', { isCameraOn, trackEnabled: videoTrack.enabled });
@@ -837,6 +1011,174 @@ const VideoChat: React.FC = () => {
       setActiveMode(null);
       navigate('/');
     }
+  };
+
+  const handleRevealVideo = () => {
+    try {
+      console.log('👁️ Revealing video...');
+      
+      // Emit socket event to notify partner
+      if (socket && sessionId) {
+        socket.emit('reveal_video', {
+          sessionId,
+          maskType: selectedMask,
+          isAutoReveal: false,
+          timestamp: Date.now()
+        });
+        console.log('✅ Reveal video event emitted to backend');
+      }
+      
+      // Call AR context method to update state
+      revealVideo();
+    } catch (error) {
+      console.error('❌ Error revealing video:', error);
+    }
+  };
+
+  // Swipe gesture handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMatchConnected) return;
+    
+    // 🔐 Edge Case 3: Detect multi-touch (pinch zoom) - ignore for swipe
+    if (e.touches.length > 1) {
+      console.log('🔍 Multi-touch detected (pinch/zoom) - ignoring swipe');
+      resetSwipeState();
+      return;
+    }
+    
+    // 🔐 Check if swipes are enabled based on edge cases
+    if (!isSwipeEnabled()) {
+      return;
+    }
+    
+    const touch = e.touches[0];
+    setTouchStartX(touch.clientX);
+    setTouchStartY(touch.clientY);
+    
+    // Check for double tap (like gesture)
+    const now = Date.now();
+    if (now - lastTapTimeRef.current < 300) {
+      // Double tap detected
+      handleDoubleTap();
+      lastTapTimeRef.current = 0;
+    } else {
+      lastTapTimeRef.current = now;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMatchConnected || touchStartX === null || touchStartY === null) return;
+    
+    // 🔐 Edge Case 3: If multi-touch started, abort swipe
+    if (e.touches.length > 1) {
+      console.log('🔍 Multi-touch during move - canceling swipe');
+      resetSwipeState();
+      return;
+    }
+    
+    // 🔐 Check if swipes are still enabled (conditions might change mid-swipe)
+    if (!isSwipeEnabled()) {
+      resetSwipeState();
+      return;
+    }
+    
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStartX;
+    const diffY = touch.clientY - touchStartY;
+    
+    // Only process horizontal swipes (ignore vertical scrolling)
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 20) {
+      setSwipeOffset(diffX);
+      
+      // Show hint when threshold reached
+      if (diffX < -100) {
+        setShowSwipeHint('left');
+      } else if (diffX > 100) {
+        setShowSwipeHint('right');
+      } else {
+        setShowSwipeHint(null);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isMatchConnected || touchStartX === null) {
+      resetSwipeState();
+      return;
+    }
+    
+    // 🔐 Final check before executing swipe action
+    if (!isSwipeEnabled()) {
+      console.log('🚫 Swipe action blocked by edge case protection');
+      resetSwipeState();
+      return;
+    }
+    
+    const swipeThreshold = 150;
+    
+    // Swipe left - Next person
+    if (swipeOffset < -swipeThreshold) {
+      console.log('👈 Swipe left detected - Next person');
+      nextMatch();
+    }
+    // Swipe right - Add friend (placeholder)
+    else if (swipeOffset > swipeThreshold) {
+      console.log('👉 Swipe right detected - Add friend');
+      handleAddFriend();
+    }
+    
+    resetSwipeState();
+  };
+
+  const handleDoubleTap = () => {
+    console.log('❤️ Double tap detected - Like animation');
+    setShowLikeAnimation(true);
+    setTimeout(() => setShowLikeAnimation(false), 1500);
+    
+    // Optional: Send like event to backend
+    if (socket && sessionId) {
+      socket.emit('send_like', { sessionId, timestamp: Date.now() });
+    }
+  };
+
+  const handleAddFriend = () => {
+    // Check if user is logged in
+    if (!user || !user.email) {
+      console.log('⚠️ User not logged in, showing login modal');
+      setShowLoginModal(true);
+      return;
+    }
+    
+    // Check if we have partner info
+    if (!partnerId || !sessionId) {
+      console.log('⚠️ No active session to add favourite');
+      addMessage('No one to add as favourite. Connect with someone first!', false);
+      return;
+    }
+    
+    // Add to favourites via socket
+    console.log('⭐ Adding user to favourites:', {
+      currentUser: user.email,
+      favouriteUserId: partnerId,
+      sessionId
+    });
+    
+    if (socket) {
+      socket.emit('add_favourite', {
+        favouriteUserId: partnerId,
+        sessionId
+      });
+      
+      // Show success message (will be confirmed by socket event)
+      addMessage('⭐ Added to favourites!', false);
+    }
+  };
+
+  const resetSwipeState = () => {
+    setTouchStartX(null);
+    setTouchStartY(null);
+    setSwipeOffset(0);
+    setShowSwipeHint(null);
   };
 
   const toggleCamera = () => {
@@ -1203,7 +1545,13 @@ const VideoChat: React.FC = () => {
           )}
 
           {/* Remote Video */}
-          <div className="w-full h-full relative">
+          <div 
+            className="w-full h-full relative"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={resetSwipeState}
+          >
             {isMatchConnected ? (
               <>
                 <video
@@ -1215,9 +1563,38 @@ const VideoChat: React.FC = () => {
                     width: '100%',
                     height: '100%',
                     objectFit: 'contain', // FIXED: Use contain to show full original video without zoom
-                    backgroundColor: '#000'
+                    backgroundColor: '#000',
+                    transform: swipeOffset !== 0 ? `translateX(${swipeOffset}px)` : 'none',
+                    transition: swipeOffset === 0 ? 'transform 0.3s ease-out' : 'none'
                   }}
                 />
+                
+                {/* Swipe Hint - Left (Next) */}
+                {showSwipeHint === 'left' && (
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
+                    <div className="text-white text-6xl animate-bounce">←</div>
+                    <div className="text-white text-sm font-bold bg-black bg-opacity-50 px-3 py-1 rounded-full mt-2">
+                      Next
+                    </div>
+                  </div>
+                )}
+                
+                {/* Swipe Hint - Right (Friend) */}
+                {showSwipeHint === 'right' && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
+                    <div className="text-white text-6xl animate-bounce">→</div>
+                    <div className="text-white text-sm font-bold bg-black bg-opacity-50 px-3 py-1 rounded-full mt-2">
+                      Favourite
+                    </div>
+                  </div>
+                )}
+                
+                {/* Like Animation */}
+                {showLikeAnimation && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                    <div className="text-red-500 text-9xl animate-ping">❤️</div>
+                  </div>
+                )}
                 
                 {/* Omegoo Watermark - Floating with animation */}
                 <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black bg-opacity-40 backdrop-blur-sm px-3 py-2 rounded-xl border border-white border-opacity-20 animate-pulse">
@@ -1331,6 +1708,80 @@ const VideoChat: React.FC = () => {
               >
                 <ArrowPathIcon className="w-4 h-4 lg:w-5 lg:h-5" />
               </button>
+
+              {/* AR Face Mask Toggle */}
+              <div className="relative mask-menu-container">
+                <button
+                  onClick={() => setShowMaskMenu(!showMaskMenu)}
+                  className="p-2 lg:p-3 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors touch-manipulation"
+                  title="Face Masks"
+                >
+                  {selectedMask !== 'none' ? (
+                    <span className="text-lg lg:text-xl">{FACE_MASK_PRESETS[selectedMask].emoji}</span>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 lg:w-5 lg:h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Mask Selection Menu */}
+                {showMaskMenu && (
+                  <div className="absolute bottom-full mb-2 right-0 bg-gray-800 dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-700 p-3 min-w-[200px] z-50">
+                    <div className="text-xs text-gray-400 mb-2 px-2">Face Masks</div>
+                    <div className="space-y-1">
+                      {(Object.keys(FACE_MASK_PRESETS) as FaceMaskType[]).map((maskType) => (
+                        <button
+                          key={maskType}
+                          onClick={() => {
+                            setMask(maskType);
+                            setShowMaskMenu(false);
+                          }}
+                          className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                            selectedMask === maskType
+                              ? 'bg-purple-600 text-white'
+                              : 'hover:bg-gray-700 text-white'
+                          }`}
+                        >
+                          <span className="text-xl">{FACE_MASK_PRESETS[maskType].emoji}</span>
+                          <span className="text-sm font-medium">{FACE_MASK_PRESETS[maskType].name}</span>
+                          {selectedMask === maskType && (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-auto">
+                              <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Reveal Me Button - Only when blur is active */}
+              {blurState === 'active' && (
+                <button
+                  onClick={handleRevealVideo}
+                  className="px-3 py-2 lg:px-4 lg:py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs lg:text-sm font-medium transition-colors shadow-lg touch-manipulation flex items-center space-x-1"
+                  title="Reveal your video"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 lg:w-4 lg:h-4">
+                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                    <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Reveal ({revealCountdown}s)</span>
+                </button>
+              )}
+
+              {/* Blur Active Indicator */}
+              {blurState === 'active' && (
+                <div className="absolute -top-8 right-0 bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg flex items-center space-x-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+                    <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.029 10.029 0 003.3-4.38 1.651 1.651 0 000-1.185A10.004 10.004 0 009.999 3a9.956 9.956 0 00-4.744 1.194L3.28 2.22zM7.752 6.69l1.092 1.092a2.5 2.5 0 013.374 3.373l1.091 1.092a4 4 0 00-5.557-5.557z" clipRule="evenodd" />
+                    <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 01-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 010-1.186A10.007 10.007 0 012.839 6.02L6.07 9.252a4 4 0 004.678 4.678z" />
+                  </svg>
+                  <span>Video Blurred</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1341,7 +1792,7 @@ const VideoChat: React.FC = () => {
           <div className="flex justify-center space-x-3 lg:space-x-4 mb-3">
             {!isMatchConnected ? (
               <button
-                onClick={() => startNewChat()}
+                onClick={() => setShowFaceMaskPicker(true)}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 lg:px-8 lg:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-sm lg:text-base touch-manipulation"
                 disabled={isSearching}
               >
@@ -1442,6 +1893,22 @@ const VideoChat: React.FC = () => {
                     </div>
                   </div>
                 ))}
+                
+                {/* Auto-Typing Indicator (Retention Boost) */}
+                {isAutoTyping && isMatchConnected && (
+                  <div className="flex justify-start mb-2 animate-fade-in">
+                    <div className="bg-gray-700 text-white px-4 py-2 rounded-2xl max-w-xs shadow-lg">
+                      <div className="flex items-center space-x-1">
+                        <div className="flex space-x-1">
+                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div ref={messagesEndRef} />
               </>
             )}
@@ -1455,6 +1922,8 @@ const VideoChat: React.FC = () => {
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyPress={handleKeyPress}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
                 placeholder={socketConnected ? (isMatchConnected ? "Type a message..." : "Find someone to chat") : "Connecting to server..."}
                 disabled={!socketConnected || !isMatchConnected}
                 className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 focus:outline-none text-sm touch-manipulation disabled:bg-gray-800 disabled:text-gray-500 transition-all duration-300"
@@ -1488,6 +1957,54 @@ const VideoChat: React.FC = () => {
         />
       )}
 
+      {/* Login/Signup Modal - For Friend System */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-4">🔒</div>
+              <h2 className="text-2xl font-bold text-white mb-2">Login Required</h2>
+              <p className="text-gray-300 text-sm">
+                You need to be logged in to add friends and access social features
+              </p>
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center gap-3 text-sm text-gray-300">
+                <div className="text-2xl">👥</div>
+                <span>Send friend requests and build your network</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-300">
+                <div className="text-2xl">💬</div>
+                <span>Chat with your friends anytime</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-300">
+                <div className="text-2xl">⭐</div>
+                <span>Save your favorite connections</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowLoginModal(false);
+                  navigate('/');
+                }}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+              >
+                Login / Sign Up
+              </button>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-colors"
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Preview Modal - Optional camera preview before matching */}
       {showPreview && (
         <PreviewModal
@@ -1495,6 +2012,16 @@ const VideoChat: React.FC = () => {
           onCancel={handlePreviewCancel}
         />
       )}
+
+      {/* Face Mask Picker Modal */}
+      <FaceMaskPicker
+        isOpen={showFaceMaskPicker}
+        onClose={() => setShowFaceMaskPicker(false)}
+        onConfirm={() => {
+          setShowFaceMaskPicker(false);
+          startNewChat(false);
+        }}
+      />
 
       {/* Audio-Only Mode Banner */}
       {isMatchConnected && isAudioOnly && (

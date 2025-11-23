@@ -336,6 +336,94 @@ export const guestAPI = {
       success: boolean; 
       stats: any;
     }>('/api/guest/stats');
+  },
+
+  // Translation API
+  translateMessage: async (text: string, targetLang: string, sourceLang: string = 'auto') => {
+    return apiService.post<{
+      success: boolean;
+      data: {
+        translatedText: string;
+        sourceLang: string;
+        targetLang: string;
+        confidence?: number;
+        cached: boolean;
+      };
+      meta: {
+        remainingQuota: number;
+        quotaResetIn: number;
+      };
+    }>('/api/translate', { text, targetLang, sourceLang });
+  },
+
+  detectLanguage: async (text: string) => {
+    return apiService.post<{
+      success: boolean;
+      data: {
+        language: string;
+        confidence: number;
+      };
+    }>('/api/translate/detect', { text });
+  },
+
+  getSupportedLanguages: async () => {
+    return apiService.get<{
+      success: boolean;
+      data: {
+        languages: Array<{ code: string; name: string }>;
+      };
+    }>('/api/translate/languages');
+  },
+
+  clearTranslationCache: async () => {
+    return apiService.delete<{
+      success: boolean;
+      data: {
+        message: string;
+        clearedCount: number;
+      };
+    }>('/api/translate/cache');
+  },
+
+  getTranslationQuota: async () => {
+    return apiService.get<{
+      success: boolean;
+      data: {
+        remainingQuota: number;
+        maxQuota: number;
+        quotaResetIn: number;
+      };
+    }>('/api/translate/quota');
+  },
+
+  // Topic Dice API
+  getTopicDice: async (category?: 'fun' | 'safe' | 'deep' | 'flirty', language: string = 'en') => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    params.append('lang', language);
+    
+    return apiService.get<{
+      success: boolean;
+      data: {
+        id: string;
+        prompt: string;
+        category: string;
+        maturityRating: string;
+      };
+    }>(`/api/topic-dice?${params.toString()}`);
+  },
+
+  getTopicDiceCategories: async () => {
+    return apiService.get<{
+      success: boolean;
+      data: {
+        categories: Array<{
+          category: string;
+          count: number;
+          emoji: string;
+        }>;
+      };
+    }>('/api/topic-dice/categories');
   }
 };
 

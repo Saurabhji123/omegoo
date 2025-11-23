@@ -3748,4 +3748,41 @@ export class DatabaseService {
       createdAt: new Date()
     };
   }
+
+  /* ---------- Topic Dice Methods (Dev Mode) ---------- */
+  private static topicDicePrompts = new Map<string, any>();
+
+  static async getTopicDicePrompts(filter: any = {}): Promise<any[]> {
+    console.log('🎲 Getting topic dice prompts (dev mode - returning empty array)');
+    
+    const allPrompts = Array.from(this.topicDicePrompts.values());
+    
+    // Apply filters
+    return allPrompts.filter(prompt => {
+      if (filter.category && prompt.category !== filter.category) return false;
+      if (filter.active !== undefined && prompt.active !== filter.active) return false;
+      if (filter.maturityRating && Array.isArray(filter.maturityRating.$in)) {
+        if (!filter.maturityRating.$in.includes(prompt.maturityRating)) return false;
+      }
+      return true;
+    });
+  }
+
+  static async createTopicDicePrompt(prompt: any): Promise<void> {
+    console.log('🎲 Creating topic dice prompt (dev mode - stored in memory)', prompt.id);
+    this.topicDicePrompts.set(prompt.id, prompt);
+  }
+
+  static async updateTopicDicePrompt(promptId: string, updates: any): Promise<void> {
+    console.log('🎲 Updating topic dice prompt (dev mode)', promptId);
+    const existing = this.topicDicePrompts.get(promptId);
+    if (existing) {
+      this.topicDicePrompts.set(promptId, { ...existing, ...updates });
+    }
+  }
+
+  static async deleteTopicDicePrompt(promptId: string): Promise<void> {
+    console.log('🎲 Deleting topic dice prompt (dev mode)', promptId);
+    this.topicDicePrompts.delete(promptId);
+  }
 }

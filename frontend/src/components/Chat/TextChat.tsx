@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../contexts/TranslationContext';
 import { 
   PaperAirplaneIcon,
   // ArrowPathIcon, // Reserved for reconnect button
@@ -9,9 +10,14 @@ import {
   XMarkIcon,
   PhoneXMarkIcon,
   ChatBubbleLeftRightIcon,
-  SignalIcon
+  SignalIcon,
+  VideoCameraIcon
 } from '@heroicons/react/24/outline';
 import ReportModal from './ReportModal';
+import VideoUpgradeModal from './VideoUpgradeModal';
+import VideoUpgradeService from '../../services/videoUpgrade';
+import WebRTCService from '../../services/webrtc';
+import { guestAPI } from '../../services/api';
 
 const enableDebugLogs = process.env.REACT_APP_TEXTCHAT_DEBUG === 'true';
 const debugLog = (...args: any[]) => {
@@ -35,13 +41,32 @@ interface Message {
     content: string;
     isOwnMessage: boolean;
   };
+  // Translation metadata
+  translatedContent?: string;
+  sourceLang?: string;
+  showingOriginal?: boolean;
 }
 
 const TextChat: React.FC = () => {
   const navigate = useNavigate();
-  const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
+  const { 
+    socket, 
+    connected: socketConnected, 
+    connecting: socketConnecting, 
+    modeUserCounts, 
+    setActiveMode,
+    videoUpgradeState,
+    sendVideoRequest,
+    acceptVideoRequest,
+    declineVideoRequest,
+    sendVideoUpgradeSignaling
+  } = useSocket();
   const { user } = useAuth();
+  const { preferredLanguage, autoTranslateEnabled, translateMessage } = useTranslation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const webrtcServiceRef = useRef<WebRTCService | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
@@ -58,12 +83,30 @@ const TextChat: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [partnerTyping, setPartnerTyping] = useState(false);
   
+  // Translation states
+  const [translatingMessages, setTranslatingMessages] = useState<Set<string>>(new Set());
+  
+  // Topic Dice states
+  const [showTopicDiceModal, setShowTopicDiceModal] = useState(false);
+  const [loadingPrompt, setLoadingPrompt] = useState(false);
+  
   // Reply feature states
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  
+  // Video upgrade states
+  const [isVideoMode, setIsVideoMode] = useState(false);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
   const [swipingMessageId, setSwipingMessageId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState<number>(0);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  
+  // Auto-typing indicator states (for retention boost)
+  const [isAutoTyping, setIsAutoTyping] = useState(false);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoTypingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastMessageTimeRef = useRef<number>(Date.now());
   
   // Connection quality state (reserved for future implementation)
   // const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('good');
@@ -75,6 +118,71 @@ const TextChat: React.FC = () => {
       setActiveMode(null);
     };
   }, [setActiveMode]);
+
+  // 🎯 Auto-Typing Indicator System (Retention Boost)
+  const startInactivityTimer = useCallback(() => {
+    // Clear any existing timers
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    if (autoTypingTimerRef.current) {
+      clearTimeout(autoTypingTimerRef.current);
+    }
+    
+    // Start 4-second inactivity timer
+    inactivityTimerRef.current = setTimeout(() => {
+      debugLog('💭 4 seconds of inactivity - showing auto-typing indicator');
+      setIsAutoTyping(true);
+      
+      // Auto-typing will turn off after 2.5 seconds
+      autoTypingTimerRef.current = setTimeout(() => {
+        debugLog('⏰ Auto-typing indicator duration ended');
+        setIsAutoTyping(false);
+        
+        // Restart the cycle if still no message
+        if (isMatchConnected && Date.now() - lastMessageTimeRef.current > 6500) {
+          startInactivityTimer();
+        }
+      }, 2500);
+    }, 4000);
+  }, [isMatchConnected]);
+  
+  const cancelAutoTyping = useCallback(() => {
+    debugLog('🚫 Canceling auto-typing (real activity detected)');
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    if (autoTypingTimerRef.current) {
+      clearTimeout(autoTypingTimerRef.current);
+      autoTypingTimerRef.current = null;
+    }
+    setIsAutoTyping(false);
+  }, []);
+  
+  const resetMessageTimer = useCallback(() => {
+    lastMessageTimeRef.current = Date.now();
+    cancelAutoTyping();
+    if (isMatchConnected) {
+      startInactivityTimer();
+    }
+  }, [isMatchConnected, cancelAutoTyping, startInactivityTimer]);
+
+  // Start auto-typing timer when match connects
+  useEffect(() => {
+    if (isMatchConnected) {
+      debugLog('✅ Match connected - starting auto-typing timer system');
+      lastMessageTimeRef.current = Date.now();
+      startInactivityTimer();
+    } else {
+      // Cleanup timers when disconnected
+      cancelAutoTyping();
+    }
+    
+    return () => {
+      cancelAutoTyping();
+    };
+  }, [isMatchConnected, startInactivityTimer, cancelAutoTyping]);
 
   // Mobile viewport handling - prevent keyboard from covering input
   useEffect(() => {
@@ -98,6 +206,42 @@ const TextChat: React.FC = () => {
     };
   }, []);
 
+  // Auto-translate incoming messages if enabled
+  const handleAutoTranslate = useCallback(async (message: Message) => {
+    if (!autoTranslateEnabled || message.isOwnMessage) {
+      return;
+    }
+
+    setTranslatingMessages(prev => new Set(prev).add(message.id));
+
+    try {
+      const translated = await translateMessage(message.id, message.content, preferredLanguage);
+      
+      setMessages(prev => prev.map(msg => 
+        msg.id === message.id 
+          ? { ...msg, translatedContent: translated, sourceLang: 'auto', showingOriginal: false }
+          : msg
+      ));
+    } catch (error) {
+      console.error('Translation failed:', error);
+    } finally {
+      setTranslatingMessages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(message.id);
+        return newSet;
+      });
+    }
+  }, [autoTranslateEnabled, preferredLanguage, translateMessage]);
+
+  // Toggle between original and translated
+  const toggleTranslation = useCallback((messageId: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, showingOriginal: !msg.showingOriginal }
+        : msg
+    ));
+  }, []);
+
   // Add message helper function
   const addMessage = useCallback((content: string, isOwnMessage: boolean, replyTo?: Message['replyTo']) => {
     const newMessage: Message = {
@@ -108,7 +252,12 @@ const TextChat: React.FC = () => {
       ...(replyTo && { replyTo })
     };
     setMessages(prev => [...prev, newMessage]);
-  }, []);
+    
+    // Auto-translate if enabled and it's a partner message
+    if (autoTranslateEnabled && !isOwnMessage) {
+      handleAutoTranslate(newMessage);
+    }
+  }, [autoTranslateEnabled, handleAutoTranslate]);
 
   const addSystemMessage = useCallback((content: string) => {
     const systemMessage: Message = {
@@ -176,6 +325,8 @@ const TextChat: React.FC = () => {
           // Clear partner typing if they sent message
           if (!isOwn) {
             setPartnerTyping(false);
+            // 🔄 Reset auto-typing timer (partner sent a message)
+            resetMessageTimer();
           }
         }
       } catch (error) {
@@ -187,11 +338,17 @@ const TextChat: React.FC = () => {
     socket.on('text_partner_typing', () => {
       debugLog('⌨️ Partner started typing');
       setPartnerTyping(true);
+      // 🚫 Cancel auto-typing when real typing detected
+      cancelAutoTyping();
     });
 
     socket.on('text_partner_stopped_typing', () => {
       debugLog('⌨️ Partner stopped typing');
       setPartnerTyping(false);
+      // 🔄 Restart timer after they stop typing
+      if (isMatchConnected) {
+        startInactivityTimer();
+      }
     });
 
     // Room ended
@@ -273,6 +430,233 @@ const TextChat: React.FC = () => {
   debugWarn('⚠️ Detected recent text session from another tab/device');
       }
     }
+  }, []);
+
+  // Video upgrade - WebRTC signaling handlers
+  useEffect(() => {
+    if (!socket) return;
+
+    // Handle incoming video upgrade offer
+    const handleUpgradeOffer = async (data: { from: string; sessionId: string; sdp: string; timestamp: number }) => {
+      try {
+        debugLog('📹 Received video upgrade offer:', data);
+        
+        if (!webrtcServiceRef.current) {
+          debugWarn('⚠️ No WebRTC service available for video upgrade');
+          return;
+        }
+
+        // Handle the offer and get answer
+        const onIceCandidate = (candidate: RTCIceCandidate) => {
+          sendVideoUpgradeSignaling('upgrade_ice_candidate', {
+            to: data.from,
+            sessionId: data.sessionId,
+            candidate,
+            timestamp: Date.now()
+          });
+        };
+
+        const answer = await VideoUpgradeService.handleUpgradeOffer(
+          webrtcServiceRef.current,
+          { type: 'offer', sdp: data.sdp },
+          onIceCandidate
+        );
+
+        // Get local stream and set it to state
+        const webrtc = webrtcServiceRef.current as any;
+        const pc = webrtc.peerConnection;
+        if (pc) {
+          const senders = pc.getSenders();
+          const videoSender = senders.find((s: RTCRtpSender) => s.track?.kind === 'video');
+          if (videoSender && videoSender.track) {
+            const stream = new MediaStream([videoSender.track]);
+            setLocalStream(stream);
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = stream;
+            }
+          }
+        }
+
+        // Send answer back
+        sendVideoUpgradeSignaling('upgrade_answer', {
+          to: data.from,
+          sessionId: data.sessionId,
+          sdp: answer.sdp,
+          timestamp: Date.now()
+        });
+
+        debugLog('✅ Sent video upgrade answer');
+      } catch (error) {
+        console.error('❌ Error handling video upgrade offer:', error);
+        addSystemMessage('Failed to accept video upgrade');
+      }
+    };
+
+    // Handle incoming video upgrade answer
+    const handleUpgradeAnswer = async (data: { from: string; sessionId: string; sdp: string; timestamp: number }) => {
+      try {
+        debugLog('📹 Received video upgrade answer:', data);
+        
+        if (!webrtcServiceRef.current) {
+          debugWarn('⚠️ No WebRTC service available for video upgrade');
+          return;
+        }
+
+        await VideoUpgradeService.handleUpgradeAnswer(
+          webrtcServiceRef.current,
+          { type: 'answer', sdp: data.sdp }
+        );
+
+        setIsVideoMode(true);
+        debugLog('✅ Video upgrade completed successfully');
+      } catch (error) {
+        console.error('❌ Error handling video upgrade answer:', error);
+        addSystemMessage('Failed to complete video upgrade');
+      }
+    };
+
+    // Handle incoming ICE candidates
+    const handleUpgradeIceCandidate = async (data: { from: string; sessionId: string; candidate: RTCIceCandidateInit; timestamp: number }) => {
+      try {
+        debugLog('📹 Received video upgrade ICE candidate:', data);
+        
+        if (!webrtcServiceRef.current) {
+          debugWarn('⚠️ No WebRTC service available for video upgrade');
+          return;
+        }
+
+        await VideoUpgradeService.handleUpgradeIceCandidate(
+          webrtcServiceRef.current,
+          data.candidate
+        );
+      } catch (error) {
+        console.error('❌ Error handling video upgrade ICE candidate:', error);
+      }
+    };
+
+    socket.on('upgrade_offer', handleUpgradeOffer);
+    socket.on('upgrade_answer', handleUpgradeAnswer);
+    socket.on('upgrade_ice_candidate', handleUpgradeIceCandidate);
+
+    return () => {
+      socket.off('upgrade_offer', handleUpgradeOffer);
+      socket.off('upgrade_answer', handleUpgradeAnswer);
+      socket.off('upgrade_ice_candidate', handleUpgradeIceCandidate);
+    };
+  }, [socket, sendVideoUpgradeSignaling, addSystemMessage]);
+
+  // Video upgrade - Initiate upgrade when accepted (as initiator)
+  useEffect(() => {
+    const initiateVideoUpgrade = async () => {
+      try {
+        if (
+          videoUpgradeState.status !== 'accepted' ||
+          !videoUpgradeState.initiator ||
+          !videoUpgradeState.sessionId ||
+          !videoUpgradeState.remoteUserId
+        ) {
+          return;
+        }
+
+        debugLog('📹 Initiating video upgrade as initiator...');
+
+        // Create WebRTC service if not exists
+        if (!webrtcServiceRef.current) {
+          debugLog('📹 Creating new WebRTC service for video upgrade');
+          webrtcServiceRef.current = new WebRTCService();
+        }
+
+        // ICE candidate callback
+        const onIceCandidate = (candidate: RTCIceCandidate) => {
+          sendVideoUpgradeSignaling('upgrade_ice_candidate', {
+            to: videoUpgradeState.remoteUserId!,
+            sessionId: videoUpgradeState.sessionId!,
+            candidate,
+            timestamp: Date.now()
+          });
+        };
+
+        // Start video upgrade
+        const offer = await VideoUpgradeService.upgradeToVideo(
+          webrtcServiceRef.current,
+          onIceCandidate
+        );
+
+        // Get local stream and set it to state
+        const webrtc = webrtcServiceRef.current as any;
+        const pc = webrtc.peerConnection;
+        if (pc) {
+          const senders = pc.getSenders();
+          const videoSender = senders.find((s: RTCRtpSender) => s.track?.kind === 'video');
+          if (videoSender && videoSender.track) {
+            const stream = new MediaStream([videoSender.track]);
+            setLocalStream(stream);
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = stream;
+            }
+          }
+        }
+
+        // Send offer to partner
+        sendVideoUpgradeSignaling('upgrade_offer', {
+          to: videoUpgradeState.remoteUserId,
+          sessionId: videoUpgradeState.sessionId,
+          sdp: offer.sdp,
+          timestamp: Date.now()
+        });
+
+        setIsVideoMode(true);
+        debugLog('✅ Video upgrade initiated successfully');
+      } catch (error: any) {
+        console.error('❌ Error initiating video upgrade:', error);
+        
+        let errorMessage = 'Failed to start video';
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Camera access denied. Please allow camera permissions.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'No camera found. Please connect a camera.';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = 'Camera is in use by another application.';
+        }
+        
+        addSystemMessage(errorMessage);
+      }
+    };
+
+    initiateVideoUpgrade();
+  }, [videoUpgradeState, sendVideoUpgradeSignaling, addSystemMessage]);
+
+  // Video upgrade - Handle remote stream
+  useEffect(() => {
+    if (!webrtcServiceRef.current) return;
+
+    const handleRemoteStream = (stream: MediaStream) => {
+      debugLog('📹 Received remote video stream');
+      setRemoteStream(stream);
+      
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+      }
+    };
+
+    // Listen for track events
+    const webrtc = webrtcServiceRef.current as any;
+    const pc = webrtc.peerConnection;
+    
+    if (pc) {
+      pc.ontrack = (event: RTCTrackEvent) => {
+        debugLog('📹 Received track:', event.track.kind);
+        if (event.streams && event.streams[0]) {
+          handleRemoteStream(event.streams[0]);
+        }
+      };
+    }
+
+    return () => {
+      if (pc) {
+        pc.ontrack = null;
+      }
+    };
   }, []);
 
   const scrollToBottom = () => {
@@ -438,6 +822,34 @@ const TextChat: React.FC = () => {
     element.style.height = 'auto';
     element.style.height = Math.min(element.scrollHeight, 140) + 'px';
   }, []);
+
+  // Get random topic dice prompt
+  const getTopicPrompt = useCallback(async (category?: 'fun' | 'safe' | 'deep' | 'flirty') => {
+    setLoadingPrompt(true);
+    setShowTopicDiceModal(false);
+    
+    try {
+      const response = await guestAPI.getTopicDice(category, preferredLanguage);
+      if (response.success && response.data) {
+        // Insert prompt into message input with typing animation effect
+        const prompt = response.data.prompt;
+        setMessageInput(prompt);
+        
+        // Focus input and adjust height
+        if (inputRef.current) {
+          inputRef.current.focus();
+          requestAnimationFrame(() => adjustInputHeight());
+        }
+      } else {
+        addSystemMessage('Failed to get conversation starter. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error getting topic prompt:', error);
+      addSystemMessage('Failed to get conversation starter. Please try again.');
+    } finally {
+      setLoadingPrompt(false);
+    }
+  }, [preferredLanguage, addSystemMessage, adjustInputHeight]);
 
   const sendMessage = () => {
     try {
@@ -873,7 +1285,61 @@ const TextChat: React.FC = () => {
                           </div>
                         )}
                         
-                        <p className="text-xs sm:text-sm leading-5 whitespace-pre-wrap">{message.content}</p>
+                        {/* Translation badge - Shows when message is translated */}
+                        {message.translatedContent && !message.showingOriginal && (
+                          <div className="mb-2 flex items-center gap-2 flex-wrap">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500 bg-opacity-30 rounded-full text-xs text-purple-200">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                              </svg>
+                              Translated
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleTranslation(message.id);
+                              }}
+                              className="text-xs text-purple-300 hover:text-purple-100 underline"
+                            >
+                              View Original
+                            </button>
+                          </div>
+                        )}
+                        
+                        {/* Show original badge when viewing original of translated message */}
+                        {message.translatedContent && message.showingOriginal && (
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-500 bg-opacity-30 rounded-full text-xs text-gray-200">
+                              Original Message
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleTranslation(message.id);
+                              }}
+                              className="text-xs text-purple-300 hover:text-purple-100 underline"
+                            >
+                              View Translation
+                            </button>
+                          </div>
+                        )}
+                        
+                        {/* Message content - shows translated or original based on state */}
+                        <p className="text-xs sm:text-sm leading-5 whitespace-pre-wrap">
+                          {translatingMessages.has(message.id) ? (
+                            <span className="inline-flex items-center gap-2 text-purple-300">
+                              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Translating...
+                            </span>
+                          ) : message.translatedContent && !message.showingOriginal ? (
+                            message.translatedContent
+                          ) : (
+                            message.content
+                          )}
+                        </p>
                         <div className={`text-xs mt-1 sm:mt-2 flex items-center gap-1 ${
                           message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
                         }`}>
@@ -885,7 +1351,29 @@ const TextChat: React.FC = () => {
                 );
               })}
               
-              {/* Typing indicator - WhatsApp style with continuous blinking */}
+              {/* Auto-typing indicator - Shows after 4s of inactivity to boost retention */}
+              {isAutoTyping && isMatchConnected && !partnerTyping && (
+                <div className="flex justify-start mb-10 sm:mb-12 animate-fade-in">
+                  <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md">
+                    <div className="flex items-center space-x-1.5">
+                      <style>{`
+                        @keyframes typing-dot {
+                          0%, 60%, 100% { transform: translateY(0); }
+                          30% { transform: translateY(-8px); }
+                        }
+                        .typing-dot-1 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0s; }
+                        .typing-dot-2 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0.2s; }
+                        .typing-dot-3 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0.4s; }
+                      `}</style>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-1"></div>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-2"></div>
+                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-3"></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Real typing indicator - WhatsApp style with continuous blinking */}
               {partnerTyping && (
                 <div className="flex justify-start mb-10 sm:mb-12 animate-fade-in">
                   <div className="bg-white bg-opacity-10 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-md">
@@ -964,6 +1452,50 @@ const TextChat: React.FC = () => {
                     style={{ scrollbarWidth: 'none', overflowX: 'hidden' }}
                   />
                 </div>
+                
+                {/* Topic Dice Button */}
+                <button
+                  onClick={() => getTopicPrompt()}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setShowTopicDiceModal(true);
+                  }}
+                  disabled={!isMatchConnected || loadingPrompt}
+                  title="Get conversation starter (right-click for categories)"
+                  className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg flex-shrink-0 flex items-center justify-center ${
+                    isMatchConnected && !loadingPrompt
+                      ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white hover:shadow-yellow-500/25 transform hover:scale-105'
+                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {loadingPrompt ? (
+                    <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <span className="text-lg sm:text-xl">🎲</span>
+                  )}
+                </button>
+                
+                {/* Camera Button - Video Upgrade */}
+                <button
+                  onClick={() => {
+                    if (sessionId && partnerId) {
+                      sendVideoRequest(partnerId, sessionId);
+                    }
+                  }}
+                  disabled={!isMatchConnected}
+                  title="Request video chat"
+                  className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg flex-shrink-0 flex items-center justify-center ${
+                    isMatchConnected
+                      ? 'bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white hover:shadow-green-500/25 transform hover:scale-105'
+                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <VideoCameraIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+
                 <button
                   onClick={sendMessage}
                   disabled={!messageInput.trim() || !isMatchConnected}
@@ -1036,6 +1568,206 @@ const TextChat: React.FC = () => {
           chatMode="text"
           onClose={() => setShowReportModal(false)}
         />
+      )}
+
+      {/* Topic Dice Category Modal */}
+      {showTopicDiceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-purple-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-purple-500/30">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="text-2xl">🎲</span>
+                Conversation Starters
+              </h3>
+              <button
+                onClick={() => setShowTopicDiceModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <p className="text-gray-300 text-sm mb-6">
+              Choose a category or get a random conversation starter:
+            </p>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => getTopicPrompt('fun')}
+                className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="text-2xl">🎉</span>
+                  <span>Fun & Playful</span>
+                </span>
+                <span className="text-xs opacity-75">Light-hearted topics</span>
+              </button>
+              
+              <button
+                onClick={() => getTopicPrompt('safe')}
+                className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="text-2xl">😊</span>
+                  <span>Safe & Friendly</span>
+                </span>
+                <span className="text-xs opacity-75">Casual conversation</span>
+              </button>
+              
+              <button
+                onClick={() => getTopicPrompt('deep')}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="text-2xl">🤔</span>
+                  <span>Deep & Thoughtful</span>
+                </span>
+                <span className="text-xs opacity-75">Meaningful topics</span>
+              </button>
+              
+              <button
+                onClick={() => getTopicPrompt('flirty')}
+                className="w-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="text-2xl">😉</span>
+                  <span>Flirty & Romantic</span>
+                </span>
+                <span className="text-xs opacity-75">Playful vibes</span>
+              </button>
+              
+              <button
+                onClick={() => getTopicPrompt()}
+                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg mt-4"
+              >
+                ✨ Surprise Me (Random)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Upgrade Modal */}
+      <VideoUpgradeModal
+        state={videoUpgradeState}
+        onAccept={async () => {
+          try {
+            acceptVideoRequest();
+          } catch (error) {
+            console.error('Video upgrade accept failed:', error);
+          }
+        }}
+        onDecline={() => {
+          declineVideoRequest('declined');
+        }}
+        onDeclineAndReport={() => {
+          declineVideoRequest('reported');
+        }}
+        onClose={() => {
+          declineVideoRequest('declined');
+        }}
+      />
+
+      {/* Video Overlay - Shows when video mode is active */}
+      {isVideoMode && (localStream || remoteStream) && (
+        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col">
+          {/* Video Header */}
+          <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-900 p-4 shadow-lg backdrop-blur-sm">
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <h3 className="text-white font-semibold text-lg">Video Chat Active</h3>
+              </div>
+              <button
+                onClick={() => {
+                  // Minimize video, return to text-only
+                  setIsVideoMode(false);
+                  // Stop video tracks
+                  if (localStream) {
+                    localStream.getVideoTracks().forEach(track => track.stop());
+                  }
+                }}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+                Minimize Video
+              </button>
+            </div>
+          </div>
+
+          {/* Video Grid */}
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 max-w-7xl mx-auto w-full">
+            {/* Remote Video (Partner) */}
+            <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-2xl">
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-4 left-4 bg-black bg-opacity-60 px-3 py-1 rounded-full backdrop-blur-sm">
+                <span className="text-white text-sm font-medium">Stranger</span>
+              </div>
+              {!remoteStream && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-white text-sm">Waiting for partner's video...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Local Video (You) */}
+            <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-2xl">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover mirror"
+              />
+              <div className="absolute bottom-4 left-4 bg-purple-600 bg-opacity-80 px-3 py-1 rounded-full backdrop-blur-sm">
+                <span className="text-white text-sm font-medium">You</span>
+              </div>
+              {!localStream && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-white text-sm">Starting your camera...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Text Chat Section - Minimized at bottom */}
+          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 p-4 max-h-64 overflow-y-auto">
+            <div className="max-w-7xl mx-auto">
+              <h4 className="text-white text-sm font-semibold mb-2 opacity-70">Text Messages</h4>
+              <div className="space-y-2">
+                {messages.slice(-5).map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`px-3 py-1.5 rounded-lg text-sm max-w-xs ${
+                        msg.isOwnMessage
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-700 text-gray-100'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
     </>

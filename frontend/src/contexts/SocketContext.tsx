@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useReducer, useCallback, u
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { debugLog, debugWarn } from '../utils/debugLogger';
+import { VideoUpgradeState } from '../types/videoUpgrade';
 
 export type ChatMode = 'text' | 'audio' | 'video';
 
@@ -34,6 +35,7 @@ interface SocketState {
   moderationWarnings: string[];
   modeUserCounts: ModeUserCounts;
   activeMode: ChatMode | null;
+  videoUpgradeState: VideoUpgradeState;
 }
 
 interface SocketContextType extends SocketState {
@@ -44,6 +46,10 @@ interface SocketContextType extends SocketState {
   stopMatching: () => void;
   reportUser: (reason: string, description: string) => void;
   setActiveMode: (mode: ChatMode | null) => void;
+  sendVideoRequest: (partnerId: string, sessionId: string) => void;
+  acceptVideoRequest: () => void;
+  declineVideoRequest: (reason?: 'declined' | 'reported') => void;
+  sendVideoUpgradeSignaling: (event: string, data: any) => void;
 }
 
 type SocketAction =
@@ -55,7 +61,8 @@ type SocketAction =
   | { type: 'ADD_MODERATION_WARNING'; payload: string }
   | { type: 'CLEAR_MODERATION_WARNINGS' }
   | { type: 'SET_MODE_USER_COUNTS'; payload: ModeUserCounts }
-  | { type: 'SET_ACTIVE_MODE'; payload: ChatMode | null };
+  | { type: 'SET_ACTIVE_MODE'; payload: ChatMode | null }
+  | { type: 'SET_VIDEO_UPGRADE_STATE'; payload: Partial<VideoUpgradeState> };
 
 const initialState: SocketState = {
   socket: null,
@@ -69,7 +76,11 @@ const initialState: SocketState = {
     audio: 0,
     video: 0
   },
-  activeMode: null
+  activeMode: null,
+  videoUpgradeState: {
+    status: 'idle',
+    initiator: false
+  }
 };
 
 function socketReducer(state: SocketState, action: SocketAction): SocketState {
@@ -95,6 +106,14 @@ function socketReducer(state: SocketState, action: SocketAction): SocketState {
         return state;
       }
       return { ...state, activeMode: action.payload };
+    case 'SET_VIDEO_UPGRADE_STATE':
+      return { 
+        ...state, 
+        videoUpgradeState: { 
+          ...state.videoUpgradeState, 
+          ...action.payload 
+        } 
+      };
     default:
       return state;
   }
@@ -312,6 +331,78 @@ export const SocketProvider: React.FC<{ children: ReactNode; guestId?: string | 
       dispatch({ type: 'SET_MODE_USER_COUNTS', payload: counts });
     });
 
+    // Video Upgrade Socket Listeners
+    socket.on('request_video', (data: any) => {
+      debugLog('Video upgrade request received', { from: data.from, sessionId: data.sessionId });
+      dispatch({ 
+        type: 'SET_VIDEO_UPGRADE_STATE', 
+        payload: { 
+          status: 'incoming', 
+          initiator: false,
+          remoteUserId: data.from,
+          sessionId: data.sessionId,
+          requestTimestamp: data.timestamp
+        } 
+      });
+    });
+
+    socket.on('video_request_sent', (data: any) => {
+      debugLog('Video request sent confirmation', { to: data.to, sessionId: data.sessionId });
+      dispatch({ 
+        type: 'SET_VIDEO_UPGRADE_STATE', 
+        payload: { 
+          status: 'requesting',
+          remoteUserId: data.to,
+          sessionId: data.sessionId,
+          requestTimestamp: data.timestamp
+        } 
+      });
+    });
+
+    socket.on('video_response', (data: any) => {
+      debugLog('Video response received', { accept: data.accept, reason: data.reason });
+      if (data.accept) {
+        dispatch({ 
+          type: 'SET_VIDEO_UPGRADE_STATE', 
+          payload: { status: 'accepted' } 
+        });
+      } else {
+        dispatch({ 
+          type: 'SET_VIDEO_UPGRADE_STATE', 
+          payload: { 
+            status: 'declined',
+            error: data.reason === 'permission_denied' ? 'Partner denied camera permission' : 'Partner declined video request'
+          } 
+        });
+      }
+    });
+
+    socket.on('upgrade_offer', (data: any) => {
+      debugLog('Video upgrade offer received', { from: data.from });
+      // Will be handled by TextChat component
+    });
+
+    socket.on('upgrade_answer', (data: any) => {
+      debugLog('Video upgrade answer received', { from: data.from });
+      // Will be handled by TextChat component
+    });
+
+    socket.on('upgrade_ice_candidate', (data: any) => {
+      debugLog('Video upgrade ICE candidate received', { from: data.from });
+      // Will be handled by TextChat component
+    });
+
+    socket.on('video_upgrade_error', (data: any) => {
+      debugWarn('Video upgrade error', { message: data.message });
+      dispatch({ 
+        type: 'SET_VIDEO_UPGRADE_STATE', 
+        payload: { 
+          status: 'failed',
+          error: data.message
+        } 
+      });
+    });
+
     dispatch({ type: 'SET_SOCKET', payload: socket });
   }
 
@@ -391,6 +482,72 @@ export const SocketProvider: React.FC<{ children: ReactNode; guestId?: string | 
     }
   };
 
+  // Video Upgrade Methods
+  const sendVideoRequest = useCallback((partnerId: string, sessionId: string) => {
+    if (state.socket && state.connected) {
+      debugLog('Sending video upgrade request', { partnerId, sessionId });
+      dispatch({ 
+        type: 'SET_VIDEO_UPGRADE_STATE', 
+        payload: { 
+          status: 'requesting', 
+          initiator: true,
+          remoteUserId: partnerId,
+          sessionId
+        } 
+      });
+      state.socket.emit('request_video', {
+        to: partnerId,
+        sessionId,
+        chatId: sessionId,
+        timestamp: Date.now()
+      });
+    } else {
+      debugWarn('Cannot send video request while disconnected');
+    }
+  }, [state.socket, state.connected]);
+
+  const acceptVideoRequest = useCallback(() => {
+    if (state.socket && state.connected && state.videoUpgradeState.sessionId) {
+      debugLog('Accepting video request', { sessionId: state.videoUpgradeState.sessionId });
+      dispatch({ 
+        type: 'SET_VIDEO_UPGRADE_STATE', 
+        payload: { status: 'accepted' } 
+      });
+      state.socket.emit('video_response', {
+        to: state.videoUpgradeState.remoteUserId,
+        sessionId: state.videoUpgradeState.sessionId,
+        chatId: state.videoUpgradeState.sessionId,
+        accept: true,
+        timestamp: Date.now()
+      });
+    }
+  }, [state.socket, state.connected, state.videoUpgradeState]);
+
+  const declineVideoRequest = useCallback((reason?: 'declined' | 'reported') => {
+    if (state.socket && state.connected && state.videoUpgradeState.sessionId) {
+      debugLog('Declining video request', { sessionId: state.videoUpgradeState.sessionId, reason });
+      dispatch({ 
+        type: 'SET_VIDEO_UPGRADE_STATE', 
+        payload: { status: 'idle', initiator: false } 
+      });
+      state.socket.emit('video_response', {
+        to: state.videoUpgradeState.remoteUserId,
+        sessionId: state.videoUpgradeState.sessionId,
+        chatId: state.videoUpgradeState.sessionId,
+        accept: false,
+        reason: reason || 'declined',
+        timestamp: Date.now()
+      });
+    }
+  }, [state.socket, state.connected, state.videoUpgradeState]);
+
+  const sendVideoUpgradeSignaling = useCallback((event: string, data: any) => {
+    if (state.socket && state.connected) {
+      debugLog('Sending video upgrade signaling', { event });
+      state.socket.emit(event, data);
+    }
+  }, [state.socket, state.connected]);
+
   const value: SocketContextType = {
     ...state,
     connect,
@@ -399,7 +556,11 @@ export const SocketProvider: React.FC<{ children: ReactNode; guestId?: string | 
     startMatching,
     stopMatching,
     reportUser,
-    setActiveMode
+    setActiveMode,
+    sendVideoRequest,
+    acceptVideoRequest,
+    declineVideoRequest,
+    sendVideoUpgradeSignaling
   };
 
   return (

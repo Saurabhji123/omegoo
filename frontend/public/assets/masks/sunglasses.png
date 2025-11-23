@@ -1,0 +1,17 @@
+<svg width="200" height="80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Left lens -->
+  <ellipse cx="50" cy="40" rx="35" ry="25" fill="url(#grad)" stroke="#333" stroke-width="3"/>
+  <!-- Right lens -->
+  <ellipse cx="150" cy="40" rx="35" ry="25" fill="url(#grad)" stroke="#333" stroke-width="3"/>
+  <!-- Bridge -->
+  <rect x="85" y="35" width="30" height="10" rx="5" fill="#333"/>
+  <!-- Frame reflection -->
+  <ellipse cx="40" cy="30" rx="10" ry="8" fill="white" opacity="0.3"/>
+  <ellipse cx="140" cy="30" rx="10" ry="8" fill="white" opacity="0.3"/>
+</svg>

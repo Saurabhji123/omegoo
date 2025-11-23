@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocket } from '../../contexts/SocketContext';
 import { useNavigate } from 'react-router-dom';
 import { authAPI, userAPI } from '../../services/api';
 import { 
@@ -7,11 +8,16 @@ import {
   VideoCameraIcon,
   ShieldCheckIcon,
   ArrowRightOnRectangleIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  StarIcon,
+  TrashIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
 const Profile: React.FC = () => {
   const { user, logout, refreshUser, deleteAccount } = useAuth();
+  const { socket } = useSocket();
   const navigate = useNavigate();
   const [, forceUpdate] = useState({});
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -28,6 +34,17 @@ const Profile: React.FC = () => {
   const [genderSelection, setGenderSelection] = useState<'male' | 'female' | 'others' | null>(null);
   const [genderSaving, setGenderSaving] = useState(false);
   const [genderError, setGenderError] = useState('');
+
+  // Favourites state
+  const [activeTab, setActiveTab] = useState<'profile' | 'favourites'>('profile');
+  const [favourites, setFavourites] = useState<any[]>([]);
+  const [loadingFavourites, setLoadingFavourites] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [connectingUser, setConnectingUser] = useState<any>(null);
+  const [connectMode, setConnectMode] = useState<'text' | 'audio' | 'video'>('text');
+  const [connectStatus, setConnectStatus] = useState<'idle' | 'connecting' | 'waiting' | 'unavailable' | 'success'>('idle');
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
   // Fetch fresh user data when profile loads
   useEffect(() => {
@@ -63,6 +80,120 @@ const Profile: React.FC = () => {
       setShowGenderModal(false);
     }
   }, [user?.gender, user?.preferences?.authProvider, user?.preferences?.genderConfirmed]);
+
+  // Fetch favourites when tab switches
+  useEffect(() => {
+    if (activeTab === 'favourites' && socket) {
+      fetchFavourites();
+    }
+  }, [activeTab, socket]);
+
+  // Socket event listeners for favourites
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleFavouritesList = (data: { favourites: any[] }) => {
+      console.log('⭐ Received favourites list:', data.favourites);
+      setFavourites(data.favourites);
+      setLoadingFavourites(false);
+    };
+
+    const handleFavouriteAdded = (data: { userId: string; message: string }) => {
+      console.log('✅ Favourite added:', data);
+      // Refresh favourites list
+      fetchFavourites();
+    };
+
+    const handleFavouriteRemoved = (data: { userId: string; message: string }) => {
+      console.log('✅ Favourite removed:', data);
+      // Remove from local state
+      setFavourites(prev => prev.filter(fav => fav.userId !== data.userId));
+      setShowRemoveConfirm(false);
+      setRemovingUserId(null);
+    };
+
+    const handleFavouriteConnecting = (data: { message: string; waitTime: number }) => {
+      console.log('⏳ User busy, waiting:', data);
+      setConnectStatus('waiting');
+    };
+
+    const handleFavouriteUnavailable = (data: { message: string; userId: string }) => {
+      console.log('❌ User unavailable:', data);
+      setConnectStatus('unavailable');
+      setTimeout(() => {
+        setShowConnectModal(false);
+        setConnectStatus('idle');
+      }, 3000);
+    };
+
+    const handleMatchFound = (data: any) => {
+      console.log('✅ Match found with favourite!', data);
+      setConnectStatus('success');
+      setTimeout(() => {
+        setShowConnectModal(false);
+        // Redirect to appropriate chat
+        navigate(`/chat/${data.mode}`);
+      }, 1000);
+    };
+
+    const handleFavouriteError = (data: { message: string }) => {
+      console.error('❌ Favourite error:', data);
+      alert(data.message);
+      setConnectStatus('idle');
+    };
+
+    socket.on('favourites_list', handleFavouritesList);
+    socket.on('favourite_added', handleFavouriteAdded);
+    socket.on('favourite_removed', handleFavouriteRemoved);
+    socket.on('favourite_connecting', handleFavouriteConnecting);
+    socket.on('favourite_unavailable', handleFavouriteUnavailable);
+    socket.on('match_found', handleMatchFound);
+    socket.on('favourite_error', handleFavouriteError);
+
+    return () => {
+      socket.off('favourites_list', handleFavouritesList);
+      socket.off('favourite_added', handleFavouriteAdded);
+      socket.off('favourite_removed', handleFavouriteRemoved);
+      socket.off('favourite_connecting', handleFavouriteConnecting);
+      socket.off('favourite_unavailable', handleFavouriteUnavailable);
+      socket.off('match_found', handleMatchFound);
+      socket.off('favourite_error', handleFavouriteError);
+    };
+  }, [socket, navigate]);
+
+  // Favourites handler functions
+  const fetchFavourites = () => {
+    if (!socket) return;
+    setLoadingFavourites(true);
+    socket.emit('get_favourites');
+  };
+
+  const handleConnectWithFavourite = (favourite: any, mode: 'text' | 'audio' | 'video') => {
+    setConnectingUser(favourite);
+    setConnectMode(mode);
+    setConnectStatus('connecting');
+    setShowConnectModal(true);
+
+    if (socket) {
+      socket.emit('connect_with_favourite', {
+        favouriteUserId: favourite.userId,
+        mode
+      });
+    }
+  };
+
+  const handleRemoveFavourite = (userId: string) => {
+    setRemovingUserId(userId);
+    setShowRemoveConfirm(true);
+  };
+
+  const confirmRemoveFavourite = () => {
+    if (!socket || !removingUserId) return;
+
+    socket.emit('remove_favourite', {
+      favouriteUserId: removingUserId
+    });
+  };
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -268,6 +399,45 @@ const Profile: React.FC = () => {
         </div>
       </div>
       
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-white/10">
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`px-6 py-3 font-semibold transition-colors relative ${
+            activeTab === 'profile'
+              ? 'text-white'
+              : 'text-white/50 hover:text-white/80'
+          }`}
+        >
+          Profile
+          {activeTab === 'profile' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-500"></div>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('favourites')}
+          className={`px-6 py-3 font-semibold transition-colors relative flex items-center gap-2 ${
+            activeTab === 'favourites'
+              ? 'text-white'
+              : 'text-white/50 hover:text-white/80'
+          }`}
+        >
+          <StarIcon className="w-5 h-5" />
+          Favourites
+          {favourites.length > 0 && (
+            <span className="bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {favourites.length}
+            </span>
+          )}
+          {activeTab === 'favourites' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-500"></div>
+          )}
+        </button>
+      </div>
+      
+      {/* Profile Tab Content */}
+      {activeTab === 'profile' && (
+        <>
       {/* Profile Card */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-purple-500/5 to-blue-500/10" aria-hidden="true" />
@@ -577,6 +747,193 @@ const Profile: React.FC = () => {
                     setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
                   }}
                   className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+        </>
+      )}
+
+      {/* Favourites Tab Content */}
+      {activeTab === 'favourites' && (
+        <div className="space-y-6">
+          {loadingFavourites ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+              <p className="text-white/70 mt-4">Loading favourites...</p>
+            </div>
+          ) : favourites.length === 0 ? (
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
+              <StarIconSolid className="w-16 h-16 text-yellow-400/30 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">No Favourites Yet</h3>
+              <p className="text-white/70 mb-6">
+                When chatting, swipe right to add someone to your favourites!
+              </p>
+              <button
+                onClick={() => navigate('/')}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+              >
+                Start Chatting
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {favourites.map((fav) => (
+                <div
+                  key={fav.userId}
+                  className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <UserCircleIcon className="w-12 h-12 text-white/60" />
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-gray-900 ${
+                          fav.isOnline ? 'bg-green-500' : 'bg-gray-500'
+                        }`}></div>
+                      </div>
+                      <div>
+                        <h4 className="text-white font-semibold">{fav.email || 'Anonymous'}</h4>
+                        <p className="text-white/50 text-sm capitalize">{fav.gender || 'Unknown'}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveFavourite(fav.userId)}
+                      className="text-red-400 hover:text-red-300 p-2 hover:bg-red-500/10 rounded-lg transition-colors"
+                      title="Remove from favourites"
+                    >
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {fav.interests && fav.interests.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-white/50 text-xs mb-2">Interests:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {fav.interests.slice(0, 3).map((interest: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="bg-purple-500/20 text-purple-200 text-xs px-2 py-1 rounded-full"
+                          >
+                            {interest}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleConnectWithFavourite(fav, 'text')}
+                      disabled={!fav.isOnline}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      Text
+                    </button>
+                    <button
+                      onClick={() => handleConnectWithFavourite(fav, 'audio')}
+                      disabled={!fav.isOnline}
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      Audio
+                    </button>
+                    <button
+                      onClick={() => handleConnectWithFavourite(fav, 'video')}
+                      disabled={!fav.isOnline}
+                      className="flex-1 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      Video
+                    </button>
+                  </div>
+
+                  {!fav.isOnline && (
+                    <p className="text-yellow-400 text-xs mt-3 text-center">Offline - Last seen {new Date(fav.lastActiveAt).toLocaleDateString()}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Connect Modal */}
+      {showConnectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl">
+            <div className="text-center">
+              {connectStatus === 'connecting' && (
+                <>
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 mx-auto mb-4"></div>
+                  <h3 className="text-xl font-bold text-white mb-2">Connecting...</h3>
+                  <p className="text-gray-300">Checking if user is available</p>
+                </>
+              )}
+
+              {connectStatus === 'waiting' && (
+                <>
+                  <div className="animate-pulse">
+                    <div className="text-5xl mb-4">⏳</div>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">User is Busy</h3>
+                  <p className="text-gray-300">Waiting for availability... (10-15s)</p>
+                </>
+              )}
+
+              {connectStatus === 'unavailable' && (
+                <>
+                  <div className="text-5xl mb-4">😔</div>
+                  <h3 className="text-xl font-bold text-white mb-2">User Not Available</h3>
+                  <p className="text-gray-300">Please try again later</p>
+                </>
+              )}
+
+              {connectStatus === 'success' && (
+                <>
+                  <div className="text-5xl mb-4">✅</div>
+                  <h3 className="text-xl font-bold text-white mb-2">Connected!</h3>
+                  <p className="text-gray-300">Redirecting to chat...</p>
+                </>
+              )}
+
+              <button
+                onClick={() => {
+                  setShowConnectModal(false);
+                  setConnectStatus('idle');
+                }}
+                className="mt-6 px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Confirmation Modal */}
+      {showRemoveConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border border-red-500/30 shadow-2xl">
+            <div className="text-center">
+              <TrashIcon className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Remove from Favourites?</h3>
+              <p className="text-gray-300 mb-6">This user will be removed from your favourites list</p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={confirmRemoveFavourite}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-xl font-semibold transition-colors"
+                >
+                  Remove
+                </button>
+                <button
+                  onClick={() => {
+                    setShowRemoveConfirm(false);
+                    setRemovingUserId(null);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-colors"
                 >
                   Cancel
                 </button>

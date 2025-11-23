@@ -10,12 +10,15 @@ class WebRTCService {
   private currentMatchUserId: string | null = null;
   private currentSessionId: string | null = null;
 
-  // NO TURN/STUN servers - Direct P2P only (matches EnhancedWebRTCService)
-  private iceServers: RTCIceServer[] = [];
-  // Previously used STUN servers (disabled for direct P2P):
-  // { urls: 'stun:stun.l.google.com:19302' },
-  // { urls: 'stun:stun1.l.google.com:19302' },
-  // etc.
+  // Google STUN servers for reliable P2P connection establishment
+  // Multiple servers provide redundancy for NAT traversal
+  private iceServers: RTCIceServer[] = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' }
+  ];
 
   private statsIntervalId: number | null = null;
   private onStatsUpdate: ((stats: any) => void) | null = null;
@@ -156,16 +159,89 @@ class WebRTCService {
 
     // Handle connection state changes
     this.peerConnection.onconnectionstatechange = () => {
-      if (this.onConnectionStateChange && this.peerConnection) {
-        this.onConnectionStateChange(this.peerConnection.connectionState);
+      if (this.peerConnection) {
+        const state = this.peerConnection.connectionState;
+        console.log('🔌 Connection state changed:', state);
+        
+        if (this.onConnectionStateChange) {
+          this.onConnectionStateChange(state);
+        }
       }
     };
 
-    // Handle ICE candidates
+    // Monitor ICE connection state for debugging
+    this.peerConnection.oniceconnectionstatechange = () => {
+      if (this.peerConnection) {
+        const iceState = this.peerConnection.iceConnectionState;
+        console.log('🧊 ICE connection state:', iceState);
+        
+        switch (iceState) {
+          case 'checking':
+            console.log('🔍 ICE agents are checking connectivity...');
+            break;
+          case 'connected':
+            console.log('✅ ICE connection established successfully!');
+            break;
+          case 'completed':
+            console.log('🎉 ICE gathering and connectivity checks completed!');
+            break;
+          case 'failed':
+            console.error('❌ ICE connection failed - P2P connection could not be established');
+            break;
+          case 'disconnected':
+            console.warn('⚠️ ICE connection temporarily disconnected');
+            break;
+          case 'closed':
+            console.log('🔒 ICE connection closed');
+            break;
+        }
+      }
+    };
+
+    // Monitor ICE gathering state
+    this.peerConnection.onicegatheringstatechange = () => {
+      if (this.peerConnection) {
+        const gatheringState = this.peerConnection.iceGatheringState;
+        console.log('📡 ICE gathering state:', gatheringState);
+        
+        switch (gatheringState) {
+          case 'gathering':
+            console.log('🔄 Gathering ICE candidates via STUN servers...');
+            break;
+          case 'complete':
+            console.log('✅ ICE candidate gathering completed');
+            break;
+        }
+      }
+    };
+
+    // Handle ICE candidates with detailed logging
     this.peerConnection.onicecandidate = (event) => {
-      if (event.candidate && this.onIceCandidateGenerated) {
-        this.onIceCandidateGenerated(event.candidate);
-        console.log('🧊 Generated ICE candidate for external signaling');
+      if (event.candidate) {
+        const candidate = event.candidate;
+        
+        // Log candidate type for debugging STUN server usage
+        let candidateType = 'unknown';
+        if (candidate.candidate) {
+          if (candidate.candidate.includes('typ host')) candidateType = 'host (local)';
+          else if (candidate.candidate.includes('typ srflx')) candidateType = 'srflx (STUN)';
+          else if (candidate.candidate.includes('typ relay')) candidateType = 'relay (TURN)';
+          else if (candidate.candidate.includes('typ prflx')) candidateType = 'prflx (peer reflexive)';
+        }
+        
+        console.log('🧊 Generated ICE candidate:', {
+          type: candidateType,
+          protocol: candidate.protocol,
+          address: candidate.address,
+          port: candidate.port,
+          priority: candidate.priority
+        });
+        
+        if (this.onIceCandidateGenerated) {
+          this.onIceCandidateGenerated(candidate);
+        }
+      } else {
+        console.log('🏁 ICE candidate gathering finished (null candidate)');
       }
     };
 

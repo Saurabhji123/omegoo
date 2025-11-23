@@ -6,6 +6,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GuestProvider, useGuest } from './contexts/GuestContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { TranslationProvider } from './contexts/TranslationContext';
+import { VoiceFilterProvider } from './contexts/VoiceFilterContext';
+import { ARFilterProvider } from './contexts/ARFilterContext';
 import apiService from './services/api';
 import SEOHead from './components/SEO/SEOHead';
 import { defaultSEO } from './config/seo.config';
@@ -308,7 +311,13 @@ const SocketProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ childr
   
   return (
     <SocketProvider guestId={guestId}>
-      {children}
+      <TranslationProvider>
+        <VoiceFilterProvider>
+          <ARFilterProvider>
+            {children}
+          </ARFilterProvider>
+        </VoiceFilterProvider>
+      </TranslationProvider>
     </SocketProvider>
   );
 };

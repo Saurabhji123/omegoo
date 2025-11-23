@@ -514,6 +514,15 @@ export class SocketService {
       }
     });
 
+    // AR filter events
+    socket.on('reveal_video', (data) => {
+      try {
+        this.handleRevealVideo(socket, data);
+      } catch (error) {
+        console.error('❌ Reveal video event error:', error);
+      }
+    });
+
     // Moderation handlers
     socket.on('report_user', async (data) => {
       try {
@@ -596,6 +605,86 @@ export class SocketService {
         this.handleTextReconnect(socket);
       } catch (error) {
         console.error('❌ Text reconnect error:', error);
+      }
+    });
+
+    // Favourites handlers
+    socket.on('add_favourite', async (data) => {
+      try {
+        await this.handleAddFavourite(socket, data);
+      } catch (error) {
+        console.error('❌ Add favourite error:', error);
+        socket.emit('favourite_error', { message: 'Failed to add favourite' });
+      }
+    });
+
+    socket.on('remove_favourite', async (data) => {
+      try {
+        await this.handleRemoveFavourite(socket, data);
+      } catch (error) {
+        console.error('❌ Remove favourite error:', error);
+        socket.emit('favourite_error', { message: 'Failed to remove favourite' });
+      }
+    });
+
+    socket.on('get_favourites', async () => {
+      try {
+        await this.handleGetFavourites(socket);
+      } catch (error) {
+        console.error('❌ Get favourites error:', error);
+        socket.emit('favourite_error', { message: 'Failed to get favourites' });
+      }
+    });
+
+    socket.on('connect_with_favourite', async (data) => {
+      try {
+        await this.handleConnectWithFavourite(socket, data);
+      } catch (error) {
+        console.error('❌ Connect with favourite error:', error);
+        socket.emit('favourite_error', { message: 'Failed to connect with favourite' });
+      }
+    });
+
+    // Video Upgrade Handlers - Live Escalation Bridge
+    socket.on('request_video', async (data) => {
+      try {
+        await this.handleVideoUpgradeRequest(socket, data);
+      } catch (error) {
+        console.error('❌ Video upgrade request error:', error);
+        socket.emit('video_upgrade_error', { message: 'Failed to send video request' });
+      }
+    });
+
+    socket.on('video_response', async (data) => {
+      try {
+        await this.handleVideoUpgradeResponse(socket, data);
+      } catch (error) {
+        console.error('❌ Video response error:', error);
+        socket.emit('video_upgrade_error', { message: 'Failed to process video response' });
+      }
+    });
+
+    socket.on('upgrade_offer', (data) => {
+      try {
+        this.handleVideoUpgradeSignaling(socket, 'upgrade_offer', data);
+      } catch (error) {
+        console.error('❌ Upgrade offer error:', error);
+      }
+    });
+
+    socket.on('upgrade_answer', (data) => {
+      try {
+        this.handleVideoUpgradeSignaling(socket, 'upgrade_answer', data);
+      } catch (error) {
+        console.error('❌ Upgrade answer error:', error);
+      }
+    });
+
+    socket.on('upgrade_ice_candidate', (data) => {
+      try {
+        this.handleVideoUpgradeSignaling(socket, 'upgrade_ice_candidate', data);
+      } catch (error) {
+        console.error('❌ Upgrade ICE candidate error:', error);
       }
     });
   }
@@ -1659,6 +1748,428 @@ export class SocketService {
 
       console.log(`✅ Notified partner ${partnerId} about mute status: ${isMuted}`);
     }
+  }
+
+  // AR filter reveal video event handler
+  private static handleRevealVideo(socket: AuthenticatedSocket, data: any) {
+    if (!socket.userId) return;
+
+    const { sessionId, maskType, isAutoReveal, timestamp, performanceMetrics } = data;
+
+    console.log(`👁️ Video revealed: User ${socket.userId} ${isAutoReveal ? '(auto)' : '(manual)'} in session ${sessionId} with mask: ${maskType || 'none'}`);
+
+    // Find partner and notify
+    const session = this.activeSessions.get(sessionId);
+    if (session) {
+      const partnerId = session.user1 === socket.userId ? session.user2 : session.user1;
+      
+      // Emit to all partner devices
+      this.emitToAllUserDevices(partnerId, 'video-revealed', {
+        userId: socket.userId,
+        maskType,
+        isAutoReveal,
+        timestamp: timestamp || Date.now()
+      });
+
+      console.log(`✅ Notified partner ${partnerId} about video reveal (auto: ${isAutoReveal}, mask: ${maskType || 'none'})`);
+
+      // Log AR usage analytics to MongoDB
+      if (this.databaseService) {
+        const sessionStartTime = session.startedAt?.getTime() || Date.now();
+        const revealTime = Math.round((Date.now() - sessionStartTime) / 1000); // seconds since session start
+        
+        this.databaseService.logARAnalytics({
+          sessionId,
+          userId: socket.userId,
+          maskType: maskType || 'none',
+          blurEnabled: data.blurEnabled !== undefined ? data.blurEnabled : false,
+          blurDuration: data.blurDuration || 0,
+          revealTime,
+          isAutoReveal: isAutoReveal || false,
+          devicePerformance: performanceMetrics?.devicePerformance || 'medium',
+          qualityPreset: performanceMetrics?.qualityPreset || 'medium',
+          avgFps: performanceMetrics?.avgFps || 0,
+          avgCpuUsage: performanceMetrics?.avgCpuUsage || 0,
+          droppedFrames: performanceMetrics?.droppedFrames || 0,
+        }).catch((error: any) => {
+          console.error('❌ Failed to log AR analytics:', error);
+        });
+      }
+    }
+  }
+
+  // Video Upgrade Handlers - Live Escalation Bridge
+  private static async handleVideoUpgradeRequest(socket: AuthenticatedSocket, data: any) {
+    if (!socket.userId) {
+      socket.emit('video_upgrade_error', { message: 'Authentication required' });
+      return;
+    }
+
+    const { chatId, sessionId, to } = data;
+    
+    console.log(`📹 Video upgrade request: ${socket.userId} → ${to} (session: ${sessionId})`);
+
+    // Validate session exists
+    const session = this.activeSessions.get(sessionId);
+    if (!session) {
+      socket.emit('video_upgrade_error', { message: 'Session not found or expired' });
+      return;
+    }
+
+    // Verify requester is part of this session
+    if (session.user1 !== socket.userId && session.user2 !== socket.userId) {
+      socket.emit('video_upgrade_error', { message: 'Not authorized for this session' });
+      return;
+    }
+
+    // Verify target user is the partner
+    const partnerId = session.user1 === socket.userId ? session.user2 : session.user1;
+    if (to !== partnerId) {
+      socket.emit('video_upgrade_error', { message: 'Invalid target user' });
+      return;
+    }
+
+    // Create video upgrade request message
+    const requestMessage = {
+      type: 'request_video',
+      from: socket.userId,
+      to: partnerId,
+      chatId,
+      sessionId,
+      timestamp: Date.now()
+    };
+
+    // Forward to partner (all devices)
+    this.emitToAllUserDevices(partnerId, 'request_video', requestMessage);
+
+    // Confirm to requester
+    socket.emit('video_request_sent', {
+      to: partnerId,
+      sessionId,
+      timestamp: requestMessage.timestamp
+    });
+
+    // Log analytics event
+    console.log(`📊 Analytics: video_request_sent`, {
+      from: socket.userId,
+      to: partnerId,
+      sessionId,
+      timestamp: requestMessage.timestamp
+    });
+  }
+
+  private static async handleVideoUpgradeResponse(socket: AuthenticatedSocket, data: any) {
+    if (!socket.userId) {
+      socket.emit('video_upgrade_error', { message: 'Authentication required' });
+      return;
+    }
+
+    const { chatId, sessionId, accept, reason, to } = data;
+
+    console.log(`📹 Video upgrade response: ${socket.userId} → ${to} (${accept ? 'ACCEPT' : 'DECLINE'}) reason: ${reason || 'none'}`);
+
+    // Validate session
+    const session = this.activeSessions.get(sessionId);
+    if (!session) {
+      socket.emit('video_upgrade_error', { message: 'Session not found or expired' });
+      return;
+    }
+
+    // Verify responder is part of this session
+    if (session.user1 !== socket.userId && session.user2 !== socket.userId) {
+      socket.emit('video_upgrade_error', { message: 'Not authorized for this session' });
+      return;
+    }
+
+    const partnerId = session.user1 === socket.userId ? session.user2 : session.user1;
+    if (to !== partnerId) {
+      socket.emit('video_upgrade_error', { message: 'Invalid target user' });
+      return;
+    }
+
+    // Create response message
+    const responseMessage = {
+      type: 'video_response',
+      from: socket.userId,
+      to: partnerId,
+      chatId,
+      sessionId,
+      accept,
+      reason,
+      timestamp: Date.now()
+    };
+
+    // Forward to requester (all devices)
+    this.emitToAllUserDevices(partnerId, 'video_response', responseMessage);
+
+    // Handle declined with report
+    if (!accept && reason === 'reported') {
+      console.log(`🚨 Video upgrade declined with report: ${partnerId} reported by ${socket.userId}`);
+      
+      // Create moderation report with transcript snapshot
+      const transcript = this.chatTranscripts.get(sessionId) || [];
+      await DatabaseService.createModerationReport({
+        sessionId,
+        reportedUserId: partnerId,
+        reporterUserId: socket.userId,
+        violationType: 'inappropriate_video_request',
+        description: 'User reported video upgrade request as inappropriate',
+        evidenceUrls: [],
+        autoDetected: false,
+        confidenceScore: 0,
+        additionalContext: {
+          transcriptSnapshot: transcript.slice(-10), // Last 10 messages
+          upgradeDeclined: true
+        }
+      });
+
+      console.log(`📝 Report created for inappropriate video request in session ${sessionId}`);
+    }
+
+    // Log analytics
+    const analyticsEvent = accept ? 'video_accepted' : 'video_declined';
+    console.log(`📊 Analytics: ${analyticsEvent}`, {
+      from: socket.userId,
+      to: partnerId,
+      sessionId,
+      reason: reason || 'none',
+      timestamp: responseMessage.timestamp
+    });
+  }
+
+  private static handleVideoUpgradeSignaling(socket: AuthenticatedSocket, event: string, data: any) {
+    if (!socket.userId) return;
+
+    const { to, sessionId } = data;
+
+    console.log(`🔄 Video upgrade signaling: ${event} from ${socket.userId} to ${to}`);
+
+    // Validate session
+    const session = this.activeSessions.get(sessionId);
+    if (!session) {
+      console.warn(`⚠️ Session ${sessionId} not found for video upgrade signaling`);
+      return;
+    }
+
+    // Verify users are part of session
+    if (session.user1 !== socket.userId && session.user2 !== socket.userId) {
+      console.warn(`⚠️ User ${socket.userId} not authorized for session ${sessionId}`);
+      return;
+    }
+
+    const partnerId = session.user1 === socket.userId ? session.user2 : session.user1;
+    if (to !== partnerId) {
+      console.warn(`⚠️ Invalid target ${to} for session ${sessionId}`);
+      return;
+    }
+
+    // Forward signaling message to partner (all devices)
+    const signalingMessage = {
+      ...data,
+      from: socket.userId
+    };
+
+    this.emitToAllUserDevices(partnerId, event, signalingMessage);
+    console.log(`✅ Forwarded ${event} from ${socket.userId} to ${partnerId}`);
+  }
+
+  // ==================== FAVOURITES HANDLERS ====================
+  
+  /**
+   * Handle add to favourites
+   */
+  private static async handleAddFavourite(socket: AuthenticatedSocket, data: any) {
+    const { favouriteUserId, sessionId } = data;
+
+    if (!socket.userId || !favouriteUserId) {
+      socket.emit('favourite_error', { message: 'Invalid request' });
+      return;
+    }
+
+    console.log(`⭐ Adding favourite: ${socket.userId} -> ${favouriteUserId}`);
+
+    // Get favourite user details
+    const favouriteUser = await DatabaseService.getUserById(favouriteUserId);
+    if (!favouriteUser) {
+      socket.emit('favourite_error', { message: 'User not found' });
+      return;
+    }
+
+    // Add to favourites with user details
+    const result = await DatabaseService.addFavourite(
+      socket.userId,
+      favouriteUserId,
+      favouriteUser.gender,
+      favouriteUser.preferences?.interests || []
+    );
+
+    if (result.success) {
+      socket.emit('favourite_added', {
+        userId: favouriteUserId,
+        message: 'Added to favourites successfully!'
+      });
+      console.log(`✅ Favourite added successfully`);
+    } else {
+      socket.emit('favourite_error', { message: result.error || 'Failed to add favourite' });
+    }
+  }
+
+  /**
+   * Handle remove from favourites
+   */
+  private static async handleRemoveFavourite(socket: AuthenticatedSocket, data: any) {
+    const { favouriteUserId } = data;
+
+    if (!socket.userId || !favouriteUserId) {
+      socket.emit('favourite_error', { message: 'Invalid request' });
+      return;
+    }
+
+    console.log(`🗑️ Removing favourite: ${socket.userId} -> ${favouriteUserId}`);
+
+    const result = await DatabaseService.removeFavourite(socket.userId, favouriteUserId);
+
+    if (result.success) {
+      socket.emit('favourite_removed', {
+        userId: favouriteUserId,
+        message: 'Removed from favourites'
+      });
+      console.log(`✅ Favourite removed successfully`);
+    } else {
+      socket.emit('favourite_error', { message: result.error || 'Failed to remove favourite' });
+    }
+  }
+
+  /**
+   * Handle get favourites list
+   */
+  private static async handleGetFavourites(socket: AuthenticatedSocket) {
+    if (!socket.userId) {
+      socket.emit('favourite_error', { message: 'Not authenticated' });
+      return;
+    }
+
+    console.log(`📋 Getting favourites for user: ${socket.userId}`);
+
+    const favourites = await DatabaseService.getFavourites(socket.userId);
+
+    socket.emit('favourites_list', { favourites });
+    console.log(`✅ Sent ${favourites.length} favourites to user`);
+  }
+
+  /**
+   * Handle connect with favourite user
+   * Checks if favourite is online and available, then creates instant match
+   */
+  private static async handleConnectWithFavourite(socket: AuthenticatedSocket, data: any) {
+    const { favouriteUserId, mode } = data;
+
+    if (!socket.userId || !favouriteUserId || !mode) {
+      socket.emit('favourite_error', { message: 'Invalid request' });
+      return;
+    }
+
+    console.log(`🔗 Attempting to connect ${socket.userId} with favourite ${favouriteUserId} (${mode})`);
+
+    // Check if favourite user is online
+    const isOnline = await DatabaseService.isUserOnline(favouriteUserId);
+    if (!isOnline) {
+      socket.emit('favourite_unavailable', {
+        message: 'User is not online at this moment',
+        userId: favouriteUserId
+      });
+      return;
+    }
+
+    // Check if favourite user is in an active session (busy)
+    let isBusy = false;
+    for (const [sessionId, session] of this.activeSessions.entries()) {
+      if (session.user1 === favouriteUserId || session.user2 === favouriteUserId) {
+        isBusy = true;
+        break;
+      }
+    }
+
+    if (isBusy) {
+      console.log(`⏳ Favourite user ${favouriteUserId} is busy, waiting 10-15 seconds...`);
+      
+      // Wait 10-15 seconds before rechecking
+      const waitTime = 10000 + Math.random() * 5000; // 10-15 seconds
+      
+      socket.emit('favourite_connecting', {
+        message: 'User is busy, waiting for availability...',
+        waitTime: Math.round(waitTime / 1000)
+      });
+
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+
+      // Recheck availability
+      let stillBusy = false;
+      for (const [sessionId, session] of this.activeSessions.entries()) {
+        if (session.user1 === favouriteUserId || session.user2 === favouriteUserId) {
+          stillBusy = true;
+          break;
+        }
+      }
+
+      if (stillBusy) {
+        socket.emit('favourite_unavailable', {
+          message: 'User not available at this moment. Please try again later.',
+          userId: favouriteUserId
+        });
+        return;
+      }
+    }
+
+    // User is available, create instant match
+    console.log(`✅ Creating instant match with favourite user`);
+
+    const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const normalizedMode = normalizeMode(mode);
+
+    // Create session
+    this.activeSessions.set(sessionId, {
+      id: sessionId,
+      user1: socket.userId,
+      user2: favouriteUserId,
+      mode: normalizedMode,
+      startTime: Date.now(),
+      status: 'active'
+    });
+
+    // Save session to database
+    await DatabaseService.createChatSession({
+      id: sessionId,
+      user1: socket.userId,
+      user2: favouriteUserId,
+      mode: normalizedMode,
+      status: 'active',
+      startedAt: new Date()
+    });
+
+    // Get user details
+    const user1 = await DatabaseService.getUserById(socket.userId);
+    const user2 = await DatabaseService.getUserById(favouriteUserId);
+
+    // Notify both users
+    const matchData = {
+      sessionId,
+      partnerId: favouriteUserId,
+      partnerGender: user2?.gender || 'others',
+      mode: normalizedMode
+    };
+
+    socket.emit('match_found', matchData);
+
+    this.emitToAllUserDevices(favouriteUserId, 'match_found', {
+      sessionId,
+      partnerId: socket.userId,
+      partnerGender: user1?.gender || 'others',
+      mode: normalizedMode,
+      isFavouriteConnection: true // Flag to show it's from favourites
+    });
+
+    console.log(`✅ Instant match created: ${sessionId}`);
   }
 }
 

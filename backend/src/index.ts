@@ -23,6 +23,8 @@ import reportsRoutes from './routes/reports';
 import statusRoutes from './routes/status';
 import analyticsRoutes from './routes/analytics';
 import guestRoutes from './routes/guest'; // Shadow Login guest routes
+import translationRoutes from './routes/translation'; // Boredom Killers - Translation
+import topicDiceRoutes from './routes/topicDice'; // Boredom Killers - Topic Dice
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -221,6 +223,8 @@ app.use('/api/chat', authenticateToken, requireVerification, chatRoutes);
 app.use('/api/moderation', authenticateToken, moderationRoutes);
 app.use('/api/payment', authenticateToken, paymentRoutes);
 app.use('/api/admin', adminRoutes); // Admin routes handle their own authentication
+app.use('/api', translationRoutes); // Translation routes (auth handled within)
+app.use('/api', topicDiceRoutes); // Topic Dice routes (auth handled within)
 
 // 404 handler
 app.use('*', (req, res) => {

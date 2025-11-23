@@ -36,3 +36,8 @@
     transform: rotate(360deg);
   }
 }
+
+/* Video mirror effect for local camera */
+.mirror {
+  transform: scaleX(-1);
+}

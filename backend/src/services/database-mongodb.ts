@@ -589,6 +589,15 @@ interface IGuestUserDoc extends Document {
   notes?: string;
 }
 
+/* Favourites - User's saved favourite users */
+interface IFavouriteDoc extends Document {
+  userId: string; // Current user who added favourite
+  favouriteUserId: string; // The user being added to favourites
+  favouriteUserGender?: string; // Gender of favourite user
+  favouriteUserInterests?: string[]; // Interests of favourite user
+  addedAt: Date; // When favourite was added
+}
+
 /* -------------------------
    Schemas
    ------------------------- */
@@ -810,6 +819,24 @@ GuestUserSchema.index({ lastSeen: -1 });
 GuestUserSchema.index({ createdAt: -1 });
 const GuestUserModel: Model<IGuestUserDoc> = mongoose.model<IGuestUserDoc>('GuestUser', GuestUserSchema);
 
+// Favourites Schema
+const FavouriteSchema = new Schema<IFavouriteDoc>({
+  userId: { type: String, required: true, index: true },
+  favouriteUserId: { type: String, required: true, index: true },
+  favouriteUserGender: { type: String },
+  favouriteUserInterests: { type: [String], default: [] },
+  addedAt: { type: Date, default: Date.now, index: true }
+}, {
+  versionKey: false
+});
+
+// Indexes for fast lookups and prevent duplicates
+FavouriteSchema.index({ userId: 1, favouriteUserId: 1 }, { unique: true }); // Prevent duplicate favourites
+FavouriteSchema.index({ userId: 1, addedAt: -1 }); // Sort favourites by recent
+FavouriteSchema.index({ favouriteUserId: 1 }); // Find who favourited a user
+
+const FavouriteModel: Model<IFavouriteDoc> = mongoose.model<IFavouriteDoc>('Favourite', FavouriteSchema);
+
 // Indexes for better query performance
 BanHistorySchema.index({ userId: 1, isActive: 1 });
 BanHistorySchema.index({ expiresAt: 1 });
@@ -923,6 +950,76 @@ const AnomalyEventSchema = new Schema<IAnomalyEventDoc>({
 
 AnomalyEventSchema.index({ metric: 1, timestamp: -1 });
 
+// Topic Dice Schema - Boredom Killers Feature
+interface ITopicDicePromptDoc extends Document {
+  promptId: string;
+  promptEn: string;
+  category: 'fun' | 'safe' | 'deep' | 'flirty';
+  maturityRating: 'G' | 'PG' | 'PG-13';
+  localizedVariants: Map<string, string>;
+  tags: string[];
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/* AR Analytics */
+interface IARAnalyticsDoc extends Document {
+  sessionId: string;
+  userId: string;
+  maskType: string; // 'none' | 'sunglasses' | 'dog_ears' | 'cat_ears' | 'party_hat'
+  blurEnabled: boolean;
+  blurDuration: number; // seconds
+  revealTime: number; // seconds from start
+  isAutoReveal: boolean;
+  devicePerformance: string; // 'low' | 'medium' | 'high'
+  qualityPreset: string; // 'low' | 'medium' | 'high'
+  avgFps: number;
+  avgCpuUsage: number;
+  droppedFrames: number;
+  timestamp: Date;
+}
+
+const TopicDicePromptSchema = new Schema<ITopicDicePromptDoc>({
+  promptId: { type: String, required: true, unique: true, index: true },
+  promptEn: { type: String, required: true },
+  category: { type: String, enum: ['fun', 'safe', 'deep', 'flirty'], required: true, index: true },
+  maturityRating: { type: String, enum: ['G', 'PG', 'PG-13'], required: true, index: true },
+  localizedVariants: { type: Map, of: String, default: {} },
+  tags: { type: [String], default: [] },
+  active: { type: Boolean, default: true, index: true },
+  createdAt: { type: Date, default: () => new Date() },
+  updatedAt: { type: Date, default: () => new Date() }
+}, {
+  versionKey: false
+});
+
+TopicDicePromptSchema.index({ category: 1, active: 1, maturityRating: 1 });
+
+const ARAnalyticsSchema = new Schema<IARAnalyticsDoc>({
+  sessionId: { type: String, required: true, index: true },
+  userId: { type: String, required: true, index: true },
+  maskType: { type: String, required: true, index: true },
+  blurEnabled: { type: Boolean, default: false },
+  blurDuration: { type: Number, default: 0 },
+  revealTime: { type: Number, default: 0 },
+  isAutoReveal: { type: Boolean, default: false },
+  devicePerformance: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+  qualityPreset: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+  avgFps: { type: Number, default: 0 },
+  avgCpuUsage: { type: Number, default: 0 },
+  droppedFrames: { type: Number, default: 0 },
+  timestamp: { type: Date, default: () => new Date(), index: true }
+}, {
+  versionKey: false
+});
+
+ARAnalyticsSchema.index({ sessionId: 1, userId: 1 });
+ARAnalyticsSchema.index({ maskType: 1, timestamp: -1 });
+ARAnalyticsSchema.index({ userId: 1, timestamp: -1 });
+
+const TopicDicePromptModel: Model<ITopicDicePromptDoc> = mongoose.model<ITopicDicePromptDoc>('TopicDicePrompt', TopicDicePromptSchema);
+const ARAnalyticsModel: Model<IARAnalyticsDoc> = mongoose.model<IARAnalyticsDoc>('ARAnalytics', ARAnalyticsSchema);
 const GoalDefinitionModel: Model<IGoalDefinitionDoc> = mongoose.model<IGoalDefinitionDoc>('GoalDefinition', GoalDefinitionSchema);
 const GoalSnapshotModel: Model<IGoalSnapshotDoc> = mongoose.model<IGoalSnapshotDoc>('GoalSnapshot', GoalSnapshotSchema);
 const AnomalyBaselineModel: Model<IAnomalyBaselineDoc> = mongoose.model<IAnomalyBaselineDoc>('AnomalyBaseline', AnomalyBaselineSchema);
@@ -948,6 +1045,7 @@ export class DatabaseService {
   private static goalRecomputeTimers = new Map<string, NodeJS.Timeout>();
   private static anomalyBaselines = new Map<string, AnomalyBaselineEntry>();
   private static anomalyEvents: AnomalyEventEntry[] = [];
+  private static topicDicePrompts = new Map<string, any>(); // In-memory fallback for topic dice
   private static anomalyScanTimer: NodeJS.Timeout | null = null;
   private static isRunningAnomalyScan = false;
   private static goalsSeeded = false;
@@ -3284,6 +3382,127 @@ export class DatabaseService {
     if (duration) s.duration = duration;
     this.chatSessions.set(sessionId, s);
     return true;
+  }
+
+  // ==================== FAVOURITES METHODS ====================
+  
+  /**
+   * Add a user to favourites
+   */
+  static async addFavourite(
+    userId: string,
+    favouriteUserId: string,
+    favouriteUserGender?: string,
+    favouriteUserInterests?: string[]
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isConnected) {
+      return { success: false, error: 'Database not connected' };
+    }
+
+    try {
+      // Check if already in favourites
+      const existing = await FavouriteModel.findOne({ userId, favouriteUserId }).lean();
+      if (existing) {
+        return { success: false, error: 'User already in favourites' };
+      }
+
+      // Add to favourites
+      await FavouriteModel.create({
+        userId,
+        favouriteUserId,
+        favouriteUserGender,
+        favouriteUserInterests,
+        addedAt: new Date()
+      });
+
+      console.log('✅ Favourite added:', { userId, favouriteUserId });
+      return { success: true };
+    } catch (err: any) {
+      console.error('❌ Error adding favourite:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Remove a user from favourites
+   */
+  static async removeFavourite(userId: string, favouriteUserId: string): Promise<{ success: boolean; error?: string }> {
+    if (!this.isConnected) {
+      return { success: false, error: 'Database not connected' };
+    }
+
+    try {
+      const result = await FavouriteModel.deleteOne({ userId, favouriteUserId });
+      
+      if (result.deletedCount === 0) {
+        return { success: false, error: 'Favourite not found' };
+      }
+
+      console.log('✅ Favourite removed:', { userId, favouriteUserId });
+      return { success: true };
+    } catch (err: any) {
+      console.error('❌ Error removing favourite:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Get all favourites for a user with their online status
+   */
+  static async getFavourites(userId: string): Promise<any[]> {
+    if (!this.isConnected) {
+      return [];
+    }
+
+    try {
+      const favourites = await FavouriteModel.find({ userId })
+        .sort({ addedAt: -1 })
+        .lean();
+
+      // Get user details for each favourite
+      const favouriteUsers = await Promise.all(
+        favourites.map(async (fav) => {
+          const user = await UserModel.findOne({ id: fav.favouriteUserId })
+            .select('id email gender isOnline lastActiveAt')
+            .lean();
+          
+          if (!user) return null;
+
+          return {
+            favouriteId: fav._id,
+            userId: user.id,
+            email: user.email,
+            gender: fav.favouriteUserGender || user.gender,
+            interests: fav.favouriteUserInterests || [],
+            isOnline: user.isOnline || false,
+            lastActiveAt: user.lastActiveAt,
+            addedAt: fav.addedAt
+          };
+        })
+      );
+
+      return favouriteUsers.filter(Boolean);
+    } catch (err) {
+      console.error('❌ Error getting favourites:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Check if a user is in favourites
+   */
+  static async isFavourite(userId: string, favouriteUserId: string): Promise<boolean> {
+    if (!this.isConnected) {
+      return false;
+    }
+
+    try {
+      const existing = await FavouriteModel.findOne({ userId, favouriteUserId }).lean();
+      return !!existing;
+    } catch (err) {
+      console.error('❌ Error checking favourite:', err);
+      return false;
+    }
   }
 
   static async getChatSession(sessionId: string): Promise<any | null> {
@@ -7127,5 +7346,280 @@ export class DatabaseService {
       unknown: current.unknown,
       sources
     };
+  }
+
+  /* ---------- Topic Dice Methods ---------- */
+  
+  /**
+   * Get topic dice prompts with filters
+   */
+  static async getTopicDicePrompts(filter: any = {}): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        const prompts = await TopicDicePromptModel.find(filter).lean();
+        return prompts.map(p => ({
+          id: p.promptId,
+          promptEn: p.promptEn,
+          category: p.category,
+          maturityRating: p.maturityRating,
+          localizedVariants: p.localizedVariants || {},
+          tags: p.tags || [],
+          active: p.active,
+          createdAt: p.createdAt
+        }));
+      } catch (error) {
+        console.error('❌ Error getting topic dice prompts from MongoDB:', error);
+        return this.getTopicDicePromptsInMemory(filter);
+      }
+    }
+    return this.getTopicDicePromptsInMemory(filter);
+  }
+
+  private static getTopicDicePromptsInMemory(filter: any = {}): any[] {
+    const allPrompts = Array.from(this.topicDicePrompts.values());
+    
+    // Apply filters
+    return allPrompts.filter(prompt => {
+      if (filter.category && prompt.category !== filter.category) return false;
+      if (filter.active !== undefined && prompt.active !== filter.active) return false;
+      if (filter.maturityRating && Array.isArray(filter.maturityRating.$in)) {
+        if (!filter.maturityRating.$in.includes(prompt.maturityRating)) return false;
+      }
+      return true;
+    });
+  }
+
+  /**
+   * Create topic dice prompt
+   */
+  static async createTopicDicePrompt(prompt: any): Promise<void> {
+    if (this.isConnected) {
+      try {
+        await TopicDicePromptModel.create({
+          promptId: prompt.id,
+          promptEn: prompt.promptEn,
+          category: prompt.category,
+          maturityRating: prompt.maturityRating,
+          localizedVariants: new Map(Object.entries(prompt.localizedVariants || {})),
+          tags: prompt.tags || [],
+          active: prompt.active !== undefined ? prompt.active : true,
+          createdAt: prompt.createdAt || new Date(),
+          updatedAt: new Date()
+        });
+        console.log('✅ Created topic dice prompt in MongoDB:', prompt.id);
+      } catch (error) {
+        console.error('❌ Error creating topic dice prompt in MongoDB:', error);
+        this.topicDicePrompts.set(prompt.id, prompt);
+      }
+    } else {
+      this.topicDicePrompts.set(prompt.id, prompt);
+    }
+  }
+
+  /**
+   * Update topic dice prompt
+   */
+  static async updateTopicDicePrompt(promptId: string, updates: any): Promise<void> {
+    if (this.isConnected) {
+      try {
+        const updateData: any = { ...updates, updatedAt: new Date() };
+        
+        // Convert localizedVariants object to Map if present
+        if (updates.localizedVariants) {
+          updateData.localizedVariants = new Map(Object.entries(updates.localizedVariants));
+        }
+
+        await TopicDicePromptModel.updateOne(
+          { promptId },
+          { $set: updateData }
+        );
+        console.log('✅ Updated topic dice prompt in MongoDB:', promptId);
+      } catch (error) {
+        console.error('❌ Error updating topic dice prompt in MongoDB:', error);
+        const existing = this.topicDicePrompts.get(promptId);
+        if (existing) {
+          this.topicDicePrompts.set(promptId, { ...existing, ...updates });
+        }
+      }
+    } else {
+      const existing = this.topicDicePrompts.get(promptId);
+      if (existing) {
+        this.topicDicePrompts.set(promptId, { ...existing, ...updates });
+      }
+    }
+  }
+
+  /**
+   * Delete topic dice prompt
+   */
+  static async deleteTopicDicePrompt(promptId: string): Promise<void> {
+    if (this.isConnected) {
+      try {
+        await TopicDicePromptModel.deleteOne({ promptId });
+        console.log('✅ Deleted topic dice prompt from MongoDB:', promptId);
+      } catch (error) {
+        console.error('❌ Error deleting topic dice prompt from MongoDB:', error);
+        this.topicDicePrompts.delete(promptId);
+      }
+    } else {
+      this.topicDicePrompts.delete(promptId);
+    }
+  }
+
+  /* ---------- AR Analytics ---------- */
+  
+  /**
+   * Log AR usage analytics
+   */
+  static async logARAnalytics(data: {
+    sessionId: string;
+    userId: string;
+    maskType: string;
+    blurEnabled: boolean;
+    blurDuration: number;
+    revealTime: number;
+    isAutoReveal: boolean;
+    devicePerformance?: string;
+    qualityPreset?: string;
+    avgFps?: number;
+    avgCpuUsage?: number;
+    droppedFrames?: number;
+  }): Promise<void> {
+    if (this.isConnected) {
+      try {
+        await ARAnalyticsModel.create({
+          sessionId: data.sessionId,
+          userId: data.userId,
+          maskType: data.maskType,
+          blurEnabled: data.blurEnabled,
+          blurDuration: data.blurDuration,
+          revealTime: data.revealTime,
+          isAutoReveal: data.isAutoReveal,
+          devicePerformance: data.devicePerformance || 'medium',
+          qualityPreset: data.qualityPreset || 'medium',
+          avgFps: data.avgFps || 0,
+          avgCpuUsage: data.avgCpuUsage || 0,
+          droppedFrames: data.droppedFrames || 0,
+          timestamp: new Date(),
+        });
+        console.log('✅ Logged AR analytics to MongoDB:', {
+          sessionId: data.sessionId,
+          userId: data.userId,
+          maskType: data.maskType,
+          isAutoReveal: data.isAutoReveal,
+        });
+      } catch (error) {
+        console.error('❌ Error logging AR analytics to MongoDB:', error);
+      }
+    } else {
+      console.log('📝 [In-memory mode] AR analytics:', data);
+    }
+  }
+
+  /**
+   * Get AR analytics for a user
+   */
+  static async getARAnalytics(userId: string, limit = 100): Promise<any[]> {
+    if (this.isConnected) {
+      try {
+        return await ARAnalyticsModel.find({ userId })
+          .sort({ timestamp: -1 })
+          .limit(limit)
+          .lean();
+      } catch (error) {
+        console.error('❌ Error fetching AR analytics from MongoDB:', error);
+        return [];
+      }
+    } else {
+      return [];
+    }
+  }
+
+  /**
+   * Get AR analytics summary
+   */
+  static async getARAnalyticsSummary(filters?: {
+    startDate?: Date;
+    endDate?: Date;
+    maskType?: string;
+  }): Promise<{
+    totalSessions: number;
+    maskUsage: Record<string, number>;
+    avgRevealTime: number;
+    autoRevealRate: number;
+    avgFps: number;
+    avgCpuUsage: number;
+  }> {
+    if (this.isConnected) {
+      try {
+        const matchFilter: any = {};
+        if (filters?.startDate) matchFilter.timestamp = { $gte: filters.startDate };
+        if (filters?.endDate) {
+          matchFilter.timestamp = matchFilter.timestamp || {};
+          matchFilter.timestamp.$lte = filters.endDate;
+        }
+        if (filters?.maskType) matchFilter.maskType = filters.maskType;
+
+        const results = await ARAnalyticsModel.aggregate([
+          { $match: matchFilter },
+          {
+            $group: {
+              _id: null,
+              totalSessions: { $sum: 1 },
+              maskTypes: { $push: '$maskType' },
+              avgRevealTime: { $avg: '$revealTime' },
+              autoReveals: { $sum: { $cond: ['$isAutoReveal', 1, 0] } },
+              avgFps: { $avg: '$avgFps' },
+              avgCpuUsage: { $avg: '$avgCpuUsage' },
+            },
+          },
+        ]);
+
+        if (results.length === 0) {
+          return {
+            totalSessions: 0,
+            maskUsage: {},
+            avgRevealTime: 0,
+            autoRevealRate: 0,
+            avgFps: 0,
+            avgCpuUsage: 0,
+          };
+        }
+
+        const result = results[0];
+        const maskUsage: Record<string, number> = {};
+        result.maskTypes.forEach((mask: string) => {
+          maskUsage[mask] = (maskUsage[mask] || 0) + 1;
+        });
+
+        return {
+          totalSessions: result.totalSessions,
+          maskUsage,
+          avgRevealTime: Math.round(result.avgRevealTime),
+          autoRevealRate: result.autoReveals / result.totalSessions,
+          avgFps: Math.round(result.avgFps),
+          avgCpuUsage: Math.round(result.avgCpuUsage),
+        };
+      } catch (error) {
+        console.error('❌ Error fetching AR analytics summary from MongoDB:', error);
+        return {
+          totalSessions: 0,
+          maskUsage: {},
+          avgRevealTime: 0,
+          autoRevealRate: 0,
+          avgFps: 0,
+          avgCpuUsage: 0,
+        };
+      }
+    } else {
+      return {
+        totalSessions: 0,
+        maskUsage: {},
+        avgRevealTime: 0,
+        autoRevealRate: 0,
+        avgFps: 0,
+        avgCpuUsage: 0,
+      };
+    }
   }
 }

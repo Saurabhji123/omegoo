@@ -10,15 +10,20 @@ import {
   XMarkIcon,
   PhoneXMarkIcon,
   SignalIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
 import ReportModal from './ReportModal';
+import VoiceAvatarPicker from './VoiceAvatarPicker';
+import { useVoiceFilter } from '../../contexts/VoiceFilterContext';
+import { VOICE_FILTER_PRESETS, VoiceFilterType } from '../../types/voiceFilters';
 
 const AudioChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
+  const { selectedFilter, getProcessedStream, setFilter, adjustIntensity, intensity, performanceMetrics } = useVoiceFilter();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
@@ -29,6 +34,7 @@ const AudioChat: React.FC = () => {
   // Core states
   const [isSearching, setIsSearching] = useState(false);
   const [isMatchConnected, setIsMatchConnected] = useState(false);
+  const [showVoiceAvatarPicker, setShowVoiceAvatarPicker] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [partnerId, setPartnerId] = useState<string>(''); // Track partner user ID
   const [showReportModal, setShowReportModal] = useState(false);
@@ -46,6 +52,20 @@ const AudioChat: React.FC = () => {
   const [callStartTime, setCallStartTime] = useState<number | null>(null);
   const [qualityMetrics, setQualityMetrics] = useState({ packetLoss: 0, jitter: 0, bitrate: 0 });
   const audioOnlineCount = modeUserCounts.audio;
+  
+  // Voice filter states
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+
+  // Swipe gesture states
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState<number>(0);
+  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const [showSwipeHint, setShowSwipeHint] = useState<'left' | 'right' | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  // Audio chat has no text input, so isInputFocused is always false (no typing to block swipes)
+  const isInputFocused = false;
+  const lastTapTimeRef = useRef<number>(0);
 
   useEffect(() => {
     setActiveMode('audio');
@@ -53,6 +73,30 @@ const AudioChat: React.FC = () => {
       setActiveMode(null);
     };
   }, [setActiveMode]);
+
+  // Helper function to check if swipe gestures should be enabled
+  const isSwipeEnabled = useCallback(() => {
+    // 🔐 Edge Case 1: Disable during typing
+    if (isInputFocused) {
+      console.log('🚫 Swipe disabled: User is typing');
+      return false;
+    }
+    
+    // 🔐 Edge Case 2: Disable during modal states
+    if (showReportModal || showLoginModal || showFilterMenu) {
+      console.log('🚫 Swipe disabled: Modal/menu is open');
+      return false;
+    }
+    
+    // 🔐 Edge Case 4: Disable during network issues
+    if (!socketConnected || socketConnecting) {
+      console.log('🚫 Swipe disabled: Network reconnecting');
+      return false;
+    }
+    
+    // ✅ All conditions passed
+    return true;
+  }, [isInputFocused, showReportModal, showLoginModal, showFilterMenu, socketConnected, socketConnecting]);
 
   // Debug mic state changes
   useEffect(() => {
@@ -507,22 +551,36 @@ const AudioChat: React.FC = () => {
       };
       
       // Get fresh stream via WebRTC service
-      const stream = await webRTCRef.current!.initializeMedia(constraints);
-      if (!stream) {
+      const rawStream = await webRTCRef.current!.initializeMedia(constraints);
+      if (!rawStream) {
         throw new Error('Failed to initialize media via WebRTC service');
       }
       
-      console.log('✅ Fresh audio stream created with tracks:', stream.getAudioTracks().length);
+      console.log('✅ Raw audio stream created with tracks:', rawStream.getAudioTracks().length);
       
-      if (stream && localAudioRef.current) {
-        localAudioRef.current.srcObject = stream;
-        localStreamRef.current = stream;
+      // Apply voice filter if selected
+      let processedStream = rawStream;
+      if (selectedFilter !== 'none') {
+        try {
+          console.log(`🎤 Applying voice filter: ${selectedFilter}`);
+          processedStream = await getProcessedStream(rawStream);
+          console.log('✅ Voice filter applied successfully');
+        } catch (error) {
+          console.error('❌ Failed to apply voice filter:', error);
+          // Fallback to raw stream if filter fails
+          processedStream = rawStream;
+        }
+      }
+      
+      if (processedStream && localAudioRef.current) {
+        localAudioRef.current.srcObject = processedStream;
+        localStreamRef.current = processedStream;
         
         // Start audio level monitoring
-        startAudioLevelMonitoring(stream);
+        startAudioLevelMonitoring(processedStream);
         
         // Log detailed audio track info for debugging
-        const audioTracks = stream.getAudioTracks();
+        const audioTracks = processedStream.getAudioTracks();
         console.log('✅ Enhanced local audio initialized with tracks:', audioTracks.length);
         audioTracks.forEach((track, index) => {
           console.log(`🎤 Local audio track ${index}:`, {
@@ -551,7 +609,7 @@ const AudioChat: React.FC = () => {
         }
         
         setIsProcessingAudio(false);
-        return stream;
+        return processedStream;
       }
       
       throw new Error('Failed to initialize audio stream');
@@ -757,6 +815,144 @@ const AudioChat: React.FC = () => {
     navigate('/');
   };
 
+  // Swipe gesture handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // 🔐 Edge Case 3: Detect multi-touch (pinch zoom) - ignore for swipe
+    if (e.touches.length > 1) {
+      console.log('🔍 Multi-touch detected (pinch/zoom) - ignoring swipe');
+      resetSwipeState();
+      return;
+    }
+    
+    // 🔐 Check if swipes are enabled based on edge cases
+    if (!isSwipeEnabled()) {
+      return;
+    }
+    
+    const touch = e.touches[0];
+    setTouchStartX(touch.clientX);
+    setTouchStartY(touch.clientY);
+    
+    // Double tap detection
+    const now = Date.now();
+    if (now - lastTapTimeRef.current < 300) {
+      handleDoubleTap();
+      lastTapTimeRef.current = 0; // Reset after double tap
+    } else {
+      lastTapTimeRef.current = now;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX === null || touchStartY === null) return;
+    
+    // 🔐 Edge Case 3: If multi-touch started, abort swipe
+    if (e.touches.length > 1) {
+      console.log('🔍 Multi-touch during move - canceling swipe');
+      resetSwipeState();
+      return;
+    }
+    
+    // 🔐 Check if swipes are still enabled
+    if (!isSwipeEnabled()) {
+      resetSwipeState();
+      return;
+    }
+    
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStartX;
+    const diffY = touch.clientY - touchStartY;
+    
+    // Only handle horizontal swipes
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 20) {
+      e.preventDefault(); // Prevent scrolling during swipe
+      setSwipeOffset(diffX);
+      
+      // Show hints when swipe reaches threshold
+      if (diffX < -100) {
+        setShowSwipeHint('left');
+      } else if (diffX > 100) {
+        setShowSwipeHint('right');
+      } else {
+        setShowSwipeHint(null);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    // 🔐 Final check before executing swipe action
+    if (!isSwipeEnabled()) {
+      console.log('🚫 Swipe action blocked by edge case protection');
+      resetSwipeState();
+      return;
+    }
+    
+    // Trigger actions based on swipe distance
+    if (swipeOffset < -150) {
+      // Swipe left = Next person
+      nextMatch();
+    } else if (swipeOffset > 150) {
+      // Swipe right = Add friend (placeholder)
+      handleAddFriend();
+    }
+    
+    resetSwipeState();
+  };
+
+  const handleDoubleTap = () => {
+    if (!isMatchConnected || !sessionId) return;
+    
+    // Show like animation
+    setShowLikeAnimation(true);
+    setTimeout(() => setShowLikeAnimation(false), 1500);
+    
+    // Send like event via socket
+    if (socket) {
+      socket.emit('send_like', {
+        sessionId,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleAddFriend = () => {
+    // Check if user is logged in
+    if (!user || !user.email) {
+      console.log('⚠️ User not logged in, showing login modal');
+      setShowLoginModal(true);
+      return;
+    }
+    
+    // Check if we have partner info
+    if (!partnerId || !sessionId) {
+      console.log('⚠️ No active session to add favourite');
+      return;
+    }
+    
+    // Add to favourites via socket
+    console.log('⭐ Adding user to favourites:', {
+      currentUser: user.email,
+      favouriteUserId: partnerId,
+      sessionId
+    });
+    
+    if (socket) {
+      socket.emit('add_favourite', {
+        favouriteUserId: partnerId,
+        sessionId
+      });
+      
+      console.log('✅ Favourite request sent!');
+    }
+  };
+
+  const resetSwipeState = () => {
+    setTouchStartX(null);
+    setTouchStartY(null);
+    setSwipeOffset(0);
+    setShowSwipeHint(null);
+  };
+
   const toggleMic = () => {
     console.log('🎤 MIC TOGGLE: Current state =', isMicOn);
     
@@ -933,8 +1129,45 @@ const AudioChat: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Audio Area - Enhanced for mobile */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8">
+      {/* Main Audio Area - Enhanced for mobile with swipe gestures */}
+      <div 
+        className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 relative"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={resetSwipeState}
+        style={{
+          transform: swipeOffset !== 0 ? `translateX(${swipeOffset}px)` : 'none',
+          transition: swipeOffset === 0 ? 'transform 0.3s ease-out' : 'none'
+        }}
+      >
+        
+        {/* Swipe Hint - Left (Next) */}
+        {showSwipeHint === 'left' && (
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
+            <div className="text-white text-6xl animate-bounce">←</div>
+            <div className="text-white text-sm font-bold bg-black bg-opacity-50 px-3 py-1 rounded-full mt-2">
+              Next
+            </div>
+          </div>
+        )}
+        
+        {/* Swipe Hint - Right (Friend) */}
+        {showSwipeHint === 'right' && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
+            <div className="text-white text-6xl animate-bounce">→</div>
+            <div className="text-white text-sm font-bold bg-black bg-opacity-50 px-3 py-1 rounded-full mt-2">
+              Favourite
+            </div>
+          </div>
+        )}
+        
+        {/* Like Animation */}
+        {showLikeAnimation && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+            <div className="text-red-500 text-9xl animate-ping">❤️</div>
+          </div>
+        )}
         
         {/* Idle State */}
         {!isSearching && !isMatchConnected && (
@@ -947,7 +1180,7 @@ const AudioChat: React.FC = () => {
               Connect instantly with people worldwide through high-quality voice conversations
             </p>
             <button
-              onClick={() => startNewChat()}
+              onClick={() => setShowVoiceAvatarPicker(true)}
               disabled={!socketConnected || isProcessingAudio}
               className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 px-8 py-4 rounded-xl text-lg sm:text-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:cursor-not-allowed shadow-lg"
             >
@@ -1064,7 +1297,120 @@ const AudioChat: React.FC = () => {
                   <SpeakerXMarkIcon className="w-6 h-6 text-white" />
                 )}
               </button>
+              
+              {/* Voice Filter Control */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowFilterMenu(!showFilterMenu)}
+                  disabled={!isMatchConnected}
+                  className={`p-3 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    selectedFilter !== 'none'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                      : 'bg-gray-700 hover:bg-gray-600'
+                  } shadow-md relative`}
+                  title="Voice Filter"
+                >
+                  {selectedFilter !== 'none' ? (
+                    <span className="text-2xl">{VOICE_FILTER_PRESETS[selectedFilter].emoji}</span>
+                  ) : (
+                    <AdjustmentsHorizontalIcon className="w-6 h-6 text-white" />
+                  )}
+                  {performanceMetrics && performanceMetrics.cpuUsage > 15 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-gray-900"></span>
+                  )}
+                </button>
+                
+                {/* Filter Menu Dropdown */}
+                {showFilterMenu && (
+                  <div className="absolute bottom-full mb-2 right-0 bg-gray-800 rounded-xl shadow-2xl p-4 w-72 z-50 border border-gray-700">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="font-semibold text-white">Voice Filter</h3>
+                      <button
+                        onClick={() => setShowFilterMenu(false)}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <XMarkIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                    
+                    {/* Filter Options */}
+                    <div className="space-y-2 mb-4">
+                      {(Object.keys(VOICE_FILTER_PRESETS) as VoiceFilterType[]).map((filterType) => {
+                        const preset = VOICE_FILTER_PRESETS[filterType];
+                        return (
+                          <button
+                            key={filterType}
+                            onClick={() => {
+                              setFilter(filterType);
+                              if (filterType === 'none') {
+                                setShowFilterMenu(false);
+                              }
+                            }}
+                            className={`w-full p-3 rounded-lg flex items-center gap-3 transition-all ${
+                              selectedFilter === filterType
+                                ? `bg-gradient-to-r ${preset.color} text-white`
+                                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                            }`}
+                          >
+                            <span className="text-2xl">{preset.emoji}</span>
+                            <div className="flex-1 text-left">
+                              <div className="font-medium">{preset.name}</div>
+                              <div className="text-xs opacity-75">{preset.description}</div>
+                            </div>
+                            {selectedFilter === filterType && (
+                              <span className="text-green-400">✓</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Intensity Slider (only if filter active) */}
+                    {selectedFilter !== 'none' && (
+                      <div className="pt-3 border-t border-gray-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-gray-300">Intensity</span>
+                          <span className="text-sm font-medium text-white">{Math.round(intensity * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={VOICE_FILTER_PRESETS[selectedFilter].minIntensity}
+                          max={VOICE_FILTER_PRESETS[selectedFilter].maxIntensity}
+                          step="0.05"
+                          value={intensity}
+                          onChange={(e) => adjustIntensity(parseFloat(e.target.value))}
+                          className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+                        />
+                        <div className="flex justify-between text-xs text-gray-400 mt-1">
+                          <span>Subtle</span>
+                          <span>Strong</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* CPU Warning */}
+                    {performanceMetrics && performanceMetrics.cpuUsage > 15 && (
+                      <div className="mt-3 p-2 bg-orange-500/20 border border-orange-500/50 rounded-lg">
+                        <div className="flex items-center gap-2 text-orange-400 text-xs">
+                          <ExclamationTriangleIcon className="w-4 h-4" />
+                          <span>High CPU: {Math.round(performanceMetrics.cpuUsage)}%</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Voice Filter Active Badge */}
+            {selectedFilter !== 'none' && (
+              <div className="mb-4 flex justify-center">
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${VOICE_FILTER_PRESETS[selectedFilter].color} text-white text-sm font-medium shadow-lg`}>
+                  <span className="text-lg">{VOICE_FILTER_PRESETS[selectedFilter].emoji}</span>
+                  <span>{VOICE_FILTER_PRESETS[selectedFilter].name} Active</span>
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -1192,6 +1538,64 @@ const AudioChat: React.FC = () => {
           onClose={() => setShowReportModal(false)}
         />
       )}
+
+      {/* Login/Signup Modal - For Friend System */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-4">🔒</div>
+              <h2 className="text-2xl font-bold text-white mb-2">Login Required</h2>
+              <p className="text-gray-300 text-sm">
+                You need to be logged in to add friends and access social features
+              </p>
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center gap-3 text-sm text-gray-300">
+                <div className="text-2xl">👥</div>
+                <span>Send friend requests and build your network</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-300">
+                <div className="text-2xl">💬</div>
+                <span>Chat with your friends anytime</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-300">
+                <div className="text-2xl">⭐</div>
+                <span>Save your favorite connections</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowLoginModal(false);
+                  navigate('/');
+                }}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+              >
+                Login / Sign Up
+              </button>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-colors"
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Voice Avatar Picker Modal */}
+      <VoiceAvatarPicker
+        isOpen={showVoiceAvatarPicker}
+        onClose={() => setShowVoiceAvatarPicker(false)}
+        onConfirm={() => {
+          setShowVoiceAvatarPicker(false);
+          startNewChat(false);
+        }}
+      />
     </div>
   );
 };

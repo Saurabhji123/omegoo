@@ -1,0 +1,8 @@
+<svg width="200" height="120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left ear -->
+  <polygon points="30,100 50,20 70,100" fill="#FFB6C1" stroke="#FF69B4" stroke-width="2"/>
+  <polygon points="40,90 50,40 60,90" fill="#FFC0CB"/>
+  <!-- Right ear -->
+  <polygon points="130,100 150,20 170,100" fill="#FFB6C1" stroke="#FF69B4" stroke-width="2"/>
+  <polygon points="140,90 150,40 160,90" fill="#FFC0CB"/>
+</svg>
