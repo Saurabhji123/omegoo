@@ -1713,16 +1713,20 @@ const VideoChat: React.FC = () => {
             )}
           </div>
 
-          {/* Omegoo Watermark - always visible */}
-          <div className="pointer-events-none absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg-black bg-opacity-40 backdrop-blur-sm px-3 py-2 rounded-xl border border-white border-opacity-20 animate-pulse">
-            <img 
-              src="/logo512.png" 
-              alt="Omegoo" 
-              className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg shadow-sm object-cover opacity-90"
-            />
-            <span className="text-white text-sm sm:text-base font-bold tracking-wider opacity-90 drop-shadow-lg">
-              Omegoo
-            </span>
+          {/* Omegoo Watermark - always visible with continuous blink */}
+          <div className="pointer-events-none absolute top-4 right-4 sm:top-6 sm:right-6 z-50">
+            <div className="flex items-center gap-2 bg-black bg-opacity-40 backdrop-blur-sm px-3 py-2 rounded-xl border border-white border-opacity-20">
+              <img 
+                src="/logo512.png" 
+                alt="Omegoo" 
+                className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg shadow-sm object-cover animate-pulse"
+                style={{ animationDuration: '2s' }}
+              />
+              <span className="text-white text-sm sm:text-base font-bold tracking-wider drop-shadow-lg animate-pulse"
+                style={{ animationDuration: '2s' }}>
+                Omegoo
+              </span>
+            </div>
           </div>
 
           {/* Local Video - FIXED: Consistent aspect ratio across all devices */}
@@ -1854,48 +1858,7 @@ const VideoChat: React.FC = () => {
                       ))}
                     </div>
                     
-                    {blurState === 'active' || blurState === 'manual' ? (
-                      <div className="mt-2 pt-2 border-t border-gray-700">
-                        <button
-                          onClick={() => {
-                            handleRevealVideo();
-                            if (blurState === 'active') {
-                              localStorage.setItem('omegoo_blur_enabled', 'false');
-                            }
-                            setShowMaskMenu(false);
-                          }}
-                          className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                            blurState === 'manual'
-                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                              : 'bg-red-600 hover:bg-red-700 text-white'
-                          }`}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          <span className="text-sm font-medium">
-                            {blurState === 'manual' ? 'Reveal Video' : `Stop Blur (${revealCountdown}s)`}
-                          </span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="mt-2 pt-2 border-t border-gray-700">
-                        <button
-                          onClick={() => {
-                            enableManualBlur();
-                            setShowMaskMenu(false);
-                          }}
-                          className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                            <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06L16.03 15.03a10.03 10.03 0 003.27-4.38 1.651 1.651 0 000-1.186A10.004 10.004 0 009.998 3a9.956 9.956 0 00-4.744 1.194L3.28 2.22z" clipRule="evenodd" />
-                            <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 01-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 010-1.186A10.007 10.007 0 012.839 6.02L6.07 9.252a4 4 0 004.678 4.678z" />
-                          </svg>
-                          <span className="text-sm font-medium">Blur My Video</span>
-                        </button>
-                      </div>
-                    )}
+
                   </div>
                 )}
               </div>
