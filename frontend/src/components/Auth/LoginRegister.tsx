@@ -54,10 +54,15 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
       if (isLogin) {
         console.log('🔐 Logging in...');
         await loginWithEmail(email, password);
-        console.log('✅ Login successful, redirecting to home...');
+        console.log('✅ Login successful');
         
-        // Navigate to home page after successful login
-        navigate('/');
+        // Call onSuccess callback if provided (for inline usage)
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          // Navigate to home page only if no callback provided
+          navigate('/');
+        }
       } else {
         if (!gender) {
           setError('Please select your gender');
@@ -133,10 +138,15 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
       // Send to backend
       await loginWithGoogle(credentialResponse.credential!);
       
-      console.log('✅ Google authentication successful, redirecting...');
-      navigate('/');
+      console.log('✅ Google authentication successful');
       
-      if (onSuccess) onSuccess();
+      // Call onSuccess callback if provided (for inline usage)
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        // Navigate to home page only if no callback provided
+        navigate('/');
+      }
     } catch (err: any) {
       console.error('❌ Google login error:', err);
       setError(err.message || 'Google sign-in failed. Please try again.');

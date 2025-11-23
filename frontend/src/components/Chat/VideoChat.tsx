@@ -17,6 +17,7 @@ import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid
 import ReportModal from './ReportModal';
 import { PreviewModal } from './PreviewModal';
 import FaceMaskPicker from './FaceMaskPicker';
+import LoginRegister from '../Auth/LoginRegister';
 import { useARFilter } from '../../contexts/ARFilterContext';
 import { FACE_MASK_PRESETS, FaceMaskType, BlurState } from '../../types/arFilters';
 
@@ -2036,49 +2037,29 @@ const VideoChat: React.FC = () => {
       )}
 
       {/* Login/Signup Modal - For Friend System */}
+      {/* Inline Login Modal - No redirect, stay on video chat */}
       {showLoginModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl">
-            <div className="text-center mb-6">
-              <div className="text-5xl mb-4">🔒</div>
-              <h2 className="text-2xl font-bold text-white mb-2">Login Required</h2>
-              <p className="text-gray-300 text-sm">
-                You need to be logged in to add friends and access social features
-              </p>
-            </div>
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="relative bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Close button */}
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
+            >
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
             
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center gap-3 text-sm text-gray-300">
-                <div className="text-2xl">👥</div>
-                <span>Send friend requests and build your network</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-gray-300">
-                <div className="text-2xl">💬</div>
-                <span>Chat with your friends anytime</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-gray-300">
-                <div className="text-2xl">⭐</div>
-                <span>Save your favorite connections</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowLoginModal(false);
-                  navigate('/');
-                }}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
-              >
-                Login / Sign Up
-              </button>
-              <button
-                onClick={() => setShowLoginModal(false)}
-                className="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-colors"
-              >
-                Later
-              </button>
-            </div>
+            {/* LoginRegister component - inline */}
+            <LoginRegister
+              onSuccess={() => {
+                console.log('✅ Login successful on video chat page');
+                setShowLoginModal(false);
+                // User is now logged in, can continue chatting
+                addMessage('✅ Login successful! You can now add favourites.', false);
+              }}
+            />
           </div>
         </div>
       )}
