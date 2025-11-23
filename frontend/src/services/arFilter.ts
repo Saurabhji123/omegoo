@@ -221,27 +221,19 @@ class ARFilterService {
 
   /**
    * Initialize TensorFlow.js FaceMesh detector
+   * SIMPLIFIED: Using canvas filters only, no face detection needed
    */
   private async initializeFaceMesh(): Promise<void> {
     try {
-      console.log('🔧 Loading FaceMesh model...');
+      console.log('🔧 Initializing canvas filters (no face detection)...');
       
-      const detectorConfig: any = {
-        runtime: 'mediapipe',
-        refineLandmarks: AR_CONSTANTS.REFINEMENT,
-        maxFaces: AR_CONSTANTS.MAX_FACES,
-        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
-      };
+      // Skip TensorFlow loading - we're using simple canvas filters
+      this.detector = null;
       
-      this.detector = await faceLandmarksDetection.createDetector(
-        this.model as any,
-        detectorConfig
-      );
-      
-      console.log('✅ FaceMesh model loaded successfully');
+      console.log('✅ Canvas filters ready (simplified mode)');
     } catch (error) {
-      console.error('❌ Failed to load FaceMesh model:', error);
-      throw new Error('FaceMesh initialization failed');
+      console.error('❌ Failed to initialize filters:', error);
+      throw new Error('Filter initialization failed');
     }
   }
 
@@ -371,36 +363,20 @@ class ARFilterService {
           this.canvas.height
         );
         
+        // Apply canvas filters based on mask type (no face detection needed)
+        if (this.currentMask !== 'none') {
+          this.applyCanvasFilter(this.currentMask);
+        }
+        
         // Apply blur if active
         if (this.blurState === 'active' && this.blurIntensity > 0) {
           this.applyBlur();
-        }
-        
-        // Detect face and apply mask if enabled (with adaptive frequency)
-        this.framesSinceLastDetection++;
-        const shouldDetect = this.framesSinceLastDetection >= this.detectionFrequency;
-        
-        if (this.currentMask !== 'none' && this.detector && shouldDetect) {
-          const detectionStart = performance.now();
-          await this.detectAndDrawMask();
-          const detectionTime = performance.now() - detectionStart;
-          this.performanceMetrics.faceDetectionTime = detectionTime;
-          this.framesSinceLastDetection = 0;
-        } else if (this.lastFaceLandmarks && this.currentMask !== 'none') {
-          // Use cached landmarks when skipping detection
-          this.drawMask(this.lastFaceLandmarks);
         }
         
         // Update performance metrics
         const renderTime = performance.now() - startTime;
         this.performanceMetrics.renderTime = renderTime;
         this.updatePerformanceMetrics(renderTime);
-        
-        // Adaptive performance adjustment
-        if (this.adaptiveResolution && Date.now() - this.lastPerformanceCheck > 5000) {
-          this.adjustPerformance();
-          this.lastPerformanceCheck = Date.now();
-        }
         
       } catch (error) {
         console.error('❌ Error in processing loop:', error);
@@ -437,48 +413,72 @@ class ARFilterService {
   }
 
   /**
-   * Detect face and draw mask overlay
+   * Apply simple canvas filter (no face detection)
+   */
+  private applyCanvasFilter(filterType: FaceMaskType): void {
+    if (!this.ctx || !this.canvas) return;
+    
+    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    const data = imageData.data;
+    
+    switch (filterType) {
+      case 'sunglasses':
+        // Cool blue tint
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] = Math.min(255, data[i] * 0.9); // Red
+          data[i + 1] = Math.min(255, data[i + 1] * 0.95); // Green
+          data[i + 2] = Math.min(255, data[i + 2] * 1.1); // Blue
+        }
+        break;
+        
+      case 'dog_ears':
+        // Warm sepia tone
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          data[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
+          data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
+          data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
+        }
+        break;
+        
+      case 'cat_ears':
+        // High contrast
+        for (let i = 0; i < data.length; i += 4) {
+          const factor = 1.3;
+          data[i] = Math.min(255, ((data[i] - 128) * factor + 128));
+          data[i + 1] = Math.min(255, ((data[i + 1] - 128) * factor + 128));
+          data[i + 2] = Math.min(255, ((data[i + 2] - 128) * factor + 128));
+        }
+        break;
+        
+      case 'party_hat':
+        // Vibrant saturation boost
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const gray = (r + g + b) / 3;
+          const saturation = 1.5;
+          data[i] = Math.min(255, gray + (r - gray) * saturation);
+          data[i + 1] = Math.min(255, gray + (g - gray) * saturation);
+          data[i + 2] = Math.min(255, gray + (b - gray) * saturation);
+        }
+        break;
+    }
+    
+    this.ctx.putImageData(imageData, 0, 0);
+    console.log(`🎨 Applied filter: ${filterType}`);
+  }
+
+  /**
+   * Detect face and draw mask overlay (DEPRECATED - using simple filters now)
    */
   private async detectAndDrawMask(): Promise<void> {
-    if (!this.detector || !this.videoElement || !this.ctx) return;
-    
-    try {
-      // Detect faces
-      const faces = await this.detector.estimateFaces(this.videoElement, {
-        flipHorizontal: false,
-      });
-      
-      if (faces.length > 0) {
-        const face = faces[0];
-        this.faceDetected = true;
-        
-        // Convert to our landmark format
-        this.lastFaceLandmarks = {
-          keypoints: face.keypoints.map((kp: any) => ({ x: kp.x, y: kp.y, z: kp.z || 0, name: kp.name })),
-          boundingBox: face.box ? {
-            topLeft: { x: face.box.xMin, y: face.box.yMin },
-            bottomRight: { x: face.box.xMax, y: face.box.yMax },
-          } : { topLeft: { x: 0, y: 0 }, bottomRight: { x: 0, y: 0 } },
-          confidence: 0.9, // FaceMesh doesn't provide confidence
-        };
-        
-        // Notify callback
-        if (this.faceDetectionCallback) {
-          this.faceDetectionCallback(true, this.lastFaceLandmarks);
-        }
-        
-        // Draw mask based on type
-        this.drawMask(this.lastFaceLandmarks);
-      } else {
-        this.faceDetected = false;
-        if (this.faceDetectionCallback) {
-          this.faceDetectionCallback(false);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Face detection error:', error);
-      this.faceDetected = false;
-    }
+    // Simplified: No face detection, using canvas filters instead
+    console.log('⚠️ Face detection disabled, using canvas filters');
+    return;
   }
 
   /**
