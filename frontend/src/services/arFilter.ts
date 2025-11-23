@@ -358,7 +358,10 @@ class ARFilterService {
         if (this.currentMask !== 'none') {
           const filterString = this.getFilterString(this.currentMask);
           this.ctx.filter = filterString;
-          console.log(`🎨 Applied ${this.currentMask} filter to canvas context for remote streaming`);
+          // Log only on mask change, not every frame
+          if (this.frameCount % 90 === 0) { // Log every 3 seconds at 30fps
+            console.log(`🎨 Applied ${this.currentMask} filter to canvas context`);
+          }
         } else {
           this.ctx.filter = 'none';
         }
@@ -625,10 +628,28 @@ class ARFilterService {
   private applyBlur(): void {
     if (!this.ctx || !this.canvas) return;
     
-    // Use CSS filter for blur (faster than manual convolution)
+    // Get current canvas content as ImageData
+    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Apply blur filter and redraw
     this.ctx.filter = `blur(${this.blurIntensity}px)`;
-    this.ctx.drawImage(this.canvas, 0, 0);
-    this.ctx.filter = 'none';
+    this.ctx.putImageData(imageData, 0, 0);
+    
+    // Create temporary canvas to apply blur properly
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = this.canvas.width;
+    tempCanvas.height = this.canvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    if (tempCtx) {
+      // Draw current canvas to temp with blur
+      tempCtx.filter = `blur(${this.blurIntensity}px)`;
+      tempCtx.drawImage(this.canvas, 0, 0);
+      
+      // Draw blurred result back to main canvas
+      this.ctx.filter = 'none';
+      this.ctx.drawImage(tempCanvas, 0, 0);
+    }
   }
 
   /**

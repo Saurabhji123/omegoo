@@ -316,6 +316,72 @@ const VideoChat: React.FC = () => {
     prevBlurStateRef.current = blurState;
   }, [blurState, revealCountdown, socket, sessionId, selectedMask]);
 
+  // CRITICAL: Reprocess stream when mask or blur changes
+  useEffect(() => {
+    const reprocessStream = async () => {
+      // Only reprocess if we have an active camera stream
+      if (!localStreamRef.current) {
+        console.log('⏭️ No active stream to reprocess');
+        return;
+      }
+
+      // Get the raw video track (not processed)
+      const videoTracks = localStreamRef.current.getVideoTracks();
+      if (videoTracks.length === 0) {
+        console.log('⏭️ No video tracks found');
+        return;
+      }
+
+      try {
+        console.log('🔄 Reprocessing stream with new filter...', { selectedMask, blurState });
+        
+        // Get raw stream from WebRTC (original camera stream)
+        const rawStream = webRTCRef.current?.getLocalStream();
+        if (!rawStream) {
+          console.error('❌ Could not get raw stream for reprocessing');
+          return;
+        }
+
+        // Apply filters if needed
+        if (selectedMask !== 'none' || blurState === 'active') {
+          await initializeAR();
+          const processedStream = await getProcessedStream(rawStream);
+          
+          // Update local video preview
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = processedStream;
+            localStreamRef.current = processedStream;
+          }
+
+          // Update WebRTC peer connection if connected
+          if (webRTCRef.current && isMatchConnected) {
+            await webRTCRef.current.replaceLocalStream(processedStream);
+            console.log('📡 Updated stream sent to remote peer');
+          }
+          
+          console.log('✅ Stream reprocessed with filters');
+        } else {
+          // No filters - use raw stream
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = rawStream;
+            localStreamRef.current = rawStream;
+          }
+
+          if (webRTCRef.current && isMatchConnected) {
+            await webRTCRef.current.replaceLocalStream(rawStream);
+            console.log('📡 Raw stream sent to remote peer (no filters)');
+          }
+          
+          console.log('✅ Stream reset to raw (no filters)');
+        }
+      } catch (error) {
+        console.error('❌ Failed to reprocess stream:', error);
+      }
+    };
+
+    reprocessStream();
+  }, [selectedMask, blurState, getProcessedStream, initializeAR, isMatchConnected]);
+
   // Define reusable remote stream handler
   const handleRemoteStream = useCallback((stream: MediaStream) => {
     console.log('📺 Remote stream received:', {
@@ -2082,8 +2148,21 @@ const VideoChat: React.FC = () => {
       <FaceMaskPicker
         isOpen={showFaceMaskPicker}
         onClose={() => setShowFaceMaskPicker(false)}
-        onConfirm={() => {
+        onConfirm={async () => {
           setShowFaceMaskPicker(false);
+          
+          // CRITICAL: Start camera FIRST before searching
+          try {
+            console.log('🎥 Starting camera preview before search...');
+            await startLocalVideo();
+            console.log('✅ Camera preview started successfully');
+          } catch (error) {
+            console.error('❌ Failed to start camera:', error);
+            alert('Camera access is required for video chat. Please allow camera permissions.');
+            return;
+          }
+          
+          // Now start search
           startNewChat(false);
         }}
       />
