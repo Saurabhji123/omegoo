@@ -37,11 +37,12 @@ const Home: React.FC = () => {
   const [showTooltip, setShowTooltip] = useState<'text' | 'audio' | 'video' | null>(null);
   const [totalOnlineUsers, setTotalOnlineUsers] = useState<number>(0);
 
-  // Calculate total online users from mode counts
+  // Calculate total online users from mode counts (multiply by 3 for display)
   useEffect(() => {
-    const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
-    setTotalOnlineUsers(total);
-    console.log('👥 Total online users:', total, 'Breakdown:', modeUserCounts);
+    const realTotal = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
+    const displayTotal = realTotal * 3; // Show 3x inflated count for retention psychology
+    setTotalOnlineUsers(displayTotal);
+    console.log('👥 Real online users:', realTotal, '| Displayed:', displayTotal, 'Breakdown:', modeUserCounts);
   }, [modeUserCounts]);
 
   useEffect(() => {
@@ -339,7 +340,7 @@ const Home: React.FC = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
-              {modeUserCounts.text} online now
+              {modeUserCounts.text * 3} online now
             </span>
           </div>
         </div>
@@ -402,7 +403,7 @@ const Home: React.FC = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
-              {modeUserCounts.audio} online now
+              {modeUserCounts.audio * 3} online now
             </span>
           </div>
         </div>
@@ -465,7 +466,7 @@ const Home: React.FC = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
-              {modeUserCounts.video} online now
+              {modeUserCounts.video * 3} online now
             </span>
           </div>
         </div>
@@ -476,19 +477,19 @@ const Home: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm text-white">
             <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
               <div className="text-white/70">Online Now</div>
-              <div className="text-lg sm:text-xl font-bold">{totalOnlineUsers || statusSummary.connectedUsers}</div>
+              <div className="text-lg sm:text-xl font-bold">{totalOnlineUsers || (statusSummary.connectedUsers * 3)}</div>
             </div>
             <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
               <div className="text-white/70">In Queue</div>
-              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.total}</div>
+              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.total * 3}</div>
             </div>
             <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
               <div className="text-white/70">Voice Queue</div>
-              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.audio}</div>
+              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.audio * 3}</div>
             </div>
             <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
               <div className="text-white/70">Video Queue</div>
-              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.video}</div>
+              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.video * 3}</div>
             </div>
           </div>
         </div>

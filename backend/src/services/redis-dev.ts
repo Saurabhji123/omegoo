@@ -121,10 +121,19 @@ export class RedisService {
       req.userId !== request.userId && 
       req.mode === request.mode &&
       this.isGenderCompatible(request, req) &&
-      (now - req.timestamp) < 120000 // Match with users waiting less than 2 minutes (more generous)
+      (now - req.timestamp) < 300000 // Match with users waiting less than 5 minutes (more generous)
     );
 
     console.log(`👥 Eligible matches found: ${eligibleQueue.length}`);
+    
+    if (eligibleQueue.length > 0) {
+      console.log(`👥 Queue details:`, eligibleQueue.map(r => ({
+        userId: r.userId,
+        waitTime: Math.round((now - r.timestamp) / 1000) + 's',
+        gender: r.userGender,
+        preference: r.preferences?.genderPreference
+      })));
+    }
 
     if (eligibleQueue.length > 0) {
       // Get the user who has been waiting the longest
@@ -138,8 +147,8 @@ export class RedisService {
       return match;
     }
 
-    // Clean up very old requests (older than 5 minutes)
-  const activeQueue = queue.filter(req => (now - req.timestamp) < 300000);
+    // Clean up very old requests (older than 10 minutes)
+    const activeQueue = queue.filter(req => (now - req.timestamp) < 600000);
     this.queues.set(key, activeQueue);
     
     if (activeQueue.length !== queue.length) {

@@ -937,6 +937,46 @@ export class SocketService {
         totalWaiting: queueStats.totalWaiting,
         mode
       });
+      
+      // Retry matching every 2 seconds for up to 30 seconds
+      let retryCount = 0;
+      const maxRetries = 15;
+      const retryInterval = setInterval(async () => {
+        retryCount++;
+        
+        if (retryCount >= maxRetries) {
+          clearInterval(retryInterval);
+          console.log(`⏱️ Max retries reached for ${socket.userId}, stopping auto-retry`);
+          return;
+        }
+        
+        // Check if user is still waiting (not in active session)
+        let isStillWaiting = true;
+        for (const [sessionId, session] of this.activeSessions.entries()) {
+          if (session.user1 === socket.userId || session.user2 === socket.userId) {
+            isStillWaiting = false;
+            clearInterval(retryInterval);
+            console.log(`✅ User ${socket.userId} already matched in session ${sessionId}, stopping retry`);
+            break;
+          }
+        }
+        
+        if (!isStillWaiting) return;
+        
+        console.log(`🔄 Retry #${retryCount} for ${socket.userId}...`);
+        const retryMatch = await DevRedisService.findMatch(matchRequest);
+        
+        if (retryMatch) {
+          clearInterval(retryInterval);
+          console.log(`✅ Retry match found for ${socket.userId}!`);
+          
+          // Remove from queue and create session (same logic as above)
+          await DevRedisService.removeFromMatchQueue(socket.userId!, mode);
+          
+          // Call handleFindMatch again to create the session
+          await this.handleFindMatch(socket, data);
+        }
+      }, 2000);
     }
   }
 
