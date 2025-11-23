@@ -138,13 +138,13 @@ class ARFilterService {
     
     switch (preset) {
       case 'low':
-        this.detectionFrequency = 3; // Detect every 3 frames
+        this.detectionFrequency = 4; // Detect every 4 frames
         this.currentResolution = { width: 480, height: 360 };
         this.adaptiveResolution = true;
         break;
       case 'medium':
-        this.detectionFrequency = 2; // Detect every 2 frames
-        this.currentResolution = { width: 640, height: 480 };
+        this.detectionFrequency = 3; // Detect every 3 frames
+        this.currentResolution = { width: 560, height: 420 };
         this.adaptiveResolution = true;
         break;
       case 'high':
@@ -319,10 +319,10 @@ class ARFilterService {
         };
       });
       
-      // Create canvas for processing
+      // Create canvas for processing based on selected quality preset
       this.canvas = document.createElement('canvas');
-      this.canvas.width = AR_CONSTANTS.CANVAS_WIDTH;
-      this.canvas.height = AR_CONSTANTS.CANVAS_HEIGHT;
+      this.canvas.width = this.currentResolution.width;
+      this.canvas.height = this.currentResolution.height;
       this.ctx = this.canvas.getContext('2d', { 
         alpha: false,
         desynchronized: true, // Reduce latency
@@ -362,7 +362,8 @@ class ARFilterService {
     const processFrame = async () => {
       if (!this.videoElement || !this.canvas || !this.ctx) return;
       
-      const startTime = performance.now();
+      const now = performance.now();
+      const startTime = now;
       
       try {
         const blurEnabled = (this.blurState === 'active' || this.blurState === 'manual') && this.blurIntensity > 0;
@@ -398,6 +399,10 @@ class ARFilterService {
         const renderTime = performance.now() - startTime;
         this.performanceMetrics.renderTime = renderTime;
         this.updatePerformanceMetrics(renderTime);
+        if (now - this.lastPerformanceCheck >= 1500) {
+          this.adjustPerformance();
+          this.lastPerformanceCheck = now;
+        }
         
       } catch (error) {
         console.error('❌ Error in processing loop:', error);
@@ -422,12 +427,7 @@ class ARFilterService {
 
       if (faces && faces.length > 0) {
         const face = faces[0];
-        const keypoints = (face.keypoints || []).map((kp: any) => ({
-          x: kp.x,
-          y: kp.y,
-          z: kp.z ?? 0,
-          name: kp.name,
-        }));
+        const keypoints = this.normalizeKeypoints(face.keypoints || []);
 
         const landmarks: FaceLandmarks = {
           keypoints,
@@ -518,6 +518,24 @@ class ARFilterService {
     this.ctx.restore();
   }
 
+  private toPixelCoordinate(value: number, max: number): number {
+    if (!max || max <= 1) {
+      return value;
+    }
+    return value <= 1 ? value * max : value;
+  }
+
+  private normalizeKeypoints(keypoints: any[]): Array<{ x: number; y: number; z: number; name?: string }> {
+    const videoWidth = this.videoElement?.videoWidth || this.currentResolution.width;
+    const videoHeight = this.videoElement?.videoHeight || this.currentResolution.height;
+    return keypoints.map((kp: any) => ({
+      x: this.toPixelCoordinate(kp.x, videoWidth),
+      y: this.toPixelCoordinate(kp.y, videoHeight),
+      z: kp.z ?? 0,
+      name: kp.name,
+    }));
+  }
+
   /**
    * Draw mask overlay on canvas
    */
@@ -532,8 +550,10 @@ class ARFilterService {
     }
     
     const keypoints = landmarks.keypoints;
-    const scaleX = this.canvas.width / this.videoElement!.videoWidth;
-    const scaleY = this.canvas.height / this.videoElement!.videoHeight;
+    const videoWidth = this.videoElement?.videoWidth || this.currentResolution.width;
+    const videoHeight = this.videoElement?.videoHeight || this.currentResolution.height;
+    const scaleX = this.canvas.width / videoWidth;
+    const scaleY = this.canvas.height / videoHeight;
     
     // Draw mask based on type
     switch (this.currentMask) {
@@ -647,8 +667,10 @@ class ARFilterService {
     
     // Draw simple colored overlay as fallback
     const keypoints = landmarks.keypoints;
-    const scaleX = this.canvas!.width / this.videoElement!.videoWidth;
-    const scaleY = this.canvas!.height / this.videoElement!.videoHeight;
+    const videoWidth = this.videoElement?.videoWidth || this.currentResolution.width;
+    const videoHeight = this.videoElement?.videoHeight || this.currentResolution.height;
+    const scaleX = this.canvas!.width / videoWidth;
+    const scaleY = this.canvas!.height / videoHeight;
     
     this.ctx.save();
     this.ctx.globalAlpha = 0.7;

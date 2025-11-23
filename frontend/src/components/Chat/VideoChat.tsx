@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
 import WebRTCService from '../../services/webrtc';
-import { 
+import {
   VideoCameraIcon,
   VideoCameraSlashIcon,
   MicrophoneIcon,
@@ -11,7 +11,9 @@ import {
   SpeakerXMarkIcon,
   ChatBubbleLeftRightIcon,
   PaperAirplaneIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline';
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
 import ReportModal from './ReportModal';
@@ -1585,6 +1587,13 @@ const VideoChat: React.FC = () => {
     }
   };
 
+  const blurEnabled = blurState === 'active' || blurState === 'manual';
+  const blurButtonTooltip = blurEnabled
+    ? blurState === 'manual'
+      ? 'Your video is hidden. Tap to reveal.'
+      : `Auto reveal in ${Math.max(revealCountdown, 0)}s. Tap to show now.`
+    : 'Blur your video before revealing yourself.';
+
   return (
     <div className="fixed inset-0 bg-gray-900 flex flex-col lg:flex-row">
       {/* Main Video Area */}
@@ -1691,7 +1700,7 @@ const VideoChat: React.FC = () => {
                 )}
                 
                 {/* Omegoo Watermark - Floating with animation */}
-                <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black bg-opacity-40 backdrop-blur-sm px-3 py-2 rounded-xl border border-white border-opacity-20 animate-pulse">
+                <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg-black bg-opacity-40 backdrop-blur-sm px-3 py-2 rounded-xl border border-white border-opacity-20 animate-pulse">
                   <img 
                     src="/logo512.png" 
                     alt="Omegoo" 
@@ -1894,43 +1903,29 @@ const VideoChat: React.FC = () => {
                 )}
               </div>
 
-              {/* Blur Action Button */}
-              {blurState === 'active' || blurState === 'manual' ? (
+              {/* Blur Toggle */}
+              <div className="relative">
                 <button
-                  onClick={handleRevealVideo}
-                  className="px-3 py-2 lg:px-4 lg:py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs lg:text-sm font-medium transition-colors shadow-lg touch-manipulation flex items-center space-x-1"
-                  title="Reveal your video"
+                  onClick={blurEnabled ? handleRevealVideo : enableManualBlur}
+                  className={`p-2 lg:p-3 rounded-full ${
+                    blurEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600'
+                  } text-white transition-colors touch-manipulation`}
+                  title={blurButtonTooltip}
+                  aria-label={blurEnabled ? 'Reveal my video' : 'Blur my video'}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 lg:w-4 lg:h-4">
-                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
-                    <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>{blurState === 'manual' ? 'Reveal Video' : `Reveal (${revealCountdown}s)`}</span>
+                  {blurEnabled ? (
+                    <EyeSlashIcon className="w-4 h-4 lg:w-5 lg:h-5" />
+                  ) : (
+                    <EyeIcon className="w-4 h-4 lg:w-5 lg:h-5" />
+                  )}
                 </button>
-              ) : (
-                <button
-                  onClick={enableManualBlur}
-                  className="px-3 py-2 lg:px-4 lg:py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs lg:text-sm font-medium transition-colors shadow-lg touch-manipulation flex items-center space-x-1"
-                  title="Blur your video"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 lg:w-4 lg:h-4">
-                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
-                    <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Blur My Video</span>
-                </button>
-              )}
 
-              {/* Blur Active Indicator */}
-              {(blurState === 'active' || blurState === 'manual') && (
-                <div className="absolute -top-8 right-0 bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg flex items-center space-x-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
-                    <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.029 10.029 0 003.3-4.38 1.651 1.651 0 000-1.185A10.004 10.004 0 009.999 3a9.956 9.956 0 00-4.744 1.194L3.28 2.22zM7.752 6.69l1.092 1.092a2.5 2.5 0 013.374 3.373l1.091 1.092a4 4 0 00-5.557-5.557z" clipRule="evenodd" />
-                    <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 01-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 010-1.186A10.007 10.007 0 012.839 6.02L6.07 9.252a4 4 0 004.678 4.678z" />
-                  </svg>
-                  <span>{blurState === 'manual' ? 'Video Hidden' : `Blurred (${revealCountdown}s)`}</span>
-                </div>
-              )}
+                {blurEnabled && (
+                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] lg:text-xs px-2 py-1 rounded-full shadow-lg whitespace-nowrap">
+                    {blurState === 'manual' ? 'Video Hidden' : `Reveal in ${Math.max(revealCountdown, 0)}s`}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
