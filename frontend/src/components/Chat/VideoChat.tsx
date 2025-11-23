@@ -241,6 +241,36 @@ const VideoChat: React.FC = () => {
     applySpeakerState();
   }, [isSpeakerOn, applySpeakerState]);
 
+  // Apply CSS filter directly to local video element when mask changes
+  useEffect(() => {
+    if (localVideoRef.current) {
+      let filterString = 'none';
+      
+      switch (selectedMask) {
+        case 'sunglasses':
+          filterString = 'hue-rotate(210deg) brightness(1.1) contrast(1.2)';
+          console.log('🎨 Applied sunglasses filter to video element');
+          break;
+        case 'dog_ears':
+          filterString = 'sepia(0.7) brightness(1.05) contrast(1.1)';
+          console.log('🎨 Applied dog ears filter to video element');
+          break;
+        case 'cat_ears':
+          filterString = 'contrast(1.4) saturate(1.2) brightness(1.05)';
+          console.log('🎨 Applied cat ears filter to video element');
+          break;
+        case 'party_hat':
+          filterString = 'saturate(1.8) brightness(1.1) contrast(1.15) hue-rotate(10deg)';
+          console.log('🎨 Applied party hat filter to video element');
+          break;
+        default:
+          console.log('🎨 Removed filter from video element');
+      }
+      
+      localVideoRef.current.style.filter = filterString;
+    }
+  }, [selectedMask]);
+
   // Handle window resize for responsive video aspect ratio
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
