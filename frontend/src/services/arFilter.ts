@@ -354,7 +354,15 @@ class ARFilterService {
       const startTime = performance.now();
       
       try {
-        // Draw video frame to canvas
+        // Apply canvas filters based on mask type BEFORE drawing (CSS filters)
+        if (this.currentMask !== 'none') {
+          this.applyCanvasFilter(this.currentMask);
+        } else {
+          // Reset filter when no mask
+          (this.ctx as any).filter = 'none';
+        }
+        
+        // Draw video frame to canvas (with filter applied)
         this.ctx.drawImage(
           this.videoElement,
           0,
@@ -363,10 +371,8 @@ class ARFilterService {
           this.canvas.height
         );
         
-        // Apply canvas filters based on mask type (no face detection needed)
-        if (this.currentMask !== 'none') {
-          this.applyCanvasFilter(this.currentMask);
-        }
+        // Reset filter after drawing
+        (this.ctx as any).filter = 'none';
         
         // Apply blur if active
         if (this.blurState === 'active' && this.blurIntensity > 0) {
@@ -413,63 +419,42 @@ class ARFilterService {
   }
 
   /**
-   * Apply simple canvas filter (no face detection)
+   * Apply simple canvas filter using CSS filter property (FAST!)
    */
   private applyCanvasFilter(filterType: FaceMaskType): void {
     if (!this.ctx || !this.canvas) return;
     
-    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-    const data = imageData.data;
+    // Apply CSS filter to canvas context for MUCH better performance
+    let filterString = 'none';
     
     switch (filterType) {
       case 'sunglasses':
-        // Cool blue tint
-        for (let i = 0; i < data.length; i += 4) {
-          data[i] = Math.min(255, data[i] * 0.9); // Red
-          data[i + 1] = Math.min(255, data[i + 1] * 0.95); // Green
-          data[i + 2] = Math.min(255, data[i + 2] * 1.1); // Blue
-        }
+        // Cool blue tint - using hue rotation and brightness
+        filterString = 'hue-rotate(210deg) brightness(1.1) contrast(1.2)';
+        console.log('🎨 Applied sunglasses filter (cool blue)');
         break;
         
       case 'dog_ears':
         // Warm sepia tone
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          data[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
-          data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
-          data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
-        }
+        filterString = 'sepia(0.7) brightness(1.05) contrast(1.1)';
+        console.log('🎨 Applied dog ears filter (warm sepia)');
         break;
         
       case 'cat_ears':
-        // High contrast
-        for (let i = 0; i < data.length; i += 4) {
-          const factor = 1.3;
-          data[i] = Math.min(255, ((data[i] - 128) * factor + 128));
-          data[i + 1] = Math.min(255, ((data[i + 1] - 128) * factor + 128));
-          data[i + 2] = Math.min(255, ((data[i + 2] - 128) * factor + 128));
-        }
+        // High contrast with slight saturation
+        filterString = 'contrast(1.4) saturate(1.2) brightness(1.05)';
+        console.log('🎨 Applied cat ears filter (high contrast)');
         break;
         
       case 'party_hat':
         // Vibrant saturation boost
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          const gray = (r + g + b) / 3;
-          const saturation = 1.5;
-          data[i] = Math.min(255, gray + (r - gray) * saturation);
-          data[i + 1] = Math.min(255, gray + (g - gray) * saturation);
-          data[i + 2] = Math.min(255, gray + (b - gray) * saturation);
-        }
+        filterString = 'saturate(1.8) brightness(1.1) contrast(1.15) hue-rotate(10deg)';
+        console.log('🎨 Applied party hat filter (vibrant)');
         break;
     }
     
-    this.ctx.putImageData(imageData, 0, 0);
-    console.log(`🎨 Applied filter: ${filterType}`);
+    // Apply filter to canvas context (this affects subsequent drawImage calls)
+    (this.ctx as any).filter = filterString;
   }
 
   /**
@@ -687,8 +672,9 @@ class ARFilterService {
    * Change mask type
    */
   setMask(maskType: FaceMaskType): void {
-    console.log(`🎭 Changing mask to: ${maskType}`);
+    console.log(`🎭 [AR Filter] Changing mask from "${this.currentMask}" to "${maskType}"`);
     this.currentMask = maskType;
+    console.log(`✅ [AR Filter] Mask updated! Processing loop will apply on next frame.`);
   }
 
   /**
