@@ -544,16 +544,23 @@ class ARFilterService {
     
     const maskImage = this.maskImages.get(this.currentMask);
     if (!maskImage || !this.maskImagesLoaded.has(this.currentMask)) {
-      // Fallback: draw simple overlay
+      console.log(`⚠️ Mask image not loaded for ${this.currentMask}, using fallback. Loaded masks:`, Array.from(this.maskImagesLoaded));
       this.drawFallbackMask(landmarks);
       return;
     }
     
     const keypoints = landmarks.keypoints;
+    if (!keypoints || keypoints.length === 0) {
+      console.warn('⚠️ No keypoints available for mask drawing');
+      return;
+    }
+    
     const videoWidth = this.videoElement?.videoWidth || this.currentResolution.width;
     const videoHeight = this.videoElement?.videoHeight || this.currentResolution.height;
     const scaleX = this.canvas.width / videoWidth;
     const scaleY = this.canvas.height / videoHeight;
+    
+    console.log(`🎭 Drawing ${this.currentMask} mask. Canvas: ${this.canvas.width}x${this.canvas.height}, Video: ${videoWidth}x${videoHeight}, Scale: ${scaleX.toFixed(2)}x${scaleY.toFixed(2)}, Keypoints: ${keypoints.length}`);
     
     // Draw mask based on type
     switch (this.currentMask) {
@@ -582,30 +589,33 @@ class ARFilterService {
     const leftEyeInner = keypoints[133]; // Left eye inner corner  
     const rightEyeInner = keypoints[362]; // Right eye inner corner
     
-    if (!leftEyeOuter || !rightEyeOuter || !leftEyeInner || !rightEyeInner) return;
+    if (!leftEyeOuter || !rightEyeOuter || !leftEyeInner || !rightEyeInner) {
+      console.log('⚠️ Missing eye landmarks for sunglasses');
+      return;
+    }
     
-    // Calculate center between all eye points for better positioning
-    const leftEyeX = (leftEyeOuter.x + leftEyeInner.x) / 2;
-    const leftEyeY = (leftEyeOuter.y + leftEyeInner.y) / 2;
-    const rightEyeX = (rightEyeOuter.x + rightEyeInner.x) / 2;
-    const rightEyeY = (rightEyeOuter.y + rightEyeInner.y) / 2;
+    // Keypoints are already in pixel coordinates, just need canvas scaling
+    const leftEyeX = ((leftEyeOuter.x + leftEyeInner.x) / 2) * scaleX;
+    const leftEyeY = ((leftEyeOuter.y + leftEyeInner.y) / 2) * scaleY;
+    const rightEyeX = ((rightEyeOuter.x + rightEyeInner.x) / 2) * scaleX;
+    const rightEyeY = ((rightEyeOuter.y + rightEyeInner.y) / 2) * scaleY;
     
     const eyeDistance = Math.hypot(
-      (rightEyeX - leftEyeX) * scaleX,
-      (rightEyeY - leftEyeY) * scaleY
+      rightEyeX - leftEyeX,
+      rightEyeY - leftEyeY
     );
     
-    const centerX = ((leftEyeX + rightEyeX) / 2) * scaleX;
-    const centerY = ((leftEyeY + rightEyeY) / 2) * scaleY;
+    const centerX = (leftEyeX + rightEyeX) / 2;
+    const centerY = (leftEyeY + rightEyeY) / 2;
     
     const angle = Math.atan2(
-      (rightEyeY - leftEyeY) * scaleY,
-      (rightEyeX - leftEyeX) * scaleX
+      rightEyeY - leftEyeY,
+      rightEyeX - leftEyeX
     );
     
     // Larger size for better visibility
-    const width = eyeDistance * 3.2 * this.maskScale;
-    const height = width * 0.5;
+    const width = eyeDistance * 2.8 * this.maskScale;
+    const height = width * 0.45;
     
     this.ctx.save();
     this.ctx.translate(centerX, centerY);
@@ -613,6 +623,8 @@ class ARFilterService {
     this.ctx.globalAlpha = this.maskOpacity;
     this.ctx.drawImage(image, -width / 2, -height / 2, width, height);
     this.ctx.restore();
+    
+    console.log('🕶️ Drew sunglasses at', { centerX, centerY, width, height, angle });
   }
 
   /**
@@ -628,24 +640,30 @@ class ARFilterService {
     const leftCheek = keypoints[234]; // Left cheek
     const rightCheek = keypoints[454]; // Right cheek
     
-    if (!foreheadCenter || !foreheadLeft || !foreheadRight || !leftCheek || !rightCheek) return;
+    if (!foreheadCenter || !foreheadLeft || !foreheadRight || !leftCheek || !rightCheek) {
+      console.log('⚠️ Missing landmarks for ears');
+      return;
+    }
     
+    // Apply canvas scaling to pixel coordinates
     const headWidth = Math.hypot(
       (rightCheek.x - leftCheek.x) * scaleX,
       (rightCheek.y - leftCheek.y) * scaleY
     );
     
     const centerX = ((foreheadLeft.x + foreheadRight.x) / 2) * scaleX;
-    const centerY = foreheadCenter.y * scaleY - headWidth * 0.15;
+    const centerY = foreheadCenter.y * scaleY - headWidth * 0.2;
     
     // Bigger ears for better visibility
-    const width = headWidth * 1.8 * this.maskScale;
-    const height = width * 1.3;
+    const width = headWidth * 1.6 * this.maskScale;
+    const height = width * 1.2;
     
     this.ctx.save();
     this.ctx.globalAlpha = this.maskOpacity;
     this.ctx.drawImage(image, centerX - width / 2, centerY - height, width, height);
     this.ctx.restore();
+    
+    console.log('🐶 Drew ears at', { centerX, centerY, width, height });
   }
 
   /**
@@ -659,7 +677,10 @@ class ARFilterService {
     const leftTemple = keypoints[21];
     const rightTemple = keypoints[251];
     
-    if (!foreheadCenter || !chin || !leftTemple || !rightTemple) return;
+    if (!foreheadCenter || !chin || !leftTemple || !rightTemple) {
+      console.log('⚠️ Missing landmarks for party hat');
+      return;
+    }
     
     const headHeight = Math.abs((foreheadCenter.y - chin.y) * scaleY);
     const headWidth = Math.hypot(
@@ -668,16 +689,18 @@ class ARFilterService {
     );
     
     const centerX = foreheadCenter.x * scaleX;
-    const centerY = foreheadCenter.y * scaleY - headHeight * 0.1;
+    const centerY = foreheadCenter.y * scaleY - headHeight * 0.15;
     
     // Bigger hat for visibility
-    const width = headWidth * 1.0 * this.maskScale;
-    const height = width * 1.6;
+    const width = headWidth * 1.1 * this.maskScale;
+    const height = width * 1.5;
     
     this.ctx.save();
     this.ctx.globalAlpha = this.maskOpacity;
     this.ctx.drawImage(image, centerX - width / 2, centerY - height, width, height);
     this.ctx.restore();
+    
+    console.log('🎉 Drew party hat at', { centerX, centerY, width, height });
   }
 
   /**
