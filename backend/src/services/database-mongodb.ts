@@ -822,7 +822,7 @@ const GuestUserModel: Model<IGuestUserDoc> = mongoose.model<IGuestUserDoc>('Gues
 // Favourites Schema
 const FavouriteSchema = new Schema<IFavouriteDoc>({
   userId: { type: String, required: true, index: true },
-  favouriteUserId: { type: String, required: true, index: true },
+  favouriteUserId: { type: String, required: true }, // Removed duplicate index - defined in schema.index() below
   favouriteUserGender: { type: String },
   favouriteUserInterests: { type: [String], default: [] },
   addedAt: { type: Date, default: Date.now, index: true }
