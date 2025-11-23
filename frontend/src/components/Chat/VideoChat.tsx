@@ -357,17 +357,17 @@ const VideoChat: React.FC = () => {
     console.log('🔌 WebRTC Connection State Changed:', state);
 
     if (state === 'disconnected' || state === 'failed' || state === 'closed') {
-      console.log('⚠️ WebRTC connection lost, triggering reconnection...');
+      console.log('⚠️ WebRTC connection lost - Remote user disconnected!');
       console.log('Current state (from refs):', {
         isMatchConnected: isMatchConnectedRef.current,
         sessionId: sessionIdRef.current
       });
 
+      // CRITICAL FIX: Auto-find next partner when remote disconnects
       if (isMatchConnectedRef.current && sessionIdRef.current) {
-        setIsMatchConnected(false);
-        setCurrentState('finding');
-        setIsSearching(true);
-
+        console.log('🔄 Starting auto-search for next partner...');
+        
+        // Clean up remote stream
         if (remoteVideoRef.current) {
           if (remoteVideoRef.current.srcObject) {
             const stream = remoteVideoRef.current.srcObject as MediaStream;
@@ -378,13 +378,31 @@ const VideoChat: React.FC = () => {
           remoteVideoRef.current.load();
         }
 
-        addMessage('Connection lost. Finding someone new...', false);
+        // Update UI state
+        setIsMatchConnected(false);
+        setCurrentState('finding');
+        setIsSearching(true);
+        addMessage('Partner disconnected. Finding someone new...', false);
+        
+        // Clean up session
+        if (socket && sessionIdRef.current) {
+          socket.emit('end_session', { sessionId: sessionIdRef.current });
+        }
+        setSessionId(null);
+        setPartnerId('');
+        
+        // Force cleanup WebRTC
+        if (webRTCRef.current) {
+          webRTCRef.current.forceDisconnect();
+        }
+        
+        // Auto-search for next partner after 500ms
         setTimeout(() => {
           if (socket && socket.connected) {
-            console.log('🔍 Auto-searching after WebRTC disconnect...');
+            console.log('🔍 Emitting find_match for next partner...');
             socket.emit('find_match', { mode: 'video' });
           }
-        }, 1000);
+        }, 500);
       }
     } else if (state === 'connected') {
       setIsMatchConnected(true);
@@ -446,6 +464,16 @@ const VideoChat: React.FC = () => {
         setIsSearching(false);
         setMessages([]);
         // Match found - no system message needed
+        
+        // 🎭 BLUR RESTART: Check if blur should be applied for this new match
+        const blurEnabled = localStorage.getItem('omegoo_blur_enabled') === 'true';
+        const blurDuration = parseInt(localStorage.getItem('omegoo_blur_duration') || '5', 10);
+        if (blurEnabled && blurDuration > 0) {
+          console.log(`👁️ Re-applying blur for new match: ${blurDuration}s countdown`);
+          setTimeout(() => {
+            startBlurCountdown(blurDuration);
+          }, 1000); // Small delay to ensure video stream is ready
+        }
         
         // Configure WebRTC service with match details
         if (webRTCRef.current) {
@@ -1783,6 +1811,26 @@ const VideoChat: React.FC = () => {
                         </button>
                       ))}
                     </div>
+                    
+                    {/* Stop Blur Button - Only show when blur is active */}
+                    {blurState === 'active' && (
+                      <div className="mt-2 pt-2 border-t border-gray-700">
+                        <button
+                          onClick={() => {
+                            revealVideo();
+                            localStorage.setItem('omegoo_blur_enabled', 'false');
+                            setShowMaskMenu(false);
+                          }}
+                          className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="text-sm font-medium">Stop Blur ({revealCountdown}s)</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
