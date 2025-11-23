@@ -7,7 +7,7 @@
 export type FaceMaskType = 'none' | 'sunglasses' | 'dog_ears' | 'cat_ears' | 'party_hat';
 
 // Blur state
-export type BlurState = 'active' | 'revealed' | 'disabled';
+export type BlurState = 'active' | 'manual' | 'revealed' | 'disabled';
 
 // Face landmark points from TensorFlow FaceMesh
 export interface FaceLandmarks {

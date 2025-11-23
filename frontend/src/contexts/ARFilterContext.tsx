@@ -33,6 +33,7 @@ interface ARFilterContextType {
   setMask: (mask: FaceMaskType) => void;
   setBlurIntensity: (intensity: number) => void;
   startBlurCountdown: (duration?: number) => void;
+  enableManualBlur: () => void;
   revealVideo: () => void;
   getProcessedStream: (stream: MediaStream) => Promise<MediaStream>;
   stopProcessing: () => void;
@@ -280,6 +281,23 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
+  const enableManualBlur = useCallback(() => {
+    if (blurState === 'manual') {
+      return;
+    }
+
+    console.log('👁️ Manually enabling blur...');
+
+    setBlurState('manual');
+    setRevealCountdown(0);
+    arFilterService.setBlurState('manual');
+
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+  }, [blurState]);
+
   /**
    * Reset to defaults
    */
@@ -341,6 +359,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setMask,
     setBlurIntensity,
     startBlurCountdown,
+    enableManualBlur,
     revealVideo,
     getProcessedStream,
     stopProcessing,

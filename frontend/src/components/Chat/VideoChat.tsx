@@ -32,7 +32,7 @@ const VideoChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
-  const { selectedMask, blurState, revealCountdown, getProcessedStream, revealVideo, initialize: initializeAR, setMask, startBlurCountdown, stopProcessing } = useARFilter();
+  const { selectedMask, blurState, revealCountdown, getProcessedStream, revealVideo, initialize: initializeAR, setMask, startBlurCountdown, enableManualBlur, stopProcessing } = useARFilter();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -252,7 +252,7 @@ const VideoChat: React.FC = () => {
       return;
     }
 
-    const shouldUseAR = selectedMask !== 'none' || blurState === 'active';
+    const shouldUseAR = selectedMask !== 'none' || blurState === 'active' || blurState === 'manual';
 
     if (shouldUseAR) {
       if (arActiveRef.current && processedStreamRef.current) {
@@ -1848,22 +1848,45 @@ const VideoChat: React.FC = () => {
                       ))}
                     </div>
                     
-                    {/* Stop Blur Button - Only show when blur is active */}
-                    {blurState === 'active' && (
+                    {blurState === 'active' || blurState === 'manual' ? (
                       <div className="mt-2 pt-2 border-t border-gray-700">
                         <button
                           onClick={() => {
-                            revealVideo();
-                            localStorage.setItem('omegoo_blur_enabled', 'false');
+                            handleRevealVideo();
+                            if (blurState === 'active') {
+                              localStorage.setItem('omegoo_blur_enabled', 'false');
+                            }
                             setShowMaskMenu(false);
                           }}
-                          className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+                          className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                            blurState === 'manual'
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                              : 'bg-red-600 hover:bg-red-700 text-white'
+                          }`}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          <span className="text-sm font-medium">Stop Blur ({revealCountdown}s)</span>
+                          <span className="text-sm font-medium">
+                            {blurState === 'manual' ? 'Reveal Video' : `Stop Blur (${revealCountdown}s)`}
+                          </span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-2 pt-2 border-t border-gray-700">
+                        <button
+                          onClick={() => {
+                            enableManualBlur();
+                            setShowMaskMenu(false);
+                          }}
+                          className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                            <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06L16.03 15.03a10.03 10.03 0 003.27-4.38 1.651 1.651 0 000-1.186A10.004 10.004 0 009.998 3a9.956 9.956 0 00-4.744 1.194L3.28 2.22z" clipRule="evenodd" />
+                            <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 01-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 010-1.186A10.007 10.007 0 012.839 6.02L6.07 9.252a4 4 0 004.678 4.678z" />
+                          </svg>
+                          <span className="text-sm font-medium">Blur My Video</span>
                         </button>
                       </div>
                     )}
@@ -1871,8 +1894,8 @@ const VideoChat: React.FC = () => {
                 )}
               </div>
 
-              {/* Reveal Me Button - Only when blur is active */}
-              {blurState === 'active' && (
+              {/* Blur Action Button */}
+              {blurState === 'active' || blurState === 'manual' ? (
                 <button
                   onClick={handleRevealVideo}
                   className="px-3 py-2 lg:px-4 lg:py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs lg:text-sm font-medium transition-colors shadow-lg touch-manipulation flex items-center space-x-1"
@@ -1882,18 +1905,30 @@ const VideoChat: React.FC = () => {
                     <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
                     <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                   </svg>
-                  <span>Reveal ({revealCountdown}s)</span>
+                  <span>{blurState === 'manual' ? 'Reveal Video' : `Reveal (${revealCountdown}s)`}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={enableManualBlur}
+                  className="px-3 py-2 lg:px-4 lg:py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs lg:text-sm font-medium transition-colors shadow-lg touch-manipulation flex items-center space-x-1"
+                  title="Blur your video"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 lg:w-4 lg:h-4">
+                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                    <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Blur My Video</span>
                 </button>
               )}
 
               {/* Blur Active Indicator */}
-              {blurState === 'active' && (
+              {(blurState === 'active' || blurState === 'manual') && (
                 <div className="absolute -top-8 right-0 bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg flex items-center space-x-1">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
                     <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.029 10.029 0 003.3-4.38 1.651 1.651 0 000-1.185A10.004 10.004 0 009.999 3a9.956 9.956 0 00-4.744 1.194L3.28 2.22zM7.752 6.69l1.092 1.092a2.5 2.5 0 013.374 3.373l1.091 1.092a4 4 0 00-5.557-5.557z" clipRule="evenodd" />
                     <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 01-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 010-1.186A10.007 10.007 0 012.839 6.02L6.07 9.252a4 4 0 004.678 4.678z" />
                   </svg>
-                  <span>Video Blurred</span>
+                  <span>{blurState === 'manual' ? 'Video Hidden' : `Blurred (${revealCountdown}s)`}</span>
                 </div>
               )}
             </div>
