@@ -275,6 +275,48 @@ class WebRTCService {
     }
   }
 
+  // Replace local stream with processed stream (for AR filters)
+  // This ensures remote peer sees the filtered video
+  async replaceLocalStream(processedStream: MediaStream): Promise<void> {
+    console.log('🎭 Replacing local stream with processed stream for remote transmission');
+    
+    if (!this.peerConnection) {
+      console.warn('⚠️ No peer connection, just updating local stream reference');
+      this.localStream = processedStream;
+      return;
+    }
+
+    const senders = this.peerConnection.getSenders();
+    const processedVideoTrack = processedStream.getVideoTracks()[0];
+    const processedAudioTrack = processedStream.getAudioTracks()[0];
+
+    // Replace video track in all video senders
+    const videoSenders = senders.filter(s => s.track?.kind === 'video');
+    for (const sender of videoSenders) {
+      try {
+        await sender.replaceTrack(processedVideoTrack);
+        console.log('✅ Replaced video track with processed version (remote will see filters)');
+      } catch (error) {
+        console.error('❌ Failed to replace video track:', error);
+      }
+    }
+
+    // Replace audio track in all audio senders
+    const audioSenders = senders.filter(s => s.track?.kind === 'audio');
+    for (const sender of audioSenders) {
+      try {
+        await sender.replaceTrack(processedAudioTrack);
+        console.log('✅ Replaced audio track with processed version');
+      } catch (error) {
+        console.error('❌ Failed to replace audio track:', error);
+      }
+    }
+
+    // Update local stream reference
+    this.localStream = processedStream;
+    console.log('🎬 Local stream updated, remote peer now receives processed stream');
+  }
+
   // Create offer (caller)
   async createOffer(): Promise<RTCSessionDescriptionInit> {
     if (!this.peerConnection) {

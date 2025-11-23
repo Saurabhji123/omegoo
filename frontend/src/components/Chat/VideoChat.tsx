@@ -32,7 +32,7 @@ const VideoChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
-  const { selectedMask, blurState, revealCountdown, getProcessedStream, revealVideo, initialize: initializeAR, setMask } = useARFilter();
+  const { selectedMask, blurState, revealCountdown, getProcessedStream, revealVideo, initialize: initializeAR, setMask, startBlurCountdown } = useARFilter();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -878,6 +878,12 @@ const VideoChat: React.FC = () => {
           await initializeAR();
           processedStream = await getProcessedStream(rawStream);
           console.log('✅ AR filters applied successfully');
+          
+          // 🎬 CRITICAL: Replace WebRTC stream so remote peer sees filters
+          if (webRTCRef.current && processedStream) {
+            await webRTCRef.current.replaceLocalStream(processedStream);
+            console.log('📡 Processed stream sent to remote peer');
+          }
         } catch (error) {
           console.error('❌ Failed to apply AR filters:', error);
           // Fallback to raw stream
