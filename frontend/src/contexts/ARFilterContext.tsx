@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import arFilterService from '../services/arFilter';
+import { pythonFilterClient } from '../services/pythonFilterClient';
 import {
   FaceMaskType,
   BlurState,
@@ -70,54 +71,59 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       console.log('🎭 Initializing AR Filter Context...');
       
-      const caps = await arFilterService.initialize();
-      setCapabilities(caps);
-      setIsInitialized(true);
-      
-      // Set up performance monitoring callback
-      arFilterService.setPerformanceCallback((metrics) => {
-        setPerformanceMetrics(metrics);
+      // Try to connect to Python filter service first
+      try {
+        await pythonFilterClient.connect();
+        console.log('✅ Using Python filter backend (OpenCV)');
         
-        // Auto-disable if performance is poor
-        if (metrics.cpuUsage > AR_CONSTANTS.CPU_DISABLE_THRESHOLD || 
-            metrics.fps < AR_CONSTANTS.FPS_WARNING_THRESHOLD) {
-          console.warn('⚠️ Poor performance detected, consider disabling AR');
-        }
-      });
-      
-      // Set up face detection callback
-      arFilterService.setFaceDetectionCallback((detected, landmarks) => {
-        setFaceDetected(detected);
-        if (landmarks) {
-          setLastLandmarks(landmarks);
-        }
-      });
-      
-      // Set up error callback
-      arFilterService.setErrorCallback((error) => {
-        console.error('❌ AR Filter error:', error);
-        // Reset to safe state on error
-        setSelectedMask('none');
-        setBlurState('disabled');
-      });
-      
-      // Load preferences from localStorage
-      const savedMask = localStorage.getItem('omegoo_ar_mask');
-      if (savedMask && savedMask !== 'none') {
-        setSelectedMask(savedMask as FaceMaskType);
+        // Mock capabilities for Python backend
+        const caps: ARCapabilities = {
+          supportsFaceMesh: true,
+          supportsCanvas: true,
+          supportsOffscreenCanvas: false,
+          supportsWebGL: true,
+          supportsCaptureStream: true,
+          recommendedMasks: ['sunglasses', 'dog_ears', 'cat_ears', 'party_hat'],
+          warnings: [],
+          devicePerformance: 'high',
+        };
+        
+        setCapabilities(caps);
+        setIsInitialized(true);
+        return caps;
+      } catch (pythonError) {
+        console.warn('⚠️ Python filter service not available, falling back to JS:', pythonError);
+        
+        // Fallback to JavaScript implementation
+        const caps = await arFilterService.initialize();
+        setCapabilities(caps);
+        setIsInitialized(true);
+        
+        // Set up callbacks for JS implementation
+        arFilterService.setPerformanceCallback((metrics) => {
+          setPerformanceMetrics(metrics);
+          
+          if (metrics.cpuUsage > AR_CONSTANTS.CPU_DISABLE_THRESHOLD || 
+              metrics.fps < AR_CONSTANTS.FPS_WARNING_THRESHOLD) {
+            console.warn('⚠️ Poor performance detected, consider disabling AR');
+          }
+        });
+        
+        arFilterService.setFaceDetectionCallback((detected, landmarks) => {
+          setFaceDetected(detected);
+          if (landmarks) {
+            setLastLandmarks(landmarks);
+          }
+        });
+        
+        arFilterService.setErrorCallback((error) => {
+          console.error('❌ AR Filter error:', error);
+          setSelectedMask('none');
+          setBlurState('disabled');
+        });
+        
+        return caps;
       }
-      
-      const savedBlurDuration = localStorage.getItem('omegoo_blur_duration');
-      if (savedBlurDuration) {
-        const duration = parseInt(savedBlurDuration, 10);
-        if (duration > 0) {
-          setBlurState('active');
-          setRevealCountdown(duration);
-        }
-      }
-      
-      console.log('✅ AR Filter Context initialized');
-      return caps;
     } catch (error) {
       console.error('❌ AR Filter initialization failed:', error);
       throw error;
@@ -130,7 +136,13 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const setMask = useCallback((mask: FaceMaskType) => {
     console.log(`🎭 Setting mask: ${mask}`);
     setSelectedMask(mask);
-    arFilterService.setMask(mask);
+    
+    // Use Python client if connected, otherwise fallback to JS
+    if (pythonFilterClient.isConnected()) {
+      pythonFilterClient.setFilter(mask);
+    } else {
+      arFilterService.setMask(mask);
+    }
     
     // Save to localStorage
     localStorage.setItem('omegoo_ar_mask', mask);
@@ -216,7 +228,17 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         await initialize();
       }
       
-      // Start AR processing
+      // Use Python backend if connected
+      if (pythonFilterClient.isConnected()) {
+        console.log('🐍 Using Python filter backend');
+        const processedStream = await pythonFilterClient.startProcessing(stream, selectedMask);
+        currentStreamRef.current = processedStream;
+        setIsProcessing(false);
+        return processedStream;
+      }
+      
+      // Fallback to JavaScript implementation
+      console.log('📜 Using JavaScript filter fallback');
       const processedStream = await arFilterService.startProcessing(
         stream,
         selectedMask,
@@ -242,7 +264,12 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const stopProcessing = useCallback(() => {
     console.log('🛑 Stopping AR processing...');
     
+    // Stop both Python and JS services
+    if (pythonFilterClient.isConnected()) {
+      pythonFilterClient.stopProcessing();
+    }
     arFilterService.stopProcessing();
+    
     currentStreamRef.current = null;
     setIsProcessing(false);
     setFaceDetected(false);

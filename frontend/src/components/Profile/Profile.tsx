@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import { useNavigate } from 'react-router-dom';
@@ -10,8 +10,7 @@ import {
   ArrowRightOnRectangleIcon,
   CurrencyDollarIcon,
   StarIcon,
-  TrashIcon,
-  XMarkIcon
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
@@ -40,11 +39,16 @@ const Profile: React.FC = () => {
   const [favourites, setFavourites] = useState<any[]>([]);
   const [loadingFavourites, setLoadingFavourites] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
-  const [connectingUser, setConnectingUser] = useState<any>(null);
-  const [connectMode, setConnectMode] = useState<'text' | 'audio' | 'video'>('text');
   const [connectStatus, setConnectStatus] = useState<'idle' | 'connecting' | 'waiting' | 'unavailable' | 'success'>('idle');
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+
+  // Favourites handler functions - DEFINED EARLY to avoid hoisting issues
+  const fetchFavourites = useCallback(() => {
+    if (!socket) return;
+    setLoadingFavourites(true);
+    socket.emit('get_favourites');
+  }, [socket]);
 
   // Fetch fresh user data when profile loads
   useEffect(() => {
@@ -86,7 +90,7 @@ const Profile: React.FC = () => {
     if (activeTab === 'favourites' && socket) {
       fetchFavourites();
     }
-  }, [activeTab, socket]);
+  }, [activeTab, socket, fetchFavourites]);
 
   // Socket event listeners for favourites
   useEffect(() => {
@@ -159,18 +163,10 @@ const Profile: React.FC = () => {
       socket.off('match_found', handleMatchFound);
       socket.off('favourite_error', handleFavouriteError);
     };
-  }, [socket, navigate]);
+  }, [socket, navigate, fetchFavourites]);
 
-  // Favourites handler functions
-  const fetchFavourites = () => {
-    if (!socket) return;
-    setLoadingFavourites(true);
-    socket.emit('get_favourites');
-  };
-
+  // Other favourites handler functions
   const handleConnectWithFavourite = (favourite: any, mode: 'text' | 'audio' | 'video') => {
-    setConnectingUser(favourite);
-    setConnectMode(mode);
     setConnectStatus('connecting');
     setShowConnectModal(true);
 

@@ -354,15 +354,17 @@ class ARFilterService {
       const startTime = performance.now();
       
       try {
-        // Apply canvas filters based on mask type BEFORE drawing (CSS filters)
+        // Apply canvas filter to element for instant preview
         if (this.currentMask !== 'none') {
           this.applyCanvasFilter(this.currentMask);
         } else {
           // Reset filter when no mask
-          (this.ctx as any).filter = 'none';
+          if (this.canvas instanceof HTMLCanvasElement) {
+            (this.canvas as HTMLCanvasElement).style.filter = 'none';
+          }
         }
         
-        // Draw video frame to canvas (with filter applied)
+        // Draw video frame to canvas (filter already applied to element)
         this.ctx.drawImage(
           this.videoElement,
           0,
@@ -370,9 +372,6 @@ class ARFilterService {
           this.canvas.width,
           this.canvas.height
         );
-        
-        // Reset filter after drawing
-        (this.ctx as any).filter = 'none';
         
         // Apply blur if active
         if (this.blurState === 'active' && this.blurIntensity > 0) {
@@ -420,11 +419,12 @@ class ARFilterService {
 
   /**
    * Apply simple canvas filter using CSS filter property (FAST!)
+   * NEW: Apply to canvas element directly for instant preview visibility
    */
   private applyCanvasFilter(filterType: FaceMaskType): void {
     if (!this.ctx || !this.canvas) return;
     
-    // Apply CSS filter to canvas context for MUCH better performance
+    // Apply CSS filter DIRECTLY to canvas element for instant visual effect
     let filterString = 'none';
     
     switch (filterType) {
@@ -453,8 +453,10 @@ class ARFilterService {
         break;
     }
     
-    // Apply filter to canvas context (this affects subsequent drawImage calls)
-    (this.ctx as any).filter = filterString;
+    // Apply filter DIRECTLY to canvas element (not context) for instant preview
+    if (this.canvas instanceof HTMLCanvasElement) {
+      (this.canvas as HTMLCanvasElement).style.filter = filterString;
+    }
   }
 
   /**
@@ -674,7 +676,17 @@ class ARFilterService {
   setMask(maskType: FaceMaskType): void {
     console.log(`🎭 [AR Filter] Changing mask from "${this.currentMask}" to "${maskType}"`);
     this.currentMask = maskType;
-    console.log(`✅ [AR Filter] Mask updated! Processing loop will apply on next frame.`);
+    
+    // Apply filter immediately to canvas element for instant preview
+    if (this.canvas && this.canvas instanceof HTMLCanvasElement) {
+      if (maskType !== 'none') {
+        this.applyCanvasFilter(maskType);
+      } else {
+        (this.canvas as HTMLCanvasElement).style.filter = 'none';
+      }
+    }
+    
+    console.log(`✅ [AR Filter] Mask updated! Filter applied immediately.`);
   }
 
   /**
