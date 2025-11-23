@@ -51,7 +51,14 @@ export class SocketService {
   private static io: SocketIOServer;
   private static connectedUsers = new Map<string, string[]>(); // userId -> socketId[] (multi-device support)
   private static waitingQueue: string[] = []; // For in-memory queue management
-  private static activeSessions = new Map<string, { user1: string; user2: string; mode: string }>(); // sessionId -> users + mode
+  private static activeSessions = new Map<string, { 
+    id?: string;
+    user1: string; 
+    user2: string; 
+    mode: string;
+    startTime?: number;
+    status?: string;
+  }>(); // sessionId -> users + mode
   private static disconnectionTimers = new Map<string, NodeJS.Timeout>(); // userId -> timer for delayed cleanup
   private static chatTranscripts = new Map<string, BufferedChatMessage[]>();
   private static modePresence: Record<ChatMode, Set<string>> = {
@@ -1774,11 +1781,11 @@ export class SocketService {
       console.log(`✅ Notified partner ${partnerId} about video reveal (auto: ${isAutoReveal}, mask: ${maskType || 'none'})`);
 
       // Log AR usage analytics to MongoDB
-      if (this.databaseService) {
-        const sessionStartTime = session.startedAt?.getTime() || Date.now();
+      if (DatabaseService) {
+        const sessionStartTime = session.startTime || Date.now();
         const revealTime = Math.round((Date.now() - sessionStartTime) / 1000); // seconds since session start
         
-        this.databaseService.logARAnalytics({
+        DatabaseService.logARAnalytics({
           sessionId,
           userId: socket.userId,
           maskType: maskType || 'none',
@@ -1913,14 +1920,10 @@ export class SocketService {
         reportedUserId: partnerId,
         reporterUserId: socket.userId,
         violationType: 'inappropriate_video_request',
-        description: 'User reported video upgrade request as inappropriate',
+        description: `User reported video upgrade request as inappropriate. Transcript: ${JSON.stringify(transcript.slice(-10))}. Upgrade declined: true`,
         evidenceUrls: [],
         autoDetected: false,
-        confidenceScore: 0,
-        additionalContext: {
-          transcriptSnapshot: transcript.slice(-10), // Last 10 messages
-          upgradeDeclined: true
-        }
+        confidenceScore: 0
       });
 
       console.log(`📝 Report created for inappropriate video request in session ${sessionId}`);
@@ -2129,7 +2132,6 @@ export class SocketService {
 
     // Create session
     this.activeSessions.set(sessionId, {
-      id: sessionId,
       user1: socket.userId,
       user2: favouriteUserId,
       mode: normalizedMode,
@@ -2139,12 +2141,9 @@ export class SocketService {
 
     // Save session to database
     await DatabaseService.createChatSession({
-      id: sessionId,
-      user1: socket.userId,
-      user2: favouriteUserId,
-      mode: normalizedMode,
-      status: 'active',
-      startedAt: new Date()
+      user1Id: socket.userId,
+      user2Id: favouriteUserId,
+      mode: normalizedMode
     });
 
     // Get user details

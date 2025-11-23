@@ -3505,6 +3505,36 @@ export class DatabaseService {
     }
   }
 
+  /**
+   * Check if a user is currently online
+   */
+  static async isUserOnline(userId: string): Promise<boolean> {
+    if (!this.isConnected) {
+      return false;
+    }
+
+    try {
+      const user = await UserModel.findOne({ id: userId })
+        .select('isOnline lastActiveAt')
+        .lean();
+      
+      if (!user) {
+        return false;
+      }
+
+      // Consider online if isOnline flag is true AND last active within 5 minutes
+      if (user.isOnline && user.lastActiveAt) {
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        return user.lastActiveAt >= fiveMinutesAgo;
+      }
+
+      return user.isOnline || false;
+    } catch (err) {
+      console.error('❌ Error checking if user is online:', err);
+      return false;
+    }
+  }
+
   static async getChatSession(sessionId: string): Promise<any | null> {
     if (this.isConnected) {
       try {

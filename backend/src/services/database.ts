@@ -534,4 +534,40 @@ export class DatabaseService {
     void data;
     return null;
   }
+
+  // Favourites System (Stub - Use MongoDB)
+  static async addFavourite(userId: string, favouriteUserId: string, gender?: string, interests?: string[]): Promise<{ success: boolean; error?: string }> {
+    console.warn('⚠️ addFavourite called on PostgreSQL - use MongoDB for favourites system');
+    void userId;
+    void favouriteUserId;
+    void gender;
+    void interests;
+    return { success: false, error: 'UNSUPPORTED' };
+  }
+
+  static async removeFavourite(userId: string, favouriteUserId: string): Promise<{ success: boolean; error?: string }> {
+    console.warn('⚠️ removeFavourite called on PostgreSQL - use MongoDB for favourites system');
+    void userId;
+    void favouriteUserId;
+    return { success: false, error: 'UNSUPPORTED' };
+  }
+
+  static async getFavourites(userId: string): Promise<any[]> {
+    console.warn('⚠️ getFavourites called on PostgreSQL - use MongoDB for favourites system');
+    void userId;
+    return [];
+  }
+
+  static async isUserOnline(userId: string): Promise<boolean> {
+    console.warn('⚠️ isUserOnline called on PostgreSQL - use MongoDB for online tracking');
+    void userId;
+    return false;
+  }
+
+  // AR Analytics (Stub - Use MongoDB)
+  static async logARAnalytics(data: any): Promise<any | null> {
+    console.warn('⚠️ logARAnalytics called on PostgreSQL - use MongoDB for AR analytics');
+    void data;
+    return null;
+  }
 }

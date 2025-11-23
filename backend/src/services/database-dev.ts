@@ -3785,4 +3785,73 @@ export class DatabaseService {
     console.log('🎲 Deleting topic dice prompt (dev mode)', promptId);
     this.topicDicePrompts.delete(promptId);
   }
+
+  /* ---------- Favourites System (Dev Mode) ---------- */
+  private static userFavourites = new Map<string, Set<string>>();
+
+  static async addFavourite(userId: string, favouriteUserId: string, gender?: string, interests?: string[]): Promise<{ success: boolean; error?: string }> {
+    console.log('⭐ Adding favourite (dev mode)', { userId, favouriteUserId, gender, interests });
+    
+    if (!this.userFavourites.has(userId)) {
+      this.userFavourites.set(userId, new Set());
+    }
+    
+    const userFavs = this.userFavourites.get(userId)!;
+    if (userFavs.has(favouriteUserId)) {
+      return { success: false, error: 'Already in favourites' };
+    }
+    
+    userFavs.add(favouriteUserId);
+    return { success: true };
+  }
+
+  static async removeFavourite(userId: string, favouriteUserId: string): Promise<{ success: boolean; error?: string }> {
+    console.log('🗑️ Removing favourite (dev mode)', { userId, favouriteUserId });
+    
+    const userFavs = this.userFavourites.get(userId);
+    if (!userFavs || !userFavs.has(favouriteUserId)) {
+      return { success: false, error: 'Not in favourites' };
+    }
+    
+    userFavs.delete(favouriteUserId);
+    return { success: true };
+  }
+
+  static async getFavourites(userId: string): Promise<any[]> {
+    console.log('📋 Getting favourites (dev mode)', userId);
+    
+    const userFavs = this.userFavourites.get(userId);
+    if (!userFavs || userFavs.size === 0) {
+      return [];
+    }
+    
+    // Return basic favourite user info
+    return Array.from(userFavs).map(favId => ({
+      userId: favId,
+      addedAt: new Date(),
+      isOnline: false
+    }));
+  }
+
+  static async isUserOnline(userId: string): Promise<boolean> {
+    console.log('🔍 Checking user online status (dev mode)', userId);
+    // In dev mode, randomly return true/false for testing
+    return Math.random() > 0.5;
+  }
+
+  /* ---------- AR Analytics (Dev Mode) ---------- */
+  static async logARAnalytics(data: any): Promise<any | null> {
+    console.log('🎭 Logging AR analytics (dev mode - no persistence)', {
+      sessionId: data.sessionId,
+      userId: data.userId,
+      maskType: data.maskType,
+      blurEnabled: data.blurEnabled,
+      revealTime: data.revealTime
+    });
+    return {
+      analyticsId: `ar-analytics-${Date.now()}`,
+      ...data,
+      createdAt: new Date()
+    };
+  }
 }

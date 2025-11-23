@@ -3,6 +3,9 @@ import { DatabaseService as MongoDBDatabaseService } from './database-mongodb';
 import { DatabaseService as DevDatabaseService } from './database-dev';
 import { RedisService as DevRedisService } from './redis-dev';
 
+// Use union type instead of intersection to avoid 'never' type
+type UnifiedDatabaseService = typeof MongoDBDatabaseService | typeof DevDatabaseService;
+
 const resolveShouldUseMongo = (): boolean => {
   const rawFlag = (process.env.USE_MONGODB || '').trim().toLowerCase();
   if (rawFlag === 'true') {
@@ -17,7 +20,7 @@ const resolveShouldUseMongo = (): boolean => {
 export class ServiceFactory {
   private static _useMongo = resolveShouldUseMongo();
 
-  static get DatabaseService() {
+  static get DatabaseService(): UnifiedDatabaseService {
     const logContext = {
       NODE_ENV: process.env.NODE_ENV,
       USE_MONGODB: process.env.USE_MONGODB,
@@ -28,7 +31,7 @@ export class ServiceFactory {
 
     const service = this._useMongo ? MongoDBDatabaseService : DevDatabaseService;
     console.log(`🔧 ServiceFactory: Using ${this._useMongo ? 'MongoDB Production' : 'In-Memory Development'} DatabaseService`);
-    return service;
+    return service as UnifiedDatabaseService;
   }
 
   static get RedisService() {
