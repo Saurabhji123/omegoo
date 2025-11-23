@@ -32,13 +32,16 @@ const VideoChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
-  const { selectedMask, blurState, revealCountdown, getProcessedStream, revealVideo, initialize: initializeAR, setMask, startBlurCountdown } = useARFilter();
+  const { selectedMask, blurState, revealCountdown, getProcessedStream, revealVideo, initialize: initializeAR, setMask, startBlurCountdown, stopProcessing } = useARFilter();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null); // Track local stream for mic control
   const remoteStreamRef = useRef<MediaStream | null>(null); // Track remote stream for speaker control
+  const rawStreamRef = useRef<MediaStream | null>(null);
+  const processedStreamRef = useRef<MediaStream | null>(null);
+  const arActiveRef = useRef(false);
   const prevBlurStateRef = useRef<BlurState>('disabled'); // Track previous blur state for auto-reveal detection
   
   const getStoredBoolean = (key: string, fallback: boolean): boolean => {
@@ -242,35 +245,83 @@ const VideoChat: React.FC = () => {
     applySpeakerState();
   }, [isSpeakerOn, applySpeakerState]);
 
-  // Apply CSS filter directly to local video element when mask changes
-  useEffect(() => {
-    if (localVideoRef.current) {
-      let filterString = 'none';
-      
-      switch (selectedMask) {
-        case 'sunglasses':
-          filterString = 'hue-rotate(210deg) brightness(1.1) contrast(1.2)';
-          console.log('🎨 Applied sunglasses filter to video element');
-          break;
-        case 'dog_ears':
-          filterString = 'sepia(0.7) brightness(1.05) contrast(1.1)';
-          console.log('🎨 Applied dog ears filter to video element');
-          break;
-        case 'cat_ears':
-          filterString = 'contrast(1.4) saturate(1.2) brightness(1.05)';
-          console.log('🎨 Applied cat ears filter to video element');
-          break;
-        case 'party_hat':
-          filterString = 'saturate(1.8) brightness(1.1) contrast(1.15) hue-rotate(10deg)';
-          console.log('🎨 Applied party hat filter to video element');
-          break;
-        default:
-          console.log('🎨 Removed filter from video element');
-      }
-      
-      localVideoRef.current.style.filter = filterString;
+  const applyEffectsToCurrentStream = useCallback(async () => {
+    const rawStream = rawStreamRef.current;
+    if (!rawStream) {
+      console.log('⏭️ No raw stream available yet for AR effects');
+      return;
     }
-  }, [selectedMask]);
+
+    const shouldUseAR = selectedMask !== 'none' || blurState === 'active';
+
+    if (shouldUseAR) {
+      if (arActiveRef.current && processedStreamRef.current) {
+        // Already streaming via AR pipeline; mask/blur updates propagate internally
+        return;
+      }
+
+      try {
+        console.log('🎭 Enabling AR pipeline for local stream');
+        await initializeAR();
+        const processedStream = await getProcessedStream(rawStream);
+        processedStreamRef.current = processedStream;
+        arActiveRef.current = true;
+
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = processedStream;
+        }
+        localStreamRef.current = processedStream;
+
+        if (webRTCRef.current) {
+          await webRTCRef.current.replaceLocalStream(processedStream);
+        }
+
+        console.log('✅ AR pipeline enabled');
+      } catch (error) {
+        console.error('❌ Failed to enable AR pipeline:', error);
+        arActiveRef.current = false;
+        processedStreamRef.current = null;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = rawStream;
+        }
+        localStreamRef.current = rawStream;
+      }
+    } else {
+      if (!arActiveRef.current) {
+        if (localStreamRef.current !== rawStream && localVideoRef.current) {
+          localVideoRef.current.srcObject = rawStream;
+          localStreamRef.current = rawStream;
+        }
+      } else {
+        console.log('🛑 Disabling AR pipeline (no active filters)');
+        stopProcessing();
+        arActiveRef.current = false;
+        processedStreamRef.current = null;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = rawStream;
+        }
+        localStreamRef.current = rawStream;
+        if (webRTCRef.current) {
+          await webRTCRef.current.replaceLocalStream(rawStream);
+        }
+      }
+    }
+
+    applyMicState();
+    const activeStream = localStreamRef.current;
+    const videoTrack = activeStream?.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.enabled = isCameraOn;
+    }
+
+    if (localVideoRef.current) {
+      try {
+        await localVideoRef.current.play();
+      } catch (playError) {
+        console.warn('Auto-play prevented after stream update');
+      }
+    }
+  }, [selectedMask, blurState, initializeAR, getProcessedStream, stopProcessing, applyMicState, isCameraOn]);
 
   // Handle window resize for responsive video aspect ratio
   useEffect(() => {
@@ -316,71 +367,13 @@ const VideoChat: React.FC = () => {
     prevBlurStateRef.current = blurState;
   }, [blurState, revealCountdown, socket, sessionId, selectedMask]);
 
-  // CRITICAL: Reprocess stream when mask or blur changes
   useEffect(() => {
-    const reprocessStream = async () => {
-      // Only reprocess if we have an active camera stream
-      if (!localStreamRef.current) {
-        console.log('⏭️ No active stream to reprocess');
-        return;
-      }
-
-      // Get the raw video track (not processed)
-      const videoTracks = localStreamRef.current.getVideoTracks();
-      if (videoTracks.length === 0) {
-        console.log('⏭️ No video tracks found');
-        return;
-      }
-
-      try {
-        console.log('🔄 Reprocessing stream with new filter...', { selectedMask, blurState });
-        
-        // Get raw stream from WebRTC (original camera stream)
-        const rawStream = webRTCRef.current?.getLocalStream();
-        if (!rawStream) {
-          console.error('❌ Could not get raw stream for reprocessing');
-          return;
-        }
-
-        // Apply filters if needed
-        if (selectedMask !== 'none' || blurState === 'active') {
-          await initializeAR();
-          const processedStream = await getProcessedStream(rawStream);
-          
-          // Update local video preview
-          if (localVideoRef.current) {
-            localVideoRef.current.srcObject = processedStream;
-            localStreamRef.current = processedStream;
-          }
-
-          // Update WebRTC peer connection if connected
-          if (webRTCRef.current && isMatchConnected) {
-            await webRTCRef.current.replaceLocalStream(processedStream);
-            console.log('📡 Updated stream sent to remote peer');
-          }
-          
-          console.log('✅ Stream reprocessed with filters');
-        } else {
-          // No filters - use raw stream
-          if (localVideoRef.current) {
-            localVideoRef.current.srcObject = rawStream;
-            localStreamRef.current = rawStream;
-          }
-
-          if (webRTCRef.current && isMatchConnected) {
-            await webRTCRef.current.replaceLocalStream(rawStream);
-            console.log('📡 Raw stream sent to remote peer (no filters)');
-          }
-          
-          console.log('✅ Stream reset to raw (no filters)');
-        }
-      } catch (error) {
-        console.error('❌ Failed to reprocess stream:', error);
-      }
-    };
-
-    reprocessStream();
-  }, [selectedMask, blurState, getProcessedStream, initializeAR, isMatchConnected]);
+    // Only attempt to apply effects after raw stream captured
+    if (!rawStreamRef.current) {
+      return;
+    }
+    void applyEffectsToCurrentStream();
+  }, [selectedMask, blurState, applyEffectsToCurrentStream]);
 
   // Define reusable remote stream handler
   const handleRemoteStream = useCallback((stream: MediaStream) => {
@@ -914,6 +907,13 @@ const VideoChat: React.FC = () => {
 
   const startLocalVideo = async () => {
     try {
+      if (arActiveRef.current) {
+        console.log('🛑 Stopping existing AR pipeline before restarting camera');
+        stopProcessing();
+        arActiveRef.current = false;
+        processedStreamRef.current = null;
+      }
+
       const constraints = {
         video: {
           width: { ideal: 640, max: 1280 },
@@ -935,55 +935,18 @@ const VideoChat: React.FC = () => {
         throw new Error('Failed to get media stream');
       }
       
-      // Apply AR filters if mask selected or blur active
-      let processedStream = rawStream;
-      if (selectedMask !== 'none' || blurState === 'active') {
-        try {
-          console.log('🎭 Applying AR filters...', { selectedMask, blurState });
-          // Initialize AR service if not already done
-          await initializeAR();
-          processedStream = await getProcessedStream(rawStream);
-          console.log('✅ AR filters applied successfully');
-          
-          // 🎬 CRITICAL: Replace WebRTC stream so remote peer sees filters
-          if (webRTCRef.current && processedStream) {
-            await webRTCRef.current.replaceLocalStream(processedStream);
-            console.log('📡 Processed stream sent to remote peer');
-          }
-        } catch (error) {
-          console.error('❌ Failed to apply AR filters:', error);
-          // Fallback to raw stream
-          processedStream = rawStream;
-        }
+      rawStreamRef.current = rawStream;
+      arActiveRef.current = false;
+      processedStreamRef.current = null;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = rawStream;
       }
-      
-      if (processedStream && localVideoRef.current) {
-        localVideoRef.current.srcObject = processedStream;
-        localStreamRef.current = processedStream; // Store stream reference for mic control
-        setCameraBlocked(false);
-        console.log('✅ Local video stream set to video element');
-        
-        // Apply current mic state to audio track (important for fresh stream after Next Person)
-        applyMicState();
-        const currentMicState = micStateRef.current;
-        console.log('🎤 Applied mic state to fresh stream:', {
-          currentMicState,
-          trackEnabled: localStreamRef.current?.getAudioTracks()[0]?.enabled
-        });
+      localStreamRef.current = rawStream;
 
-        const videoTrack = processedStream.getVideoTracks()[0];
-        if (videoTrack) {
-          videoTrack.enabled = isCameraOn;
-          console.log('🎥 Applied camera state to fresh stream:', { isCameraOn, trackEnabled: videoTrack.enabled });
-        }
-        
-        // Ensure video plays
-        try {
-          await localVideoRef.current.play();
-        } catch (playError) {
-          console.warn('Auto-play prevented, user interaction needed');
-        }
-      }
+      await applyEffectsToCurrentStream();
+
+      setCameraBlocked(false);
+      console.log('✅ Local video stream ready');
     } catch (error) {
       console.error('❌ Failed to start local video:', error);
       setCameraBlocked(true);

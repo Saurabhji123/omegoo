@@ -43,6 +43,7 @@ class ARFilterService {
   private blurIntensity: number = AR_CONSTANTS.BLUR_RADIUS.MEDIUM;
   private maskOpacity: number = 1.0;
   private maskScale: number = 1.0;
+  private lastFilterString: string = 'none';
   
   // Performance optimization
   private qualityPreset: 'low' | 'medium' | 'high' = 'medium';
@@ -354,19 +355,26 @@ class ARFilterService {
       const startTime = performance.now();
       
       try {
-        // Apply filter to canvas CONTEXT (not element) so it affects what's drawn
+        // Combine mask + blur filters into single pass for better performance
+        const filterParts: string[] = [];
         if (this.currentMask !== 'none') {
-          const filterString = this.getFilterString(this.currentMask);
-          this.ctx.filter = filterString;
-          // Log only on mask change, not every frame
-          if (this.frameCount % 90 === 0) { // Log every 3 seconds at 30fps
-            console.log(`🎨 Applied ${this.currentMask} filter to canvas context`);
-          }
-        } else {
-          this.ctx.filter = 'none';
+          filterParts.push(this.getFilterString(this.currentMask));
         }
-        
-        // Draw video frame to canvas with filter applied
+        if (this.blurState === 'active' && this.blurIntensity > 0) {
+          filterParts.push(`blur(${this.blurIntensity}px)`);
+        }
+
+        const filterString = filterParts.length > 0 ? filterParts.join(' ') : 'none';
+        if (filterString !== this.lastFilterString) {
+          this.lastFilterString = filterString;
+          if (filterString !== 'none') {
+            console.log(`🎨 Canvas filter updated -> ${filterString}`);
+          }
+        }
+
+        this.ctx.filter = filterString;
+
+        // Draw video frame to canvas with combined filter applied
         this.ctx.drawImage(
           this.videoElement,
           0,
@@ -375,13 +383,8 @@ class ARFilterService {
           this.canvas.height
         );
         
-        // Reset filter after drawing (important for blur)
+        // Reset filter after drawing to avoid affecting future operations
         this.ctx.filter = 'none';
-        
-        // Apply blur if active
-        if (this.blurState === 'active' && this.blurIntensity > 0) {
-          this.applyBlur();
-        }
         
         // Update performance metrics
         const renderTime = performance.now() - startTime;
@@ -625,33 +628,6 @@ class ARFilterService {
   /**
    * Apply blur effect to canvas
    */
-  private applyBlur(): void {
-    if (!this.ctx || !this.canvas) return;
-    
-    // Get current canvas content as ImageData
-    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-    
-    // Apply blur filter and redraw
-    this.ctx.filter = `blur(${this.blurIntensity}px)`;
-    this.ctx.putImageData(imageData, 0, 0);
-    
-    // Create temporary canvas to apply blur properly
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = this.canvas.width;
-    tempCanvas.height = this.canvas.height;
-    const tempCtx = tempCanvas.getContext('2d');
-    
-    if (tempCtx) {
-      // Draw current canvas to temp with blur
-      tempCtx.filter = `blur(${this.blurIntensity}px)`;
-      tempCtx.drawImage(this.canvas, 0, 0);
-      
-      // Draw blurred result back to main canvas
-      this.ctx.filter = 'none';
-      this.ctx.drawImage(tempCanvas, 0, 0);
-    }
-  }
-
   /**
    * Update performance metrics
    */

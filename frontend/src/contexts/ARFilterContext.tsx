@@ -233,7 +233,6 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.log('🐍 Using Python filter backend');
         const processedStream = await pythonFilterClient.startProcessing(stream, selectedMask);
         currentStreamRef.current = processedStream;
-        setIsProcessing(false);
         return processedStream;
       }
       
@@ -247,7 +246,6 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       );
       
       currentStreamRef.current = processedStream;
-      setIsProcessing(false);
       
       return processedStream;
     } catch (error) {
