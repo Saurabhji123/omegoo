@@ -1544,13 +1544,13 @@ export class SocketService {
 
       console.log(`✅ Text match found: ${socket.userId} <-> ${partner.userId} in room ${room.roomId}`);
 
-      // Emit to both users
-      socket.emit('text_match_found', {
+      // Emit to both users using multi-device support
+      this.emitToAllUserDevices(socket.userId, 'text_match_found', {
         roomId: room.roomId,
         partnerId: partner.userId
       });
 
-      this.io.to(partner.socketId).emit('text_match_found', {
+      this.emitToAllUserDevices(partner.userId, 'text_match_found', {
         roomId: room.roomId,
         partnerId: socket.userId
       });
@@ -1629,9 +1629,9 @@ export class SocketService {
 
     console.log(`💬 Message in room ${room.roomId}: ${socket.userId} -> ${partner.userId}`);
 
-    // Emit to both users
-    socket.emit('text_message_received', message);
-    this.io.to(partner.socketId).emit('text_message_received', message);
+    // Emit to both users using multi-device support
+    this.emitToAllUserDevices(socket.userId, 'text_message_received', message);
+    this.emitToAllUserDevices(partner.userId, 'text_message_received', message);
 
     // Update activity
     TextChatQueueService.updateActivity(room.roomId);
@@ -1654,7 +1654,7 @@ export class SocketService {
     const partner = TextChatQueueService.getPartner(room.roomId, socket.userId);
     if (!partner) return;
 
-    // Emit to partner
+    // Emit to partner using multi-device support
     const typingEvent: TypingEvent = {
       roomId: room.roomId,
       userId: socket.userId,
@@ -1662,7 +1662,7 @@ export class SocketService {
       timestamp: Date.now()
     };
 
-    this.io.to(partner.socketId).emit(isTyping ? 'text_partner_typing' : 'text_partner_stopped_typing', typingEvent);
+    this.emitToAllUserDevices(partner.userId, isTyping ? 'text_partner_typing' : 'text_partner_stopped_typing', typingEvent);
   }
 
   private static handleLeaveTextRoom(socket: AuthenticatedSocket) {
@@ -1681,10 +1681,10 @@ export class SocketService {
     TextChatQueueService.endRoom(room.roomId, 'user_left');
     TextChatRoomService.cleanupRoom(room);
 
-    // Notify users
-    socket.emit('text_room_ended', { reason: 'user_left' });
+    // Notify users using multi-device support
+    this.emitToAllUserDevices(socket.userId, 'text_room_ended', { reason: 'user_left' });
     if (partner) {
-      this.io.to(partner.socketId).emit('text_room_ended', { reason: 'partner_left' });
+      this.emitToAllUserDevices(partner.userId, 'text_room_ended', { reason: 'partner_left' });
     }
 
     console.log(`💬 Text room ${room.roomId} ended`);
@@ -1710,12 +1710,12 @@ export class SocketService {
         messages: reconnectResult.messages || []
       });
 
-      // Notify partner
+      // Notify partner using multi-device support
       const room = TextChatQueueService.getRoom(reconnectResult.roomId);
       if (room) {
         const partner = TextChatQueueService.getPartner(reconnectResult.roomId, socket.userId);
         if (partner) {
-          this.io.to(partner.socketId).emit('text_partner_reconnected', {
+          this.emitToAllUserDevices(partner.userId, 'text_partner_reconnected', {
             partnerId: socket.userId
           });
         }

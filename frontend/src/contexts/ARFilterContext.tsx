@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import arFilterService from '../services/arFilter';
+import ARFilterService from '../services/arFilter';
 import { pythonFilterClient } from '../services/pythonFilterClient';
 import {
   FaceMaskType,
@@ -84,7 +84,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           supportsOffscreenCanvas: false,
           supportsWebGL: true,
           supportsCaptureStream: true,
-          recommendedMasks: ['sunglasses', 'dog_ears', 'cat_ears', 'party_hat'],
+          recommendedMasks: ['grayscale', 'sepia', 'invert', 'cool', 'warm', 'vibrant'],
           warnings: [],
           devicePerformance: 'high',
         };
@@ -96,12 +96,13 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.warn('⚠️ Python filter service not available, falling back to JS:', pythonError);
         
         // Fallback to JavaScript implementation
-        const caps = await arFilterService.initialize();
+        const caps = await ARFilterService.getInstance().initialize();
         setCapabilities(caps);
         setIsInitialized(true);
         
         // Set up callbacks for JS implementation
-        arFilterService.setPerformanceCallback((metrics) => {
+        // Performance and error callbacks
+        ARFilterService.getInstance().setPerformanceCallback((metrics: ARPerformanceMetrics) => {
           setPerformanceMetrics(metrics);
           
           if (metrics.cpuUsage > AR_CONSTANTS.CPU_DISABLE_THRESHOLD || 
@@ -110,14 +111,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           }
         });
         
-        arFilterService.setFaceDetectionCallback((detected, landmarks) => {
-          setFaceDetected(detected);
-          if (landmarks) {
-            setLastLandmarks(landmarks);
-          }
-        });
-        
-        arFilterService.setErrorCallback((error) => {
+        ARFilterService.getInstance().setErrorCallback((error: Error) => {
           console.error('❌ AR Filter error:', error);
           setSelectedMask('none');
           setBlurState('disabled');
@@ -142,7 +136,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (pythonFilterClient.isConnected()) {
       pythonFilterClient.setFilter(mask);
     } else {
-      arFilterService.setMask(mask);
+      ARFilterService.getInstance().setFilter(mask); // Updated method name
     }
     
     // Save to localStorage
@@ -155,7 +149,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const setBlurIntensity = useCallback((intensity: number) => {
     const clampedIntensity = Math.max(0, Math.min(AR_CONSTANTS.BLUR_RADIUS.MAX, intensity));
     setBlurIntensityState(clampedIntensity);
-    arFilterService.setBlurIntensity(clampedIntensity);
+    ARFilterService.getInstance().setBlurIntensity(clampedIntensity);
   }, []);
 
   /**
@@ -166,7 +160,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     setBlurState('active');
     setRevealCountdown(duration);
-    arFilterService.setBlurState('active');
+    ARFilterService.getInstance().setBlurState('active');
     
     // Save duration preference
     localStorage.setItem('omegoo_blur_duration', duration.toString());
@@ -188,7 +182,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Inline reveal logic to avoid circular dependency
         setBlurState('revealed');
         setRevealCountdown(0);
-        arFilterService.setBlurState('revealed');
+        ARFilterService.getInstance().setBlurState('revealed');
         if (countdownIntervalRef.current) {
           clearInterval(countdownIntervalRef.current);
           countdownIntervalRef.current = null;
@@ -205,7 +199,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     setBlurState('revealed');
     setRevealCountdown(0);
-    arFilterService.setBlurState('revealed');
+    ARFilterService.getInstance().setBlurState('revealed');
     
     // Clear countdown interval
     if (countdownIntervalRef.current) {
@@ -220,7 +214,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   /**
    * Get processed video stream with AR effects
    */
-  const getProcessedStream = useCallback(async (stream: MediaStream): Promise<MediaStream> => {
+  const getProcessedStream = useCallback(async (stream: MediaStream, videoElement?: HTMLVideoElement): Promise<MediaStream> => {
     try {
       setIsProcessing(true);
       
@@ -237,13 +231,14 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return processedStream;
       }
       
-      // Fallback to JavaScript implementation
-      console.log('📜 Using JavaScript filter fallback');
-      const processedStream = await arFilterService.startProcessing(
+      // Fallback to JavaScript implementation (now CSS-based)
+      console.log('📜 Using CSS filter implementation');
+      const processedStream = await ARFilterService.getInstance().startProcessing(
         stream,
         selectedMask,
         blurState,
-        blurIntensity
+        blurIntensity,
+        videoElement // Pass video element for CSS filter application
       );
       
       currentStreamRef.current = processedStream;
@@ -267,7 +262,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (pythonFilterClient.isConnected()) {
       pythonFilterClient.stopProcessing();
     }
-    arFilterService.stopProcessing();
+    ARFilterService.getInstance().stopProcessing();
     
     currentStreamRef.current = null;
     setIsProcessing(false);
@@ -290,7 +285,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setBlurState('manual');
     setRevealCountdown(0);
-    arFilterService.setBlurState('manual');
+    ARFilterService.getInstance().setBlurState('manual');
 
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
@@ -311,8 +306,8 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setBlurIntensityState(AR_CONSTANTS.BLUR_RADIUS.MEDIUM);
     setRevealCountdown(0);
     
-    arFilterService.setMask('none');
-    arFilterService.setBlurState('disabled');
+    ARFilterService.getInstance().setFilter('none');
+    ARFilterService.getInstance().setBlurState('disabled');
   }, [stopProcessing]);
 
   /**
@@ -335,9 +330,9 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
    */
   useEffect(() => {
     if (isProcessing) {
-      arFilterService.setMask(selectedMask);
-      arFilterService.setBlurState(blurState);
-      arFilterService.setBlurIntensity(blurIntensity);
+      ARFilterService.getInstance().setFilter(selectedMask);
+      ARFilterService.getInstance().setBlurState(blurState);
+      ARFilterService.getInstance().setBlurIntensity(blurIntensity);
     }
   }, [selectedMask, blurState, blurIntensity, isProcessing]);
 
@@ -385,3 +380,4 @@ export const useARFilter = (): ARFilterContextType => {
 };
 
 export default ARFilterContext;
+

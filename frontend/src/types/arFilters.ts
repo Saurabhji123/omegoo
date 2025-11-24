@@ -3,8 +3,8 @@
  * Defines types for face masks, blur effects, and AR capabilities
  */
 
-// Face mask types
-export type FaceMaskType = 'none' | 'sunglasses' | 'dog_ears' | 'cat_ears' | 'party_hat';
+// Color filter types (replacing face masks)
+export type FaceMaskType = 'none' | 'grayscale' | 'sepia' | 'invert' | 'cool' | 'warm' | 'vibrant';
 
 // Blur state
 export type BlurState = 'active' | 'manual' | 'revealed' | 'disabled';
@@ -151,12 +151,12 @@ export const AR_CONSTANTS = {
   },
 };
 
-// Face mask presets
+// Color filter presets (replacing face masks for better performance)
 export const FACE_MASK_PRESETS: Record<FaceMaskType, FaceMaskPreset> = {
   none: {
     id: 'none',
-    name: 'No Mask',
-    description: 'Show your natural face',
+    name: 'No Filter',
+    description: 'Original colors',
     emoji: '😊',
     icon: '',
     color: 'from-gray-600 to-gray-700',
@@ -164,48 +164,70 @@ export const FACE_MASK_PRESETS: Record<FaceMaskType, FaceMaskPreset> = {
     landmarks: [],
     cpuImpact: 'low',
   },
-  sunglasses: {
-    id: 'sunglasses',
-    name: 'Cool Shades',
-    description: 'Classic sunglasses look',
-    emoji: '😎',
-    icon: '/assets/masks/sunglasses.png',
-    color: 'from-yellow-500 to-orange-600',
+  grayscale: {
+    id: 'grayscale',
+    name: 'Grayscale',
+    description: 'Black and white filter',
+    emoji: '⚪',
+    icon: '',
+    color: 'from-gray-500 to-gray-700',
     difficulty: 'easy',
-    landmarks: ['LEFT_EYE_OUTER', 'RIGHT_EYE_OUTER', 'NOSE_BRIDGE'],
+    landmarks: [],
     cpuImpact: 'low',
   },
-  dog_ears: {
-    id: 'dog_ears',
-    name: 'Puppy Ears',
-    description: 'Adorable dog ears',
-    emoji: '🐶',
-    icon: '/assets/masks/dog_ears.png',
-    color: 'from-orange-500 to-amber-600',
-    difficulty: 'medium',
-    landmarks: ['HEAD_TOP', 'LEFT_EAR', 'RIGHT_EAR'],
-    cpuImpact: 'medium',
-  },
-  cat_ears: {
-    id: 'cat_ears',
-    name: 'Kitty Ears',
-    description: 'Cute cat ears',
-    emoji: '🐱',
-    icon: '/assets/masks/cat_ears.png',
-    color: 'from-pink-500 to-purple-600',
-    difficulty: 'medium',
-    landmarks: ['HEAD_TOP', 'LEFT_EAR', 'RIGHT_EAR'],
-    cpuImpact: 'medium',
-  },
-  party_hat: {
-    id: 'party_hat',
-    name: 'Party Hat',
-    description: 'Celebration time!',
-    emoji: '🎉',
-    icon: '/assets/masks/party_hat.png',
-    color: 'from-blue-500 to-indigo-600',
+  sepia: {
+    id: 'sepia',
+    name: 'Sepia',
+    description: 'Vintage brown tone',
+    emoji: '🟤',
+    icon: '',
+    color: 'from-amber-600 to-orange-700',
     difficulty: 'easy',
-    landmarks: ['HEAD_TOP', 'FOREHEAD'],
+    landmarks: [],
+    cpuImpact: 'low',
+  },
+  invert: {
+    id: 'invert',
+    name: 'Invert',
+    description: 'Negative colors',
+    emoji: '🔄',
+    icon: '',
+    color: 'from-purple-500 to-indigo-600',
+    difficulty: 'easy',
+    landmarks: [],
+    cpuImpact: 'low',
+  },
+  cool: {
+    id: 'cool',
+    name: 'Cool Blue',
+    description: 'Blue color tone',
+    emoji: '🔵',
+    icon: '',
+    color: 'from-blue-500 to-cyan-600',
+    difficulty: 'easy',
+    landmarks: [],
+    cpuImpact: 'low',
+  },
+  warm: {
+    id: 'warm',
+    name: 'Warm Red',
+    description: 'Red/orange tone',
+    emoji: '🔴',
+    icon: '',
+    color: 'from-red-500 to-orange-600',
+    difficulty: 'easy',
+    landmarks: [],
+    cpuImpact: 'low',
+  },
+  vibrant: {
+    id: 'vibrant',
+    name: 'Vibrant',
+    description: 'Enhanced saturation',
+    emoji: '🌈',
+    icon: '',
+    color: 'from-pink-500 to-purple-600',
+    difficulty: 'easy',
+    landmarks: [],
     cpuImpact: 'low',
   },
 };
@@ -247,11 +269,27 @@ export function getDevicePerformance(): 'high' | 'medium' | 'low' {
 }
 
 export function getRecommendedMasks(performance: 'high' | 'medium' | 'low'): FaceMaskType[] {
-  if (performance === 'high') {
-    return ['sunglasses', 'dog_ears', 'cat_ears', 'party_hat'];
-  } else if (performance === 'medium') {
-    return ['sunglasses', 'party_hat'];
-  } else {
-    return ['sunglasses'];
+  // All color filters are lightweight and work on any device
+  return ['grayscale', 'sepia', 'invert', 'cool', 'warm', 'vibrant'];
+}
+
+// Get CSS filter string for a given filter type
+export function getFilterCSS(filterType: FaceMaskType): string {
+  switch (filterType) {
+    case 'grayscale':
+      return 'grayscale(100%)';
+    case 'sepia':
+      return 'sepia(80%)';
+    case 'invert':
+      return 'invert(100%)';
+    case 'cool':
+      return 'hue-rotate(180deg) saturate(1.2)';
+    case 'warm':
+      return 'hue-rotate(-30deg) saturate(1.3) contrast(1.1)';
+    case 'vibrant':
+      return 'saturate(1.8) contrast(1.15) brightness(1.05)';
+    case 'none':
+    default:
+      return 'none';
   }
 }

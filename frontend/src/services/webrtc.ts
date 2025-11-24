@@ -676,6 +676,36 @@ class WebRTCService {
     return 0;
   }
 
+  // Replace video track (for filters/effects)
+  async replaceVideoTrack(newVideoTrack: MediaStreamTrack): Promise<void> {
+    if (!this.peerConnection) {
+      console.warn('⚠️ Cannot replace video track: no peer connection');
+      return;
+    }
+
+    const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
+    if (sender && sender.track) {
+      try {
+        await sender.replaceTrack(newVideoTrack);
+        console.log('✅ Video track replaced successfully');
+        
+        // Update local stream
+        if (this.localStream) {
+          const oldTrack = this.localStream.getVideoTracks()[0];
+          if (oldTrack) {
+            this.localStream.removeTrack(oldTrack);
+          }
+          this.localStream.addTrack(newVideoTrack);
+        }
+      } catch (error) {
+        console.error('❌ Failed to replace video track:', error);
+        throw error;
+      }
+    } else {
+      console.warn('⚠️ No video sender found to replace track');
+    }
+  }
+
   // Switch camera (front/back)
   async switchCamera(): Promise<void> {
     if (this.localStream) {

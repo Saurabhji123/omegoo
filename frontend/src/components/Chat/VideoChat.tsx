@@ -34,7 +34,7 @@ const VideoChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
-  const { selectedMask, blurState, revealCountdown, getProcessedStream, revealVideo, initialize: initializeAR, setMask, startBlurCountdown, enableManualBlur, stopProcessing } = useARFilter();
+  const { selectedMask, blurState, revealCountdown, revealVideo, setMask, startBlurCountdown, enableManualBlur } = useARFilter();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -250,37 +250,61 @@ const VideoChat: React.FC = () => {
   const applyEffectsToCurrentStream = useCallback(async () => {
     const rawStream = rawStreamRef.current;
     if (!rawStream) {
-      console.log('⏭️ No raw stream available yet for AR effects');
+      console.log('⏭️ No raw stream available yet for effects');
       return;
     }
 
-    const shouldUseAR = selectedMask !== 'none' || blurState === 'active' || blurState === 'manual';
+    const shouldUseFilters = selectedMask !== 'none' || blurState === 'active' || blurState === 'manual';
 
-    if (shouldUseAR) {
+    if (shouldUseFilters) {
       if (arActiveRef.current && processedStreamRef.current) {
-        // Already streaming via AR pipeline; mask/blur updates propagate internally
+        // Already processing; filter updates apply automatically
+        console.log('🔄 Filters updated, changes apply instantly to remote stream');
         return;
       }
 
       try {
-        console.log('🎭 Enabling AR pipeline for local stream');
-        await initializeAR();
-        const processedStream = await getProcessedStream(rawStream);
+        console.log('🎭 Enabling filter pipeline for remote streaming');
+        
+        // Get AR service instance
+        const ARFilterService = (await import('../../services/arFilter')).default;
+        const arService = ARFilterService.getInstance();
+        
+        // Initialize if needed
+        if (!arService.getCapabilities()) {
+          await arService.initialize();
+        }
+        
+        // Get processed stream with filters
+        const processedStream = await arService.startProcessing(
+          rawStream,
+          selectedMask,
+          blurState,
+          10 // blur intensity
+        );
+        
         processedStreamRef.current = processedStream;
         arActiveRef.current = true;
 
+        // Update local video display
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = processedStream;
         }
         localStreamRef.current = processedStream;
 
+        // Send processed stream to remote user via WebRTC
         if (webRTCRef.current) {
-          await webRTCRef.current.replaceLocalStream(processedStream);
+          const videoTrack = processedStream.getVideoTracks()[0];
+          if (videoTrack) {
+            await webRTCRef.current.replaceVideoTrack(videoTrack);
+            console.log('✅ Remote user will now see filtered video');
+          }
         }
 
-        console.log('✅ AR pipeline enabled');
+        console.log('✅ Filter pipeline enabled - remote stream updated');
       } catch (error) {
-        console.error('❌ Failed to enable AR pipeline:', error);
+        console.error('❌ Failed to enable filter pipeline:', error);
+        // Fallback to raw stream
         arActiveRef.current = false;
         processedStreamRef.current = null;
         if (localVideoRef.current) {
@@ -289,28 +313,37 @@ const VideoChat: React.FC = () => {
         localStreamRef.current = rawStream;
       }
     } else {
-      if (!arActiveRef.current) {
-        if (localStreamRef.current !== rawStream && localVideoRef.current) {
-          localVideoRef.current.srcObject = rawStream;
-          localStreamRef.current = rawStream;
-        }
-      } else {
-        console.log('🛑 Disabling AR pipeline (no active filters)');
-        stopProcessing();
+      // No filters needed
+      if (arActiveRef.current && processedStreamRef.current) {
+        console.log('🛑 Disabling filters, switching to raw stream');
+        const ARFilterService = (await import('../../services/arFilter')).default;
+        const arService = ARFilterService.getInstance();
+        arService.stopProcessing();
         arActiveRef.current = false;
         processedStreamRef.current = null;
+        
+        // Switch back to raw stream
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = rawStream;
         }
         localStreamRef.current = rawStream;
+        
+        // Send raw stream to remote user
         if (webRTCRef.current) {
-          await webRTCRef.current.replaceLocalStream(rawStream);
+          const videoTrack = rawStream.getVideoTracks()[0];
+          if (videoTrack) {
+            await webRTCRef.current.replaceVideoTrack(videoTrack);
+            console.log('✅ Remote user will now see unfiltered video');
+          }
         }
+      } else if (localStreamRef.current !== rawStream && localVideoRef.current) {
+        localVideoRef.current.srcObject = rawStream;
+        localStreamRef.current = rawStream;
       }
     }
 
     applyMicState();
-    const activeStream = localStreamRef.current;
+    const activeStream = localStreamRef.current || rawStream;
     const videoTrack = activeStream?.getVideoTracks()[0];
     if (videoTrack) {
       videoTrack.enabled = isCameraOn;
@@ -323,7 +356,7 @@ const VideoChat: React.FC = () => {
         console.warn('Auto-play prevented after stream update');
       }
     }
-  }, [selectedMask, blurState, initializeAR, getProcessedStream, stopProcessing, applyMicState, isCameraOn]);
+  }, [selectedMask, blurState, applyMicState, isCameraOn]);
 
   // Handle window resize for responsive video aspect ratio
   useEffect(() => {
@@ -376,6 +409,20 @@ const VideoChat: React.FC = () => {
     }
     void applyEffectsToCurrentStream();
   }, [selectedMask, blurState, applyEffectsToCurrentStream]);
+
+  // Update filters in real-time when mask or blur changes
+  useEffect(() => {
+    if (arActiveRef.current) {
+      const updateFilters = async () => {
+        const ARFilterService = (await import('../../services/arFilter')).default;
+        const arService = ARFilterService.getInstance();
+        arService.setFilter(selectedMask);
+        arService.setBlurState(blurState, 10);
+        console.log('🔄 Filter settings updated in real-time for remote stream');
+      };
+      updateFilters();
+    }
+  }, [selectedMask, blurState]);
 
   // Define reusable remote stream handler
   const handleRemoteStream = useCallback((stream: MediaStream) => {
@@ -911,7 +958,7 @@ const VideoChat: React.FC = () => {
     try {
       if (arActiveRef.current) {
         console.log('🛑 Stopping existing AR pipeline before restarting camera');
-        stopProcessing();
+        // No need to call stopProcessing - CSS filters are automatic
         arActiveRef.current = false;
         processedStreamRef.current = null;
       }
@@ -1729,11 +1776,11 @@ const VideoChat: React.FC = () => {
             </div>
           </div>
 
-          {/* Local Video - FIXED: Consistent aspect ratio across all devices */}
+          {/* Local Video - FIXED: 1:1 aspect ratio for consistency across all devices */}
           <div className="absolute bottom-20 right-2 lg:bottom-4 lg:right-4 xl:bottom-6 xl:right-6">
             <div className={`bg-gray-800 rounded-lg border-2 border-white border-opacity-30 overflow-hidden shadow-2xl ${
-              // FIXED: Maintain consistent portrait aspect ratio (3:4) on all devices
-              windowWidth < 768 ? 'w-24 h-32' : 'w-36 h-48 lg:w-48 lg:h-64 xl:w-56 xl:h-72'
+              // FIXED: Square aspect ratio (1:1) on all devices for consistency
+              windowWidth < 768 ? 'w-24 h-24' : 'w-40 h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56'
             }`}>
               <video
                 ref={localVideoRef}
@@ -1746,7 +1793,7 @@ const VideoChat: React.FC = () => {
                   transform: isLocalMirrored ? 'scaleX(-1)' : 'none',
                   width: '100%',
                   height: '100%',
-                  objectFit: 'contain', // FIXED: Use contain to show full original video without zoom
+                  objectFit: 'cover', // FIXED: Use cover to fill square container
                   backgroundColor: '#1f2937'
                 }}
               />

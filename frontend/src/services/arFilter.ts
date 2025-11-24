@@ -1,85 +1,40 @@
 /**
- * AR Filter Service
- * Handles face detection, mask overlays, and blur effects using TensorFlow.js FaceMesh
+ * Simplified AR Filter Service
+ * Uses CSS filters for better performance - no TensorFlow, no canvas processing
  */
 
-// @ts-ignore - TensorFlow types may not be fully available
-import * as faceLandmarksDetection from '@tensorflow-models/face-landmarks-detection';
-// @ts-ignore
-import '@tensorflow/tfjs-core';
-// @ts-ignore
-import '@tensorflow/tfjs-converter';
-// @ts-ignore
-import '@tensorflow/tfjs-backend-webgl';
 import {
   FaceMaskType,
   BlurState,
-  FaceLandmarks,
   ARCapabilities,
   ARPerformanceMetrics,
   AR_CONSTANTS,
   getDevicePerformance,
   getRecommendedMasks,
+  getFilterCSS,
 } from '../types/arFilters';
 
 class ARFilterService {
   private static instance: ARFilterService;
   
-  // TensorFlow FaceMesh
-  private detector: any | null = null;
-  private model: string = 'MediaPipeFaceMesh';
-  
   // Canvas processing
   private videoElement: HTMLVideoElement | null = null;
-  private canvas: HTMLCanvasElement | OffscreenCanvas | null = null;
-  private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null;
+  private canvas: HTMLCanvasElement | null = null;
+  private ctx: CanvasRenderingContext2D | null = null;
   private animationFrameId: number | null = null;
+  
+  // State
+  private currentFilter: FaceMaskType = 'none';
+  private blurState: BlurState = 'disabled';
+  private blurIntensity: number = AR_CONSTANTS.BLUR_RADIUS.MEDIUM;
   
   // Streams
   private originalStream: MediaStream | null = null;
   private processedStream: MediaStream | null = null;
   
-  // State
-  private currentMask: FaceMaskType = 'none';
-  private blurState: BlurState = 'disabled';
-  private blurIntensity: number = AR_CONSTANTS.BLUR_RADIUS.MEDIUM;
-  private maskOpacity: number = 1.0;
-  private maskScale: number = 1.0;
-  
-  // Performance optimization
-  private qualityPreset: 'low' | 'medium' | 'high' = 'medium';
-  private useOffscreenCanvas: boolean = false;
-  private detectionFrequency: number = 1; // Detect every N frames
-  private framesSinceLastDetection: number = 0;
-  private adaptiveResolution: boolean = true;
-  private currentResolution: { width: number; height: number } = { width: 640, height: 480 };
-  private lastPerformanceCheck: number = Date.now();
-  
-  // Face detection
-  private lastFaceLandmarks: FaceLandmarks | null = null;
-  private faceDetected: boolean = false;
-  
-  // Performance tracking
-  private performanceMetrics: ARPerformanceMetrics = {
-    fps: 0,
-    faceDetectionTime: 0,
-    renderTime: 0,
-    cpuUsage: 0,
-    droppedFrames: 0,
-    timestamp: Date.now(),
-  };
-  private frameCount: number = 0;
-  private lastFpsUpdate: number = Date.now();
-  private processingTimes: number[] = [];
-  
-  // Mask images cache
-  private maskImages: Map<FaceMaskType, HTMLImageElement> = new Map();
-  private maskImagesLoaded: Set<FaceMaskType> = new Set();
-  
   // Callbacks
   private performanceCallback: ((metrics: ARPerformanceMetrics) => void) | null = null;
   private errorCallback: ((error: Error) => void) | null = null;
-  private faceDetectionCallback: ((detected: boolean, landmarks?: FaceLandmarks) => void) | null = null;
   
   // Capabilities
   private capabilities: ARCapabilities | null = null;
@@ -94,217 +49,53 @@ class ARFilterService {
   }
 
   /**
-   * Initialize AR Filter Service
+   * Initialize AR Filter Service (simplified - no TensorFlow needed)
    */
   async initialize(options?: { qualityPreset?: 'low' | 'medium' | 'high' }): Promise<ARCapabilities> {
     try {
-      console.log('🎭 Initializing AR Filter Service...');
+      console.log('🎨 Initializing CSS Filter Service...');
       
-      // Set quality preset
-      if (options?.qualityPreset) {
-        this.setQualityPreset(options.qualityPreset);
-      }
+      // Detect browser capabilities (CSS filters are universally supported)
+      const capabilities: ARCapabilities = {
+        supportsFaceMesh: false, // No longer needed
+        supportsCanvas: true,
+        supportsOffscreenCanvas: typeof OffscreenCanvas !== 'undefined',
+        supportsWebGL: false, // No longer needed
+        supportsCaptureStream: typeof HTMLCanvasElement !== 'undefined' && 
+                               typeof HTMLCanvasElement.prototype.captureStream === 'function',
+        recommendedMasks: getRecommendedMasks(getDevicePerformance()),
+        warnings: [],
+        devicePerformance: getDevicePerformance(),
+      };
       
-      // Check capabilities
-      this.capabilities = await this.checkCapabilities();
-      console.log('✅ AR Capabilities:', this.capabilities);
-      
-      // Enable OffscreenCanvas if supported
-      this.useOffscreenCanvas = this.capabilities.supportsOffscreenCanvas && this.qualityPreset !== 'low';
-      console.log(`📊 Performance mode: ${this.qualityPreset}, OffscreenCanvas: ${this.useOffscreenCanvas}`);
-      
-      // Only initialize FaceMesh if supported
-      if (this.capabilities.supportsFaceMesh) {
-        await this.initializeFaceMesh();
-      } else {
-        console.warn('⚠️ FaceMesh not supported, using fallback mode');
-      }
-      
-      // Preload mask images
-      await this.preloadMaskImages();
-      
-      return this.capabilities;
+      this.capabilities = capabilities;
+      console.log('✅ CSS Filter Service initialized', capabilities);
+      return capabilities;
     } catch (error) {
-      console.error('❌ AR Filter initialization failed:', error);
+      console.error('❌ Failed to initialize CSS Filter Service:', error);
       throw error;
     }
   }
 
   /**
-   * Set quality preset
-   */
-  private setQualityPreset(preset: 'low' | 'medium' | 'high') {
-    this.qualityPreset = preset;
-    
-    switch (preset) {
-      case 'low':
-        this.detectionFrequency = 4; // Detect every 4 frames
-        this.currentResolution = { width: 480, height: 360 };
-        this.adaptiveResolution = true;
-        break;
-      case 'medium':
-        this.detectionFrequency = 3; // Detect every 3 frames
-        this.currentResolution = { width: 560, height: 420 };
-        this.adaptiveResolution = true;
-        break;
-      case 'high':
-        this.detectionFrequency = 1; // Detect every frame
-        this.currentResolution = { width: 640, height: 480 };
-        this.adaptiveResolution = false;
-        break;
-    }
-    
-    console.log(`🎚️ Quality preset: ${preset}`, {
-      detectionFrequency: this.detectionFrequency,
-      resolution: this.currentResolution,
-      adaptiveResolution: this.adaptiveResolution,
-    });
-  }
-
-  /**
-   * Check browser AR capabilities
-   */
-  private async checkCapabilities(): Promise<ARCapabilities> {
-    const warnings: string[] = [];
-    const devicePerformance = getDevicePerformance();
-    
-    // Check FaceMesh support
-    let supportsFaceMesh = false;
-    try {
-      // Check if TensorFlow.js and FaceMesh are available
-      supportsFaceMesh = !!(faceLandmarksDetection && typeof faceLandmarksDetection.createDetector === 'function');
-    } catch {
-      warnings.push('TensorFlow.js FaceMesh not available');
-    }
-    
-    // Check Canvas support
-    const supportsCanvas = !!document.createElement('canvas').getContext;
-    if (!supportsCanvas) {
-      warnings.push('Canvas API not supported');
-    }
-    
-    // Check OffscreenCanvas support
-    const supportsOffscreenCanvas = typeof OffscreenCanvas !== 'undefined';
-    
-    // Check WebGL support
-    let supportsWebGL = false;
-    try {
-      const testCanvas = document.createElement('canvas');
-      supportsWebGL = !!(testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl'));
-    } catch {
-      warnings.push('WebGL not supported');
-    }
-    
-    // Check captureStream support
-    const supportsCaptureStream = 'captureStream' in HTMLCanvasElement.prototype;
-    if (!supportsCaptureStream) {
-      warnings.push('Canvas captureStream not supported');
-    }
-    
-    // Get recommended masks based on device performance
-    const recommendedMasks = getRecommendedMasks(devicePerformance);
-    
-    // Add performance warnings
-    if (devicePerformance === 'low') {
-      warnings.push('Low-end device detected. AR features may be limited.');
-    }
-    
-    return {
-      supportsFaceMesh,
-      supportsCanvas,
-      supportsOffscreenCanvas,
-      supportsWebGL,
-      supportsCaptureStream,
-      recommendedMasks,
-      warnings,
-      devicePerformance,
-    };
-  }
-
-  /**
-   * Initialize TensorFlow.js FaceMesh detector
-   * SIMPLIFIED: Using canvas filters only, no face detection needed
-   */
-  private async initializeFaceMesh(): Promise<void> {
-    try {
-      if (!faceLandmarksDetection || typeof faceLandmarksDetection.createDetector !== 'function') {
-        throw new Error('FaceMesh API not available');
-      }
-
-      const supportedModels = (faceLandmarksDetection as any).SupportedModels;
-      const modelEnum = supportedModels?.MediaPipeFaceMesh ?? this.model;
-      const detectorConfig: faceLandmarksDetection.MediaPipeFaceMeshTfjsModelConfig = {
-        runtime: 'tfjs',
-        refineLandmarks: this.qualityPreset !== 'low',
-        maxFaces: AR_CONSTANTS.MAX_FACES,
-      };
-
-      console.log('🔧 Loading FaceMesh detector...', detectorConfig);
-      this.detector = await faceLandmarksDetection.createDetector(modelEnum, detectorConfig);
-      console.log('✅ FaceMesh detector ready');
-    } catch (error) {
-      console.error('❌ Failed to initialize FaceMesh:', error);
-      throw new Error('FaceMesh initialization failed');
-    }
-  }
-
-  /**
-   * Preload mask images
-   */
-  private async preloadMaskImages(): Promise<void> {
-    const maskTypes: FaceMaskType[] = ['sunglasses', 'dog_ears', 'cat_ears', 'party_hat'];
-    
-    const loadPromises = maskTypes.map(async (type) => {
-      try {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        // For now, use placeholder images - replace with actual assets
-        // In production, these should be actual PNG files in public/assets/masks/
-        img.src = `/assets/masks/${type}.png`;
-        
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => {
-            this.maskImages.set(type, img);
-            this.maskImagesLoaded.add(type);
-            console.log(`✅ Loaded mask: ${type}`);
-            resolve();
-          };
-          img.onerror = () => {
-            console.warn(`⚠️ Failed to load mask: ${type}, will use fallback`);
-            resolve(); // Don't reject, just skip this mask
-          };
-          
-          // Timeout after 5 seconds
-          setTimeout(() => resolve(), 5000);
-        });
-      } catch (error) {
-        console.warn(`⚠️ Error loading mask ${type}:`, error);
-      }
-    });
-    
-    await Promise.all(loadPromises);
-    console.log(`✅ Preloaded ${this.maskImagesLoaded.size} mask images`);
-  }
-
-  /**
-   * Start processing video stream with AR effects
+   * Apply filters using canvas and return processed stream for WebRTC
    */
   async startProcessing(
     stream: MediaStream,
-    maskType: FaceMaskType = 'none',
+    filterType: FaceMaskType = 'none',
     blurState: BlurState = 'disabled',
-    blurIntensity: number = AR_CONSTANTS.BLUR_RADIUS.MEDIUM
+    blurIntensity: number = AR_CONSTANTS.BLUR_RADIUS.MEDIUM,
+    videoElement?: HTMLVideoElement
   ): Promise<MediaStream> {
     try {
-      console.log('🎬 Starting AR processing...', { maskType, blurState });
+      console.log('🎨 Starting canvas-based filter processing...', { filterType, blurState });
       
-      this.currentMask = maskType;
+      this.currentFilter = filterType;
       this.blurState = blurState;
       this.blurIntensity = blurIntensity;
       this.originalStream = stream;
       
-      // Create video element
+      // Create video element to read from stream
       this.videoElement = document.createElement('video');
       this.videoElement.srcObject = stream;
       this.videoElement.autoplay = true;
@@ -319,14 +110,11 @@ class ARFilterService {
         };
       });
       
-      // Create canvas for processing based on selected quality preset
+      // Create canvas for processing
       this.canvas = document.createElement('canvas');
-      this.canvas.width = this.currentResolution.width;
-      this.canvas.height = this.currentResolution.height;
-      this.ctx = this.canvas.getContext('2d', { 
-        alpha: false,
-        desynchronized: true, // Reduce latency
-      });
+      this.canvas.width = this.videoElement.videoWidth || 640;
+      this.canvas.height = this.videoElement.videoHeight || 480;
+      this.ctx = this.canvas.getContext('2d', { alpha: false });
       
       if (!this.ctx) {
         throw new Error('Failed to get canvas context');
@@ -335,8 +123,8 @@ class ARFilterService {
       // Start processing loop
       this.startProcessingLoop();
       
-      // Capture canvas stream
-      this.processedStream = this.canvas.captureStream(AR_CONSTANTS.TARGET_FPS);
+      // Capture canvas stream at 30fps
+      this.processedStream = this.canvas.captureStream(30);
       
       // Add audio tracks from original stream
       const audioTracks = stream.getAudioTracks();
@@ -344,31 +132,45 @@ class ARFilterService {
         this.processedStream!.addTrack(track);
       });
       
-      console.log('✅ AR processing started');
+      console.log('✅ Canvas-based filter processing started - remote users will see filtered video');
       return this.processedStream;
     } catch (error) {
-      console.error('❌ Failed to start AR processing:', error);
+      console.error('❌ Failed to start filter processing:', error);
       if (this.errorCallback) {
         this.errorCallback(error as Error);
       }
-      throw error;
+      // Return original stream as fallback
+      return stream;
     }
   }
 
   /**
-   * Main processing loop using requestAnimationFrame
+   * Processing loop to continuously apply filters to canvas
    */
   private startProcessingLoop(): void {
-    const processFrame = async () => {
+    const processFrame = () => {
       if (!this.videoElement || !this.canvas || !this.ctx) return;
       
-      const now = performance.now();
-      const startTime = now;
-      
       try {
+        // Apply filters to canvas context
+        const filters: string[] = [];
+        
+        // Add blur if active
         const blurEnabled = (this.blurState === 'active' || this.blurState === 'manual') && this.blurIntensity > 0;
-        this.ctx.filter = blurEnabled ? `blur(${this.blurIntensity}px)` : 'none';
-
+        if (blurEnabled) {
+          filters.push(`blur(${this.blurIntensity}px)`);
+        }
+        
+        // Add color filter
+        if (this.currentFilter !== 'none') {
+          const colorFilter = getFilterCSS(this.currentFilter);
+          if (colorFilter !== 'none') {
+            filters.push(colorFilter);
+          }
+        }
+        
+        // Apply filters and draw
+        this.ctx.filter = filters.length > 0 ? filters.join(' ') : 'none';
         this.ctx.drawImage(
           this.videoElement,
           0,
@@ -376,37 +178,8 @@ class ARFilterService {
           this.canvas.width,
           this.canvas.height
         );
-        
-        this.ctx.filter = 'none';
-
-        const shouldDetectFace = this.detector && this.currentMask !== 'none';
-        if (shouldDetectFace) {
-          this.framesSinceLastDetection++;
-          if (this.framesSinceLastDetection >= this.detectionFrequency) {
-            this.framesSinceLastDetection = 0;
-            await this.runFaceDetection();
-          }
-        }
-
-        if (this.currentMask !== 'none') {
-          if (this.lastFaceLandmarks) {
-            this.drawMask(this.lastFaceLandmarks);
-          } else {
-            this.drawTintOverlay(this.currentMask);
-          }
-        }
-        
-        const renderTime = performance.now() - startTime;
-        this.performanceMetrics.renderTime = renderTime;
-        this.updatePerformanceMetrics(renderTime);
-        if (now - this.lastPerformanceCheck >= 1500) {
-          this.adjustPerformance();
-          this.lastPerformanceCheck = now;
-        }
-        
       } catch (error) {
         console.error('❌ Error in processing loop:', error);
-        this.performanceMetrics.droppedFrames++;
       }
       
       this.animationFrameId = requestAnimationFrame(processFrame);
@@ -415,424 +188,87 @@ class ARFilterService {
     processFrame();
   }
 
-  private async runFaceDetection(): Promise<void> {
-    if (!this.detector || !this.videoElement) {
-      return;
-    }
-
-    try {
-      const detectionStart = performance.now();
-      const faces = await this.detector.estimateFaces(this.videoElement, { flipHorizontal: false });
-      this.performanceMetrics.faceDetectionTime = performance.now() - detectionStart;
-
-      if (faces && faces.length > 0) {
-        const face = faces[0];
-        const keypoints = this.normalizeKeypoints(face.keypoints || []);
-
-        const landmarks: FaceLandmarks = {
-          keypoints,
-          boundingBox: {
-            topLeft: {
-              x: face.box?.topLeft?.[0] ?? 0,
-              y: face.box?.topLeft?.[1] ?? 0,
-            },
-            bottomRight: {
-              x: face.box?.bottomRight?.[0] ?? 0,
-              y: face.box?.bottomRight?.[1] ?? 0,
-            },
-          },
-          confidence: face.score?.[0] ?? 1,
-        };
-
-        this.lastFaceLandmarks = landmarks;
-        if (!this.faceDetected) {
-          this.faceDetected = true;
-          this.faceDetectionCallback?.(true, landmarks);
-        } else {
-          this.faceDetectionCallback?.(true, landmarks);
-        }
-      } else {
-        this.handleFaceLost();
-      }
-    } catch (error) {
-      console.warn('⚠️ Face detection skipped due to error:', error);
-      this.handleFaceLost();
-    }
-  }
-
-  private handleFaceLost(): void {
-    if (this.faceDetected) {
-      this.faceDetectionCallback?.(false);
-    }
-    this.faceDetected = false;
-    this.lastFaceLandmarks = null;
-  }
-
   /**
-   * Adjust performance based on metrics
+   * Update filter type - changes apply instantly to stream
    */
-  private adjustPerformance(): void {
-    const cpuUsage = this.performanceMetrics.cpuUsage;
-    const fps = this.performanceMetrics.fps;
-    
-    // If CPU usage is high or FPS is low, reduce detection frequency
-    if (cpuUsage > AR_CONSTANTS.CPU_WARNING_THRESHOLD || fps < AR_CONSTANTS.MIN_FPS) {
-      if (this.detectionFrequency < 5) {
-        this.detectionFrequency++;
-        console.log(`⚡ Performance adjustment: Reduced detection frequency to every ${this.detectionFrequency} frames`);
-      }
-    } else if (cpuUsage < AR_CONSTANTS.CPU_WARNING_THRESHOLD * 0.5 && fps > AR_CONSTANTS.TARGET_FPS * 0.9) {
-      // If performance is good, increase detection frequency
-      if (this.detectionFrequency > 1) {
-        this.detectionFrequency--;
-        console.log(`⚡ Performance adjustment: Increased detection frequency to every ${this.detectionFrequency} frames`);
-      }
-    }
+  setFilter(filterType: FaceMaskType): void {
+    console.log('🎨 Changing filter to:', filterType, '- remote users will see this instantly');
+    this.currentFilter = filterType;
+    // Filter changes automatically apply in next animation frame
   }
 
   /**
-   * Get CSS filter string for a mask type
+   * Update blur state - changes apply instantly to stream
    */
-  private getFallbackTint(filterType: FaceMaskType): string {
-    switch (filterType) {
-      case 'sunglasses':
-        return 'rgba(0, 0, 0, 0.25)';
-      case 'dog_ears':
-        return 'rgba(222, 184, 135, 0.2)';
-      case 'cat_ears':
-        return 'rgba(255, 192, 203, 0.2)';
-      case 'party_hat':
-        return 'rgba(255, 215, 0, 0.2)';
-      default:
-        return 'transparent';
+  setBlurState(blurState: BlurState, intensity?: number): void {
+    console.log('🌫️ Changing blur state to:', blurState, intensity, '- remote users will see this instantly');
+    this.blurState = blurState;
+    if (intensity !== undefined) {
+      this.blurIntensity = intensity;
     }
-  }
-
-  private drawTintOverlay(filterType: FaceMaskType): void {
-    if (!this.ctx || !this.canvas) return;
-    const tint = this.getFallbackTint(filterType);
-    if (tint === 'transparent') return;
-    this.ctx.save();
-    this.ctx.fillStyle = tint;
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.restore();
-  }
-
-  private toPixelCoordinate(value: number, max: number): number {
-    if (!max || max <= 1) {
-      return value;
-    }
-    return value <= 1 ? value * max : value;
-  }
-
-  private normalizeKeypoints(keypoints: any[]): Array<{ x: number; y: number; z: number; name?: string }> {
-    const videoWidth = this.videoElement?.videoWidth || this.currentResolution.width;
-    const videoHeight = this.videoElement?.videoHeight || this.currentResolution.height;
-    return keypoints.map((kp: any) => ({
-      x: this.toPixelCoordinate(kp.x, videoWidth),
-      y: this.toPixelCoordinate(kp.y, videoHeight),
-      z: kp.z ?? 0,
-      name: kp.name,
-    }));
+    // Blur changes automatically apply in next animation frame
   }
 
   /**
-   * Draw mask overlay on canvas
-   */
-  private drawMask(landmarks: FaceLandmarks): void {
-    if (!this.ctx || !this.canvas) return;
-    
-    const maskImage = this.maskImages.get(this.currentMask);
-    if (!maskImage || !this.maskImagesLoaded.has(this.currentMask)) {
-      console.log(`⚠️ Mask image not loaded for ${this.currentMask}, using fallback. Loaded masks:`, Array.from(this.maskImagesLoaded));
-      this.drawFallbackMask(landmarks);
-      return;
-    }
-    
-    const keypoints = landmarks.keypoints;
-    if (!keypoints || keypoints.length === 0) {
-      console.warn('⚠️ No keypoints available for mask drawing');
-      return;
-    }
-    
-    const videoWidth = this.videoElement?.videoWidth || this.currentResolution.width;
-    const videoHeight = this.videoElement?.videoHeight || this.currentResolution.height;
-    const scaleX = this.canvas.width / videoWidth;
-    const scaleY = this.canvas.height / videoHeight;
-    
-    console.log(`🎭 Drawing ${this.currentMask} mask. Canvas: ${this.canvas.width}x${this.canvas.height}, Video: ${videoWidth}x${videoHeight}, Scale: ${scaleX.toFixed(2)}x${scaleY.toFixed(2)}, Keypoints: ${keypoints.length}`);
-    
-    // Draw mask based on type
-    switch (this.currentMask) {
-      case 'sunglasses':
-        this.drawSunglasses(keypoints, maskImage, scaleX, scaleY);
-        break;
-      case 'dog_ears':
-      case 'cat_ears':
-        this.drawEars(keypoints, maskImage, scaleX, scaleY);
-        break;
-      case 'party_hat':
-        this.drawPartyHat(keypoints, maskImage, scaleX, scaleY);
-        break;
-    }
-  }
-
-  /**
-   * Draw sunglasses on face
-   */
-  private drawSunglasses(keypoints: any[], image: HTMLImageElement, scaleX: number, scaleY: number): void {
-    if (!this.ctx) return;
-    
-    // Get eye landmarks - use center points for better accuracy
-    const leftEyeOuter = keypoints[33]; // Left eye outer corner
-    const rightEyeOuter = keypoints[263]; // Right eye outer corner
-    const leftEyeInner = keypoints[133]; // Left eye inner corner  
-    const rightEyeInner = keypoints[362]; // Right eye inner corner
-    
-    if (!leftEyeOuter || !rightEyeOuter || !leftEyeInner || !rightEyeInner) {
-      console.log('⚠️ Missing eye landmarks for sunglasses');
-      return;
-    }
-    
-    // Keypoints are already in pixel coordinates, just need canvas scaling
-    const leftEyeX = ((leftEyeOuter.x + leftEyeInner.x) / 2) * scaleX;
-    const leftEyeY = ((leftEyeOuter.y + leftEyeInner.y) / 2) * scaleY;
-    const rightEyeX = ((rightEyeOuter.x + rightEyeInner.x) / 2) * scaleX;
-    const rightEyeY = ((rightEyeOuter.y + rightEyeInner.y) / 2) * scaleY;
-    
-    const eyeDistance = Math.hypot(
-      rightEyeX - leftEyeX,
-      rightEyeY - leftEyeY
-    );
-    
-    const centerX = (leftEyeX + rightEyeX) / 2;
-    const centerY = (leftEyeY + rightEyeY) / 2;
-    
-    const angle = Math.atan2(
-      rightEyeY - leftEyeY,
-      rightEyeX - leftEyeX
-    );
-    
-    // Larger size for better visibility
-    const width = eyeDistance * 2.8 * this.maskScale;
-    const height = width * 0.45;
-    
-    this.ctx.save();
-    this.ctx.translate(centerX, centerY);
-    this.ctx.rotate(angle);
-    this.ctx.globalAlpha = this.maskOpacity;
-    this.ctx.drawImage(image, -width / 2, -height / 2, width, height);
-    this.ctx.restore();
-    
-    console.log('🕶️ Drew sunglasses at', { centerX, centerY, width, height, angle });
-  }
-
-  /**
-   * Draw ears (dog/cat) on face
-   */
-  private drawEars(keypoints: any[], image: HTMLImageElement, scaleX: number, scaleY: number): void {
-    if (!this.ctx) return;
-    
-    // Use forehead and temple points for better ear positioning
-    const foreheadLeft = keypoints[21]; // Left temple area
-    const foreheadRight = keypoints[251]; // Right temple area
-    const foreheadCenter = keypoints[10]; // Center forehead
-    const leftCheek = keypoints[234]; // Left cheek
-    const rightCheek = keypoints[454]; // Right cheek
-    
-    if (!foreheadCenter || !foreheadLeft || !foreheadRight || !leftCheek || !rightCheek) {
-      console.log('⚠️ Missing landmarks for ears');
-      return;
-    }
-    
-    // Apply canvas scaling to pixel coordinates
-    const headWidth = Math.hypot(
-      (rightCheek.x - leftCheek.x) * scaleX,
-      (rightCheek.y - leftCheek.y) * scaleY
-    );
-    
-    const centerX = ((foreheadLeft.x + foreheadRight.x) / 2) * scaleX;
-    const centerY = foreheadCenter.y * scaleY - headWidth * 0.2;
-    
-    // Bigger ears for better visibility
-    const width = headWidth * 1.6 * this.maskScale;
-    const height = width * 1.2;
-    
-    this.ctx.save();
-    this.ctx.globalAlpha = this.maskOpacity;
-    this.ctx.drawImage(image, centerX - width / 2, centerY - height, width, height);
-    this.ctx.restore();
-    
-    console.log('🐶 Drew ears at', { centerX, centerY, width, height });
-  }
-
-  /**
-   * Draw party hat on head
-   */
-  private drawPartyHat(keypoints: any[], image: HTMLImageElement, scaleX: number, scaleY: number): void {
-    if (!this.ctx) return;
-    
-    const foreheadCenter = keypoints[10]; // Center forehead
-    const chin = keypoints[152]; // Chin point
-    const leftTemple = keypoints[21];
-    const rightTemple = keypoints[251];
-    
-    if (!foreheadCenter || !chin || !leftTemple || !rightTemple) {
-      console.log('⚠️ Missing landmarks for party hat');
-      return;
-    }
-    
-    const headHeight = Math.abs((foreheadCenter.y - chin.y) * scaleY);
-    const headWidth = Math.hypot(
-      (rightTemple.x - leftTemple.x) * scaleX,
-      (rightTemple.y - leftTemple.y) * scaleY
-    );
-    
-    const centerX = foreheadCenter.x * scaleX;
-    const centerY = foreheadCenter.y * scaleY - headHeight * 0.15;
-    
-    // Bigger hat for visibility
-    const width = headWidth * 1.1 * this.maskScale;
-    const height = width * 1.5;
-    
-    this.ctx.save();
-    this.ctx.globalAlpha = this.maskOpacity;
-    this.ctx.drawImage(image, centerX - width / 2, centerY - height, width, height);
-    this.ctx.restore();
-    
-    console.log('🎉 Drew party hat at', { centerX, centerY, width, height });
-  }
-
-  /**
-   * Fallback mask drawing (simple shapes if images not loaded)
-   */
-  private drawFallbackMask(landmarks: FaceLandmarks): void {
-    if (!this.ctx) return;
-    
-    // Draw simple colored overlay as fallback
-    const keypoints = landmarks.keypoints;
-    const videoWidth = this.videoElement?.videoWidth || this.currentResolution.width;
-    const videoHeight = this.videoElement?.videoHeight || this.currentResolution.height;
-    const scaleX = this.canvas!.width / videoWidth;
-    const scaleY = this.canvas!.height / videoHeight;
-    
-    this.ctx.save();
-    this.ctx.globalAlpha = 0.7;
-    
-    switch (this.currentMask) {
-      case 'sunglasses': {
-        const leftEye = keypoints[AR_CONSTANTS.LANDMARKS.LEFT_EYE_OUTER];
-        const rightEye = keypoints[AR_CONSTANTS.LANDMARKS.RIGHT_EYE_OUTER];
-        if (leftEye && rightEye) {
-          this.ctx.fillStyle = '#000000';
-          const eyeRadius = 20;
-          this.ctx.beginPath();
-          this.ctx.arc(leftEye.x * scaleX, leftEye.y * scaleY, eyeRadius, 0, 2 * Math.PI);
-          this.ctx.arc(rightEye.x * scaleX, rightEye.y * scaleY, eyeRadius, 0, 2 * Math.PI);
-          this.ctx.fill();
-        }
-        break;
-      }
-      default:
-        // No fallback for other masks
-        break;
-    }
-    
-    this.ctx.restore();
-  }
-
-  /**
-   * Apply blur effect to canvas
-   */
-  /**
-   * Update performance metrics
-   */
-  private updatePerformanceMetrics(frameTime: number): void {
-    this.frameCount++;
-    this.processingTimes.push(frameTime);
-    
-    // Keep last 60 frames for averaging
-    if (this.processingTimes.length > 60) {
-      this.processingTimes.shift();
-    }
-    
-    // Update FPS every second
-    const now = Date.now();
-    if (now - this.lastFpsUpdate >= 1000) {
-      this.performanceMetrics.fps = this.frameCount;
-      this.frameCount = 0;
-      this.lastFpsUpdate = now;
-      
-      // Estimate CPU usage
-      const avgFrameTime = this.processingTimes.reduce((a, b) => a + b, 0) / this.processingTimes.length;
-      const targetFrameTime = 1000 / AR_CONSTANTS.TARGET_FPS;
-      this.performanceMetrics.cpuUsage = Math.min(100, (avgFrameTime / targetFrameTime) * 100);
-      
-      this.performanceMetrics.timestamp = now;
-      
-      // Notify callback
-      if (this.performanceCallback) {
-        this.performanceCallback(this.performanceMetrics);
-      }
-    }
-  }
-
-  /**
-   * Change mask type
-   */
-  setMask(maskType: FaceMaskType): void {
-    if (this.currentMask === maskType) {
-      return;
-    }
-    console.log(`🎭 [AR Filter] Changing mask from "${this.currentMask}" to "${maskType}"`);
-    this.currentMask = maskType;
-
-    if (maskType === 'none') {
-      this.handleFaceLost();
-    }
-  }
-
-  /**
-   * Set blur state
-   */
-  setBlurState(state: BlurState): void {
-    console.log(`👁️ Setting blur state: ${state}`);
-    this.blurState = state;
-  }
-
-  /**
-   * Set blur intensity
+   * Update blur intensity - changes apply instantly to stream
    */
   setBlurIntensity(intensity: number): void {
+    console.log('🌫️ Changing blur intensity to:', intensity, '- remote users will see this instantly');
     this.blurIntensity = Math.max(0, Math.min(AR_CONSTANTS.BLUR_RADIUS.MAX, intensity));
+    // Intensity changes automatically apply in next animation frame
   }
 
   /**
-   * Set mask opacity
+   * Stop processing and clean up
    */
-  setMaskOpacity(opacity: number): void {
-    this.maskOpacity = Math.max(0, Math.min(1, opacity));
+  stopProcessing(): void {
+    console.log('🛑 Stopping filter processing...');
+    
+    // Stop animation frame
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    
+    // Stop processed stream
+    if (this.processedStream) {
+      this.processedStream.getTracks().forEach(track => {
+        // Don't stop audio tracks from original stream
+        if (track.kind === 'video') {
+          track.stop();
+        }
+      });
+      this.processedStream = null;
+    }
+    
+    // Cleanup video element
+    if (this.videoElement) {
+      this.videoElement.srcObject = null;
+      this.videoElement = null;
+    }
+    
+    // Cleanup canvas
+    this.canvas = null;
+    this.ctx = null;
+    
+    // Reset state
+    this.originalStream = null;
+    this.currentFilter = 'none';
+    this.blurState = 'disabled';
+    
+    console.log('✅ Filter processing stopped');
   }
 
   /**
-   * Set mask scale
+   * Get current processing state
    */
-  setMaskScale(scale: number): void {
-    this.maskScale = Math.max(AR_CONSTANTS.MASK_SCALE.MIN, Math.min(AR_CONSTANTS.MASK_SCALE.MAX, scale));
-  }
-
-  /**
-   * Get processed stream
-   */
-  getProcessedStream(): MediaStream | null {
-    return this.processedStream;
-  }
-
-  /**
-   * Get current performance metrics
-   */
-  getPerformanceMetrics(): ARPerformanceMetrics {
-    return { ...this.performanceMetrics };
+  getState() {
+    return {
+      isProcessing: this.videoElement !== null,
+      currentFilter: this.currentFilter,
+      blurState: this.blurState,
+      blurIntensity: this.blurIntensity,
+    };
   }
 
   /**
@@ -843,104 +279,29 @@ class ARFilterService {
   }
 
   /**
-   * Set performance callback
+   * Set callbacks
    */
   setPerformanceCallback(callback: (metrics: ARPerformanceMetrics) => void): void {
     this.performanceCallback = callback;
   }
 
-  /**
-   * Set error callback
-   */
   setErrorCallback(callback: (error: Error) => void): void {
     this.errorCallback = callback;
   }
 
   /**
-   * Set face detection callback
+   * Get mock performance metrics (no heavy processing anymore)
    */
-  setFaceDetectionCallback(callback: (detected: boolean, landmarks?: FaceLandmarks) => void): void {
-    this.faceDetectionCallback = callback;
-  }
-
-  /**
-   * Check if face is detected
-   */
-  isFaceDetected(): boolean {
-    return this.faceDetected;
-  }
-
-  /**
-   * Stop processing and cleanup
-   */
-  stopProcessing(): void {
-    console.log('🛑 Stopping AR processing...');
-    
-    // Stop animation loop
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
-    }
-    
-    // Stop streams
-    if (this.processedStream) {
-      this.processedStream.getTracks().forEach(track => track.stop());
-      this.processedStream = null;
-    }
-    
-    // Clean up video element
-    if (this.videoElement) {
-      this.videoElement.pause();
-      this.videoElement.srcObject = null;
-      this.videoElement = null;
-    }
-    
-    // Clean up canvas
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.canvas!.width, this.canvas!.height);
-      this.ctx = null;
-    }
-    this.canvas = null;
-    
-    // Reset state
-    this.originalStream = null;
-    this.faceDetected = false;
-    this.lastFaceLandmarks = null;
-    
-    console.log('✅ AR processing stopped');
-  }
-
-  /**
-   * Destroy service and free resources
-   */
-  async destroy(): Promise<void> {
-    console.log('🗑️ Destroying AR Filter Service...');
-    
-    this.stopProcessing();
-    
-    // Dispose TensorFlow resources
-    if (this.detector) {
-      try {
-        this.detector.dispose();
-      } catch (error) {
-        console.error('Error disposing detector:', error);
-      }
-      this.detector = null;
-    }
-    
-    // Clear mask images
-    this.maskImages.clear();
-    this.maskImagesLoaded.clear();
-    
-    // Reset callbacks
-    this.performanceCallback = null;
-    this.errorCallback = null;
-    this.faceDetectionCallback = null;
-    
-    console.log('✅ AR Filter Service destroyed');
+  getPerformanceMetrics(): ARPerformanceMetrics {
+    return {
+      fps: 60, // CSS filters don't impact FPS
+      faceDetectionTime: 0,
+      renderTime: 0,
+      cpuUsage: 0,
+      droppedFrames: 0,
+      timestamp: Date.now(),
+    };
   }
 }
 
-// Export singleton instance
-const arFilterService = ARFilterService.getInstance();
-export default arFilterService;
+export default ARFilterService;
