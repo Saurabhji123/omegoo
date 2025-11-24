@@ -1777,8 +1777,8 @@ const VideoChat: React.FC = () => {
           {/* Local Video - FIXED: 1:1 aspect ratio for consistency across all devices */}
           <div className="absolute bottom-20 right-2 lg:bottom-4 lg:right-4 xl:bottom-6 xl:right-6">
             <div className={`bg-gray-800 rounded-lg border-2 border-white border-opacity-30 overflow-hidden shadow-2xl ${
-              // FIXED: Square aspect ratio (1:1) - increased mobile size to 36x36 for better visibility
-              windowWidth < 768 ? 'w-36 h-36' : 'w-40 h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56'
+              // FIXED: Square aspect ratio (1:1) - increased sizes: mobile 36x36, tablet 56x56, desktop 64x64, xl 72x72
+              windowWidth < 768 ? 'w-36 h-36' : windowWidth < 1024 ? 'w-56 h-56' : windowWidth < 1280 ? 'w-64 h-64' : 'w-72 h-72'
             }`}>
               <video
                 ref={localVideoRef}

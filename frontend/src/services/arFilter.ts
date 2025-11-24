@@ -105,10 +105,18 @@ class ARFilterService {
       // Wait for video to be ready
       await new Promise<void>((resolve) => {
         this.videoElement!.onloadedmetadata = () => {
-          this.videoElement!.play();
+          this.videoElement!.play().catch(err => {
+            console.error('❌ Video play error:', err);
+          });
           resolve();
         };
       });
+      
+      // Ensure video keeps playing
+      this.videoElement.onpause = () => {
+        console.log('⚠️ Video paused, resuming...');
+        this.videoElement!.play().catch(err => console.error('Resume error:', err));
+      };
       
       // Create canvas for processing
       this.canvas = document.createElement('canvas');
@@ -152,6 +160,9 @@ class ARFilterService {
       if (!this.videoElement || !this.canvas || !this.ctx) return;
       
       try {
+        // CRITICAL: Clear canvas before drawing to prevent freezing
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
         // Apply filters to canvas context
         const filters: string[] = [];
         
@@ -171,6 +182,8 @@ class ARFilterService {
         
         // Apply filters and draw
         this.ctx.filter = filters.length > 0 ? filters.join(' ') : 'none';
+        
+        // Draw the current video frame
         this.ctx.drawImage(
           this.videoElement,
           0,
@@ -178,6 +191,9 @@ class ARFilterService {
           this.canvas.width,
           this.canvas.height
         );
+        
+        // Reset filter after drawing to avoid filter accumulation
+        this.ctx.filter = 'none';
       } catch (error) {
         console.error('❌ Error in processing loop:', error);
       }
