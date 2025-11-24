@@ -96,10 +96,10 @@ export const AR_CONSTANTS = {
   
   // Blur settings
   BLUR_RADIUS: {
-    LOW: 2,
-    MEDIUM: 4,
-    HIGH: 6,
-    MAX: 8,
+    LOW: 4,
+    MEDIUM: 6,
+    HIGH: 8,
+    MAX: 10,
   },
   DEFAULT_BLUR_DURATION: 10, // seconds
   BLUR_COUNTDOWN_INTERVAL: 1000, // ms

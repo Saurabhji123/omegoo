@@ -72,10 +72,18 @@ export class SocketService {
   private static emitToAllUserDevices(userId: string, event: string, data: any) {
     const socketIds = this.connectedUsers.get(userId) || [];
     if (socketIds.length > 0) {
-      console.log(`📤 [Multi-Device] Emitting '${event}' to ${socketIds.length} device(s) for user ${userId}`);
+      console.log(`📤 [Multi-Device] Emitting '${event}' to ${socketIds.length} device(s) for user ${userId}:`, socketIds);
       socketIds.forEach(socketId => {
-        this.io.to(socketId).emit(event, data);
+        const socket = this.io.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.emit(event, data);
+          console.log(`✅ [Multi-Device] Event '${event}' sent to socket ${socketId}`);
+        } else {
+          console.warn(`⚠️ [Multi-Device] Socket ${socketId} not found for user ${userId}`);
+        }
       });
+    } else {
+      console.warn(`⚠️ [Multi-Device] No active sockets found for user ${userId}`);
     }
   }
 
