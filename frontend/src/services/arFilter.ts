@@ -90,39 +90,60 @@ class ARFilterService {
     try {
       console.log('🎨 Starting canvas-based filter processing...', { filterType, blurState });
       
+      // CRITICAL: Stop any existing processing first to prevent multiple loops
+      if (this.animationFrameId !== null) {
+        console.log('⚠️ Stopping existing processing loop before starting new one');
+        cancelAnimationFrame(this.animationFrameId);
+        this.animationFrameId = null;
+      }
+      
       this.currentFilter = filterType;
       this.blurState = blurState;
       this.blurIntensity = blurIntensity;
       this.originalStream = stream;
       
-      // Create video element to read from stream
-      this.videoElement = document.createElement('video');
-      this.videoElement.srcObject = stream;
-      this.videoElement.autoplay = true;
-      this.videoElement.playsInline = true;
-      this.videoElement.muted = true;
+      // Use provided video element if available, otherwise create new
+      if (videoElement && videoElement.srcObject === stream) {
+        console.log('✅ Using existing video element');
+        this.videoElement = videoElement;
+      } else {
+        // Create video element to read from stream
+        this.videoElement = document.createElement('video');
+        this.videoElement.srcObject = stream;
+        this.videoElement.autoplay = true;
+        this.videoElement.playsInline = true;
+        this.videoElement.muted = true;
+      }
       
-      // Wait for video to be ready
-      await new Promise<void>((resolve) => {
-        this.videoElement!.onloadedmetadata = () => {
-          this.videoElement!.play().catch(err => {
-            console.error('❌ Video play error:', err);
-          });
-          resolve();
-        };
-      });
+      // Wait for video to be ready only for newly created elements
+      if (!videoElement) {
+        await new Promise<void>((resolve) => {
+          this.videoElement!.onloadedmetadata = () => {
+            this.videoElement!.play().catch(err => {
+              console.error('❌ Video play error:', err);
+            });
+            resolve();
+          };
+        });
+      }
       
-      // Ensure video keeps playing
-      this.videoElement.onpause = () => {
-        console.log('⚠️ Video paused, resuming...');
-        this.videoElement!.play().catch(err => console.error('Resume error:', err));
-      };
+      // Create or reuse canvas for processing
+      if (!this.canvas) {
+        this.canvas = document.createElement('canvas');
+      }
       
-      // Create canvas for processing
-      this.canvas = document.createElement('canvas');
-      this.canvas.width = this.videoElement.videoWidth || 640;
-      this.canvas.height = this.videoElement.videoHeight || 480;
-      this.ctx = this.canvas.getContext('2d', { alpha: false });
+      // Set canvas size based on video dimensions
+      const width = this.videoElement.videoWidth || 640;
+      const height = this.videoElement.videoHeight || 480;
+      
+      // Only resize if dimensions changed
+      if (this.canvas.width !== width || this.canvas.height !== height) {
+        this.canvas.width = width;
+        this.canvas.height = height;
+        console.log(`📐 Canvas sized to ${width}x${height}`);
+      }
+      
+      this.ctx = this.canvas.getContext('2d', { alpha: false, willReadFrequently: false });
       
       if (!this.ctx) {
         throw new Error('Failed to get canvas context');
@@ -157,7 +178,10 @@ class ARFilterService {
    */
   private startProcessingLoop(): void {
     const processFrame = () => {
-      if (!this.videoElement || !this.canvas || !this.ctx) return;
+      // CRITICAL: Check if processing should continue
+      if (!this.videoElement || !this.canvas || !this.ctx || this.animationFrameId === null) {
+        return;
+      }
       
       try {
         // CRITICAL: Clear canvas before drawing to prevent freezing
@@ -257,9 +281,10 @@ class ARFilterService {
       this.processedStream = null;
     }
     
-    // Cleanup video element
+    // Cleanup video element only if we created it
     if (this.videoElement) {
-      this.videoElement.srcObject = null;
+      // Don't remove srcObject if it's an external video element
+      // Just clear our reference
       this.videoElement = null;
     }
     

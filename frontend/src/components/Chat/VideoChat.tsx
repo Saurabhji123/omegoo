@@ -255,12 +255,6 @@ const VideoChat: React.FC = () => {
     const shouldUseFilters = selectedMask !== 'none' || blurState === 'active' || blurState === 'manual';
 
     if (shouldUseFilters) {
-      if (arActiveRef.current && processedStreamRef.current) {
-        // Already processing; filter updates apply automatically
-        console.log('🔄 Filters updated, changes apply instantly to remote stream');
-        return;
-      }
-
       try {
         console.log('🎭 Enabling filter pipeline for remote streaming');
         
@@ -269,23 +263,26 @@ const VideoChat: React.FC = () => {
         const arService = ARFilterService.getInstance();
         
         // Initialize if needed
-        if (!arService.getCapabilities()) {
+        const capabilities = arService.getCapabilities?.() || null;
+        if (!capabilities) {
           await arService.initialize();
         }
         
-        // Get processed stream with filters
+        // Start or restart processing with current local video element
+        // This will stop any existing processing and start fresh
         const processedStream = await arService.startProcessing(
           rawStream,
           selectedMask,
           blurState,
-          4 // blur intensity - light blur (was 10px, now 4px)
+          4, // blur intensity - light blur
+          localVideoRef.current || undefined // Pass existing video element
         );
         
         processedStreamRef.current = processedStream;
         arActiveRef.current = true;
 
-        // Update local video display
-        if (localVideoRef.current) {
+        // Update local video display only if it's a new stream
+        if (localVideoRef.current && localVideoRef.current.srcObject !== processedStream) {
           localVideoRef.current.srcObject = processedStream;
         }
         localStreamRef.current = processedStream;
