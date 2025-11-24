@@ -18,7 +18,6 @@ import {
 import { MicrophoneIcon as MicrophoneSlashIcon } from '@heroicons/react/24/solid';
 import ReportModal from './ReportModal';
 import { PreviewModal } from './PreviewModal';
-import FaceMaskPicker from './FaceMaskPicker';
 import LoginRegister from '../Auth/LoginRegister';
 import { useARFilter } from '../../contexts/ARFilterContext';
 import { FACE_MASK_PRESETS, FaceMaskType, BlurState } from '../../types/arFilters';
@@ -82,7 +81,6 @@ const VideoChat: React.FC = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false); // Optional preview modal
   const [isAudioOnly, setIsAudioOnly] = useState(false); // Track audio-only mode
-  const [showFaceMaskPicker, setShowFaceMaskPicker] = useState(false);
   const [showMaskMenu, setShowMaskMenu] = useState(false);
   
   // Swipe gesture states
@@ -115,7 +113,7 @@ const VideoChat: React.FC = () => {
     }
     
     // 🔐 Edge Case 2: Disable during modal/popup states
-    if (showReportModal || showLoginModal || showPreview || showFaceMaskPicker || showMaskMenu) {
+    if (showReportModal || showLoginModal || showPreview || showMaskMenu) {
       console.log('🚫 Swipe disabled: Modal/popup is open');
       return false;
     }
@@ -128,7 +126,7 @@ const VideoChat: React.FC = () => {
     
     // ✅ All conditions passed - swipes enabled
     return true;
-  }, [isInputFocused, showReportModal, showLoginModal, showPreview, showFaceMaskPicker, showMaskMenu, socketConnected, socketConnecting]);
+  }, [isInputFocused, showReportModal, showLoginModal, showPreview, showMaskMenu, socketConnected, socketConnecting]);
 
   // 🎯 Auto-Typing Indicator System (Retention Boost)
   const startInactivityTimer = useCallback(() => {
@@ -280,7 +278,7 @@ const VideoChat: React.FC = () => {
           rawStream,
           selectedMask,
           blurState,
-          10 // blur intensity
+          4 // blur intensity - light blur (was 10px, now 4px)
         );
         
         processedStreamRef.current = processedStream;
@@ -417,7 +415,7 @@ const VideoChat: React.FC = () => {
         const ARFilterService = (await import('../../services/arFilter')).default;
         const arService = ARFilterService.getInstance();
         arService.setFilter(selectedMask);
-        arService.setBlurState(blurState, 10);
+        arService.setBlurState(blurState, 4); // light blur intensity
         console.log('🔄 Filter settings updated in real-time for remote stream');
       };
       updateFilters();
@@ -1779,8 +1777,8 @@ const VideoChat: React.FC = () => {
           {/* Local Video - FIXED: 1:1 aspect ratio for consistency across all devices */}
           <div className="absolute bottom-20 right-2 lg:bottom-4 lg:right-4 xl:bottom-6 xl:right-6">
             <div className={`bg-gray-800 rounded-lg border-2 border-white border-opacity-30 overflow-hidden shadow-2xl ${
-              // FIXED: Square aspect ratio (1:1) on all devices for consistency
-              windowWidth < 768 ? 'w-24 h-24' : 'w-40 h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56'
+              // FIXED: Square aspect ratio (1:1) - increased mobile size to 36x36 for better visibility
+              windowWidth < 768 ? 'w-36 h-36' : 'w-40 h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56'
             }`}>
               <video
                 ref={localVideoRef}
@@ -1920,7 +1918,18 @@ const VideoChat: React.FC = () => {
           <div className="flex flex-wrap justify-center items-center gap-3 lg:gap-4 mb-3">
             {!isMatchConnected ? (
               <button
-                onClick={() => setShowFaceMaskPicker(true)}
+                onClick={async () => {
+                  // Start camera and search directly without preview modal
+                  try {
+                    console.log('🎥 Starting camera before search...');
+                    await startLocalVideo();
+                    console.log('✅ Camera started successfully');
+                    startNewChat(false);
+                  } catch (error) {
+                    console.error('❌ Failed to start camera:', error);
+                    alert('Camera access is required for video chat. Please allow camera permissions.');
+                  }
+                }}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 lg:px-8 lg:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-sm lg:text-base touch-manipulation"
                 disabled={isSearching}
               >
@@ -2135,29 +2144,6 @@ const VideoChat: React.FC = () => {
           onCancel={handlePreviewCancel}
         />
       )}
-
-      {/* Face Mask Picker Modal */}
-      <FaceMaskPicker
-        isOpen={showFaceMaskPicker}
-        onClose={() => setShowFaceMaskPicker(false)}
-        onConfirm={async () => {
-          setShowFaceMaskPicker(false);
-          
-          // CRITICAL: Start camera FIRST before searching
-          try {
-            console.log('🎥 Starting camera preview before search...');
-            await startLocalVideo();
-            console.log('✅ Camera preview started successfully');
-          } catch (error) {
-            console.error('❌ Failed to start camera:', error);
-            alert('Camera access is required for video chat. Please allow camera permissions.');
-            return;
-          }
-          
-          // Now start search
-          startNewChat(false);
-        }}
-      />
 
       {/* Audio-Only Mode Banner */}
       {isMatchConnected && isAudioOnly && (

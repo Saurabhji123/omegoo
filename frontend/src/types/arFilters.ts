@@ -277,17 +277,17 @@ export function getRecommendedMasks(performance: 'high' | 'medium' | 'low'): Fac
 export function getFilterCSS(filterType: FaceMaskType): string {
   switch (filterType) {
     case 'grayscale':
-      return 'grayscale(100%)';
+      return 'grayscale(100%) contrast(1.1)'; // Added contrast for better definition
     case 'sepia':
-      return 'sepia(80%)';
+      return 'sepia(90%) contrast(1.15) brightness(1.05)'; // Increased sepia and added contrast
     case 'invert':
-      return 'invert(100%)';
+      return 'invert(100%) hue-rotate(180deg)'; // Added hue-rotate for more dramatic effect
     case 'cool':
-      return 'hue-rotate(180deg) saturate(1.2)';
+      return 'saturate(1.4) contrast(1.1) brightness(0.95) hue-rotate(200deg)'; // More pronounced blue
     case 'warm':
-      return 'hue-rotate(-30deg) saturate(1.3) contrast(1.1)';
+      return 'saturate(1.5) contrast(1.2) brightness(1.08) hue-rotate(-20deg)'; // More pronounced warm tones
     case 'vibrant':
-      return 'saturate(1.8) contrast(1.15) brightness(1.05)';
+      return 'saturate(2.2) contrast(1.25) brightness(1.1)'; // Increased vibrance significantly
     case 'none':
     default:
       return 'none';
