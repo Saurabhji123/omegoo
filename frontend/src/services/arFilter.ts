@@ -99,11 +99,17 @@ class ARFilterService {
     videoElement?: HTMLVideoElement
   ): Promise<MediaStream> {
     try {
-      console.log('🎬 Starting filter processing...', { filterType, blurState, blurIntensity });
+      console.log('🎬 [FILTER START] Beginning filter processing...', { 
+        filterType, 
+        blurState, 
+        blurIntensity,
+        hasVideoElement: !!videoElement,
+        streamTracks: stream.getTracks().length
+      });
       
       // Stop any existing processing
       if (this.animationFrameId !== null) {
-        console.log('⚠️ Stopping existing processing loop');
+        console.log('⚠️ [FILTER START] Stopping existing processing loop');
         cancelAnimationFrame(this.animationFrameId);
         this.animationFrameId = null;
       }
@@ -115,25 +121,27 @@ class ARFilterService {
       
       // CRITICAL: Use provided video element if available (it's already playing the stream)
       if (videoElement) {
-        console.log('✅ Using existing video element from page');
+        console.log('✅ [FILTER START] Using existing video element from page');
         this.videoElement = videoElement;
         
-        // Ensure video element has the stream and is playing
-        if (videoElement.srcObject !== stream) {
-          console.log('⚠️ Video element stream mismatch, updating...');
-          videoElement.srcObject = stream;
+        // Wait a bit for video to be ready if needed
+        if (this.videoElement.readyState < 2) {
+          console.log('⏳ [FILTER START] Waiting for video to be ready...');
           await new Promise<void>((resolve) => {
-            videoElement.onloadedmetadata = () => {
-              videoElement.play().catch(err => {
-                console.error('❌ Video play error:', err);
-              });
-              resolve();
+            const checkReady = () => {
+              if (this.videoElement!.readyState >= 2) {
+                console.log('✅ [FILTER START] Video element ready');
+                resolve();
+              } else {
+                setTimeout(checkReady, 50);
+              }
             };
+            checkReady();
           });
         }
       } else {
-        // Create new video element if none provided
-        console.log('📹 Creating new video element');
+        // Create new hidden video element if none provided
+        console.log('📹 [FILTER START] Creating new video element');
         this.videoElement = document.createElement('video');
         this.videoElement.srcObject = stream;
         this.videoElement.autoplay = true;
@@ -144,11 +152,22 @@ class ARFilterService {
         await new Promise<void>((resolve) => {
           this.videoElement!.onloadedmetadata = () => {
             this.videoElement!.play().catch(err => {
-              console.error('❌ Video play error:', err);
+              console.error('❌ [FILTER START] Video play error:', err);
             });
+            console.log('✅ [FILTER START] New video element ready');
             resolve();
           };
         });
+      }
+      
+      // Verify video dimensions
+      const width = this.videoElement.videoWidth || 640;
+      const height = this.videoElement.videoHeight || 480;
+      
+      console.log(`📐 [FILTER START] Video dimensions: ${width}x${height}, readyState: ${this.videoElement.readyState}`);
+      
+      if (width === 0 || height === 0) {
+        throw new Error('Video dimensions are invalid (0x0)');
       }
       
       // Create canvas
@@ -156,13 +175,10 @@ class ARFilterService {
         this.canvas = document.createElement('canvas');
       }
       
-      const width = this.videoElement.videoWidth || 640;
-      const height = this.videoElement.videoHeight || 480;
-      
       if (this.canvas.width !== width || this.canvas.height !== height) {
         this.canvas.width = width;
         this.canvas.height = height;
-        console.log(`📐 Canvas: ${width}x${height}`);
+        console.log(`📐 [FILTER START] Canvas resized to: ${width}x${height}`);
       }
       
       this.ctx = this.canvas.getContext('2d', { alpha: false, willReadFrequently: false });
@@ -171,22 +187,29 @@ class ARFilterService {
         throw new Error('Failed to get canvas context');
       }
       
-      // Start processing
+      console.log('🎨 [FILTER START] Canvas context created');
+      
+      // Start processing loop
       this.startProcessingLoop();
       
-      // Capture canvas stream
+      // Capture canvas stream at 30fps
       this.processedStream = this.canvas.captureStream(30);
       
-      // Add audio tracks
+      console.log(`📹 [FILTER START] Canvas stream captured, video tracks: ${this.processedStream.getVideoTracks().length}`);
+      
+      // Add audio tracks from original stream
       const audioTracks = stream.getAudioTracks();
       audioTracks.forEach(track => {
         this.processedStream!.addTrack(track);
+        console.log(`🔊 [FILTER START] Added audio track: ${track.label}`);
       });
       
-      console.log('✅ Filter processing started - streaming to remote peer');
+      console.log('✅ [FILTER START] Filter processing started successfully - streaming to remote peer');
+      console.log(`   → Processed stream tracks: ${this.processedStream.getTracks().length} (${this.processedStream.getVideoTracks().length} video, ${this.processedStream.getAudioTracks().length} audio)`);
+      
       return this.processedStream;
     } catch (error) {
-      console.error('❌ Failed to start processing:', error);
+      console.error('❌ [FILTER START] Failed to start processing:', error);
       if (this.errorCallback) {
         this.errorCallback(error as Error);
       }
@@ -198,8 +221,11 @@ class ARFilterService {
    * Main processing loop - applies filters to every frame
    */
   private startProcessingLoop(): void {
+    let frameCounter = 0;
+    
     const processFrame = () => {
       if (!this.videoElement || !this.canvas || !this.ctx) {
+        console.warn('⚠️ [FILTER LOOP] Missing required elements, stopping loop');
         return;
       }
       
@@ -223,8 +249,15 @@ class ARFilterService {
           }
         }
         
+        const filterString = filters.length > 0 ? filters.join(' ') : 'none';
+        
+        // Log every 30 frames (once per second at 30fps)
+        if (frameCounter % 30 === 0) {
+          console.log(`🎨 [FILTER LOOP] Frame ${frameCounter}: filter="${filterString}", video=${this.videoElement.videoWidth}x${this.videoElement.videoHeight}, readyState=${this.videoElement.readyState}`);
+        }
+        
         // Apply filters and draw
-        this.ctx.filter = filters.length > 0 ? filters.join(' ') : 'none';
+        this.ctx.filter = filterString;
         this.ctx.drawImage(
           this.videoElement,
           0,
@@ -234,19 +267,22 @@ class ARFilterService {
         );
         this.ctx.filter = 'none';
         
+        frameCounter++;
+        
         // Update metrics
         const renderTime = performance.now() - startTime;
         this.performanceMetrics.renderTime = renderTime;
         this.updatePerformanceMetrics(renderTime);
         
       } catch (error) {
-        console.error('❌ Processing error:', error);
+        console.error('❌ [FILTER LOOP] Processing error:', error);
         this.performanceMetrics.droppedFrames++;
       }
       
       this.animationFrameId = requestAnimationFrame(processFrame);
     };
     
+    console.log('🔄 [FILTER LOOP] Starting processing loop');
     processFrame();
   }
 
@@ -305,16 +341,20 @@ class ARFilterService {
    * Change filter type
    */
   setMask(maskType: FaceMaskType): void {
-    if (this.currentMask === maskType) return;
-    console.log(`🎨 Filter: ${this.currentMask} → ${maskType}`);
+    console.log(`🎨 [FILTER SET] Changing filter: ${this.currentMask} → ${maskType}`);
+    if (this.currentMask === maskType) {
+      console.log('   → Filter unchanged, skipping');
+      return;
+    }
     this.currentMask = maskType;
+    console.log('   → Filter updated, will apply in next frame');
   }
 
   /**
    * Update blur state
    */
   setBlurState(state: BlurState, intensity?: number): void {
-    console.log(`👁️ Blur: ${state}`);
+    console.log(`👁️ [BLUR SET] State: ${this.blurState} → ${state}, Intensity: ${intensity || this.blurIntensity}px`);
     this.blurState = state;
     if (intensity !== undefined) {
       this.blurIntensity = intensity;

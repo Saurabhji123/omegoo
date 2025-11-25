@@ -248,15 +248,17 @@ const VideoChat: React.FC = () => {
   const applyEffectsToCurrentStream = useCallback(async () => {
     const rawStream = rawStreamRef.current;
     if (!rawStream) {
-      console.log('⏭️ No raw stream available yet for effects');
+      console.log('⏭️ [APPLY EFFECTS] No raw stream available yet');
       return;
     }
 
     const shouldUseFilters = selectedMask !== 'none' || blurState === 'active' || blurState === 'manual';
 
+    console.log(`📊 [APPLY EFFECTS] Filter check: mask="${selectedMask}", blur="${blurState}", shouldUseFilters=${shouldUseFilters}`);
+
     if (shouldUseFilters) {
       try {
-        console.log('🎭 Enabling filter pipeline for remote streaming');
+        console.log('🎭 [APPLY EFFECTS] Enabling filter pipeline for remote streaming');
         
         // Get AR service instance
         const ARFilterService = (await import('../../services/arFilter')).default;
@@ -265,11 +267,14 @@ const VideoChat: React.FC = () => {
         // Initialize if needed
         const capabilities = arService.getCapabilities?.() || null;
         if (!capabilities) {
+          console.log('⚙️ [APPLY EFFECTS] Initializing AR service...');
           await arService.initialize();
         }
         
-        // CRITICAL: Pass the local video element but DON'T change its srcObject
-        // The canvas will read from the video element's current stream
+        // CRITICAL: Pass the local video element so canvas can read from it
+        // DO NOT change local video's srcObject - keep it showing raw stream
+        console.log(`📹 [APPLY EFFECTS] Starting processing with local video element (ready: ${localVideoRef.current?.readyState})`);
+        
         const processedStream = await arService.startProcessing(
           rawStream,
           selectedMask,
@@ -281,22 +286,31 @@ const VideoChat: React.FC = () => {
         processedStreamRef.current = processedStream;
         arActiveRef.current = true;
 
+        // Verify processed stream has video track
+        const videoTracks = processedStream.getVideoTracks();
+        console.log(`📹 [APPLY EFFECTS] Processed stream created: ${videoTracks.length} video tracks`);
+        
+        if (videoTracks.length === 0) {
+          throw new Error('Processed stream has no video tracks!');
+        }
+
         // IMPORTANT: Keep local video showing raw stream
-        // Only send processed stream to remote user
         localStreamRef.current = rawStream;
 
         // Send processed stream to remote user via WebRTC
         if (webRTCRef.current) {
           const videoTrack = processedStream.getVideoTracks()[0];
-          if (videoTrack) {
-            await webRTCRef.current.replaceVideoTrack(videoTrack);
-            console.log('✅ Remote user will now see filtered video');
-          }
+          console.log(`🔄 [APPLY EFFECTS] Replacing WebRTC video track (id: ${videoTrack.id}, enabled: ${videoTrack.enabled}, readyState: ${videoTrack.readyState})`);
+          
+          await webRTCRef.current.replaceVideoTrack(videoTrack);
+          console.log('✅ [APPLY EFFECTS] Remote user will now see filtered video');
+        } else {
+          console.warn('⚠️ [APPLY EFFECTS] WebRTC not available, cannot send filtered stream to remote');
         }
 
-        console.log('✅ Filter pipeline enabled - remote stream updated');
+        console.log('✅ [APPLY EFFECTS] Filter pipeline enabled successfully');
       } catch (error) {
-        console.error('❌ Failed to enable filter pipeline:', error);
+        console.error('❌ [APPLY EFFECTS] Failed to enable filter pipeline:', error);
         // Fallback to raw stream
         arActiveRef.current = false;
         processedStreamRef.current = null;
@@ -305,7 +319,7 @@ const VideoChat: React.FC = () => {
     } else {
       // No filters needed
       if (arActiveRef.current && processedStreamRef.current) {
-        console.log('🛑 Disabling filters, switching to raw stream');
+        console.log('🛑 [APPLY EFFECTS] Disabling filters, switching to raw stream');
         const ARFilterService = (await import('../../services/arFilter')).default;
         const arService = ARFilterService.getInstance();
         arService.stopProcessing();
@@ -320,9 +334,11 @@ const VideoChat: React.FC = () => {
           const videoTrack = rawStream.getVideoTracks()[0];
           if (videoTrack) {
             await webRTCRef.current.replaceVideoTrack(videoTrack);
-            console.log('✅ Remote user will now see unfiltered video');
+            console.log('✅ [APPLY EFFECTS] Remote user will now see unfiltered video');
           }
         }
+      } else {
+        console.log('ℹ️ [APPLY EFFECTS] No filters active, no action needed');
       }
     }
 
@@ -333,12 +349,16 @@ const VideoChat: React.FC = () => {
       videoTrack.enabled = isCameraOn;
     }
 
-    if (localVideoRef.current && !localVideoRef.current.srcObject) {
-      localVideoRef.current.srcObject = rawStream;
-      try {
-        await localVideoRef.current.play();
-      } catch (playError) {
-        console.warn('Auto-play prevented after stream update');
+    // Ensure local video element has raw stream
+    if (localVideoRef.current) {
+      if (!localVideoRef.current.srcObject) {
+        console.log('📹 [APPLY EFFECTS] Setting raw stream on local video element');
+        localVideoRef.current.srcObject = rawStream;
+        try {
+          await localVideoRef.current.play();
+        } catch (playError) {
+          console.warn('Auto-play prevented after stream update');
+        }
       }
     }
   }, [selectedMask, blurState, applyMicState, isCameraOn]);
