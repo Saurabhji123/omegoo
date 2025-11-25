@@ -1149,17 +1149,11 @@ const VideoChat: React.FC = () => {
     if (forceCleanup) {
       console.log('🧹 Force cleaning video streams for fresh reconnect');
       
-      // Clean local video
-      if (localVideoRef.current?.srcObject) {
-        const localStream = localVideoRef.current.srcObject as MediaStream;
-        localStream.getTracks().forEach(track => {
-          console.log('🛑 Stopping local track:', track.kind);
-          track.stop();
-        });
-        localVideoRef.current.srcObject = null;
-      }
+      // DON'T stop local video - keep camera running for next match
+      // Local stream stays active so user can see themselves during "finding"
+      console.log('✅ Keeping local video stream active for next match');
       
-      // Clean remote video
+      // Clean remote video only
       if (remoteVideoRef.current?.srcObject) {
         const remoteStream = remoteVideoRef.current.srcObject as MediaStream;  
         remoteStream.getTracks().forEach(track => {
@@ -2157,7 +2151,8 @@ const VideoChat: React.FC = () => {
                       )}
                     </div>
                   </div>
-                ))}n                
+                ))}
+                
                 <div ref={messagesEndRef} />
               </>
             )}
