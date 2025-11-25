@@ -355,11 +355,42 @@ export class SocketService {
   }
 
   private static getModeCountsSnapshot() {
+    // Clean stale users before returning counts
+    this.cleanStalePresence();
+    
     return {
       text: this.modePresence.text.size,
       audio: this.modePresence.audio.size,
       video: this.modePresence.video.size
     };
+  }
+  
+  /**
+   * Remove users from presence tracking who are no longer connected
+   */
+  private static cleanStalePresence() {
+    const connectedUserIds = new Set(this.connectedUsers.keys());
+    
+    // Clean each mode's presence set
+    for (const mode of ['text', 'audio', 'video'] as ChatMode[]) {
+      const staleUsers: string[] = [];
+      
+      this.modePresence[mode].forEach(userId => {
+        if (!connectedUserIds.has(userId)) {
+          staleUsers.push(userId);
+        }
+      });
+      
+      // Remove stale users
+      staleUsers.forEach(userId => {
+        this.modePresence[mode].delete(userId);
+        this.userActiveMode.delete(userId);
+      });
+      
+      if (staleUsers.length > 0) {
+        console.log(`🧹 Cleaned ${staleUsers.length} stale users from ${mode} presence`);
+      }
+    }
   }
 
   private static emitModeCounts(targetSocketId?: string) {
