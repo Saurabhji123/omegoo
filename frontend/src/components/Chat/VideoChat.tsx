@@ -768,7 +768,12 @@ const VideoChat: React.FC = () => {
           remoteVideoRef.current.load(); // Force video element to reset
         }
         remoteStreamRef.current = null;
-        remoteStreamRef.current = null;
+        
+        // CRITICAL: Ensure local video stays visible with raw stream during finding
+        if (localVideoRef.current && rawStreamRef.current) {
+          localVideoRef.current.srcObject = rawStreamRef.current;
+          console.log('✅ Local video preserved during session end');
+        }
         
         // Reset all state
         setIsMatchConnected(false);
@@ -1170,6 +1175,12 @@ const VideoChat: React.FC = () => {
       }
       
       console.log('✅ Force cleanup completed for fresh reconnect');
+      
+      // CRITICAL: Re-ensure local video has the raw stream after cleanup
+      if (localVideoRef.current && rawStreamRef.current) {
+        localVideoRef.current.srcObject = rawStreamRef.current;
+        console.log('✅ Local video srcObject restored to raw stream');
+      }
       
       // REINITIALIZE WebRTC after cleanup for fresh connection
       setTimeout(() => {
