@@ -85,8 +85,8 @@ export const AR_CONSTANTS = {
   // Canvas settings
   CANVAS_WIDTH: 640,
   CANVAS_HEIGHT: 480,
-  TARGET_FPS: 30,
-  MIN_FPS: 15,
+  TARGET_FPS: 15, // Reduced for backend performance (still smooth)
+  MIN_FPS: 10,
   
   // FaceMesh settings
   MAX_FACES: 1, // Only track one face for performance

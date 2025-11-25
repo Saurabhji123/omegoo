@@ -242,8 +242,8 @@ class ARFilterService {
       // Start processing loop
       this.startProcessingLoop();
       
-      // Capture canvas stream at 30fps
-      this.processedStream = this.canvas.captureStream(30);
+      // Capture canvas stream at 15fps (optimized for performance)
+      this.processedStream = this.canvas.captureStream(15);
       
       console.log(`📹 [FILTER START] Canvas stream captured, video tracks: ${this.processedStream.getVideoTracks().length}`);
       
@@ -301,9 +301,9 @@ class ARFilterService {
         
         const filterString = filters.length > 0 ? filters.join(' ') : 'none';
         
-        // Log every 30 frames (once per second at 30fps)
-        if (frameCounter % 30 === 0) {
-          console.log(`🎨 [FILTER LOOP] Frame ${frameCounter}: filter="${filterString}", video=${this.videoElement.videoWidth}x${this.videoElement.videoHeight}, readyState=${this.videoElement.readyState}`);
+        // Log only every 90 frames (~6 seconds at 15fps) to reduce console overhead
+        if (frameCounter % 90 === 0) {
+          console.log(`🎨 [FILTER LOOP] Frame ${frameCounter}: filter="${filterString}", active`);
         }
         
         // Apply filters and draw
