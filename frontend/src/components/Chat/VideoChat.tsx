@@ -20,7 +20,7 @@ import ReportModal from './ReportModal';
 import { PreviewModal } from './PreviewModal';
 import LoginRegister from '../Auth/LoginRegister';
 import { useARFilter } from '../../contexts/ARFilterContext';
-import { FACE_MASK_PRESETS, FaceMaskType, BlurState } from '../../types/arFilters';
+import { FACE_MASK_PRESETS, FaceMaskType, BlurState, AR_CONSTANTS } from '../../types/arFilters';
 
 interface Message {
   id: string;
@@ -411,8 +411,8 @@ const VideoChat: React.FC = () => {
       const updateFilters = async () => {
         const ARFilterService = (await import('../../services/arFilter')).default;
         const arService = ARFilterService.getInstance();
-        arService.setFilter(selectedMask);
-        arService.setBlurState(blurState, 4); // light blur intensity
+        arService.setMask(selectedMask);
+        arService.setBlurState(blurState, AR_CONSTANTS.BLUR_RADIUS.LOW); // Reduced blur intensity
         console.log('🔄 Filter settings updated in real-time for remote stream');
       };
       updateFilters();

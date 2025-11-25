@@ -94,12 +94,12 @@ export const AR_CONSTANTS = {
   MIN_DETECTION_CONFIDENCE: 0.5,
   MIN_TRACKING_CONFIDENCE: 0.5,
   
-  // Blur settings
+  // Blur settings (reduced for visibility)
   BLUR_RADIUS: {
-    LOW: 4,
-    MEDIUM: 6,
-    HIGH: 8,
-    MAX: 10,
+    LOW: 6,
+    MEDIUM: 10,
+    HIGH: 15,
+    MAX: 20,
   },
   DEFAULT_BLUR_DURATION: 10, // seconds
   BLUR_COUNTDOWN_INTERVAL: 1000, // ms

@@ -419,8 +419,8 @@ const Settings: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                 </svg>
                 <div>
-                  <div className="font-semibold uppercase tracking-wide text-xs text-blue-100">Client-Side Face Detection</div>
-                  <p className="mt-1 text-blue-100/80">Face masks and blur effects are processed locally on your device using TensorFlow.js. No video data is sent to external servers. Blur countdown can be manually revealed or auto-reveals at end.</p>
+                  <div className="font-semibold uppercase tracking-wide text-xs text-blue-100">Client-Side Canvas Filters</div>
+                  <p className="mt-1 text-blue-100/80">Color filters and blur effects are processed locally on your device using Canvas API. No video data is sent to external servers. Blur countdown can be manually revealed or auto-reveals at end.</p>
                 </div>
               </div>
             </div>

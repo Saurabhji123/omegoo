@@ -77,12 +77,12 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         await pythonFilterClient.connect();
         console.log('✅ Using Python filter backend (OpenCV)');
         
-        // Mock capabilities for Python backend
+        // Mock capabilities for Python backend (no face detection)
         const caps: ARCapabilities = {
-          supportsFaceMesh: true,
+          supportsFaceMesh: false,
           supportsCanvas: true,
           supportsOffscreenCanvas: false,
-          supportsWebGL: true,
+          supportsWebGL: false,
           supportsCaptureStream: true,
           recommendedMasks: ['grayscale', 'sepia', 'invert', 'cool', 'warm', 'vibrant'],
           warnings: [],
@@ -136,7 +136,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (pythonFilterClient.isConnected()) {
       pythonFilterClient.setFilter(mask);
     } else {
-      ARFilterService.getInstance().setFilter(mask); // Updated method name
+      ARFilterService.getInstance().setMask(mask);
     }
     
     // Save to localStorage
@@ -231,14 +231,14 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return processedStream;
       }
       
-      // Fallback to JavaScript implementation (now CSS-based)
-      console.log('📜 Using CSS filter implementation');
+      // Fallback to JavaScript implementation (canvas-based, no face detection)
+      console.log('📜 Using canvas filter implementation');
       const processedStream = await ARFilterService.getInstance().startProcessing(
         stream,
         selectedMask,
         blurState,
         blurIntensity,
-        videoElement // Pass video element for CSS filter application
+        videoElement
       );
       
       currentStreamRef.current = processedStream;
@@ -306,7 +306,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setBlurIntensityState(AR_CONSTANTS.BLUR_RADIUS.MEDIUM);
     setRevealCountdown(0);
     
-    ARFilterService.getInstance().setFilter('none');
+    ARFilterService.getInstance().setMask('none');
     ARFilterService.getInstance().setBlurState('disabled');
   }, [stopProcessing]);
 
@@ -330,7 +330,7 @@ export const ARFilterProvider: React.FC<{ children: React.ReactNode }> = ({ chil
    */
   useEffect(() => {
     if (isProcessing) {
-      ARFilterService.getInstance().setFilter(selectedMask);
+      ARFilterService.getInstance().setMask(selectedMask);
       ARFilterService.getInstance().setBlurState(blurState);
       ARFilterService.getInstance().setBlurIntensity(blurIntensity);
     }

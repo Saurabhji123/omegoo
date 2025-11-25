@@ -1,6 +1,6 @@
 /**
- * Simplified AR Filter Service
- * Uses CSS filters for better performance - no TensorFlow, no canvas processing
+ * AR Filter Service - Pure Canvas-Based Filters
+ * No face detection - applies blur and color filters directly to video stream
  */
 
 import {
@@ -11,7 +11,6 @@ import {
   AR_CONSTANTS,
   getDevicePerformance,
   getRecommendedMasks,
-  getFilterCSS,
 } from '../types/arFilters';
 
 class ARFilterService {
@@ -24,13 +23,26 @@ class ARFilterService {
   private animationFrameId: number | null = null;
   
   // State
-  private currentFilter: FaceMaskType = 'none';
+  private currentMask: FaceMaskType = 'none';
   private blurState: BlurState = 'disabled';
   private blurIntensity: number = AR_CONSTANTS.BLUR_RADIUS.MEDIUM;
   
   // Streams
   private originalStream: MediaStream | null = null;
   private processedStream: MediaStream | null = null;
+  
+  // Performance tracking
+  private frameCount: number = 0;
+  private lastFpsUpdate: number = Date.now();
+  private processingTimes: number[] = [];
+  private performanceMetrics: ARPerformanceMetrics = {
+    fps: 0,
+    faceDetectionTime: 0,
+    renderTime: 0,
+    cpuUsage: 0,
+    droppedFrames: 0,
+    timestamp: Date.now(),
+  };
   
   // Callbacks
   private performanceCallback: ((metrics: ARPerformanceMetrics) => void) | null = null;
@@ -49,18 +61,17 @@ class ARFilterService {
   }
 
   /**
-   * Initialize AR Filter Service (simplified - no TensorFlow needed)
+   * Initialize AR Filter Service (no face detection needed)
    */
-  async initialize(options?: { qualityPreset?: 'low' | 'medium' | 'high' }): Promise<ARCapabilities> {
+  async initialize(): Promise<ARCapabilities> {
     try {
-      console.log('🎨 Initializing CSS Filter Service...');
+      console.log('🎨 Initializing Filter Service (no face detection)...');
       
-      // Detect browser capabilities (CSS filters are universally supported)
       const capabilities: ARCapabilities = {
-        supportsFaceMesh: false, // No longer needed
+        supportsFaceMesh: false,
         supportsCanvas: true,
         supportsOffscreenCanvas: typeof OffscreenCanvas !== 'undefined',
-        supportsWebGL: false, // No longer needed
+        supportsWebGL: false,
         supportsCaptureStream: typeof HTMLCanvasElement !== 'undefined' && 
                                typeof HTMLCanvasElement.prototype.captureStream === 'function',
         recommendedMasks: getRecommendedMasks(getDevicePerformance()),
@@ -69,16 +80,16 @@ class ARFilterService {
       };
       
       this.capabilities = capabilities;
-      console.log('✅ CSS Filter Service initialized', capabilities);
+      console.log('✅ Filter Service ready', capabilities);
       return capabilities;
     } catch (error) {
-      console.error('❌ Failed to initialize CSS Filter Service:', error);
+      console.error('❌ Filter Service initialization failed:', error);
       throw error;
     }
   }
 
   /**
-   * Apply filters using canvas and return processed stream for WebRTC
+   * Start processing video with filters
    */
   async startProcessing(
     stream: MediaStream,
@@ -88,35 +99,32 @@ class ARFilterService {
     videoElement?: HTMLVideoElement
   ): Promise<MediaStream> {
     try {
-      console.log('🎨 Starting canvas-based filter processing...', { filterType, blurState });
+      console.log('🎬 Starting filter processing...', { filterType, blurState, blurIntensity });
       
-      // CRITICAL: Stop any existing processing first to prevent multiple loops
+      // Stop any existing processing
       if (this.animationFrameId !== null) {
-        console.log('⚠️ Stopping existing processing loop before starting new one');
+        console.log('⚠️ Stopping existing processing loop');
         cancelAnimationFrame(this.animationFrameId);
         this.animationFrameId = null;
       }
       
-      this.currentFilter = filterType;
+      this.currentMask = filterType;
       this.blurState = blurState;
       this.blurIntensity = blurIntensity;
       this.originalStream = stream;
       
-      // Use provided video element if available, otherwise create new
+      // Use provided video element or create new
       if (videoElement && videoElement.srcObject === stream) {
         console.log('✅ Using existing video element');
         this.videoElement = videoElement;
       } else {
-        // Create video element to read from stream
         this.videoElement = document.createElement('video');
         this.videoElement.srcObject = stream;
         this.videoElement.autoplay = true;
         this.videoElement.playsInline = true;
         this.videoElement.muted = true;
-      }
-      
-      // Wait for video to be ready only for newly created elements
-      if (!videoElement) {
+        
+        // Wait for video to be ready
         await new Promise<void>((resolve) => {
           this.videoElement!.onloadedmetadata = () => {
             this.videoElement!.play().catch(err => {
@@ -127,20 +135,18 @@ class ARFilterService {
         });
       }
       
-      // Create or reuse canvas for processing
+      // Create canvas
       if (!this.canvas) {
         this.canvas = document.createElement('canvas');
       }
       
-      // Set canvas size based on video dimensions
       const width = this.videoElement.videoWidth || 640;
       const height = this.videoElement.videoHeight || 480;
       
-      // Only resize if dimensions changed
       if (this.canvas.width !== width || this.canvas.height !== height) {
         this.canvas.width = width;
         this.canvas.height = height;
-        console.log(`📐 Canvas sized to ${width}x${height}`);
+        console.log(`📐 Canvas: ${width}x${height}`);
       }
       
       this.ctx = this.canvas.getContext('2d', { alpha: false, willReadFrequently: false });
@@ -149,56 +155,53 @@ class ARFilterService {
         throw new Error('Failed to get canvas context');
       }
       
-      // Start processing loop
+      // Start processing
       this.startProcessingLoop();
       
-      // Capture canvas stream at 30fps
+      // Capture canvas stream
       this.processedStream = this.canvas.captureStream(30);
       
-      // Add audio tracks from original stream
+      // Add audio tracks
       const audioTracks = stream.getAudioTracks();
       audioTracks.forEach(track => {
         this.processedStream!.addTrack(track);
       });
       
-      console.log('✅ Canvas-based filter processing started - remote users will see filtered video');
+      console.log('✅ Filter processing started - streaming to remote peer');
       return this.processedStream;
     } catch (error) {
-      console.error('❌ Failed to start filter processing:', error);
+      console.error('❌ Failed to start processing:', error);
       if (this.errorCallback) {
         this.errorCallback(error as Error);
       }
-      // Return original stream as fallback
       return stream;
     }
   }
 
   /**
-   * Processing loop to continuously apply filters to canvas
+   * Main processing loop - applies filters to every frame
    */
   private startProcessingLoop(): void {
     const processFrame = () => {
-      // CRITICAL: Check if processing should continue
-      if (!this.videoElement || !this.canvas || !this.ctx || this.animationFrameId === null) {
+      if (!this.videoElement || !this.canvas || !this.ctx) {
         return;
       }
       
+      const startTime = performance.now();
+      
       try {
-        // CRITICAL: Clear canvas before drawing to prevent freezing
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Apply filters to canvas context
+        // Build filter string
         const filters: string[] = [];
         
-        // Add blur if active
+        // Add blur
         const blurEnabled = (this.blurState === 'active' || this.blurState === 'manual') && this.blurIntensity > 0;
         if (blurEnabled) {
           filters.push(`blur(${this.blurIntensity}px)`);
         }
         
         // Add color filter
-        if (this.currentFilter !== 'none') {
-          const colorFilter = getFilterCSS(this.currentFilter);
+        if (this.currentMask !== 'none') {
+          const colorFilter = this.getFilterCSS(this.currentMask);
           if (colorFilter !== 'none') {
             filters.push(colorFilter);
           }
@@ -206,8 +209,6 @@ class ARFilterService {
         
         // Apply filters and draw
         this.ctx.filter = filters.length > 0 ? filters.join(' ') : 'none';
-        
-        // Draw the current video frame
         this.ctx.drawImage(
           this.videoElement,
           0,
@@ -215,11 +216,16 @@ class ARFilterService {
           this.canvas.width,
           this.canvas.height
         );
-        
-        // Reset filter after drawing to avoid filter accumulation
         this.ctx.filter = 'none';
+        
+        // Update metrics
+        const renderTime = performance.now() - startTime;
+        this.performanceMetrics.renderTime = renderTime;
+        this.updatePerformanceMetrics(renderTime);
+        
       } catch (error) {
-        console.error('❌ Error in processing loop:', error);
+        console.error('❌ Processing error:', error);
+        this.performanceMetrics.droppedFrames++;
       }
       
       this.animationFrameId = requestAnimationFrame(processFrame);
@@ -229,51 +235,97 @@ class ARFilterService {
   }
 
   /**
-   * Update filter type - changes apply instantly to stream
+   * Get CSS filter string for color effects
    */
-  setFilter(filterType: FaceMaskType): void {
-    console.log('🎨 Changing filter to:', filterType, '- remote users will see this instantly');
-    this.currentFilter = filterType;
-    // Filter changes automatically apply in next animation frame
+  private getFilterCSS(filterType: FaceMaskType): string {
+    switch (filterType) {
+      case 'grayscale':
+        return 'grayscale(100%) contrast(1.1)';
+      case 'sepia':
+        return 'sepia(90%) contrast(1.15) brightness(1.05)';
+      case 'invert':
+        return 'invert(100%) hue-rotate(180deg)';
+      case 'cool':
+        return 'saturate(1.4) contrast(1.1) brightness(0.95) hue-rotate(200deg)';
+      case 'warm':
+        return 'saturate(1.5) contrast(1.2) brightness(1.08) hue-rotate(-20deg)';
+      case 'vibrant':
+        return 'saturate(2.2) contrast(1.25) brightness(1.1)';
+      case 'none':
+      default:
+        return 'none';
+    }
   }
 
   /**
-   * Update blur state - changes apply instantly to stream
+   * Update performance metrics
    */
-  setBlurState(blurState: BlurState, intensity?: number): void {
-    console.log('🌫️ Changing blur state to:', blurState, intensity, '- remote users will see this instantly');
-    this.blurState = blurState;
+  private updatePerformanceMetrics(frameTime: number): void {
+    this.frameCount++;
+    this.processingTimes.push(frameTime);
+    
+    if (this.processingTimes.length > 60) {
+      this.processingTimes.shift();
+    }
+    
+    const now = Date.now();
+    if (now - this.lastFpsUpdate >= 1000) {
+      this.performanceMetrics.fps = this.frameCount;
+      this.frameCount = 0;
+      this.lastFpsUpdate = now;
+      
+      const avgFrameTime = this.processingTimes.reduce((a, b) => a + b, 0) / this.processingTimes.length;
+      const targetFrameTime = 1000 / AR_CONSTANTS.TARGET_FPS;
+      this.performanceMetrics.cpuUsage = Math.min(100, (avgFrameTime / targetFrameTime) * 100);
+      this.performanceMetrics.timestamp = now;
+      
+      if (this.performanceCallback) {
+        this.performanceCallback(this.performanceMetrics);
+      }
+    }
+  }
+
+  /**
+   * Change filter type
+   */
+  setMask(maskType: FaceMaskType): void {
+    if (this.currentMask === maskType) return;
+    console.log(`🎨 Filter: ${this.currentMask} → ${maskType}`);
+    this.currentMask = maskType;
+  }
+
+  /**
+   * Update blur state
+   */
+  setBlurState(state: BlurState, intensity?: number): void {
+    console.log(`👁️ Blur: ${state}`);
+    this.blurState = state;
     if (intensity !== undefined) {
       this.blurIntensity = intensity;
     }
-    // Blur changes automatically apply in next animation frame
   }
 
   /**
-   * Update blur intensity - changes apply instantly to stream
+   * Change blur intensity
    */
   setBlurIntensity(intensity: number): void {
-    console.log('🌫️ Changing blur intensity to:', intensity, '- remote users will see this instantly');
+    console.log('🌫️ Blur intensity:', intensity);
     this.blurIntensity = Math.max(0, Math.min(AR_CONSTANTS.BLUR_RADIUS.MAX, intensity));
-    // Intensity changes automatically apply in next animation frame
   }
 
   /**
-   * Stop processing and clean up
+   * Stop processing
    */
   stopProcessing(): void {
     console.log('🛑 Stopping filter processing...');
     
-    // Stop animation frame
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
     
-    // Stop processed stream
     if (this.processedStream) {
       this.processedStream.getTracks().forEach(track => {
-        // Don't stop audio tracks from original stream
         if (track.kind === 'video') {
           track.stop();
         }
@@ -281,32 +333,23 @@ class ARFilterService {
       this.processedStream = null;
     }
     
-    // Cleanup video element only if we created it
-    if (this.videoElement) {
-      // Don't remove srcObject if it's an external video element
-      // Just clear our reference
-      this.videoElement = null;
-    }
-    
-    // Cleanup canvas
+    this.videoElement = null;
     this.canvas = null;
     this.ctx = null;
-    
-    // Reset state
     this.originalStream = null;
-    this.currentFilter = 'none';
+    this.currentMask = 'none';
     this.blurState = 'disabled';
     
-    console.log('✅ Filter processing stopped');
+    console.log('✅ Processing stopped');
   }
 
   /**
-   * Get current processing state
+   * Get current state
    */
   getState() {
     return {
       isProcessing: this.videoElement !== null,
-      currentFilter: this.currentFilter,
+      currentFilter: this.currentMask,
       blurState: this.blurState,
       blurIntensity: this.blurIntensity,
     };
@@ -320,28 +363,24 @@ class ARFilterService {
   }
 
   /**
-   * Set callbacks
+   * Set performance callback
    */
   setPerformanceCallback(callback: (metrics: ARPerformanceMetrics) => void): void {
     this.performanceCallback = callback;
   }
 
+  /**
+   * Set error callback
+   */
   setErrorCallback(callback: (error: Error) => void): void {
     this.errorCallback = callback;
   }
 
   /**
-   * Get mock performance metrics (no heavy processing anymore)
+   * Get performance metrics
    */
   getPerformanceMetrics(): ARPerformanceMetrics {
-    return {
-      fps: 60, // CSS filters don't impact FPS
-      faceDetectionTime: 0,
-      renderTime: 0,
-      cpuUsage: 0,
-      droppedFrames: 0,
-      timestamp: Date.now(),
-    };
+    return { ...this.performanceMetrics };
   }
 }
 
