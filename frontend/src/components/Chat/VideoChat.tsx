@@ -252,6 +252,13 @@ const VideoChat: React.FC = () => {
       return;
     }
 
+    // Validate raw stream health
+    const rawVideoTrack = rawStream.getVideoTracks()[0];
+    if (!rawVideoTrack || rawVideoTrack.readyState !== 'live') {
+      console.error('❌ [APPLY EFFECTS] Raw stream video track not live:', rawVideoTrack?.readyState);
+      return;
+    }
+
     const shouldUseFilters = selectedMask !== 'none' || blurState === 'active' || blurState === 'manual';
 
     console.log(`📊 [APPLY EFFECTS] Filter check: mask="${selectedMask}", blur="${blurState}", shouldUseFilters=${shouldUseFilters}`);
@@ -271,9 +278,33 @@ const VideoChat: React.FC = () => {
           await arService.initialize();
         }
         
-        // CRITICAL: Pass the local video element so canvas can read from it
-        // DO NOT change local video's srcObject - keep it showing raw stream
-        console.log(`📹 [APPLY EFFECTS] Starting processing with local video element (ready: ${localVideoRef.current?.readyState})`);
+        // CRITICAL: Ensure local video is playing raw stream before processing
+        if (localVideoRef.current) {
+          const currentSrc = localVideoRef.current.srcObject as MediaStream;
+          if (currentSrc !== rawStream) {
+            console.log('🔄 [APPLY EFFECTS] Resetting local video to raw stream for canvas processing');
+            localVideoRef.current.srcObject = rawStream;
+            await new Promise(resolve => setTimeout(resolve, 100)); // Let video settle
+          }
+          
+          // Wait for video element to be ready for canvas reading
+          if (localVideoRef.current.readyState < 2) {
+            console.log('⏳ [APPLY EFFECTS] Waiting for local video to be ready...');
+            await new Promise<void>((resolve) => {
+              const checkReady = () => {
+                if (localVideoRef.current && localVideoRef.current.readyState >= 2) {
+                  console.log('✅ [APPLY EFFECTS] Local video ready');
+                  resolve();
+                } else {
+                  setTimeout(checkReady, 50);
+                }
+              };
+              checkReady();
+            });
+          }
+        }
+        
+        console.log(`📹 [APPLY EFFECTS] Starting processing (video ready: ${localVideoRef.current?.readyState}, dimensions: ${localVideoRef.current?.videoWidth}x${localVideoRef.current?.videoHeight})`);
         
         const processedStream = await arService.startProcessing(
           rawStream,
@@ -283,25 +314,37 @@ const VideoChat: React.FC = () => {
           localVideoRef.current || undefined
         );
         
-        processedStreamRef.current = processedStream;
-        arActiveRef.current = true;
-
-        // Verify processed stream has video track
+        // Verify processed stream quality
         const videoTracks = processedStream.getVideoTracks();
         console.log(`📹 [APPLY EFFECTS] Processed stream created: ${videoTracks.length} video tracks`);
         
         if (videoTracks.length === 0) {
           throw new Error('Processed stream has no video tracks!');
         }
+        
+        const processedVideoTrack = videoTracks[0];
+        if (processedVideoTrack.readyState !== 'live') {
+          throw new Error(`Processed video track not live: ${processedVideoTrack.readyState}`);
+        }
+        
+        console.log(`✅ [APPLY EFFECTS] Processed track validated (id: ${processedVideoTrack.id}, enabled: ${processedVideoTrack.enabled})`);
+        
+        processedStreamRef.current = processedStream;
+        arActiveRef.current = true;
 
         // CRITICAL: Show processed stream on LOCAL video so user can see filter working
         if (localVideoRef.current) {
           console.log('🎥 [APPLY EFFECTS] Setting processed stream on local video element');
           localVideoRef.current.srcObject = processedStream;
+          try {
+            await localVideoRef.current.play();
+          } catch (playErr) {
+            console.warn('⚠️ [APPLY EFFECTS] Auto-play prevented, user interaction may be needed');
+          }
         }
         localStreamRef.current = processedStream;
         
-        // CRITICAL FIX: Update WebRTC's localStream reference so future offers use processed stream
+        // CRITICAL: Update WebRTC's localStream reference so future offers use processed stream
         if (webRTCRef.current) {
           webRTCRef.current.updateLocalStream(processedStream);
           console.log('✅ [APPLY EFFECTS] WebRTC localStream updated to processed stream');
@@ -309,11 +352,15 @@ const VideoChat: React.FC = () => {
 
         // Send processed stream to remote user via WebRTC
         if (webRTCRef.current) {
-          const videoTrack = processedStream.getVideoTracks()[0];
-          console.log(`🔄 [APPLY EFFECTS] Replacing WebRTC video track (id: ${videoTrack.id}, enabled: ${videoTrack.enabled}, readyState: ${videoTrack.readyState})`);
+          console.log(`🔄 [APPLY EFFECTS] Replacing WebRTC video track (id: ${processedVideoTrack.id}, enabled: ${processedVideoTrack.enabled}, readyState: ${processedVideoTrack.readyState})`);
           
-          await webRTCRef.current.replaceVideoTrack(videoTrack);
-          console.log('✅ [APPLY EFFECTS] Remote user will now see filtered video');
+          try {
+            await webRTCRef.current.replaceVideoTrack(processedVideoTrack);
+            console.log('✅ [APPLY EFFECTS] Remote user will now see filtered video');
+          } catch (replaceErr) {
+            console.error('❌ [APPLY EFFECTS] Failed to replace WebRTC track:', replaceErr);
+            throw replaceErr;
+          }
         } else {
           console.warn('⚠️ [APPLY EFFECTS] WebRTC not available, cannot send filtered stream to remote');
         }
@@ -321,18 +368,48 @@ const VideoChat: React.FC = () => {
         console.log('✅ [APPLY EFFECTS] Filter pipeline enabled successfully');
       } catch (error) {
         console.error('❌ [APPLY EFFECTS] Failed to enable filter pipeline:', error);
+        
+        // Comprehensive cleanup on error
+        try {
+          const ARFilterService = (await import('../../services/arFilter')).default;
+          const arService = ARFilterService.getInstance();
+          arService.stopProcessing();
+        } catch (cleanupErr) {
+          console.error('❌ [APPLY EFFECTS] Cleanup failed:', cleanupErr);
+        }
+        
         // Fallback to raw stream
         arActiveRef.current = false;
         processedStreamRef.current = null;
         localStreamRef.current = rawStream;
+        
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = rawStream;
+        }
+        
+        if (webRTCRef.current) {
+          webRTCRef.current.updateLocalStream(rawStream);
+          try {
+            await webRTCRef.current.replaceVideoTrack(rawVideoTrack);
+          } catch (fallbackErr) {
+            console.error('❌ [APPLY EFFECTS] Fallback to raw track failed:', fallbackErr);
+          }
+        }
       }
     } else {
-      // No filters needed
-      if (arActiveRef.current && processedStreamRef.current) {
+      // No filters needed - clean shutdown
+      if (arActiveRef.current) {
         console.log('🛑 [APPLY EFFECTS] Disabling filters, switching to raw stream');
-        const ARFilterService = (await import('../../services/arFilter')).default;
-        const arService = ARFilterService.getInstance();
-        arService.stopProcessing();
+        
+        try {
+          const ARFilterService = (await import('../../services/arFilter')).default;
+          const arService = ARFilterService.getInstance();
+          arService.stopProcessing();
+          console.log('✅ [APPLY EFFECTS] Filter processing stopped cleanly');
+        } catch (stopErr) {
+          console.error('❌ [APPLY EFFECTS] Error stopping filter service:', stopErr);
+        }
+        
         arActiveRef.current = false;
         processedStreamRef.current = null;
         
@@ -340,20 +417,27 @@ const VideoChat: React.FC = () => {
         if (localVideoRef.current) {
           console.log('🎥 [APPLY EFFECTS] Setting raw stream on local video element');
           localVideoRef.current.srcObject = rawStream;
+          try {
+            await localVideoRef.current.play();
+          } catch (playErr) {
+            console.warn('⚠️ [APPLY EFFECTS] Auto-play prevented on raw stream');
+          }
         }
         localStreamRef.current = rawStream;
         
         // Update WebRTC localStream reference
         if (webRTCRef.current) {
           webRTCRef.current.updateLocalStream(rawStream);
-        }
-        
-        // Send raw stream to remote user
-        if (webRTCRef.current) {
+          
+          // Send raw stream to remote user
           const videoTrack = rawStream.getVideoTracks()[0];
-          if (videoTrack) {
-            await webRTCRef.current.replaceVideoTrack(videoTrack);
-            console.log('✅ [APPLY EFFECTS] Remote user will now see unfiltered video');
+          if (videoTrack && videoTrack.readyState === 'live') {
+            try {
+              await webRTCRef.current.replaceVideoTrack(videoTrack);
+              console.log('✅ [APPLY EFFECTS] Remote user will now see unfiltered video');
+            } catch (replaceErr) {
+              console.error('❌ [APPLY EFFECTS] Failed to replace with raw track:', replaceErr);
+            }
           }
         }
       } else {
@@ -361,25 +445,29 @@ const VideoChat: React.FC = () => {
       }
     }
 
+    // Apply microphone state
     applyMicState();
+    
+    // Apply camera state to active stream
     const activeStream = localStreamRef.current || rawStream;
     const videoTrack = activeStream?.getVideoTracks()[0];
     if (videoTrack) {
       videoTrack.enabled = isCameraOn;
+      console.log(`📹 [APPLY EFFECTS] Camera state applied: ${isCameraOn ? 'ON' : 'OFF'}`);
     }
 
-    // Ensure local video element always has the active stream
+    // Final sync: Ensure local video element displays correct stream
     if (localVideoRef.current) {
       const currentSrcObject = localVideoRef.current.srcObject;
       const targetStream = shouldUseFilters ? processedStreamRef.current : rawStream;
       
       if (currentSrcObject !== targetStream && targetStream) {
-        console.log(`🎥 [APPLY EFFECTS] Updating local video element (filter=${shouldUseFilters})`);
+        console.log(`🎥 [APPLY EFFECTS] Final sync - updating local video element (filter=${shouldUseFilters})`);
         localVideoRef.current.srcObject = targetStream;
         try {
           await localVideoRef.current.play();
         } catch (playError) {
-          console.warn('⚠️ [APPLY EFFECTS] Auto-play prevented after stream update');
+          console.warn('⚠️ [APPLY EFFECTS] Auto-play prevented during final sync');
         }
       }
     }

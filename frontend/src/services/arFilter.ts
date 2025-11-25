@@ -124,20 +124,39 @@ class ARFilterService {
         console.log('✅ [FILTER START] Using existing video element from page');
         this.videoElement = videoElement;
         
-        // Wait a bit for video to be ready if needed
+        // Robust readiness check with timeout
         if (this.videoElement.readyState < 2) {
           console.log('⏳ [FILTER START] Waiting for video to be ready...');
-          await new Promise<void>((resolve) => {
+          await new Promise<void>((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 40; // 2 seconds max
+            
             const checkReady = () => {
+              attempts++;
+              
               if (this.videoElement!.readyState >= 2) {
-                console.log('✅ [FILTER START] Video element ready');
+                console.log(`✅ [FILTER START] Video element ready after ${attempts} attempts`);
                 resolve();
+              } else if (attempts >= maxAttempts) {
+                console.error(`❌ [FILTER START] Video not ready after ${attempts} attempts`);
+                reject(new Error('Video element failed to become ready'));
               } else {
                 setTimeout(checkReady, 50);
               }
             };
             checkReady();
           });
+        }
+        
+        // Double-check video is playing
+        if (this.videoElement.paused) {
+          console.log('▶️ [FILTER START] Video paused, attempting to play...');
+          try {
+            await this.videoElement.play();
+            console.log('✅ [FILTER START] Video now playing');
+          } catch (playErr) {
+            console.warn('⚠️ [FILTER START] Could not auto-play video:', playErr);
+          }
         }
       } else {
         // Create new hidden video element if none provided
@@ -148,9 +167,15 @@ class ARFilterService {
         this.videoElement.playsInline = true;
         this.videoElement.muted = true;
         
-        // Wait for video to be ready
-        await new Promise<void>((resolve) => {
+        // Wait for video to be ready with timeout
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            console.error('❌ [FILTER START] Video metadata load timeout');
+            reject(new Error('Video metadata load timeout'));
+          }, 3000);
+          
           this.videoElement!.onloadedmetadata = () => {
+            clearTimeout(timeout);
             this.videoElement!.play().catch(err => {
               console.error('❌ [FILTER START] Video play error:', err);
             });
@@ -160,14 +185,39 @@ class ARFilterService {
         });
       }
       
-      // Verify video dimensions
-      const width = this.videoElement.videoWidth || 640;
-      const height = this.videoElement.videoHeight || 480;
+      // Verify video dimensions with retry
+      let width = this.videoElement.videoWidth;
+      let height = this.videoElement.videoHeight;
+      
+      if (width === 0 || height === 0) {
+        console.log('⏳ [FILTER START] Waiting for valid dimensions...');
+        await new Promise<void>((resolve, reject) => {
+          let attempts = 0;
+          const maxAttempts = 20;
+          
+          const checkDimensions = () => {
+            attempts++;
+            width = this.videoElement!.videoWidth;
+            height = this.videoElement!.videoHeight;
+            
+            if (width > 0 && height > 0) {
+              console.log(`✅ [FILTER START] Got valid dimensions after ${attempts} attempts`);
+              resolve();
+            } else if (attempts >= maxAttempts) {
+              console.error(`❌ [FILTER START] No valid dimensions after ${attempts} attempts`);
+              reject(new Error('Video dimensions remain invalid (0x0)'));
+            } else {
+              setTimeout(checkDimensions, 50);
+            }
+          };
+          checkDimensions();
+        });
+      }
       
       console.log(`📐 [FILTER START] Video dimensions: ${width}x${height}, readyState: ${this.videoElement.readyState}`);
       
       if (width === 0 || height === 0) {
-        throw new Error('Video dimensions are invalid (0x0)');
+        throw new Error('Video dimensions are invalid (0x0) after retries');
       }
       
       // Create canvas
