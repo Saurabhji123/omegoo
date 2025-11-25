@@ -42,6 +42,7 @@ const VideoChat: React.FC = () => {
   const remoteStreamRef = useRef<MediaStream | null>(null); // Track remote stream for speaker control
   const rawStreamRef = useRef<MediaStream | null>(null);
   const processedStreamRef = useRef<MediaStream | null>(null);
+  const canvasSourceVideoRef = useRef<HTMLVideoElement | null>(null); // Hidden video for canvas processing (prevents freeze)
   const arActiveRef = useRef(false);
   const prevBlurStateRef = useRef<BlurState>('disabled'); // Track previous blur state for auto-reveal detection
   
@@ -278,40 +279,48 @@ const VideoChat: React.FC = () => {
           await arService.initialize();
         }
         
-        // CRITICAL: Ensure local video is playing raw stream before processing
-        if (localVideoRef.current) {
-          const currentSrc = localVideoRef.current.srcObject as MediaStream;
-          if (currentSrc !== rawStream) {
-            console.log('🔄 [APPLY EFFECTS] Resetting local video to raw stream for canvas processing');
-            localVideoRef.current.srcObject = rawStream;
-            await new Promise(resolve => setTimeout(resolve, 100)); // Let video settle
-          }
-          
-          // Wait for video element to be ready for canvas reading
-          if (localVideoRef.current.readyState < 2) {
-            console.log('⏳ [APPLY EFFECTS] Waiting for local video to be ready...');
-            await new Promise<void>((resolve) => {
-              const checkReady = () => {
-                if (localVideoRef.current && localVideoRef.current.readyState >= 2) {
-                  console.log('✅ [APPLY EFFECTS] Local video ready');
-                  resolve();
-                } else {
-                  setTimeout(checkReady, 50);
-                }
-              };
-              checkReady();
-            });
-          }
+        // CRITICAL: Create separate hidden video for canvas processing (prevents freeze)
+        // Canvas will read from THIS video (raw stream), while localVideoRef shows processed stream
+        if (!canvasSourceVideoRef.current) {
+          console.log('🎬 [APPLY EFFECTS] Creating hidden canvas source video element');
+          canvasSourceVideoRef.current = document.createElement('video');
+          canvasSourceVideoRef.current.autoplay = true;
+          canvasSourceVideoRef.current.playsInline = true;
+          canvasSourceVideoRef.current.muted = true;
+          canvasSourceVideoRef.current.style.display = 'none';
+          document.body.appendChild(canvasSourceVideoRef.current);
         }
         
-        console.log(`📹 [APPLY EFFECTS] Starting processing (video ready: ${localVideoRef.current?.readyState}, dimensions: ${localVideoRef.current?.videoWidth}x${localVideoRef.current?.videoHeight})`);
+        // Always ensure canvas source video plays raw stream
+        if (canvasSourceVideoRef.current.srcObject !== rawStream) {
+          console.log('🔄 [APPLY EFFECTS] Setting raw stream on canvas source video');
+          canvasSourceVideoRef.current.srcObject = rawStream;
+        }
+        
+        // Wait for canvas source video to be ready
+        if (canvasSourceVideoRef.current.readyState < 2) {
+          console.log('⏳ [APPLY EFFECTS] Waiting for canvas source video to be ready...');
+          await new Promise<void>((resolve) => {
+            const checkReady = () => {
+              if (canvasSourceVideoRef.current && canvasSourceVideoRef.current.readyState >= 2) {
+                console.log('✅ [APPLY EFFECTS] Canvas source video ready');
+                resolve();
+              } else {
+                setTimeout(checkReady, 50);
+              }
+            };
+            checkReady();
+          });
+        }
+        
+        console.log(`📹 [APPLY EFFECTS] Starting processing (canvas video ready: ${canvasSourceVideoRef.current?.readyState}, dimensions: ${canvasSourceVideoRef.current?.videoWidth}x${canvasSourceVideoRef.current?.videoHeight})`);
         
         const processedStream = await arService.startProcessing(
           rawStream,
           selectedMask,
           blurState,
           AR_CONSTANTS.BLUR_RADIUS.MEDIUM,
-          localVideoRef.current || undefined
+          canvasSourceVideoRef.current || undefined // Use hidden canvas source video
         );
         
         // Verify processed stream quality
@@ -383,6 +392,16 @@ const VideoChat: React.FC = () => {
         processedStreamRef.current = null;
         localStreamRef.current = rawStream;
         
+        // Cleanup canvas source video on error
+        if (canvasSourceVideoRef.current) {
+          canvasSourceVideoRef.current.srcObject = null;
+          if (canvasSourceVideoRef.current.parentNode) {
+            canvasSourceVideoRef.current.parentNode.removeChild(canvasSourceVideoRef.current);
+          }
+          canvasSourceVideoRef.current = null;
+          console.log('🧹 [APPLY EFFECTS] Canvas source video cleaned up after error');
+        }
+        
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = rawStream;
         }
@@ -412,6 +431,16 @@ const VideoChat: React.FC = () => {
         
         arActiveRef.current = false;
         processedStreamRef.current = null;
+        
+        // Cleanup canvas source video
+        if (canvasSourceVideoRef.current) {
+          canvasSourceVideoRef.current.srcObject = null;
+          if (canvasSourceVideoRef.current.parentNode) {
+            canvasSourceVideoRef.current.parentNode.removeChild(canvasSourceVideoRef.current);
+          }
+          canvasSourceVideoRef.current = null;
+          console.log('🧹 [APPLY EFFECTS] Canvas source video cleaned up');
+        }
         
         // Switch local video back to raw stream
         if (localVideoRef.current) {
