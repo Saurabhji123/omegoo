@@ -274,6 +274,18 @@ class WebRTCService {
       throw error;
     }
   }
+  
+  /**
+   * Update local stream reference (used when filter processing creates new stream)
+   * This ensures WebRTC uses the correct stream when creating offers
+   */
+  updateLocalStream(newStream: MediaStream): void {
+    console.log('🔄 [UPDATE STREAM] Updating local stream reference');
+    console.log(`   Old stream tracks: ${this.localStream?.getTracks().length || 0}`);
+    console.log(`   New stream tracks: ${newStream.getTracks().length}`);
+    this.localStream = newStream;
+    console.log('✅ [UPDATE STREAM] Local stream reference updated');
+  }
 
   // Replace local stream with processed stream (for AR filters)
   // This ensures remote peer sees the filtered video
@@ -678,31 +690,80 @@ class WebRTCService {
 
   // Replace video track (for filters/effects)
   async replaceVideoTrack(newVideoTrack: MediaStreamTrack): Promise<void> {
+    console.log('🔄 [REPLACE TRACK] Starting video track replacement...');
+    
     if (!this.peerConnection) {
-      console.warn('⚠️ Cannot replace video track: no peer connection');
+      console.warn('⚠️ [REPLACE TRACK] Cannot replace video track: no peer connection');
       return;
     }
 
-    const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
-    if (sender && sender.track) {
+    console.log(`📊 [REPLACE TRACK] Peer connection state: ${this.peerConnection.connectionState}`);
+    console.log(`📊 [REPLACE TRACK] ICE connection state: ${this.peerConnection.iceConnectionState}`);
+    console.log(`📊 [REPLACE TRACK] Signaling state: ${this.peerConnection.signalingState}`);
+
+    const senders = this.peerConnection.getSenders();
+    console.log(`📊 [REPLACE TRACK] Total senders: ${senders.length}`);
+    senders.forEach((sender, idx) => {
+      console.log(`   Sender ${idx}: kind=${sender.track?.kind}, id=${sender.track?.id}, enabled=${sender.track?.enabled}`);
+    });
+
+    const sender = senders.find(s => s.track?.kind === 'video');
+    
+    if (sender) {
       try {
-        await sender.replaceTrack(newVideoTrack);
-        console.log('✅ Video track replaced successfully');
+        console.log(`🔄 [REPLACE TRACK] Found video sender, replacing track...`);
+        console.log(`   Old track: id=${sender.track?.id}, enabled=${sender.track?.enabled}, readyState=${sender.track?.readyState}`);
+        console.log(`   New track: id=${newVideoTrack.id}, enabled=${newVideoTrack.enabled}, readyState=${newVideoTrack.readyState}`);
         
-        // Update local stream
+        await sender.replaceTrack(newVideoTrack);
+        console.log('✅ [REPLACE TRACK] Video track replaced successfully in peer connection');
+        
+        // Update local stream reference
         if (this.localStream) {
           const oldTrack = this.localStream.getVideoTracks()[0];
           if (oldTrack) {
             this.localStream.removeTrack(oldTrack);
+            console.log('   Removed old track from localStream');
           }
           this.localStream.addTrack(newVideoTrack);
+          console.log('   Added new track to localStream');
         }
       } catch (error) {
-        console.error('❌ Failed to replace video track:', error);
+        console.error('❌ [REPLACE TRACK] Failed to replace video track:', error);
         throw error;
       }
     } else {
-      console.warn('⚠️ No video sender found to replace track');
+      console.error('❌ [REPLACE TRACK] No video sender found!');
+      console.log(`   Available senders: ${senders.length}`);
+      console.log(`   This usually means tracks were not added during offer/answer creation`);
+      
+      // CRITICAL FIX: If no sender exists, we need to add track AND renegotiate
+      if (this.localStream) {
+        console.log('🔧 [REPLACE TRACK] Adding track to peer connection (requires renegotiation)...');
+        try {
+          // Add the new track to peer connection
+          const sender = this.peerConnection.addTrack(newVideoTrack, this.localStream);
+          console.log('✅ [REPLACE TRACK] Track added to peer connection');
+          console.log(`   New sender created: id=${sender.track?.id}`);
+          
+          // Update localStream
+          const oldTrack = this.localStream.getVideoTracks()[0];
+          if (oldTrack && oldTrack.id !== newVideoTrack.id) {
+            this.localStream.removeTrack(oldTrack);
+          }
+          if (!this.localStream.getVideoTracks().includes(newVideoTrack)) {
+            this.localStream.addTrack(newVideoTrack);
+          }
+          
+          console.log('⚠️ [REPLACE TRACK] WARNING: Adding track mid-session may require SDP renegotiation');
+          console.log('   Consider restarting the connection if video does not appear on remote side');
+        } catch (error) {
+          console.error('❌ [REPLACE TRACK] Failed to add track:', error);
+          throw error;
+        }
+      } else {
+        throw new Error('No video sender found and no local stream to add track to');
+      }
     }
   }
 

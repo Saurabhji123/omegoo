@@ -296,6 +296,12 @@ const VideoChat: React.FC = () => {
 
         // IMPORTANT: Keep local video showing raw stream
         localStreamRef.current = rawStream;
+        
+        // CRITICAL FIX: Update WebRTC's localStream reference so future offers use processed stream
+        if (webRTCRef.current) {
+          webRTCRef.current.updateLocalStream(processedStream);
+          console.log('✅ [APPLY EFFECTS] WebRTC localStream updated to processed stream');
+        }
 
         // Send processed stream to remote user via WebRTC
         if (webRTCRef.current) {
