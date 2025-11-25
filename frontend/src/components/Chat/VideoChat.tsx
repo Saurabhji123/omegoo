@@ -294,8 +294,12 @@ const VideoChat: React.FC = () => {
           throw new Error('Processed stream has no video tracks!');
         }
 
-        // IMPORTANT: Keep local video showing raw stream
-        localStreamRef.current = rawStream;
+        // CRITICAL: Show processed stream on LOCAL video so user can see filter working
+        if (localVideoRef.current) {
+          console.log('🎥 [APPLY EFFECTS] Setting processed stream on local video element');
+          localVideoRef.current.srcObject = processedStream;
+        }
+        localStreamRef.current = processedStream;
         
         // CRITICAL FIX: Update WebRTC's localStream reference so future offers use processed stream
         if (webRTCRef.current) {
@@ -332,8 +336,17 @@ const VideoChat: React.FC = () => {
         arActiveRef.current = false;
         processedStreamRef.current = null;
         
-        // Switch back to raw stream for remote user
+        // Switch local video back to raw stream
+        if (localVideoRef.current) {
+          console.log('🎥 [APPLY EFFECTS] Setting raw stream on local video element');
+          localVideoRef.current.srcObject = rawStream;
+        }
         localStreamRef.current = rawStream;
+        
+        // Update WebRTC localStream reference
+        if (webRTCRef.current) {
+          webRTCRef.current.updateLocalStream(rawStream);
+        }
         
         // Send raw stream to remote user
         if (webRTCRef.current) {
@@ -355,15 +368,18 @@ const VideoChat: React.FC = () => {
       videoTrack.enabled = isCameraOn;
     }
 
-    // Ensure local video element has raw stream
+    // Ensure local video element always has the active stream
     if (localVideoRef.current) {
-      if (!localVideoRef.current.srcObject) {
-        console.log('📹 [APPLY EFFECTS] Setting raw stream on local video element');
-        localVideoRef.current.srcObject = rawStream;
+      const currentSrcObject = localVideoRef.current.srcObject;
+      const targetStream = shouldUseFilters ? processedStreamRef.current : rawStream;
+      
+      if (currentSrcObject !== targetStream && targetStream) {
+        console.log(`🎥 [APPLY EFFECTS] Updating local video element (filter=${shouldUseFilters})`);
+        localVideoRef.current.srcObject = targetStream;
         try {
           await localVideoRef.current.play();
         } catch (playError) {
-          console.warn('Auto-play prevented after stream update');
+          console.warn('⚠️ [APPLY EFFECTS] Auto-play prevented after stream update');
         }
       }
     }
