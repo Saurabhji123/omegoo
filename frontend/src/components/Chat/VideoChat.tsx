@@ -94,12 +94,6 @@ const VideoChat: React.FC = () => {
   const [isInputFocused, setIsInputFocused] = useState(false); // Track if typing in message input
   const lastTapTimeRef = useRef<number>(0);
   
-  // Auto-typing indicator states (for retention boost)
-  const [isAutoTyping, setIsAutoTyping] = useState(false); // Fake typing indicator
-  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const autoTypingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastMessageTimeRef = useRef<number>(Date.now());
-  
   const videoOnlineCount = modeUserCounts.video * 3; // 3x multiplier for retention psychology
 
   const micStateRef = useRef<boolean>(isMicOn);
@@ -129,55 +123,6 @@ const VideoChat: React.FC = () => {
     return true;
   }, [isInputFocused, showReportModal, showLoginModal, showPreview, showMaskMenu, socketConnected, socketConnecting]);
 
-  // 🎯 Auto-Typing Indicator System (Retention Boost)
-  const startInactivityTimer = useCallback(() => {
-    // Clear any existing timers
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
-    }
-    if (autoTypingTimerRef.current) {
-      clearTimeout(autoTypingTimerRef.current);
-    }
-    
-    // Start 4-second inactivity timer
-    inactivityTimerRef.current = setTimeout(() => {
-      console.log('💭 4 seconds of inactivity - showing auto-typing indicator');
-      setIsAutoTyping(true);
-      
-      // Auto-typing will turn off after 2.5 seconds
-      autoTypingTimerRef.current = setTimeout(() => {
-        console.log('⏰ Auto-typing indicator duration ended');
-        setIsAutoTyping(false);
-        
-        // Restart the cycle if still no message
-        if (isMatchConnected && Date.now() - lastMessageTimeRef.current > 6500) {
-          startInactivityTimer();
-        }
-      }, 2500);
-    }, 4000);
-  }, [isMatchConnected]);
-  
-  const cancelAutoTyping = useCallback(() => {
-    console.log('🚫 Canceling auto-typing (real activity detected)');
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
-      inactivityTimerRef.current = null;
-    }
-    if (autoTypingTimerRef.current) {
-      clearTimeout(autoTypingTimerRef.current);
-      autoTypingTimerRef.current = null;
-    }
-    setIsAutoTyping(false);
-  }, []);
-  
-  const resetMessageTimer = useCallback(() => {
-    lastMessageTimeRef.current = Date.now();
-    cancelAutoTyping();
-    if (isMatchConnected) {
-      startInactivityTimer();
-    }
-  }, [isMatchConnected, cancelAutoTyping, startInactivityTimer]);
-
   const applyMicState = useCallback(() => {
     const currentMicState = micStateRef.current;
     const localStream = localStreamRef.current;
@@ -189,22 +134,6 @@ const VideoChat: React.FC = () => {
     }
     webRTCRef.current?.updateAudioSenders(currentMicState);
   }, []);
-
-  // Start auto-typing timer when match connects
-  useEffect(() => {
-    if (isMatchConnected) {
-      console.log('✅ Match connected - starting auto-typing timer system');
-      lastMessageTimeRef.current = Date.now();
-      startInactivityTimer();
-    } else {
-      // Cleanup timers when disconnected
-      cancelAutoTyping();
-    }
-    
-    return () => {
-      cancelAutoTyping();
-    };
-  }, [isMatchConnected, startInactivityTimer, cancelAutoTyping]);
 
   const applySpeakerState = useCallback(() => {
     const currentSpeakerState = speakerStateRef.current;
@@ -816,9 +745,6 @@ const VideoChat: React.FC = () => {
         
         // Display clean message without username
         addMessage(data.content, false);
-        
-        // 🔄 Reset auto-typing timer (stranger sent a message)
-        resetMessageTimer();
       });
 
       socket.on('session_ended', (data: { reason?: string }) => {
@@ -1143,10 +1069,37 @@ const VideoChat: React.FC = () => {
 
       setCameraBlocked(false);
       console.log('✅ Local video stream ready');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Failed to start local video:', error);
+      
+      // Detailed error handling for media initialization
+      let errorMessage = 'Failed to access camera/microphone. Please refresh and try again.';
+      
+      if (error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError') {
+        console.error('🚫 Media permission denied by user');
+        errorMessage = 'Camera/microphone access denied. Please allow access in browser settings and refresh.';
+        setCameraBlocked(true);
+      } else if (error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError') {
+        console.error('📹 No media devices found');
+        errorMessage = 'No camera or microphone found on this device.';
+        setCameraBlocked(true);
+      } else if (error?.name === 'NotReadableError' || error?.name === 'TrackStartError') {
+        console.error('🔒 Media device already in use');
+        errorMessage = 'Camera is already in use by another application. Please close other apps and try again.';
+        setCameraBlocked(true);
+      } else if (error?.name === 'OverconstrainedError') {
+        console.error('⚙️ Media constraints not satisfiable:', error?.constraint);
+        errorMessage = 'Camera settings not supported by this device. Please try a different browser.';
+      } else if (error?.name === 'AbortError') {
+        console.error('⚠️ Media access aborted');
+        errorMessage = 'Camera access was interrupted. Please try again.';
+      } else if (error?.name === 'TypeError' || error?.message?.includes('Failed to get media stream')) {
+        console.error('🌐 Media API not available');
+        errorMessage = 'Camera access not supported. Please use a modern browser (Chrome, Firefox, Safari).';
+      }
+      
       setCameraBlocked(true);
-      addMessage('Camera/microphone access denied. Please allow access and refresh.', false);
+      addMessage(errorMessage, false);
     }
   };
 
@@ -1677,17 +1630,28 @@ const VideoChat: React.FC = () => {
     } catch (error: any) {
       console.error('❌ Failed to switch camera:', error);
       
-      // Better error handling with user feedback
+      // Better error handling with user feedback and state recovery
+      let errorMessage = 'Failed to switch camera. Please try again.';
+      
       if (error.name === 'OverconstrainedError') {
-        console.error('Camera not available:', error.constraint);
-        addMessage('This device does not have the requested camera.', false);
+        console.error('📷 Camera not available:', error.constraint);
+        errorMessage = 'This device does not have the requested camera.';
       } else if (error.name === 'NotAllowedError') {
-        addMessage('Camera permission denied. Please allow camera access.', false);
+        console.error('🚫 Camera permission denied');
+        errorMessage = 'Camera permission denied. Please allow camera access in browser settings.';
+        setCameraBlocked(true);
       } else if (error.name === 'NotFoundError') {
-        addMessage('No camera found on this device.', false);
-      } else {
-        addMessage('Failed to switch camera. Please try again.', false);
+        console.error('🔍 No camera found');
+        errorMessage = 'No camera found on this device.';
+      } else if (error.name === 'NotReadableError') {
+        console.error('🔒 Camera already in use');
+        errorMessage = 'Camera is already in use by another application.';
+      } else if (error.name === 'AbortError') {
+        console.error('⚠️ Camera access aborted');
+        errorMessage = 'Camera access was interrupted. Please try again.';
       }
+      
+      addMessage(errorMessage, false);
       
       // DO NOT revert facing mode - keep the state consistent
       console.log('⚠️ Keeping facing mode as:', facingMode);
@@ -2193,23 +2157,7 @@ const VideoChat: React.FC = () => {
                       )}
                     </div>
                   </div>
-                ))}
-                
-                {/* Auto-Typing Indicator (Retention Boost) */}
-                {isAutoTyping && isMatchConnected && (
-                  <div className="flex justify-start mb-2 animate-fade-in">
-                    <div className="bg-gray-700 text-white px-4 py-2 rounded-2xl max-w-xs shadow-lg">
-                      <div className="flex items-center space-x-1">
-                        <div className="flex space-x-1">
-                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
+                ))}n                
                 <div ref={messagesEndRef} />
               </>
             )}
