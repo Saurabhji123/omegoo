@@ -113,11 +113,27 @@ class ARFilterService {
       this.blurIntensity = blurIntensity;
       this.originalStream = stream;
       
-      // Use provided video element or create new
-      if (videoElement && videoElement.srcObject === stream) {
-        console.log('✅ Using existing video element');
+      // CRITICAL: Use provided video element if available (it's already playing the stream)
+      if (videoElement) {
+        console.log('✅ Using existing video element from page');
         this.videoElement = videoElement;
+        
+        // Ensure video element has the stream and is playing
+        if (videoElement.srcObject !== stream) {
+          console.log('⚠️ Video element stream mismatch, updating...');
+          videoElement.srcObject = stream;
+          await new Promise<void>((resolve) => {
+            videoElement.onloadedmetadata = () => {
+              videoElement.play().catch(err => {
+                console.error('❌ Video play error:', err);
+              });
+              resolve();
+            };
+          });
+        }
       } else {
+        // Create new video element if none provided
+        console.log('📹 Creating new video element');
         this.videoElement = document.createElement('video');
         this.videoElement.srcObject = stream;
         this.videoElement.autoplay = true;

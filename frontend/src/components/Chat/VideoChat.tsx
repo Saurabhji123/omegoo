@@ -268,24 +268,22 @@ const VideoChat: React.FC = () => {
           await arService.initialize();
         }
         
-        // Start or restart processing with current local video element
-        // This will stop any existing processing and start fresh
+        // CRITICAL: Pass the local video element but DON'T change its srcObject
+        // The canvas will read from the video element's current stream
         const processedStream = await arService.startProcessing(
           rawStream,
           selectedMask,
           blurState,
-          4, // blur intensity - light blur
-          localVideoRef.current || undefined // Pass existing video element
+          AR_CONSTANTS.BLUR_RADIUS.MEDIUM,
+          localVideoRef.current || undefined
         );
         
         processedStreamRef.current = processedStream;
         arActiveRef.current = true;
 
-        // Update local video display only if it's a new stream
-        if (localVideoRef.current && localVideoRef.current.srcObject !== processedStream) {
-          localVideoRef.current.srcObject = processedStream;
-        }
-        localStreamRef.current = processedStream;
+        // IMPORTANT: Keep local video showing raw stream
+        // Only send processed stream to remote user
+        localStreamRef.current = rawStream;
 
         // Send processed stream to remote user via WebRTC
         if (webRTCRef.current) {
@@ -302,9 +300,6 @@ const VideoChat: React.FC = () => {
         // Fallback to raw stream
         arActiveRef.current = false;
         processedStreamRef.current = null;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = rawStream;
-        }
         localStreamRef.current = rawStream;
       }
     } else {
@@ -317,10 +312,7 @@ const VideoChat: React.FC = () => {
         arActiveRef.current = false;
         processedStreamRef.current = null;
         
-        // Switch back to raw stream
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = rawStream;
-        }
+        // Switch back to raw stream for remote user
         localStreamRef.current = rawStream;
         
         // Send raw stream to remote user
@@ -331,9 +323,6 @@ const VideoChat: React.FC = () => {
             console.log('✅ Remote user will now see unfiltered video');
           }
         }
-      } else if (localStreamRef.current !== rawStream && localVideoRef.current) {
-        localVideoRef.current.srcObject = rawStream;
-        localStreamRef.current = rawStream;
       }
     }
 
@@ -344,7 +333,8 @@ const VideoChat: React.FC = () => {
       videoTrack.enabled = isCameraOn;
     }
 
-    if (localVideoRef.current) {
+    if (localVideoRef.current && !localVideoRef.current.srcObject) {
+      localVideoRef.current.srcObject = rawStream;
       try {
         await localVideoRef.current.play();
       } catch (playError) {
@@ -951,9 +941,12 @@ const VideoChat: React.FC = () => {
 
   const startLocalVideo = async () => {
     try {
+      // Stop any existing filter processing
       if (arActiveRef.current) {
         console.log('🛑 Stopping existing AR pipeline before restarting camera');
-        // No need to call stopProcessing - CSS filters are automatic
+        const ARFilterService = (await import('../../services/arFilter')).default;
+        const arService = ARFilterService.getInstance();
+        arService.stopProcessing();
         arActiveRef.current = false;
         processedStreamRef.current = null;
       }
@@ -962,7 +955,7 @@ const VideoChat: React.FC = () => {
         video: {
           width: { ideal: 640, max: 1280 },
           height: { ideal: 480, max: 720 },
-          facingMode: facingMode, // Use current facing mode state
+          facingMode: facingMode,
           frameRate: { ideal: 15, max: 30 }
         },
         audio: {
@@ -979,14 +972,14 @@ const VideoChat: React.FC = () => {
         throw new Error('Failed to get media stream');
       }
       
+      // CRITICAL: Always set raw stream on local video element
       rawStreamRef.current = rawStream;
-      arActiveRef.current = false;
-      processedStreamRef.current = null;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = rawStream;
       }
       localStreamRef.current = rawStream;
 
+      // Apply filters if needed (this will process for remote user only)
       await applyEffectsToCurrentStream();
 
       setCameraBlocked(false);
