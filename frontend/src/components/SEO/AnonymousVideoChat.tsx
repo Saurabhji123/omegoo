@@ -25,10 +25,10 @@ const AnonymousVideoChat: React.FC = () => {
         <meta name="twitter:description" content="100% anonymous video chat with strangers. No registration, no personal data required. Private, secure, and completely free random video chat." />
       </Helmet>
 
-      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 text-white min-h-screen">
+      <div className="text-white min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
         {/* Hero Section */}
         <section className="container mx-auto px-4 pt-8 pb-16 text-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 text-gradient">
             Anonymous Video Chat
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
@@ -36,7 +36,7 @@ const AnonymousVideoChat: React.FC = () => {
           </p>
           <Link
             to="/"
-            className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="inline-block btn-primary px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             Start Anonymous Chat Now
           </Link>
@@ -44,7 +44,7 @@ const AnonymousVideoChat: React.FC = () => {
 
         {/* Why Choose Anonymous Video Chat */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Why Choose Anonymous Video Chat?
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -86,26 +86,26 @@ const AnonymousVideoChat: React.FC = () => {
 
         {/* How Anonymous Chat Works */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             How Anonymous Video Chat Works
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
-              <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-blue-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-blue-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-blue-400">1</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Open Omegoo</h3>
               <p className="text-gray-300">Visit our site—no app download, no registration required. Instant anonymous access.</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-purple-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-purple-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-purple-400">2</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Click Start</h3>
               <p className="text-gray-300">Choose Video Chat mode and get matched instantly with an anonymous stranger worldwide.</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-pink-500/20 to-blue-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-pink-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-pink-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-pink-400">3</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Chat Anonymously</h3>
@@ -116,7 +116,7 @@ const AnonymousVideoChat: React.FC = () => {
 
         {/* Privacy Features */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Advanced Privacy Protection
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
@@ -169,7 +169,7 @@ const AnonymousVideoChat: React.FC = () => {
 
         {/* FAQ Section */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Anonymous Video Chat FAQ
           </h2>
           <div className="max-w-5xl mx-auto space-y-6">
@@ -202,7 +202,7 @@ const AnonymousVideoChat: React.FC = () => {
 
         {/* Related Pages */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Explore More
           </h2>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -232,14 +232,14 @@ const AnonymousVideoChat: React.FC = () => {
 
         {/* Final CTA */}
         <section className="container mx-auto px-4 py-16 text-center">
-          <div className="bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50">
+          <div className="rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <h2 className="text-4xl font-bold mb-6">Start Anonymous Video Chat Now</h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Join millions enjoying private, secure, and completely anonymous video chat with strangers worldwide. Zero registration. 100% free forever.
             </p>
             <Link
               to="/"
-              className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-10 py-5 rounded-full text-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 transform hover:scale-105"
+              className="inline-block btn-primary text-white px-10 py-5 rounded-full text-xl font-semibold transition-all duration-300 shadow-2xl transform hover:scale-105"
             >
               Launch Anonymous Chat
             </Link>

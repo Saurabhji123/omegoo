@@ -237,7 +237,7 @@ const VerifyOTP: React.FC = () => {
           className={`w-full py-4 rounded-xl font-bold text-white text-lg transition-all duration-200 ${
             loading || otp.some((digit) => !digit)
               ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl'
+              : 'btn-primary shadow-lg hover:shadow-xl'
           }`}
         >
           {loading ? (

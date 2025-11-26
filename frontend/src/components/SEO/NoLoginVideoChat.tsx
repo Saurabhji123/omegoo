@@ -26,11 +26,11 @@ const NoLoginVideoChat: React.FC = () => {
         </script>
       </Helmet>
 
-      <main className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 text-white min-h-screen">
+      <main className="text-white min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           {/* Hero */}
           <header className="text-center mb-16">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 text-transparent bg-clip-text">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 text-gradient">
               No Login Video Chat
             </h1>
             <p className="text-xl sm:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto">
@@ -38,7 +38,7 @@ const NoLoginVideoChat: React.FC = () => {
             </p>
             <Link
               to="/"
-              className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-10 py-5 rounded-full font-bold text-lg shadow-2xl transform hover:scale-105 transition-all duration-200"
+              className="inline-block btn-primary text-white px-10 py-5 rounded-full font-bold text-lg shadow-2xl transform hover:scale-105 transition-all duration-200"
             >
               Start No Login Chat Now
             </Link>
@@ -86,7 +86,7 @@ const NoLoginVideoChat: React.FC = () => {
           </section>
 
           {/* How It Works */}
-          <section className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-white/10 rounded-3xl p-8 sm:p-12 mb-12">
+          <section className="border border-white/10 rounded-3xl p-8 sm:p-12 mb-12" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <h2 className="text-3xl font-bold mb-8">How No Login Video Chat Works</h2>
             <div className="space-y-6">
               <div className="flex gap-6 items-start">
@@ -212,7 +212,7 @@ const NoLoginVideoChat: React.FC = () => {
           </section>
 
           {/* Final CTA */}
-          <section className="text-center bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-white/10 rounded-3xl p-8 sm:p-12">
+          <section className="text-center border border-white/10 rounded-3xl p-8 sm:p-12" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <h2 className="text-3xl font-bold mb-4">
               Ready for Instant Video Chat?
             </h2>
@@ -221,7 +221,7 @@ const NoLoginVideoChat: React.FC = () => {
             </p>
             <Link
               to="/"
-              className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-10 py-5 rounded-full font-bold text-lg shadow-2xl transform hover:scale-105 transition-all duration-200"
+              className="inline-block btn-primary text-white px-10 py-5 rounded-full font-bold text-lg shadow-2xl transform hover:scale-105 transition-all duration-200"
             >
               Start No Login Chat Now
             </Link>

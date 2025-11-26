@@ -37,7 +37,7 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
   if (state.status === 'incoming') {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-white/20">
+        <div className="rounded-2xl shadow-2xl max-w-md w-full p-6 border border-white/20" style={{ backgroundColor: 'var(--bg-surface)' }}>
           {/* Privacy Tooltip */}
           {showPrivacyTooltip && (
             <div className="mb-4 bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-4">
@@ -83,7 +83,7 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
           <div className="space-y-3">
             <button
               onClick={onAccept}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+              className="w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg" style={{ backgroundColor: '#16a34a', color: 'white' }}
             >
               Accept Video
             </button>
@@ -118,7 +118,7 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
   if (state.status === 'requesting') {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-white/20">
+        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl shadow-2xl max-w-md w-full p-6">
           {/* Animated Icon */}
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center animate-pulse">
@@ -151,7 +151,7 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
   if (state.status === 'connecting') {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-white/20">
+        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl shadow-2xl max-w-md w-full p-6">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
               <div className="animate-spin rounded-full h-10 w-10 border-4 border-green-500 border-t-transparent"></div>
@@ -174,7 +174,7 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
   if (state.status === 'failed') {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-white/20">
+        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl shadow-2xl max-w-md w-full p-6">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center">
               <svg className="w-8 h-8 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -197,7 +197,7 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
+            className="w-full btn-primary font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
           >
             Continue in Text Mode
           </button>
@@ -210,7 +210,7 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
   if (state.status === 'declined') {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-white/20">
+        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl shadow-2xl max-w-md w-full p-6">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center">
               <svg className="w-8 h-8 text-orange-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -229,7 +229,7 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
+            className="w-full btn-primary font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
           >
             Continue Chatting
           </button>

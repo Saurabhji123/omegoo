@@ -25,10 +25,10 @@ const RandomChatNoRegistration: React.FC = () => {
         <meta name="twitter:description" content="Start random video chat without registration. No signup, no email, no personal data required." />
       </Helmet>
 
-      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 text-white min-h-screen">
+      <div className="text-white min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
         {/* Hero Section */}
         <section className="container mx-auto px-4 pt-8 pb-16 text-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-green-400 to-purple-400">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 text-gradient">
             Random Chat Without Registration
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
@@ -36,7 +36,7 @@ const RandomChatNoRegistration: React.FC = () => {
           </p>
           <Link
             to="/"
-            className="inline-block bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-green-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="inline-block btn-primary text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             Start Chatting Now (No Signup)
           </Link>
@@ -44,7 +44,7 @@ const RandomChatNoRegistration: React.FC = () => {
 
         {/* Why No Registration? */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Why Random Chat Without Registration Works Better
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -86,26 +86,26 @@ const RandomChatNoRegistration: React.FC = () => {
 
         {/* How It Works */}
         <section className="container mx-auto px-4 py-16 bg-gray-800/30">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             How Random Chat Without Registration Works
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
-              <div className="bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-green-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-green-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-green-400">1</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Open Omegoo</h3>
               <p className="text-gray-300">Visit omegoo.chat on any device. No signup form, no account creation page. Direct access.</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-blue-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-blue-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-blue-400">2</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Allow Camera</h3>
               <p className="text-gray-300">Click "Allow" when browser asks for webcam permission. Required for video chat (skip for text-only mode).</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-purple-500/20 to-green-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-purple-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-purple-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-purple-400">3</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Start Chatting</h3>
@@ -116,7 +116,7 @@ const RandomChatNoRegistration: React.FC = () => {
 
         {/* Features */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Why Choose Omegoo for No-Registration Chat?
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
@@ -153,7 +153,7 @@ const RandomChatNoRegistration: React.FC = () => {
 
         {/* Benefits Over Registration-Required Platforms */}
         <section className="container mx-auto px-4 py-16 bg-gray-800/30">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Registration vs No Registration: The Truth
           </h2>
           <div className="max-w-4xl mx-auto">
@@ -200,7 +200,7 @@ const RandomChatNoRegistration: React.FC = () => {
 
         {/* FAQ Section */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Random Chat Without Registration FAQ
           </h2>
           <div className="max-w-5xl mx-auto space-y-6">
@@ -233,7 +233,7 @@ const RandomChatNoRegistration: React.FC = () => {
 
         {/* Related Pages */}
         <section className="container mx-auto px-4 py-16 bg-gray-800/30">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             More Ways to Chat Anonymously
           </h2>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -263,14 +263,14 @@ const RandomChatNoRegistration: React.FC = () => {
 
         {/* Final CTA */}
         <section className="container mx-auto px-4 py-16 text-center">
-          <div className="bg-gradient-to-r from-green-600/20 via-blue-600/20 to-purple-600/20 rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50">
+          <div className="rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <h2 className="text-4xl font-bold mb-6">Start Random Chat Without Registration Now</h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Join millions enjoying instant random video chat with zero signup barriers. No email. No password. No registration. Just pure, free connections.
             </p>
             <Link
               to="/"
-              className="inline-block bg-gradient-to-r from-green-500 to-blue-600 text-white px-10 py-5 rounded-full text-xl font-semibold hover:from-green-600 hover:to-blue-700 transition-all duration-300 shadow-2xl hover:shadow-green-500/50 transform hover:scale-105"
+              className="inline-block btn-primary text-white px-10 py-5 rounded-full text-xl font-semibold transition-all duration-300 shadow-2xl transform hover:scale-105"
             >
               Launch Chat (No Signup)
             </Link>

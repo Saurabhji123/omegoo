@@ -111,7 +111,7 @@ const FaceMaskPicker: React.FC<FaceMaskPickerProps> = ({ isOpen, onClose, onConf
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl bg-gradient-to-br from-gray-900 via-purple-900/30 to-gray-900 rounded-3xl shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-2xl rounded-3xl shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-surface)' }}>
         {/* Header */}
         <div className="sticky top-0 bg-gray-900/95 backdrop-blur-sm px-6 py-4 border-b border-white/10 rounded-t-3xl z-10">
           <div className="flex items-center justify-between">
@@ -212,8 +212,9 @@ const FaceMaskPicker: React.FC<FaceMaskPickerProps> = ({ isOpen, onClose, onConf
               <button
                 onClick={() => setEnableBlurStart(!enableBlurStart)}
                 className={`relative inline-flex h-7 w-12 items-center rounded-full border border-white/15 transition-all duration-200 ${
-                  enableBlurStart ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 shadow-lg shadow-blue-500/30' : 'bg-white/10'
-                }`}
+                  enableBlurStart ? 'shadow-lg' : 'bg-white/10'
+                }
+                style={{ backgroundColor: enableBlurStart ? 'var(--primary-brand)' : undefined }}`}
               >
                 <span
                   className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200 ${
@@ -265,7 +266,7 @@ const FaceMaskPicker: React.FC<FaceMaskPickerProps> = ({ isOpen, onClose, onConf
             className={`w-full py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
               previewActive
                 ? 'bg-red-500 hover:bg-red-600 text-white'
-                : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
+                : 'btn-primary'
             }`}
           >
             {previewActive ? (
@@ -352,7 +353,7 @@ const FaceMaskPicker: React.FC<FaceMaskPickerProps> = ({ isOpen, onClose, onConf
             <button
               onClick={handleConfirm}
               disabled={capabilities?.devicePerformance === 'low' && selectedMask !== 'none'}
-              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 px-6 rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 btn-primary py-3 px-6 rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               title={capabilities?.devicePerformance === 'low' && selectedMask !== 'none' ? 'AR masks not recommended for low-end devices' : ''}
             >
               Join with {selectedMask !== 'none' ? 'Mask' : enableBlurStart ? 'Blur' : 'Settings'}

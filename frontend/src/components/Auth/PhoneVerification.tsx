@@ -152,7 +152,7 @@ const PhoneVerification: React.FC = () => {
             <button
               type="submit"
               disabled={loading || phone.length !== 10}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 disabled:transform-none w-full flex items-center justify-center"
+              className="btn-primary disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 disabled:transform-none w-full flex items-center justify-center"
             >
               {loading ? (
                 <LoadingSpinner size="small" />
@@ -226,7 +226,7 @@ const PhoneVerification: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 disabled:transform-none flex-1 flex items-center justify-center"
+                className="btn-primary disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed px-8 py-3 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 disabled:transform-none flex-1 flex items-center justify-center"
               >
                 {loading ? (
                   <LoadingSpinner size="small" />

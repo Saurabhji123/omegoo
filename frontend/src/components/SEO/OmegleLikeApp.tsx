@@ -25,10 +25,10 @@ const OmegleLikeApp: React.FC = () => {
         <meta name="twitter:description" content="Looking for an Omegle-like app? Omegoo is the best Omegle alternative." />
       </Helmet>
 
-      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 text-white min-h-screen">
+      <div className="text-white min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
         {/* Hero Section */}
         <section className="container mx-auto px-4 pt-8 pb-16 text-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-400 to-pink-400">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 text-gradient">
             Omegle-Like App: The Best Alternative After Omegle Shut Down
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
@@ -36,7 +36,7 @@ const OmegleLikeApp: React.FC = () => {
           </p>
           <Link
             to="/"
-            className="inline-block bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-orange-600 hover:to-red-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="inline-block btn-primary text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             Try Omegoo Now (Like Omegle)
           </Link>
@@ -44,7 +44,7 @@ const OmegleLikeApp: React.FC = () => {
 
         {/* Why We're the Best Omegle-Like App */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Why Omegoo is the Best Omegle-Like App in 2025
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -86,7 +86,7 @@ const OmegleLikeApp: React.FC = () => {
 
         {/* What Happened to Omegle */}
         <section className="container mx-auto px-4 py-16 bg-gray-800/30">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             What Happened to Omegle? Why You Need an Alternative
           </h2>
           <div className="max-w-4xl mx-auto">
@@ -127,7 +127,7 @@ const OmegleLikeApp: React.FC = () => {
 
         {/* Features Like Omegle, But Better */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Omegle Features You Loved—Now Improved
           </h2>
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
@@ -180,7 +180,7 @@ const OmegleLikeApp: React.FC = () => {
 
         {/* Comparison Table */}
         <section className="container mx-auto px-4 py-16 bg-gray-800/30">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Omegle vs Omegoo: Side-by-Side Comparison
           </h2>
           <div className="max-w-4xl mx-auto overflow-x-auto">
@@ -230,26 +230,26 @@ const OmegleLikeApp: React.FC = () => {
 
         {/* How to Use */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             How to Use This Omegle-Like App
           </h2>
           <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-orange-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-orange-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-orange-400">1</span>
               </div>
               <h3 className="text-xl font-bold mb-3">Visit Omegoo.chat</h3>
               <p className="text-gray-300 text-sm">No app store download. Works in any browser, just like Omegle did.</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-red-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-red-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-red-400">2</span>
               </div>
               <h3 className="text-xl font-bold mb-3">Choose Your Mode</h3>
               <p className="text-gray-300 text-sm">Text, audio, or video chat. Same options Omegle had.</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-pink-500/20 to-orange-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-pink-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-pink-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-pink-400">3</span>
               </div>
               <h3 className="text-xl font-bold mb-3">Start Chatting</h3>
@@ -260,7 +260,7 @@ const OmegleLikeApp: React.FC = () => {
 
         {/* FAQ */}
         <section className="container mx-auto px-4 py-16 bg-gray-800/30">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Omegle-Like App FAQ
           </h2>
           <div className="max-w-5xl mx-auto space-y-6">
@@ -293,7 +293,7 @@ const OmegleLikeApp: React.FC = () => {
 
         {/* Related Pages */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             More Omegle Alternatives
           </h2>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -323,14 +323,14 @@ const OmegleLikeApp: React.FC = () => {
 
         {/* Final CTA */}
         <section className="container mx-auto px-4 py-16 text-center">
-          <div className="bg-gradient-to-r from-orange-600/20 via-red-600/20 to-pink-600/20 rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50">
+          <div className="rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <h2 className="text-4xl font-bold mb-6">Miss Omegle? Try Omegoo Today</h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               The Omegle-like app everyone's talking about. Same vibe, better tech, safer environment. Free forever. No download required.
             </p>
             <Link
               to="/"
-              className="inline-block bg-gradient-to-r from-orange-500 to-red-600 text-white px-10 py-5 rounded-full text-xl font-semibold hover:from-orange-600 hover:to-red-700 transition-all duration-300 shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105"
+              className="inline-block btn-primary text-white px-10 py-5 rounded-full text-xl font-semibold transition-all duration-300 shadow-2xl transform hover:scale-105"
             >
               Start Chatting Like Omegle
             </Link>

@@ -91,7 +91,7 @@ const ReportModal: React.FC<ReportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm">
-      <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl shadow-2xl max-w-md w-full border border-white border-opacity-20 overflow-hidden">
+      <div className="rounded-2xl shadow-2xl max-w-md w-full border border-white border-opacity-20 overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)' }}>
         {/* Header */}
         <div className="bg-white bg-opacity-10 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white border-opacity-20">
           <div className="flex items-center space-x-3">

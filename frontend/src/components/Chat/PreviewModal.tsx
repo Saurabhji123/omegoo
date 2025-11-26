@@ -153,7 +153,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({ onStart, onCancel })
     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 rounded-t-lg">
+        <div style={{ backgroundColor: 'var(--primary-brand)' }} className="p-4 rounded-t-lg">
           <h2 className="text-white text-xl font-bold">Camera Preview</h2>
           <p className="text-white text-sm opacity-90">Check your video and audio before starting</p>
         </div>
@@ -292,7 +292,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({ onStart, onCancel })
           <button
             onClick={handleStart}
             disabled={loading || !!error || !stream}
-            className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded hover:from-purple-700 hover:to-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 btn-primary rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Start Video Call
           </button>

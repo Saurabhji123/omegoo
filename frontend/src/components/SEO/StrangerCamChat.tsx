@@ -25,10 +25,10 @@ const StrangerCamChat: React.FC = () => {
         <meta name="twitter:description" content="Free stranger cam chat with random people worldwide. Instant webcam chat with strangers, no registration required. Safe, fast, and fun random cam chat." />
       </Helmet>
 
-      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 text-white min-h-screen">
+      <div className="text-white min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
         {/* Hero Section */}
         <section className="container mx-auto px-4 pt-8 pb-16 text-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-400 to-purple-400">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 text-gradient">
             Stranger Cam Chat
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
@@ -36,7 +36,7 @@ const StrangerCamChat: React.FC = () => {
           </p>
           <Link
             to="/"
-            className="inline-block bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-green-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="inline-block btn-primary text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             Start Cam Chat Now
           </Link>
@@ -44,7 +44,7 @@ const StrangerCamChat: React.FC = () => {
 
         {/* Why Choose Stranger Cam Chat */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Why Choose Stranger Cam Chat?
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -86,26 +86,26 @@ const StrangerCamChat: React.FC = () => {
 
         {/* How Stranger Cam Chat Works */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             How Stranger Cam Chat Works
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
-              <div className="bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-green-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-green-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-green-400">1</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Enable Your Webcam</h3>
               <p className="text-gray-300">Click "Allow" when your browser asks for camera access. No account or app download needed.</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-blue-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-blue-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-blue-400">2</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Start Cam Chat</h3>
               <p className="text-gray-300">Hit the "Start" button and get instantly matched with a random stranger for webcam chat.</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-purple-500/20 to-green-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-purple-500/50">
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-purple-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <span className="text-4xl font-bold text-purple-400">3</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Chat & Skip</h3>
@@ -116,7 +116,7 @@ const StrangerCamChat: React.FC = () => {
 
         {/* Features Section */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Advanced Cam Chat Features
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
@@ -165,7 +165,7 @@ const StrangerCamChat: React.FC = () => {
 
         {/* Safety Tips */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Safe Stranger Cam Chat Tips
           </h2>
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
@@ -210,7 +210,7 @@ const StrangerCamChat: React.FC = () => {
 
         {/* FAQ Section */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Stranger Cam Chat FAQ
           </h2>
           <div className="max-w-5xl mx-auto space-y-6">
@@ -243,7 +243,7 @@ const StrangerCamChat: React.FC = () => {
 
         {/* Related Pages */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             More Chat Options
           </h2>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -273,14 +273,14 @@ const StrangerCamChat: React.FC = () => {
 
         {/* Final CTA */}
         <section className="container mx-auto px-4 py-16 text-center">
-          <div className="bg-gradient-to-r from-green-600/20 via-blue-600/20 to-purple-600/20 rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50">
+          <div className="rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <h2 className="text-4xl font-bold mb-6">Start Stranger Cam Chat Now</h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Join thousands enjoying free webcam chat with strangers worldwide. HD quality, instant matching, 100% free. No registration required.
             </p>
             <Link
               to="/"
-              className="inline-block bg-gradient-to-r from-green-500 to-blue-600 text-white px-10 py-5 rounded-full text-xl font-semibold hover:from-green-600 hover:to-blue-700 transition-all duration-300 shadow-2xl hover:shadow-green-500/50 transform hover:scale-105"
+              className="inline-block btn-primary text-white px-10 py-5 rounded-full text-xl font-semibold transition-all duration-300 shadow-2xl transform hover:scale-105"
             >
               Launch Cam Chat
             </Link>

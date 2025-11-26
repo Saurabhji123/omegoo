@@ -85,7 +85,7 @@ const VoiceAvatarPicker: React.FC<VoiceAvatarPickerProps> = ({ isOpen, onClose, 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-gradient-to-br from-gray-900 to-purple-900 rounded-2xl max-w-2xl w-full shadow-2xl border border-purple-500/30 max-h-[90vh] overflow-y-auto">
+      <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between">
@@ -236,8 +236,9 @@ const VoiceAvatarPicker: React.FC<VoiceAvatarPickerProps> = ({ isOpen, onClose, 
               className={`w-full py-4 rounded-xl font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 ${
                 isPreviewMode
                   ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
-              }`}
+                  : 'text-white'
+              }
+              style={{ backgroundColor: !needsCoinPurchase ? '#16a34a' : undefined }}`}
             >
               {isPreviewMode ? (
                 <>
@@ -284,7 +285,7 @@ const VoiceAvatarPicker: React.FC<VoiceAvatarPickerProps> = ({ isOpen, onClose, 
           <button
             onClick={handleConfirm}
             disabled={isProcessing}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            className="flex-1 px-6 py-3 btn-primary rounded-xl font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             {isProcessing ? (
               <div className="flex items-center justify-center gap-2">

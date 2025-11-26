@@ -126,7 +126,7 @@ const AgeGate: React.FC = () => {
             disabled={!accepted}
             className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
               accepted
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white transform hover:scale-105'
+                ? 'btn-primary transform hover:scale-105'
                 : 'bg-gray-500 bg-opacity-30 text-gray-400 cursor-not-allowed'
             }`}
           >
@@ -176,7 +176,7 @@ const AgeGate: React.FC = () => {
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={() => setShowTerms(false)}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
+                  className="btn-primary px-6 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
                 >
                   I Understand
                 </button>

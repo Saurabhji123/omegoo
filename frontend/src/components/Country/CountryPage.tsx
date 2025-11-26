@@ -20,7 +20,7 @@ const CountryPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-center">
+      <div className="min-h-screen text-white flex items-center justify-center" style={{ backgroundColor: 'var(--bg-body)' }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-400">Loading...</p>
@@ -31,7 +31,7 @@ const CountryPage: React.FC = () => {
 
   if (!country) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-center">
+      <div className="min-h-screen text-white flex items-center justify-center" style={{ backgroundColor: 'var(--bg-body)' }}>
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">Country not found</h1>
           <p className="text-gray-400 mb-8">Redirecting to homepage...</p>
@@ -143,11 +143,11 @@ const CountryPage: React.FC = () => {
         </script>
       </Helmet>
 
-      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 text-white min-h-screen">
+      <div className="text-white min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
         {/* Hero Section */}
         <section className="container mx-auto px-4 pt-8 pb-16">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 text-gradient">
               Random Video Chat in {country.name} — Talk to Strangers Instantly
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed">
@@ -175,7 +175,7 @@ const CountryPage: React.FC = () => {
             
             <Link
               to="/"
-              className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-10 py-4 rounded-full text-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="inline-block btn-primary text-white px-10 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Start Chatting with {country.name} Now
             </Link>
@@ -184,7 +184,7 @@ const CountryPage: React.FC = () => {
 
         {/* Why Chat With Strangers Section */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Why Chat With Strangers in {country.name}?
           </h2>
           <div className="max-w-4xl mx-auto">
@@ -266,7 +266,7 @@ const CountryPage: React.FC = () => {
 
         {/* Features Section */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Features of Omegoo for {country.name} Users
           </h2>
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
@@ -326,51 +326,51 @@ const CountryPage: React.FC = () => {
 
         {/* Why Better than Omegle */}
         <section className="container mx-auto px-4 py-16 bg-white/5">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-yellow-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Why Omegoo is a Better Omegle Alternative in {country.name}
           </h2>
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl p-6 border border-blue-500/30 text-center">
+                <div className="rounded-xl p-6 border border-blue-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">⚡</div>
                 <h3 className="text-lg font-bold mb-2">Faster Connections</h3>
                 <p className="text-sm text-gray-300">&lt;2s matching vs Omegle's 5-10s</p>
               </div>
-              <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-xl p-6 border border-purple-500/30 text-center">
+              <div className="rounded-xl p-6 border border-purple-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">✨</div>
                 <h3 className="text-lg font-bold mb-2">Cleaner UI</h3>
                 <p className="text-sm text-gray-300">Modern design, no clutter</p>
               </div>
-              <div className="bg-gradient-to-br from-pink-600/20 to-red-600/20 rounded-xl p-6 border border-pink-500/30 text-center">
+              <div className="rounded-xl p-6 border border-pink-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">🚫</div>
                 <h3 className="text-lg font-bold mb-2">No Creepy Bots</h3>
                 <p className="text-sm text-gray-300">Real humans only</p>
               </div>
-              <div className="bg-gradient-to-br from-green-600/20 to-blue-600/20 rounded-xl p-6 border border-green-500/30 text-center">
+              <div className="rounded-xl p-6 border border-green-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">🎯</div>
                 <h3 className="text-lg font-bold mb-2">No Popups</h3>
                 <p className="text-sm text-gray-300">Clean browsing experience</p>
               </div>
-              <div className="bg-gradient-to-br from-yellow-600/20 to-orange-600/20 rounded-xl p-6 border border-yellow-500/30 text-center">
+              <div className="rounded-xl p-6 border border-yellow-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">💯</div>
                 <h3 className="text-lg font-bold mb-2">100% Free</h3>
                 <p className="text-sm text-gray-300">Forever, no hidden costs</p>
               </div>
-              <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-xl p-6 border border-indigo-500/30 text-center">
+              <div className="rounded-xl p-6 border border-indigo-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">🌍</div>
                 <h3 className="text-lg font-bold mb-2">Global Filters</h3>
                 <p className="text-sm text-gray-300">Country-specific matching</p>
               </div>
             </div>
             <p className="text-center text-xl text-gray-300 font-semibold">
-              Omegle is gone. OmeTV is slow. <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Omegoo is the new standard.</span>
+              Omegle is gone. OmeTV is slow. <span className="text-gradient">Omegoo is the new standard.</span>
             </p>
           </div>
         </section>
 
         {/* How It Works */}
         <section className="container mx-auto px-4 py-16">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Random Video Chat for {country.name} — How It Works
           </h2>
           <div className="max-w-6xl mx-auto">
@@ -419,7 +419,7 @@ const CountryPage: React.FC = () => {
 
         {/* FAQ Section */}
         <section className="container mx-auto px-4 py-16 bg-white/5">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Frequently Asked Questions (FAQs)
           </h2>
           <div className="max-w-5xl mx-auto space-y-6">
@@ -458,7 +458,7 @@ const CountryPage: React.FC = () => {
 
         {/* Related Countries Section */}
         <section className="container mx-auto px-4 py-16 bg-gray-800/30">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-4xl font-bold text-center mb-12 text-gradient">
             Random Chat in Other Countries
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -490,14 +490,16 @@ const CountryPage: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <Link
               to="/no-login-video-chat"
-              className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl p-6 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 group"
+              className="rounded-xl p-6 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 group"
+              style={{ backgroundColor: 'var(--bg-surface)' }}
             >
               <h3 className="text-xl font-bold mb-2 text-blue-400 group-hover:text-blue-300">No Login Video Chat</h3>
               <p className="text-gray-400 text-sm">Skip registration entirely. Instant anonymous access.</p>
             </Link>
             <Link
               to="/anonymous-video-chat"
-              className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-xl p-6 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 group"
+              className="rounded-xl p-6 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 group"
+              style={{ backgroundColor: 'var(--bg-surface)' }}
             >
               <h3 className="text-xl font-bold mb-2 text-purple-400 group-hover:text-purple-300">Anonymous Video Chat</h3>
               <p className="text-gray-400 text-sm">100% private connections. Zero tracking.</p>
@@ -507,14 +509,14 @@ const CountryPage: React.FC = () => {
 
         {/* Final CTA */}
         <section className="container mx-auto px-4 py-16 text-center">
-          <div className="bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50">
+          <div className="rounded-3xl p-12 max-w-4xl mx-auto border border-gray-700/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <h2 className="text-4xl font-bold mb-6">Ready to Meet Strangers in {country.name}?</h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Join thousands of {country.name} users enjoying free random video chat. No login required. 100% anonymous. Start in 2 seconds.
             </p>
             <Link
               to="/"
-              className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-12 py-5 rounded-full text-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 transform hover:scale-105"
+              className="inline-block btn-primary text-white px-12 py-5 rounded-full text-xl font-semibold transition-all duration-300 shadow-2xl transform hover:scale-105"
             >
               Start Chatting Now
             </Link>

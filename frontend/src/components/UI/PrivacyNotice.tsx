@@ -58,7 +58,7 @@ const PrivacyNotice: React.FC = () => {
   if (isDismissed || !guestId) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-900/95 to-blue-900/95 border-t border-white/20 backdrop-blur-sm">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/20 backdrop-blur-sm" style={{ backgroundColor: 'var(--bg-surface)' }}>
       <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex-1 text-center sm:text-left">
           <p className="text-sm text-white/90">
