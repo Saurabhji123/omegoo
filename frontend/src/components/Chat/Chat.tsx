@@ -26,7 +26,9 @@ const Chat: React.FC = () => {
   const [isMicOn, setIsMicOn] = useState(true);
   const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [showReportModal, setShowReportModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [sessionId, setSessionId] = useState<string>('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [partnerId, setPartnerId] = useState<string>('');
   const { user } = useAuth();
   // const [queueInfo, setQueueInfo] = useState<{ position: number, totalWaiting: number } | null>(null); // Reserved for future use
