@@ -125,8 +125,8 @@ const Settings: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-6 px-4 sm:px-6 lg:px-0">
       <div className="relative overflow-hidden rounded-3xl border px-6 py-6 sm:py-8 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
-        <div className="absolute -top-24 -right-10 h-44 w-44 rounded-full bg-purple-400/20 blur-3xl" aria-hidden="true" />
-        <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-blue-400/10 blur-3xl" aria-hidden="true" />
+        <div className="absolute -top-24 -right-10 h-44 w-44 rounded-full bg-red-400/20 blur-3xl" aria-hidden="true" />
+        <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-red-400/10 blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.35em] text-white/60">Control Center</p>
@@ -196,7 +196,7 @@ const Settings: React.FC = () => {
               <select 
                 value={settings.videoQuality}
                 onChange={(e) => updateSetting('videoQuality', e.target.value)}
-                className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white shadow-inner transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white shadow-inner transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-red-400"
               >
                 <option value="low" className="bg-slate-900 text-white">Low (Data Saver)</option>
                 <option value="medium" className="bg-slate-900 text-white">Medium</option>
@@ -271,7 +271,7 @@ const Settings: React.FC = () => {
                     onClick={() => updateSetting('voiceFilterIntensityPreset', preset.value)}
                     className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition sm:px-4 ${
                       settings.voiceFilterIntensityPreset === preset.value
-                        ? 'border-purple-400 bg-purple-500/20 text-white'
+                        ? 'border-red-400 bg-red-500/20 text-white'
                         : 'border-white/20 bg-white/5 text-white/70 hover:border-white/40 hover:text-white'
                     }`}
                   >
@@ -295,7 +295,7 @@ const Settings: React.FC = () => {
             </div>
 
             {/* Info Banner */}
-            <div className="rounded-2xl border border-purple-400/40 bg-purple-500/10 px-4 py-4 text-sm text-purple-100">
+            <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-4 text-sm text-red-100">
               <div className="flex items-start gap-3">
                 <SparklesIcon className="mt-1 h-5 w-5" />
                 <div>
@@ -346,7 +346,7 @@ const Settings: React.FC = () => {
               <select 
                 value={settings.defaultARMask}
                 onChange={(e) => updateSetting('defaultARMask', e.target.value as FaceMaskType)}
-                className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white shadow-inner transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white shadow-inner transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-red-400"
               >
                 {(Object.keys(FACE_MASK_PRESETS) as FaceMaskType[]).map((maskType) => {
                   const preset = FACE_MASK_PRESETS[maskType];
@@ -388,7 +388,7 @@ const Settings: React.FC = () => {
                     onClick={() => updateSetting('defaultBlurDuration', preset.value)}
                     className={`rounded-2xl border px-2 py-3 text-sm font-semibold transition sm:px-3 ${
                       settings.defaultBlurDuration === preset.value
-                        ? 'border-blue-400 bg-blue-500/20 text-white'
+                        ? 'border-red-400 bg-red-500/20 text-white'
                         : 'border-white/20 bg-white/5 text-white/70 hover:border-white/40 hover:text-white'
                     }`}
                   >
@@ -411,14 +411,14 @@ const Settings: React.FC = () => {
             </div>
 
             {/* Info Banner */}
-            <div className="rounded-2xl border border-blue-400/40 bg-blue-500/10 px-4 py-4 text-sm text-blue-100">
+            <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-4 text-sm text-red-100">
               <div className="flex items-start gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="mt-1 h-5 w-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                 </svg>
                 <div>
-                  <div className="font-semibold uppercase tracking-wide text-xs text-blue-100">Client-Side Canvas Filters</div>
-                  <p className="mt-1 text-blue-100/80">Color filters and blur effects are processed locally on your device using Canvas API. No video data is sent to external servers. Blur countdown can be manually revealed or auto-reveals at end.</p>
+                  <div className="font-semibold uppercase tracking-wide text-xs text-red-100">Client-Side Canvas Filters</div>
+                  <p className="mt-1 text-red-100/80">Color filters and blur effects are processed locally on your device using Canvas API. No video data is sent to external servers. Blur countdown can be manually revealed or auto-reveals at end.</p>
                 </div>
               </div>
             </div>
@@ -487,12 +487,12 @@ const Settings: React.FC = () => {
               <ToggleSwitch enabled={settings.blockInappropriate} onChange={(value) => updateSetting('blockInappropriate', value)} />
             </div>
 
-            <div className="rounded-2xl border border-blue-400/40 bg-blue-500/10 px-4 py-4 text-sm text-blue-100">
+            <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-4 text-sm text-red-100">
               <div className="flex items-start gap-3">
                 <ShieldCheckIcon className="mt-1 h-5 w-5" />
                 <div>
-                  <div className="font-semibold uppercase tracking-wide text-xs text-blue-100">Age Verification Required</div>
-                  <p className="mt-1 text-blue-100/80">You must be 18+ to use Omegoo. Verification unlocks video and audio chat access.</p>
+                  <div className="font-semibold uppercase tracking-wide text-xs text-red-100">Age Verification Required</div>
+                  <p className="mt-1 text-red-100/80">You must be 18+ to use Omegoo. Verification unlocks video and audio chat access.</p>
                 </div>
               </div>
             </div>
@@ -562,7 +562,7 @@ const Settings: React.FC = () => {
                     onClick={() => updateSetting('matchingMode', mode)}
                     className={`rounded-2xl border px-3 py-3 text-sm font-semibold capitalize transition sm:px-4 ${
                       settings.matchingMode === mode
-                        ? 'border-blue-400 bg-blue-500/20 text-white'
+                        ? 'border-red-400 bg-red-500/20 text-white'
                         : 'border-white/20 bg-white/5 text-white/70 hover:border-white/40 hover:text-white'
                     }`}
                   >
@@ -595,7 +595,7 @@ const Settings: React.FC = () => {
         <p className="text-xs sm:text-sm text-gray-300 text-center flex items-center justify-center gap-2">
           {saving ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
               <span>Saving settings...</span>
             </>
           ) : (

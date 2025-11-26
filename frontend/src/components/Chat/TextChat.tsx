@@ -1338,7 +1338,7 @@ const TextChat: React.FC = () => {
             </div>
 
             {/* Messages Area - Scrollable Middle Section */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 min-h-0 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent pb-10 sm:pb-12">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 min-h-0 scrollbar-thin scrollbar-thumb-red-600 scrollbar-track-transparent pb-10 sm:pb-12">
               {/* Empty State */}
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full">
@@ -1375,7 +1375,7 @@ const TextChat: React.FC = () => {
                             console.log('🔄 Reply button clicked for message:', message);
                             setReplyingTo(message);
                           }}
-                          className={`absolute ${message.isOwnMessage ? '-left-10' : '-right-10'} top-1/2 -translate-y-1/2 p-2 rounded-full bg-purple-500 bg-opacity-80 hover:bg-opacity-100 backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 z-10`}
+                          className={`absolute ${message.isOwnMessage ? '-left-10' : '-right-10'} top-1/2 -translate-y-1/2 p-2 rounded-full bg-red-500 bg-opacity-80 hover:bg-opacity-100 backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 z-10`}
                           title="Reply to this message"
                         >
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1465,7 +1465,7 @@ const TextChat: React.FC = () => {
                       >
                         {/* Reply context - Shows which message this is replying to */}
                         {message.replyTo && (
-                          <div className="mb-2 pb-2 border-l-4 border-purple-400 pl-2 bg-black bg-opacity-30 rounded p-2 cursor-pointer hover:bg-opacity-40 transition-all">
+                          <div className="mb-2 pb-2 border-l-4 border-red-400 pl-2 bg-black bg-opacity-30 rounded p-2 cursor-pointer hover:bg-opacity-40 transition-all">
                             <p className="text-xs font-semibold opacity-90 mb-1">
                               <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -1483,7 +1483,7 @@ const TextChat: React.FC = () => {
                         {/* Translation badge - Shows when message is translated */}
                         {message.translatedContent && !message.showingOriginal && (
                           <div className="mb-2 flex items-center gap-2 flex-wrap">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500 bg-opacity-30 rounded-full text-xs text-purple-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500 bg-opacity-30 rounded-full text-xs text-red-200">
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                               </svg>
@@ -1643,7 +1643,7 @@ const TextChat: React.FC = () => {
                     }}
                     placeholder="Type a message..."
                     disabled={!isMatchConnected}
-                    className="textchat-input w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200 overflow-y-auto max-h-[140px] min-h-[44px]"
+                    className="textchat-input w-full bg-white bg-opacity-10 border border-white border-opacity-30 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:opacity-50 backdrop-blur-sm resize-none transition-all duration-200 overflow-y-auto max-h-[140px] min-h-[44px]"
                     style={{ scrollbarWidth: 'none', overflowX: 'hidden' }}
                   />
                 </div>
@@ -1739,7 +1739,7 @@ const TextChat: React.FC = () => {
           <div className="text-center max-w-xs sm:max-w-md lg:max-w-lg mx-4 sm:mx-0">
             <div className="mb-6 sm:mb-8">
               <div className="relative mb-6 sm:mb-8">
-                <ChatBubbleLeftRightIcon className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-purple-400" />
+                <ChatBubbleLeftRightIcon className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-red-400" />
                 <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-green-500 rounded-full flex items-center justify-center">
                   <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
                 </div>
@@ -1921,7 +1921,7 @@ const TextChat: React.FC = () => {
                     localStream.getVideoTracks().forEach(track => track.stop());
                   }
                 }}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 flex items-center gap-2"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -1947,7 +1947,7 @@ const TextChat: React.FC = () => {
               {!remoteStream && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                     <p className="text-white text-sm">Waiting for partner's video...</p>
                   </div>
                 </div>
@@ -1963,13 +1963,13 @@ const TextChat: React.FC = () => {
                 muted
                 className="w-full h-full object-cover mirror"
               />
-              <div className="absolute bottom-4 left-4 bg-purple-600 bg-opacity-80 px-3 py-1 rounded-full backdrop-blur-sm">
+              <div className="absolute bottom-4 left-4 bg-red-600 bg-opacity-80 px-3 py-1 rounded-full backdrop-blur-sm">
                 <span className="text-white text-sm font-medium">You</span>
               </div>
               {!localStream && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                     <p className="text-white text-sm">Starting your camera...</p>
                   </div>
                 </div>
@@ -1990,7 +1990,7 @@ const TextChat: React.FC = () => {
                     <div
                       className={`px-3 py-1.5 rounded-lg text-sm max-w-xs ${
                         msg.isOwnMessage
-                          ? 'bg-purple-600 text-white'
+                          ? 'bg-red-600 text-white'
                           : 'bg-gray-700 text-gray-100'
                       }`}
                     >

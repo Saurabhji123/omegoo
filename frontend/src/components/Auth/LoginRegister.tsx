@@ -241,8 +241,8 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium text-sm sm:text-base transition ${
                 isLogin 
-                  ? 'bg-purple-600 text-white' 
-                  : 'text-purple-200 hover:bg-white hover:bg-opacity-10'
+                  ? 'bg-red-600 text-white' 
+                  : 'text-gray-300 hover:bg-white hover:bg-opacity-10'
               }`}
             >
               Login
@@ -251,8 +251,8 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium text-sm sm:text-base transition ${
                 !isLogin 
-                  ? 'bg-purple-600 text-white' 
-                  : 'text-purple-200 hover:bg-white hover:bg-opacity-10'
+                  ? 'bg-red-600 text-white' 
+                  : 'text-gray-300 hover:bg-white hover:bg-opacity-10'
               }`}
             >
               Register
@@ -269,16 +269,16 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             {/* Username (Register only) */}
             {!isLogin && (
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                   Username
                 </label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-purple-300" />
+                  <UserIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
                     placeholder="Choose a username"
                     required={!isLogin}
                   />
@@ -289,14 +289,14 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             {/* Gender (Register only) */}
             {!isLogin && (
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                   Gender
                 </label>
                 <div className="relative">
                   <select
                     value={gender}
                     onChange={(e) => setGender(e.target.value as 'male' | 'female' | 'others' | '')}
-                    className="w-full appearance-none pl-3 sm:pl-4 pr-8 sm:pr-10 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full appearance-none pl-3 sm:pl-4 pr-8 sm:pr-10 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500"
                     required={!isLogin}
                   >
                     <option value="" disabled className="bg-gray-900 text-purple-300">
@@ -342,7 +342,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Enter your password"
                   required
                   minLength={6}
@@ -381,7 +381,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 sm:py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm sm:text-base rounded-lg transition flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full py-2.5 sm:py-3 px-4 font-medium text-sm sm:text-base rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

@@ -26,7 +26,7 @@ export const StaticPageLayout: React.FC<StaticPageLayoutProps> = ({
           )}
 
           {heroIcon && (
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-lg shadow-indigo-900/40">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-lg shadow-red-900/40">
               {heroIcon}
             </div>
           )}
@@ -62,7 +62,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
 }) => {
   return (
     <section
-      className={`rounded-2xl border border-white/10 bg-slate-900/60 p-6 shadow-xl shadow-indigo-950/40 backdrop-blur-sm sm:p-8 ${className}`}
+      className={`rounded-2xl border border-white/10 bg-slate-900/60 p-6 shadow-xl shadow-red-950/40 backdrop-blur-sm sm:p-8 ${className}`}
     >
       {(title || description) && (
         <header className="mb-6 space-y-2">

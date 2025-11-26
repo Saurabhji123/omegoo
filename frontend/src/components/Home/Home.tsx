@@ -908,22 +908,22 @@ const Home: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl font-bold mb-6">Core Features of Omegoo: The Ultimate Omegle Alternative</h2>
             <div className="space-y-6">
               <div className="flex gap-4 items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center text-2xl">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-2xl">
                   🚀
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-blue-300 mb-2">Instant Matching System</h3>
+                  <h3 className="text-lg font-semibold text-red-300 mb-2">Instant Matching System</h3>
                   <p className="text-sm sm:text-base text-gray-200">
                     Our smart algorithm connects you with online strangers in real-time. No queues, no waiting rooms—just instant <strong>random video chat</strong> that works like Omegle should have.
                   </p>
                 </div>
               </div>
               <div className="flex gap-4 items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center text-2xl">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-2xl">
                   🎭
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-purple-300 mb-2">Complete Anonymity</h3>
+                  <h3 className="text-lg font-semibold text-red-300 mb-2">Complete Anonymity</h3>
                   <p className="text-sm sm:text-base text-gray-200">
                     No email required, no phone verification, no personal data collection. This is truly <strong>anonymous video chat</strong> where your identity remains protected while enjoying <strong>stranger cam chat</strong> conversations.
                   </p>
@@ -941,11 +941,11 @@ const Home: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-4 items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-pink-500/20 rounded-full flex items-center justify-center text-2xl">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-2xl">
                   🛡️
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-pink-300 mb-2">Advanced Safety Measures</h3>
+                  <h3 className="text-lg font-semibold text-red-300 mb-2">Advanced Safety Measures</h3>
                   <p className="text-sm sm:text-base text-gray-200">
                     AI-powered content moderation, instant report buttons, automatic abuse detection, and community guidelines enforcement make this the safest <strong>Omegle-like app</strong> available today.
                   </p>
@@ -990,15 +990,15 @@ const Home: React.FC = () => {
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
               <div className="bg-white/5 rounded-2xl p-4">
-                <div className="text-3xl sm:text-4xl font-bold text-blue-400 mb-2">150+</div>
+                <div className="text-3xl sm:text-4xl font-bold text-red-400 mb-2">150+</div>
                 <div className="text-xs sm:text-sm text-gray-300">Countries Connected</div>
               </div>
               <div className="bg-white/5 rounded-2xl p-4">
-                <div className="text-3xl sm:text-4xl font-bold text-purple-400 mb-2">24/7</div>
+                <div className="text-3xl sm:text-4xl font-bold text-red-400 mb-2">24/7</div>
                 <div className="text-xs sm:text-sm text-gray-300">Active Users Online</div>
               </div>
               <div className="bg-white/5 rounded-2xl p-4">
-                <div className="text-3xl sm:text-4xl font-bold text-pink-400 mb-2">&lt; 2s</div>
+                <div className="text-3xl sm:text-4xl font-bold text-red-400 mb-2">&lt; 2s</div>
                 <div className="text-xs sm:text-sm text-gray-300">Average Match Time</div>
               </div>
               <div className="bg-white/5 rounded-2xl p-4">

@@ -97,7 +97,7 @@ const ForgotPassword: React.FC = () => {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
                     placeholder="you@example.com"
                     autoComplete="email"
                     autoFocus
@@ -109,7 +109,7 @@ const ForgotPassword: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 sm:py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm sm:text-base rounded-lg transition flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary w-full py-2.5 sm:py-3 px-4 font-medium text-sm sm:text-base rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

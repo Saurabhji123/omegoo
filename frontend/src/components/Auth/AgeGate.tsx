@@ -104,7 +104,7 @@ const AgeGate: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowTerms(true)}
-                  className="text-blue-400 hover:text-blue-300 underline"
+                  className="text-red-400 hover:text-red-300 underline"
                 >
                   Terms of Service
                 </button>{' '}
@@ -112,7 +112,7 @@ const AgeGate: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowTerms(true)}
-                  className="text-blue-400 hover:text-blue-300 underline"
+                  className="text-red-400 hover:text-red-300 underline"
                 >
                   Privacy Policy
                 </button>

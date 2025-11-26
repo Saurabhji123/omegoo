@@ -245,7 +245,7 @@ const PhoneVerification: React.FC = () => {
                 className={`text-sm ${
                   resendCooldown > 0 
                     ? 'text-gray-500 cursor-not-allowed' 
-                    : 'text-blue-400 hover:text-blue-300'
+                    : 'text-red-400 hover:text-red-300'
                 }`}
               >
                 {resendCooldown > 0 
@@ -262,7 +262,7 @@ const PhoneVerification: React.FC = () => {
           <p className="text-xs text-gray-400 mb-2">
             Want to try text chat first?
           </p>
-          <button className="text-sm text-blue-400 hover:text-blue-300">
+          <button className="text-sm text-red-400 hover:text-red-300">
             Skip for now
           </button>
         </div>

@@ -535,7 +535,7 @@ const PrivacyPolicy: React.FC = () => {
           {principles.map((principle) => (
             <div
               key={principle.title}
-              className="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 p-5 shadow-lg shadow-indigo-950/20"
+              className="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 p-5 shadow-lg shadow-red-950/20"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/10">
                 {principle.icon}

@@ -268,7 +268,7 @@ const Profile: React.FC = () => {
       case 'premium':
         return { color: 'bg-yellow-500', text: 'Premium', icon: '👑' };
       case 'verified':
-        return { color: 'bg-blue-500', text: 'Verified', icon: '✓' };
+        return { color: 'bg-red-500', text: 'Verified', icon: '✓' };
       case 'guest':
       default:
         return { color: 'bg-gray-500', text: 'Guest', icon: '👤' };
@@ -357,7 +357,7 @@ const Profile: React.FC = () => {
               </div>
 
               <div className="flex items-start space-x-3">
-                <VideoCameraIcon className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+                <VideoCameraIcon className="w-6 h-6 text-red-400 flex-shrink-0 mt-1" />
                 <div>
                   <h4 className="font-medium text-white">Video, Audio & Text Chat</h4>
                   <p className="text-sm text-gray-300">Connect with people from around the world</p>
@@ -382,8 +382,8 @@ const Profile: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-6 px-4 sm:px-6 lg:px-0">
       <div className="relative overflow-hidden rounded-3xl border px-6 py-6 sm:py-8 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
-        <div className="absolute -top-24 -right-6 h-44 w-44 rounded-full bg-purple-400/20 blur-3xl" aria-hidden="true" />
-        <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-blue-400/10 blur-3xl" aria-hidden="true" />
+        <div className="absolute -top-24 -right-6 h-44 w-44 rounded-full bg-red-400/20 blur-3xl" aria-hidden="true" />
+        <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-red-400/10 blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.35em] text-white/60">Profile Center</p>
@@ -695,7 +695,7 @@ const Profile: React.FC = () => {
                     type="password"
                     value={passwordData.currentPassword}
                     onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                    className="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
                     placeholder="Enter current password"
                   />
                 </div>
@@ -709,7 +709,7 @@ const Profile: React.FC = () => {
                   type="password"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                  className="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Enter new password (min 6 characters)"
                 />
               </div>
@@ -758,7 +758,7 @@ const Profile: React.FC = () => {
         <div className="space-y-6">
           {loadingFavourites ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div>
               <p className="text-white/70 mt-4">Loading favourites...</p>
             </div>
           ) : favourites.length === 0 ? (
@@ -824,21 +824,21 @@ const Profile: React.FC = () => {
                     <button
                       onClick={() => handleConnectWithFavourite(fav, 'text')}
                       disabled={!fav.isOnline}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
+                      className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
                     >
                       Text
                     </button>
                     <button
                       onClick={() => handleConnectWithFavourite(fav, 'audio')}
                       disabled={!fav.isOnline}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
+                      className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
                     >
                       Audio
                     </button>
                     <button
                       onClick={() => handleConnectWithFavourite(fav, 'video')}
                       disabled={!fav.isOnline}
-                      className="flex-1 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
+                      className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
                     >
                       Video
                     </button>
@@ -861,7 +861,7 @@ const Profile: React.FC = () => {
             <div className="text-center">
               {connectStatus === 'connecting' && (
                 <>
-                  <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-red-500 mx-auto mb-4"></div>
                   <h3 className="text-xl font-bold text-white mb-2">Connecting...</h3>
                   <p className="text-gray-300">Checking if user is available</p>
                 </>
