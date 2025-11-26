@@ -9,8 +9,9 @@ const router: Router = express.Router();
 /**
  * GET /api/topic-dice
  * Get random conversation starter prompt
+ * Supports both authenticated users and guest users (via X-Guest-Id header)
  */
-router.get('/topic-dice', authenticateToken, async (req: Request, res: Response) => {
+router.get('/topic-dice', async (req: Request, res: Response) => {
   try {
     const category = req.query.category as 'fun' | 'safe' | 'deep' | 'flirty' | undefined;
     const language = (req.query.lang as string) || 'en';
@@ -33,8 +34,9 @@ router.get('/topic-dice', authenticateToken, async (req: Request, res: Response)
       });
     }
 
-    const userId = (req as any).userId || (req as any).user?.id;
-    const sessionId = (req as any).sessionId || 'no-session';
+    // Support both auth token and guest ID
+    const userId = (req as any).userId || (req as any).user?.id || req.headers['x-guest-id'] as string;
+    const sessionId = (req as any).sessionId || req.headers['x-guest-id'] as string || 'anonymous';
 
     // Get random prompt
     const prompt = await TopicDiceService.getRandomPrompt(category, language, maturityRating);
@@ -65,8 +67,9 @@ router.get('/topic-dice', authenticateToken, async (req: Request, res: Response)
 /**
  * GET /api/topic-dice/categories
  * Get all categories with counts
+ * Supports both authenticated users and guest users
  */
-router.get('/topic-dice/categories', authenticateToken, async (req: Request, res: Response) => {
+router.get('/topic-dice/categories', async (req: Request, res: Response) => {
   try {
     const categories = await TopicDiceService.getCategories();
 

@@ -1668,8 +1668,7 @@ export class SocketService {
 
     console.log(`💬 Message in room ${room.roomId}: ${socket.userId} -> ${partner.userId}`);
 
-    // Emit to both users using multi-device support
-    this.emitToAllUserDevices(socket.userId, 'text_message_received', message);
+    // Emit only to partner (sender already sees their own message locally)
     this.emitToAllUserDevices(partner.userId, 'text_message_received', message);
 
     // Update activity

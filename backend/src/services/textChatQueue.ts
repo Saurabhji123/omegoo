@@ -25,6 +25,12 @@ export class TextChatQueueService {
     disconnectedAt: number;
   }>();
 
+  // Recent partner tracking - prevent immediate re-matching
+  // Store last 5 partners for each user, expire after 5 minutes
+  private static recentPartners = new Map<string, Array<{ partnerId: string; timestamp: number }>>();
+  private static readonly MAX_RECENT_PARTNERS = 5;
+  private static readonly RECENT_PARTNER_EXPIRE_MS = 5 * 60 * 1000; // 5 minutes
+
   /**
    * Add user to waiting queue
    * Returns queue position and estimated wait time
@@ -77,7 +83,7 @@ export class TextChatQueueService {
   }
 
   /**
-   * FIFO matching algorithm with preference support
+   * FIFO matching algorithm with recent partner exclusion
    */
   static async tryMatch(): Promise<void> {
     // Prevent concurrent matching
@@ -87,61 +93,109 @@ export class TextChatQueueService {
     this.matchingInProgress = true;
 
     try {
-      // Simple FIFO: take first two users
+      // Get first user
       const user1 = this.waitingQueue.shift();
-      const user2 = this.waitingQueue.shift();
+      if (!user1) return;
 
-      if (!user1 || !user2) {
-        // Put back if only one found
-        if (user1) this.waitingQueue.unshift(user1);
-        if (user2) this.waitingQueue.unshift(user2);
+      // Find a suitable partner (not recently matched)
+      let user2Index = -1;
+      for (let i = 0; i < this.waitingQueue.length; i++) {
+        const candidate = this.waitingQueue[i];
+        
+        // Check if they were recently matched
+        if (!this.wereRecentlyMatched(user1.userId, candidate.userId)) {
+          user2Index = i;
+          break;
+        }
+      }
+
+      // If no suitable partner found
+      if (user2Index === -1) {
+        // If queue has only 1-2 people, allow re-match after small delay
+        if (this.waitingQueue.length <= 1) {
+          console.log(`[TextChatQueue] Only ${this.waitingQueue.length + 1} users, allowing re-match`);
+          const user2 = this.waitingQueue.shift();
+          if (user2) {
+            // Put both back in queue and match them (no other option)
+            this.waitingQueue.push(user1, user2);
+            const matchUser1 = this.waitingQueue.shift()!;
+            const matchUser2 = this.waitingQueue.shift()!;
+            await this.createMatch(matchUser1, matchUser2);
+          } else {
+            this.waitingQueue.unshift(user1);
+          }
+        } else {
+          // Put user1 at end and try again
+          this.waitingQueue.push(user1);
+          console.log(`[TextChatQueue] No suitable partner for ${user1.userId}, requeued`);
+        }
         return;
       }
 
-      // Create room
-      const roomId = `text_room_${uuidv4()}`;
-      const createdAt = Date.now();
+      // Remove user2 from queue
+      const user2 = this.waitingQueue.splice(user2Index, 1)[0];
       
-      const room: TextChatRoom = {
-        roomId,
-        user1: {
-          userId: user1.userId,
-          socketId: user1.socketId,
-          guestId: user1.guestId
-        },
-        user2: {
-          userId: user2.userId,
-          socketId: user2.socketId,
-          guestId: user2.guestId
-        },
-        createdAt,
-        lastActivityAt: createdAt,
-        messageCount: 0,
-        messages: [],
-        status: 'active'
-      };
-
-      this.activeRooms.set(roomId, room);
-      this.userToRoom.set(user1.userId, roomId);
-      this.userToRoom.set(user2.userId, roomId);
-
-      // Track pairing time
-      const user1WaitTime = createdAt - user1.joinedAt;
-      const user2WaitTime = createdAt - user2.joinedAt;
-      this.pairingTimes.push(user1WaitTime, user2WaitTime);
-      
-      // Keep only last 1000 pairing times for performance
-      if (this.pairingTimes.length > 1000) {
-        this.pairingTimes = this.pairingTimes.slice(-1000);
-      }
-
-      console.log(`[TextChatQueue] ✅ Matched users ${user1.userId} & ${user2.userId} in room ${roomId}`);
-      console.log(`[TextChatQueue] Wait times: ${user1WaitTime}ms, ${user2WaitTime}ms`);
-      console.log(`[TextChatQueue] Queue size after match: ${this.waitingQueue.length}`);
+      // Create match
+      await this.createMatch(user1, user2);
 
       // Continue matching if more users in queue
       if (this.waitingQueue.length >= 2) {
         setTimeout(() => this.tryMatch(), 100);
+      }
+
+    } finally {
+      this.matchingInProgress = false;
+    }
+  }
+
+  /**
+   * Create a match between two users
+   */
+  private static async createMatch(user1: TextChatQueueEntry, user2: TextChatQueueEntry): Promise<void> {
+    const roomId = `text_room_${uuidv4()}`;
+    const createdAt = Date.now();
+    
+    const room: TextChatRoom = {
+      roomId,
+      user1: {
+        userId: user1.userId,
+        socketId: user1.socketId,
+        guestId: user1.guestId
+      },
+      user2: {
+        userId: user2.userId,
+        socketId: user2.socketId,
+        guestId: user2.guestId
+      },
+      createdAt,
+      lastActivityAt: createdAt,
+      messageCount: 0,
+      messages: [],
+      status: 'active'
+    };
+
+    this.activeRooms.set(roomId, room);
+    this.userToRoom.set(user1.userId, roomId);
+    this.userToRoom.set(user2.userId, roomId);
+
+    // Track recent partners
+    this.addRecentPartner(user1.userId, user2.userId);
+    this.addRecentPartner(user2.userId, user1.userId);
+
+    // Track pairing time
+    const user1WaitTime = createdAt - user1.joinedAt;
+    const user2WaitTime = createdAt - user2.joinedAt;
+    this.pairingTimes.push(user1WaitTime, user2WaitTime);
+    
+    // Keep only last 1000 pairing times for performance
+    if (this.pairingTimes.length > 1000) {
+      this.pairingTimes = this.pairingTimes.slice(-1000);
+    }
+
+    console.log(`[TextChatQueue] ✅ Matched users ${user1.userId} & ${user2.userId} in room ${roomId}`);
+    console.log(`[TextChatQueue] Wait times: ${user1WaitTime}ms, ${user2WaitTime}ms`);
+    console.log(`[TextChatQueue] Queue size after match: ${this.waitingQueue.length}`);
+  }
       }
 
     } finally {
@@ -459,8 +513,9 @@ export class TextChatQueueService {
       }
     }
     
-    // Also cleanup expired reconnections
+    // Also cleanup expired reconnections and recent partners
     this.cleanupExpiredReconnections();
+    this.cleanupRecentPartners();
   }
 
   /**
@@ -469,5 +524,74 @@ export class TextChatQueueService {
   static startCleanup(): void {
     setInterval(() => this.cleanupStaleRooms(), 5 * 60 * 1000); // Every 5 minutes
     console.log('[TextChatQueue] Cleanup interval started');
+  }
+
+  /**
+   * Add recent partner for a user
+   */
+  private static addRecentPartner(userId: string, partnerId: string): void {
+    if (!this.recentPartners.has(userId)) {
+      this.recentPartners.set(userId, []);
+    }
+
+    const partners = this.recentPartners.get(userId)!;
+    
+    // Remove expired entries
+    const now = Date.now();
+    const validPartners = partners.filter(p => now - p.timestamp < this.RECENT_PARTNER_EXPIRE_MS);
+    
+    // Add new partner
+    validPartners.push({ partnerId, timestamp: now });
+    
+    // Keep only last MAX_RECENT_PARTNERS
+    if (validPartners.length > this.MAX_RECENT_PARTNERS) {
+      validPartners.shift();
+    }
+    
+    this.recentPartners.set(userId, validPartners);
+  }
+
+  /**
+   * Check if two users were recently matched
+   */
+  private static wereRecentlyMatched(user1Id: string, user2Id: string): boolean {
+    const now = Date.now();
+    
+    // Check user1's recent partners
+    const user1Partners = this.recentPartners.get(user1Id);
+    if (user1Partners) {
+      const validPartners = user1Partners.filter(p => now - p.timestamp < this.RECENT_PARTNER_EXPIRE_MS);
+      if (validPartners.some(p => p.partnerId === user2Id)) {
+        return true;
+      }
+    }
+    
+    // Check user2's recent partners
+    const user2Partners = this.recentPartners.get(user2Id);
+    if (user2Partners) {
+      const validPartners = user2Partners.filter(p => now - p.timestamp < this.RECENT_PARTNER_EXPIRE_MS);
+      if (validPartners.some(p => p.partnerId === user1Id)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Cleanup expired recent partners
+   */
+  private static cleanupRecentPartners(): void {
+    const now = Date.now();
+    
+    for (const [userId, partners] of this.recentPartners.entries()) {
+      const validPartners = partners.filter(p => now - p.timestamp < this.RECENT_PARTNER_EXPIRE_MS);
+      
+      if (validPartners.length === 0) {
+        this.recentPartners.delete(userId);
+      } else {
+        this.recentPartners.set(userId, validPartners);
+      }
+    }
   }
 }

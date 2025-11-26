@@ -423,6 +423,8 @@ const TextChat: React.FC = () => {
     socket.on('text_room_ended', (data: { reason?: string }) => {
       try {
         debugLog('❌ Text room ended:', data);
+        
+        // Reset state
         setIsMatchConnected(false);
         setSessionId(null);
         setPartnerTyping(false);
@@ -435,6 +437,19 @@ const TextChat: React.FC = () => {
         };
         
         addSystemMessage(reasonMessages[data.reason || ''] || 'Chat ended');
+        
+        // Auto-rejoin if partner left or disconnected (not if user left)
+        if (socket && socketConnected && (data.reason === 'partner_left' || data.reason === 'partner_disconnected')) {
+          console.log('🔄 [TextChat] Auto-rejoining queue after partner left...');
+          setTimeout(() => {
+            if (socket && socketConnected && !isMatchConnectedRef.current) {
+              addSystemMessage('Finding you a new match...');
+              socket.emit('join_text_queue');
+              setIsSearching(true);
+              startFindingTimeout();
+            }
+          }, 500); // Small delay to ensure state is clean
+        }
       } catch (error) {
         console.error('❌ Error handling text_room_ended event:', error);
         setIsMatchConnected(false);
@@ -1577,9 +1592,21 @@ const TextChat: React.FC = () => {
                 
                 {/* Camera Button - Video Upgrade */}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (sessionId && partnerId) {
-                      sendVideoRequest(partnerId, sessionId);
+                      try {
+                        // Initialize WebRTC service if not already initialized
+                        if (!webrtcServiceRef.current) {
+                          console.log('📹 Initializing WebRTC for video upgrade...');
+                          webrtcServiceRef.current = new WebRTCService();
+                          console.log('✅ WebRTC service initialized for video upgrade');
+                        }
+                        
+                        sendVideoRequest(partnerId, sessionId);
+                      } catch (error) {
+                        console.error('❌ Failed to initialize WebRTC:', error);
+                        addSystemMessage('Failed to start video upgrade. Please try again.');
+                      }
                     }
                   }}
                   disabled={!isMatchConnected}
