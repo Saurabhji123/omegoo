@@ -421,9 +421,18 @@ const TextChat: React.FC = () => {
     });
 
     // Room ended
-    socket.on('text_room_ended', (data: { reason?: string }) => {
+    socket.on('text_room_ended', (data: { reason?: string; upgradeSessionId?: string }) => {
       try {
         debugLog('❌ Text room ended:', data);
+        
+        // If room ended due to video upgrade, don't show error message
+        if (data.reason === 'video_upgrade') {
+          console.log('✅ Text room ended due to video upgrade - this is expected');
+          setIsMatchConnected(false);
+          setSessionId(null);
+          setPartnerTyping(false);
+          return; // Don't show system message for successful upgrade
+        }
         
         // Reset state
         setIsMatchConnected(false);
@@ -476,7 +485,36 @@ const TextChat: React.FC = () => {
       
       if (data.accept) {
         console.log('✅ Video upgrade accepted! Redirecting to VideoChat...');
+        // Log analytics
+        console.log('📊 Analytics: video_upgrade_accepted', { sessionId: data.sessionId, from: data.from });
         addSystemMessage('Video upgrade accepted! Connecting...');
+        
+        // Cleanup text chat before navigating
+        console.log('🧹 Cleaning up text chat before video upgrade...');
+        
+        // Leave text room
+        if (sessionId && socket) {
+          socket.emit('leave_text_room', { roomId: sessionId });
+        }
+        
+        // Reset local state
+        setIsMatchConnected(false);
+        setPartnerTyping(false);
+        setMessageInput('');
+        
+        // Clear timers
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        if (inactivityTimerRef.current) {
+          clearTimeout(inactivityTimerRef.current);
+        }
+        if (autoTypingTimerRef.current) {
+          clearTimeout(autoTypingTimerRef.current);
+        }
+        clearFindingTimeout();
+        
+        console.log('✅ Text chat cleanup completed');
         
         // Navigate to VideoChat with upgrade session
         setTimeout(() => {
@@ -490,6 +528,8 @@ const TextChat: React.FC = () => {
         }, 500); // Small delay for user to see message
       } else {
         console.log('❌ Video upgrade declined:', data.reason);
+        // Log analytics
+        console.log('📊 Analytics: video_upgrade_declined', { sessionId: data.sessionId, reason: data.reason });
         const declineMessage = data.reason === 'reported' 
           ? 'Partner declined and reported the video request'
           : 'Partner declined the video request';

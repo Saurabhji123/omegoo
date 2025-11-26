@@ -1,6 +1,6 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import { DatabaseService, RedisService } from './serviceFactory';
+import { DatabaseService, RedisService, ServiceFactory } from './serviceFactory';
 import { RedisService as DevRedisService } from './redis-dev';
 import { RealtimeUserTracker } from './realtimeMetrics';
 import { TextChatQueueService } from './textChatQueue';
@@ -1956,6 +1956,29 @@ export class SocketService {
       socket.emit('video_upgrade_error', { message: 'Invalid target user' });
       return;
     }
+    
+    // Validate: Check if both users have sufficient coins for video (2 coins each)
+    try {
+      const dbService = ServiceFactory.DatabaseService;
+      const initiatorUser = await dbService.getUserById(socket.userId);
+      const partnerUser = await dbService.getUserById(partnerId);
+      
+      if (!initiatorUser || (initiatorUser.coins || 0) < 2) {
+        console.warn(`❌ Initiator ${socket.userId} has insufficient coins for video upgrade`);
+        socket.emit('video_upgrade_error', { message: 'You need 2 coins for video chat' });
+        return;
+      }
+      
+      if (!partnerUser || (partnerUser.coins || 0) < 2) {
+        console.warn(`❌ Partner ${partnerId} has insufficient coins for video upgrade`);
+        socket.emit('video_upgrade_error', { message: 'Partner needs 2 coins for video chat' });
+        return;
+      }
+    } catch (err) {
+      console.error('❌ Error validating coins for video upgrade:', err);
+      socket.emit('video_upgrade_error', { message: 'Failed to validate video upgrade request' });
+      return;
+    }
 
     // Create video upgrade request message
     const requestMessage = {
@@ -2030,6 +2053,53 @@ export class SocketService {
     // Forward to requester (all devices)
     this.emitToAllUserDevices(partnerId, 'video_response', responseMessage);
 
+    // Handle accepted - cleanup text session and mark as upgraded
+    if (accept) {
+      console.log(`✅ Video upgrade accepted: Cleaning up text session ${sessionId}`);
+      
+      // Get text room for cleanup
+      const textRoom = TextChatQueueService.getRoomForUser(socket.userId);
+      if (textRoom) {
+        console.log(`💬 Ending text room ${textRoom.roomId} due to video upgrade`);
+        
+        // End text room
+        TextChatQueueService.endRoom(textRoom.roomId, 'video_upgrade');
+        TextChatRoomService.cleanupRoom(textRoom);
+        
+        // Notify both users that text room ended
+        this.emitToAllUserDevices(socket.userId, 'text_room_ended', { 
+          reason: 'video_upgrade',
+          upgradeSessionId: sessionId 
+        });
+        this.emitToAllUserDevices(partnerId, 'text_room_ended', { 
+          reason: 'video_upgrade',
+          upgradeSessionId: sessionId 
+        });
+        
+        console.log(`✅ Text room ${textRoom.roomId} ended and cleaned up`);
+      }
+      
+      // Mark session with upgrade metadata
+      if (session) {
+        session.status = 'upgraded';
+        // Store metadata for analytics
+        (session as any).metadata = {
+          source: 'text-upgrade',
+          textSessionId: sessionId,
+          upgradedAt: Date.now(),
+          upgradeInitiator: partnerId, // The one who requested
+          upgradeAcceptor: socket.userId // The one who accepted
+        };
+        console.log(`📊 Analytics: video_upgrade_flow_completed`, {
+          sessionId,
+          upgradeInitiator: partnerId,
+          upgradeAcceptor: socket.userId,
+          timestamp: new Date().toISOString()
+        });
+        console.log(`📊 Session ${sessionId} marked as upgraded with metadata`);
+      }
+    }
+
     // Handle declined with report
     if (!accept && reason === 'reported') {
       console.log(`🚨 Video upgrade declined with report: ${partnerId} reported by ${socket.userId}`);
@@ -2057,7 +2127,8 @@ export class SocketService {
       to: partnerId,
       sessionId,
       reason: reason || 'none',
-      timestamp: responseMessage.timestamp
+      timestamp: responseMessage.timestamp,
+      metadata: accept ? (session as any).metadata : undefined
     });
   }
 

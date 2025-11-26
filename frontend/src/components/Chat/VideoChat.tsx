@@ -186,12 +186,99 @@ const VideoChat: React.FC = () => {
       isMatchConnectedRef.current = true;
       currentStateRef.current = 'connected';
       
-      addMessage('Connected! Continue your conversation in video mode.', false);
+      addMessage('🎥 Successfully upgraded to video! Continue your conversation.', false);
+      
+      // Show success toast
+      const showUpgradeSuccessToast = () => {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce';
+        toast.innerHTML = '✨ Video upgrade successful! Enjoy your conversation.';
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.animation = 'fadeOut 0.5s ease-out';
+          setTimeout(() => document.body.removeChild(toast), 500);
+        }, 3000);
+      };
+      showUpgradeSuccessToast();
+      
+      // Initialize WebRTC for upgraded session
+      const initUpgradedWebRTC = async () => {
+        try {
+          console.log('🔄 Initializing WebRTC for upgraded session...');
+          
+          // Clean up any existing WebRTC connection
+          if (webRTCRef.current) {
+            webRTCRef.current.cleanup();
+          }
+          
+          // Create fresh WebRTC instance
+          webRTCRef.current = new WebRTCService();
+          webRTCRef.current.onRemoteStreamReceived(handleRemoteStream);
+          webRTCRef.current.onConnectionStateChanged(handleConnectionStateChange);
+          webRTCRef.current.setSocket(socket, upgradeSessionId, upgradedPartnerId);
+          
+          // Start local video
+          await startLocalVideo();
+          console.log('📹 Local video started for upgraded session');
+          
+          // Set up ICE candidate handling
+          webRTCRef.current.setIceCandidateCallback((candidate: RTCIceCandidate) => {
+            console.log('🧊 [Upgraded] Sending ICE candidate to partner');
+            socket.emit('ice-candidate', {
+              candidate: candidate,
+              targetUserId: upgradedPartnerId,
+              sessionId: upgradeSessionId
+            });
+          });
+          
+          // Set up data channel messages
+          webRTCRef.current.onMessageReceived((message: string) => {
+            console.log('📩 [Upgraded] Received message:', message);
+            addMessage(message, false);
+          });
+          
+          // Both users need to coordinate who creates offer
+          // Use userId comparison to determine initiator (consistent across both clients)
+          const isInitiator = (user?.id || '') < upgradedPartnerId;
+          console.log('🎯 [Upgraded] Am I initiator?', isInitiator, 'My ID:', user?.id, 'Partner:', upgradedPartnerId);
+          
+          if (isInitiator) {
+            // This user creates offer
+            setTimeout(async () => {
+              try {
+                const offer = await webRTCRef.current!.createWebRTCOffer();
+                console.log('📤 [Upgraded] Sending WebRTC offer to partner');
+                socket.emit('webrtc-offer', {
+                  offer: offer,
+                  targetUserId: upgradedPartnerId,
+                  sessionId: upgradeSessionId
+                });
+              } catch (err) {
+                console.error('❌ [Upgraded] Failed to create offer:', err);
+                console.log('📊 Analytics: video_upgrade_webrtc_failed', { error: err, sessionId: upgradeSessionId });
+                addMessage('Failed to establish video connection. Click Next to try again.', false);
+                setCurrentState('disconnected');
+              }
+            }, 1000); // Small delay for both peers to be ready
+          } else {
+            console.log('⏳ [Upgraded] Waiting for WebRTC offer from partner...');
+          }
+          
+        } catch (error) {
+          console.error('❌ Failed to initialize WebRTC for upgraded session:', error);
+          console.log('📊 Analytics: video_upgrade_camera_failed', { error, sessionId: upgradeSessionId });
+          addMessage('Camera access required. Please enable camera permission and click Next.', false);
+          setCurrentState('disconnected');
+        }
+      };
+      
+      initUpgradedWebRTC();
       
       // Clear location state to prevent re-triggering
       navigate('/chat/video', { replace: true, state: {} });
     }
-  }, [upgradeSessionId, fromTextChat, upgradedPartnerId, socket, socketConnected, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [upgradeSessionId, fromTextChat, upgradedPartnerId, socket, socketConnected]);
 
   // Sync refs with state values to avoid stale closures
   useEffect(() => {
@@ -1344,6 +1431,11 @@ const VideoChat: React.FC = () => {
     try {
       console.log('🔄 Next Person clicked - using force cleanup for fresh reconnect');
       
+      // Log analytics if this was an upgraded session
+      if (fromTextChat && upgradeSessionId) {
+        console.log('📊 Analytics: upgrade_to_next_click', { sessionId: upgradeSessionId });
+      }
+      
       // Use startNewChat with force cleanup for same users reconnection
       startNewChat(true);
     } catch (error) {
@@ -1900,6 +1992,12 @@ const VideoChat: React.FC = () => {
                 <span className="sm:hidden">Video</span>
               </h1>
             </div>
+            {fromTextChat && upgradeSessionId && (
+              <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/20 border border-green-400/30 text-xs text-green-100">
+                <span>⬆️</span>
+                <span className="font-medium">Upgraded from Text</span>
+              </div>
+            )}
             <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-xs text-purple-100 animate-pulse">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
