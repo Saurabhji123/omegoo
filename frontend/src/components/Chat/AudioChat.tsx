@@ -1065,7 +1065,7 @@ const AudioChat: React.FC = () => {
   // Loading states
   if (socketConnecting) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4">
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg-body)' }}>
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <div className="text-xl">Connecting to server...</div>
@@ -1076,7 +1076,7 @@ const AudioChat: React.FC = () => {
 
   if (!socketConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center px-4">
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg-body)' }}>
         <div className="text-white text-center">
           <div className="text-xl mb-4">Connection Error</div>
           <div className="text-gray-300">Please check your internet connection and refresh.</div>
@@ -1086,7 +1086,7 @@ const AudioChat: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex flex-col">
+    <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: 'var(--bg-body)' }}>
       {/* Enhanced Header with status moved to side */}
       <div className="bg-black bg-opacity-20 p-4 flex justify-between items-center border-b border-white border-opacity-20">
         <div className="flex items-center gap-4 flex-wrap">
@@ -1182,7 +1182,7 @@ const AudioChat: React.FC = () => {
             <button
               onClick={() => setShowVoiceAvatarPicker(true)}
               disabled={!socketConnected || isProcessingAudio}
-              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 px-8 py-4 rounded-xl text-lg sm:text-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:cursor-not-allowed shadow-lg"
+              className="w-full sm:w-auto btn-primary disabled:from-gray-600 disabled:to-gray-600 px-8 py-4 rounded-xl text-lg sm:text-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:cursor-not-allowed shadow-lg"
             >
               {isProcessingAudio ? 'Initializing...' : (!socketConnected ? 'Connecting...' : 'Find Someone')}
             </button>
@@ -1210,7 +1210,7 @@ const AudioChat: React.FC = () => {
         {isMatchConnected && (
           <div className="text-center max-w-md mx-auto w-full">
             <div className="relative mb-6 sm:mb-8">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center relative overflow-hidden">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto rounded-full flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#16a34a' }}>
                 <MicrophoneIcon className="w-10 h-10 sm:w-16 sm:h-16 text-white z-10" />
                 
                 {/* Audio level indicator */}
@@ -1303,11 +1303,8 @@ const AudioChat: React.FC = () => {
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
                   disabled={!isMatchConnected}
-                  className={`p-3 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    selectedFilter !== 'none'
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                      : 'bg-gray-700 hover:bg-gray-600'
-                  } shadow-md relative`}
+                  className={`p-3 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md relative`}
+                  style={{ backgroundColor: selectedFilter !== 'none' ? 'var(--primary-brand)' : '#374151' }}
                   title="Voice Filter"
                 >
                   {selectedFilter !== 'none' ? (
@@ -1542,7 +1539,7 @@ const AudioChat: React.FC = () => {
       {/* Login/Signup Modal - For Friend System */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl">
+          <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl p-6 max-w-md w-full shadow-2xl">
             <div className="text-center mb-6">
               <div className="text-5xl mb-4">🔒</div>
               <h2 className="text-2xl font-bold text-white mb-2">Login Required</h2>
@@ -1572,7 +1569,7 @@ const AudioChat: React.FC = () => {
                   setShowLoginModal(false);
                   navigate('/');
                 }}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                className="flex-1 btn-primary py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
               >
                 Login / Sign Up
               </button>

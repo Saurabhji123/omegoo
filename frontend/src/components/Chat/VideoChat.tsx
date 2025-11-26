@@ -2274,7 +2274,7 @@ const VideoChat: React.FC = () => {
                     alert('Camera access is required for video chat. Please allow camera permissions.');
                   }
                 }}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 lg:px-8 lg:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-sm lg:text-base touch-manipulation"
+                className="btn-primary px-6 py-2 lg:px-8 lg:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg text-sm lg:text-base touch-manipulation"
                 disabled={isSearching}
               >
                 {isSearching ? 'Connecting...' : 'Find Someone'}
@@ -2283,7 +2283,7 @@ const VideoChat: React.FC = () => {
               <>
                 <button
                   onClick={nextMatch}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 lg:px-6 lg:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-sm lg:text-base touch-manipulation"
+                  className="btn-primary px-4 py-2 lg:px-6 lg:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg text-sm lg:text-base touch-manipulation"
                 >
                   Next Person
                 </button>
@@ -2324,14 +2324,14 @@ const VideoChat: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-3 space-y-2 sm:space-y-0 text-xs lg:text-sm">
             <button 
               onClick={() => setShowTextChat(!showTextChat)}
-              className="group relative px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 touch-manipulation flex items-center justify-center space-x-2"
+              className="group relative btn-primary px-4 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg touch-manipulation flex items-center justify-center space-x-2"
             >
               <ChatBubbleLeftRightIcon className="w-4 h-4" />
               <span>{showTextChat ? 'Hide Chat' : 'Show Chat'}</span>
             </button>
             <button 
               onClick={() => navigate('/chat/text')}
-              className="group relative px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/50 touch-manipulation"
+              className="group relative btn-primary px-4 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg touch-manipulation"
             >
               Text Only Mode
             </button>
@@ -2372,11 +2372,12 @@ const VideoChat: React.FC = () => {
                     <div
                       className={`max-w-xs px-2 py-1 lg:px-3 lg:py-2 rounded-lg text-xs lg:text-sm ${
                         message.isOwnMessage
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                          ? 'text-white shadow-lg'
                           : message.content.includes('Connected!') || message.content.includes('ended') || message.content.includes('Error:')
                           ? 'bg-gray-600 text-gray-200 text-center'
                           : 'bg-gray-700 text-gray-200'
                       }`}
+                      style={{ backgroundColor: message.isOwnMessage ? 'var(--primary-brand)' : undefined }}
                     >
                       <p>{message.content}</p>
                       {!message.content.includes('Connected!') && !message.content.includes('ended') && !message.content.includes('Error:') && (
@@ -2412,7 +2413,8 @@ const VideoChat: React.FC = () => {
               <button
                 onClick={sendMessage}
                 disabled={!messageInput.trim() || !socketConnected || !isMatchConnected}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-all duration-300 shadow-lg hover:shadow-purple-500/50 touch-manipulation"
+                className="p-2 rounded transition-all duration-300 shadow-lg touch-manipulation disabled:cursor-not-allowed"
+                style={{ backgroundColor: messageInput.trim() && socketConnected && isMatchConnected ? 'var(--primary-brand)' : '#4b5563', color: 'white' }}
               >
                 <PaperAirplaneIcon className="w-4 h-4" />
               </button>
