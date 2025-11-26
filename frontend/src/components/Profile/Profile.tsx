@@ -572,7 +572,9 @@ const Profile: React.FC = () => {
 
       {/* Safety & Privacy */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-          <div className="relative">x-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-transparent" aria-hidden="true" />
+        <div className="relative">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="text-lg font-semibold text-white">Safety & Privacy</h3>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70">
               Verified protections
