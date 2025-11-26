@@ -284,7 +284,7 @@ const Home: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 px-4 max-w-6xl mx-auto">
         {/* Text Chat */}
         <div 
-          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-200 relative"
+          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-300 relative"
           role="article"
           aria-labelledby="text-chat-title"
         >
@@ -348,7 +348,7 @@ const Home: React.FC = () => {
 
         {/* Audio Chat */}
         <div 
-          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-200 relative"
+          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-300 relative"
           role="article"
           aria-labelledby="voice-chat-title"
         >
@@ -412,7 +412,7 @@ const Home: React.FC = () => {
 
         {/* Video Chat */}
         <div 
-          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-200 relative"
+          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-300 relative"
           role="article"
           aria-labelledby="video-chat-title"
         >
@@ -555,7 +555,7 @@ const Home: React.FC = () => {
               >
                 <h3 className="text-lg font-semibold text-white mb-3">{audience.title}</h3>
                 <p className="text-sm sm:text-base leading-relaxed">{audience.copy}</p>
-                <div className="mt-4 text-xs uppercase tracking-wider text-indigo-200">
+                <div className="mt-4 text-xs uppercase tracking-wider text-red-200">
                   Popular keywords: random chat app India, safe Omegle alternative, campus chat platform, anonymous university chat
                 </div>
               </div>
@@ -695,7 +695,7 @@ const Home: React.FC = () => {
               <details key={item.question} className="group bg-white/10 border border-white/15 rounded-2xl px-5 py-4 text-gray-100">
                 <summary className="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
                   {item.question}
-                  <span className="text-indigo-300 group-open:rotate-180 transition-transform">▾</span>
+                  <span className="text-red-300 group-open:rotate-180 transition-transform">▾</span>
                 </summary>
                 <p className="mt-3 text-sm sm:text-base text-gray-200 leading-relaxed">
                   {item.answer}
@@ -703,7 +703,7 @@ const Home: React.FC = () => {
               </details>
             ))}
           </div>
-          <div className="mt-6 text-center text-sm text-indigo-200">
+          <div className="mt-6 text-center text-sm text-red-200">
             Still curious? Explore our{' '}
             <a href="/about" className="underline hover:text-white">About</a>,{' '}
             <a href="/safety" className="underline hover:text-white">Safety Guidelines</a>, and{' '}
@@ -849,7 +849,7 @@ const Home: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl font-bold mb-6">Why Omegoo is Better Than OmeTV and Other Omegle Alternatives</h2>
             <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-xl font-semibold text-blue-300 mb-3">🎯 No Login Video Chat</h3>
+                <h3 className="text-xl font-semibold text-red-300 mb-3">🎯 No Login Video Chat</h3>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
                   Unlike OmeTV that requires account creation, Omegoo lets you start <strong>no login video chat</strong> instantly. Click, connect, and start talking to strangers within seconds—no email, no verification, no barriers.
                 </p>
@@ -1023,7 +1023,7 @@ const Home: React.FC = () => {
             </p>
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="btn-primary px-8 py-4 rounded-full font-bold text-base sm:text-lg shadow-2xl transform hover:scale-105 transition-all duration-200"
+              className="btn-primary px-8 py-4 rounded-full font-bold text-base sm:text-lg shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
               Start Chatting Now — 100% FREE
             </button>
@@ -1055,7 +1055,7 @@ const Home: React.FC = () => {
               <article key={item.region} className="bg-white/10 border border-white/15 rounded-2xl p-6 backdrop-blur-md shadow-lg">
                 <h3 className="text-lg font-semibold text-white mb-2">{item.region}</h3>
                 <p>{item.text}</p>
-                <p className="mt-3 text-xs uppercase tracking-wider text-indigo-200">
+                <p className="mt-3 text-xs uppercase tracking-wider text-red-200">
                   Global keywords: Omegle alternative worldwide, safe Omegle replacement, random chat international
                 </p>
               </article>

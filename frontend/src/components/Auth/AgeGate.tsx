@@ -104,7 +104,7 @@ const AgeGate: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowTerms(true)}
-                  className="text-red-400 hover:text-red-300 underline"
+                  className="text-red-400 hover:text-red-300 underline transition-colors duration-300"
                 >
                   Terms of Service
                 </button>{' '}
@@ -112,7 +112,7 @@ const AgeGate: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowTerms(true)}
-                  className="text-red-400 hover:text-red-300 underline"
+                  className="text-red-400 hover:text-red-300 underline transition-colors duration-300"
                 >
                   Privacy Policy
                 </button>
@@ -124,9 +124,9 @@ const AgeGate: React.FC = () => {
           <button
             onClick={handleAccept}
             disabled={!accepted}
-            className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+            className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
               accepted
-                ? 'btn-primary transform hover:scale-105'
+                ? 'btn-primary transform hover:scale-105 shadow-lg'
                 : 'bg-gray-500 bg-opacity-30 text-gray-400 cursor-not-allowed'
             }`}
           >
@@ -151,7 +151,7 @@ const AgeGate: React.FC = () => {
                 </h2>
                 <button
                   onClick={() => setShowTerms(false)}
-                  className="text-gray-300 hover:text-white"
+                  className="text-gray-300 hover:text-white transition-colors duration-300"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -176,7 +176,7 @@ const AgeGate: React.FC = () => {
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={() => setShowTerms(false)}
-                  className="btn-primary px-6 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
+                  className="btn-primary px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
                   I Understand
                 </button>

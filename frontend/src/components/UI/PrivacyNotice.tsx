@@ -67,7 +67,7 @@ const PrivacyNotice: React.FC = () => {
             <button
               onClick={handleDeleteData}
               disabled={isDeleting}
-              className="text-blue-300 hover:text-blue-200 underline font-medium transition disabled:opacity-50"
+              className="text-red-400 hover:text-red-300 underline font-medium transition-colors duration-300 disabled:opacity-50"
             >
               {isDeleting ? 'Deleting...' : 'Delete my data'}
             </button>
@@ -77,13 +77,13 @@ const PrivacyNotice: React.FC = () => {
         <div className="flex items-center gap-3">
           <a
             href="/privacy-policy"
-            className="text-xs text-white/70 hover:text-white transition"
+            className="text-xs text-white/70 hover:text-white transition-colors duration-300"
           >
             Privacy Policy
           </a>
           <button
             onClick={handleDismiss}
-            className="text-white/70 hover:text-white transition"
+            className="text-white/70 hover:text-white transition-colors duration-300"
             aria-label="Dismiss privacy notice"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

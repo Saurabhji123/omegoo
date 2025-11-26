@@ -109,13 +109,13 @@ const Settings: React.FC = () => {
     <button
       type="button"
       onClick={() => onChange(!enabled)}
-      className={`relative inline-flex h-7 w-12 items-center rounded-full border border-white/15 transition-all duration-200 ${
+      className={`relative inline-flex h-7 w-12 items-center rounded-full border border-white/15 transition-all duration-300 ${
         enabled ? 'shadow-lg' : 'bg-white/10'
       }`}
       style={enabled ? { backgroundColor: 'var(--primary-brand)' } : {}}
     >
       <span
-        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200 ${
+        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300 ${
           enabled ? 'translate-x-6' : 'translate-x-1'
         }`}
       />
@@ -230,7 +230,7 @@ const Settings: React.FC = () => {
               <select 
                 value={settings.defaultVoiceFilter}
                 onChange={(e) => updateSetting('defaultVoiceFilter', e.target.value as VoiceFilterType)}
-                className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white shadow-inner transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white shadow-inner transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-red-400"
               >
                 {(Object.keys(VOICE_FILTER_PRESETS) as VoiceFilterType[]).map((filterType) => {
                   const preset = VOICE_FILTER_PRESETS[filterType];

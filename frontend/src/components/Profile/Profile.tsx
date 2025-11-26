@@ -524,7 +524,7 @@ const Profile: React.FC = () => {
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6 text-center shadow-lg">
           <div className="absolute inset-0" aria-hidden="true" />
           <div className="relative z-10">
-            <VideoCameraIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-300 mx-auto mb-3" />
+            <VideoCameraIcon className="w-6 h-6 sm:w-8 sm:h-8 text-red-300 mx-auto mb-3" />
             <div className="text-xl sm:text-2xl font-bold text-white">{user?.totalChats || 0}</div>
             <div className="text-xs sm:text-sm text-white/70">Total Chats</div>
           </div>
@@ -622,14 +622,14 @@ const Profile: React.FC = () => {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-white text-sm sm:text-base group-hover:text-blue-300">
+                  <div className="font-medium text-white text-sm sm:text-base group-hover:text-red-300">
                     Change Password
                   </div>
                   <div className="text-xs sm:text-sm text-white/60">
                     {user?.hasPassword ? 'Update your password' : 'Set a password (OAuth user)'}
                   </div>
                 </div>
-                <svg className="h-5 w-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
@@ -641,10 +641,10 @@ const Profile: React.FC = () => {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-white text-sm sm:text-base group-hover:text-blue-300">Privacy Settings</div>
+                  <div className="font-medium text-white text-sm sm:text-base group-hover:text-red-300">Privacy Settings</div>
                   <div className="text-xs sm:text-sm text-white/60">Manage your privacy preferences</div>
                 </div>
-                <ShieldCheckIcon className="h-5 w-5 text-blue-300" />
+                <ShieldCheckIcon className="h-5 w-5 text-red-300" />
               </div>
             </button>
 
