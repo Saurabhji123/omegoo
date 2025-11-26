@@ -555,7 +555,7 @@ const TermsOfService: React.FC = () => {
         {termsSections.map((section) => (
           <div key={section.title} className="space-y-4">
             <h3 className="flex items-center gap-3 text-lg font-semibold text-white sm:text-xl">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 text-sm font-bold text-white shadow-lg shadow-indigo-900/40">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg" style={{ backgroundColor: 'var(--primary-brand)' }}>
                 {section.badge}
               </span>
               {section.title}

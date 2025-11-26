@@ -110,8 +110,9 @@ const Settings: React.FC = () => {
       type="button"
       onClick={() => onChange(!enabled)}
       className={`relative inline-flex h-7 w-12 items-center rounded-full border border-white/15 transition-all duration-200 ${
-        enabled ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 shadow-lg shadow-blue-500/30' : 'bg-white/10'
+        enabled ? 'shadow-lg' : 'bg-white/10'
       }`}
+      style={enabled ? { backgroundColor: 'var(--primary-brand)' } : {}}
     >
       <span
         className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200 ${
@@ -123,7 +124,7 @@ const Settings: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 px-4 sm:px-6 lg:px-0">
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-purple-900/80 via-blue-900/70 to-indigo-900/80 px-6 py-6 sm:py-8 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl border px-6 py-6 sm:py-8 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
         <div className="absolute -top-24 -right-10 h-44 w-44 rounded-full bg-purple-400/20 blur-3xl" aria-hidden="true" />
         <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-blue-400/10 blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -141,8 +142,7 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Video & Audio Settings */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/15 via-purple-500/5 to-transparent" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-3xl border p-4 sm:p-6 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
         <div className="relative">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center text-lg font-semibold text-white">
@@ -208,8 +208,7 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Voice Filters */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/15 via-pink-500/10 to-transparent" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-3xl border p-4 sm:p-6 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
         <div className="relative">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center text-lg font-semibold text-white">
@@ -323,8 +322,7 @@ const Settings: React.FC = () => {
       </div>
 
       {/* AR Face Masks & Blur */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/15 via-purple-500/10 to-transparent" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-3xl border p-4 sm:p-6 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
         <div className="relative">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center text-lg font-semibold text-white">
@@ -443,8 +441,7 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Privacy & Safety */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-transparent" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-3xl border p-4 sm:p-6 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
         <div className="relative">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center text-lg font-semibold text-white">
@@ -504,8 +501,7 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Notifications */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-purple-500/5 to-transparent" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-3xl border p-4 sm:p-6 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
         <div className="relative">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center text-lg font-semibold text-white">
@@ -546,8 +542,7 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Matching Preferences */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-3xl border p-4 sm:p-6 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
         <div className="relative">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-white">Matching Preferences</h2>

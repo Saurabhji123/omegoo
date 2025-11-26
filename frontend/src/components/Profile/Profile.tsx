@@ -381,7 +381,7 @@ const Profile: React.FC = () => {
   // Logged-in user view
   return (
     <div className="max-w-5xl mx-auto space-y-6 px-4 sm:px-6 lg:px-0">
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-purple-900/80 via-blue-900/70 to-indigo-900/80 px-6 py-6 sm:py-8 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl border px-6 py-6 sm:py-8 shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
         <div className="absolute -top-24 -right-6 h-44 w-44 rounded-full bg-purple-400/20 blur-3xl" aria-hidden="true" />
         <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-blue-400/10 blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-4">
@@ -483,7 +483,7 @@ const Profile: React.FC = () => {
       {/* Gender confirmation modal for Google users */}
       {showGenderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 px-4">
-          <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 rounded-2xl shadow-2xl border border-white border-opacity-20 max-w-md w-full p-6">
+          <div className="rounded-2xl shadow-2xl border max-w-md w-full p-6" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
             <h3 className="text-xl font-bold text-white mb-4">Confirm Your Gender</h3>
             <p className="text-sm text-gray-200 mb-4">
               Please select your gender to continue. This choice helps us match you better and can’t be changed later.
@@ -572,9 +572,7 @@ const Profile: React.FC = () => {
 
       {/* Safety & Privacy */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-transparent" aria-hidden="true" />
-        <div className="relative">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative">x-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="text-lg font-semibold text-white">Safety & Privacy</h3>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70">
               Verified protections
@@ -611,7 +609,6 @@ const Profile: React.FC = () => {
 
       {/* Account Actions */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-purple-500/5 to-transparent" aria-hidden="true" />
         <div className="relative">
           <h3 className="text-lg font-semibold text-white">Account</h3>
           <p className="mt-1 text-sm text-white/60">Manage access, security, and privacy preferences in one place.</p>

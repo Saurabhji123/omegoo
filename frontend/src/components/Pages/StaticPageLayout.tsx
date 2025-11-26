@@ -16,7 +16,7 @@ export const StaticPageLayout: React.FC<StaticPageLayoutProps> = ({
   children
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-900 px-4 py-12 text-white">
+    <div className="min-h-screen px-4 py-12 text-white" style={{ backgroundColor: 'var(--bg-body)' }}>
       <div className="mx-auto flex max-w-5xl flex-col gap-10">
         <header className="text-center space-y-5">
           {eyebrow && (
