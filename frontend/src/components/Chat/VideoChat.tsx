@@ -94,6 +94,12 @@ const VideoChat: React.FC = () => {
   const [isInputFocused, setIsInputFocused] = useState(false); // Track if typing in message input
   const lastTapTimeRef = useRef<number>(0);
   
+  // Finding timeout mechanism to prevent stuck state
+  const findingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const findingRetryCountRef = useRef<number>(0);
+  const MAX_FINDING_RETRIES = 3;
+  const FINDING_TIMEOUT_MS = 30000; // 30 seconds
+  
   const videoOnlineCount = modeUserCounts.video * 3; // 3x multiplier for retention psychology
 
   const micStateRef = useRef<boolean>(isMicOn);
@@ -174,6 +180,52 @@ const VideoChat: React.FC = () => {
     }
     applySpeakerState();
   }, [isSpeakerOn, applySpeakerState]);
+
+  // Finding timeout helpers to prevent stuck state
+  const startFindingTimeout = useCallback(() => {
+    console.log('⏰ Starting finding timeout (30s)');
+    
+    // Clear any existing timeout
+    if (findingTimeoutRef.current) {
+      clearTimeout(findingTimeoutRef.current);
+    }
+    
+    findingTimeoutRef.current = setTimeout(() => {
+      console.warn('⏰ Finding timeout reached! Attempting retry...');
+      findingRetryCountRef.current += 1;
+      
+      if (findingRetryCountRef.current >= MAX_FINDING_RETRIES) {
+        console.error('❌ Max finding retries reached. Resetting to disconnected state.');
+        setIsSearching(false);
+        setCurrentState('disconnected');
+        findingRetryCountRef.current = 0;
+        addMessage('Unable to find a match. Please try again.', false);
+        return;
+      }
+      
+      // Retry finding match
+      if (socket && socket.connected) {
+        console.log(`🔄 Retry ${findingRetryCountRef.current}/${MAX_FINDING_RETRIES}: Re-emitting find_match`);
+        addMessage(`Retrying... (${findingRetryCountRef.current}/${MAX_FINDING_RETRIES})`, false);
+        socket.emit('find_match', { mode: 'video' });
+        startFindingTimeout(); // Restart timeout for retry
+      } else {
+        console.error('❌ Socket not connected for retry');
+        setIsSearching(false);
+        setCurrentState('disconnected');
+        findingRetryCountRef.current = 0;
+      }
+    }, FINDING_TIMEOUT_MS);
+  }, [socket]);
+
+  const clearFindingTimeout = useCallback(() => {
+    if (findingTimeoutRef.current) {
+      console.log('✅ Clearing finding timeout');
+      clearTimeout(findingTimeoutRef.current);
+      findingTimeoutRef.current = null;
+    }
+    findingRetryCountRef.current = 0; // Reset retry count on successful match
+  }, []);
 
   const applyEffectsToCurrentStream = useCallback(async () => {
     const rawStream = rawStreamRef.current;
@@ -645,6 +697,10 @@ const VideoChat: React.FC = () => {
         setCurrentState('connected'); // Set state to connected
         setIsSearching(false);
         setMessages([]);
+        
+        // Clear finding timeout since match was found
+        clearFindingTimeout();
+        
         // Match found - no system message needed
         
         // 🎭 BLUR RESTART: Check if blur should be applied for this new match
@@ -727,6 +783,9 @@ const VideoChat: React.FC = () => {
         console.log('🔍 Searching for video chat partner:', data);
         setIsSearching(true);
         setCurrentState('finding'); // Set state to finding
+        
+        // Start finding timeout to prevent stuck state
+        startFindingTimeout();
       });
 
       socket.on('chat_message', (data: { content: string; timestamp: number; sessionId: string; fromUserId?: string }) => {
@@ -901,6 +960,28 @@ const VideoChat: React.FC = () => {
         console.error('🚨 Video chat error:', data.message);
         console.error(`Error: ${data.message}`);
       });
+
+      // Handle match retry when partner has insufficient coins
+      socket.on('match-retry', (data: { message: string }) => {
+        console.log('🔄 Match retry:', data.message);
+        addMessage(data.message || 'Searching for another partner...', false);
+        setIsSearching(true);
+        setCurrentState('finding');
+        
+        // Restart finding timeout for retry
+        startFindingTimeout();
+      });
+
+      // Handle insufficient coins error
+      socket.on('insufficient-coins', (data: { required: number; current: number; message: string }) => {
+        console.warn('💰 Insufficient coins:', data);
+        setIsSearching(false);
+        setCurrentState('disconnected');
+        
+        const errorMsg = `Not enough coins to start chat. Need ${data.required} but have ${data.current}. Daily refill at 12 AM.`;
+        addMessage(errorMsg, false);
+        alert(errorMsg);
+      });
     }
 
     // Start local video
@@ -957,6 +1038,11 @@ const VideoChat: React.FC = () => {
       socket?.off('webrtc-answer');
       socket?.off('ice-candidate');
       socket?.off('error');
+      socket?.off('match-retry');
+      socket?.off('insufficient-coins');
+      
+      // Clear finding timeout on cleanup
+      clearFindingTimeout();
       
       console.log('✅ VideoChat cleanup completed');
     };
@@ -1212,6 +1298,9 @@ const VideoChat: React.FC = () => {
       socket.emit('find_match', { mode: 'video' });
       console.log('✅ New partner search started');
       addMessage('Searching for someone to chat with...', false);
+      
+      // Start finding timeout to prevent stuck state
+      startFindingTimeout();
     }, searchDelay);
   };
 
@@ -1715,6 +1804,9 @@ const VideoChat: React.FC = () => {
       setCurrentState('finding');
       socket.emit('find_match', { mode: 'video' });
       console.log('[VideoChat] Finding match with preview stream');
+      
+      // Start finding timeout to prevent stuck state
+      startFindingTimeout();
     }
   };
 
