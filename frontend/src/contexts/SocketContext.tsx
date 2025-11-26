@@ -50,6 +50,7 @@ interface SocketContextType extends SocketState {
   acceptVideoRequest: () => void;
   declineVideoRequest: (reason?: 'declined' | 'reported') => void;
   sendVideoUpgradeSignaling: (event: string, data: any) => void;
+  resetVideoUpgradeState: () => void;
 }
 
 type SocketAction =
@@ -548,6 +549,20 @@ export const SocketProvider: React.FC<{ children: ReactNode; guestId?: string | 
     }
   }, [state.socket, state.connected]);
 
+  const resetVideoUpgradeState = useCallback(() => {
+    debugLog('Resetting video upgrade state');
+    dispatch({ 
+      type: 'SET_VIDEO_UPGRADE_STATE', 
+      payload: { 
+        status: 'idle',
+        error: undefined,
+        initiator: false,
+        remoteUserId: undefined,
+        sessionId: undefined
+      } 
+    });
+  }, []);
+
   const value: SocketContextType = {
     ...state,
     connect,
@@ -560,7 +575,8 @@ export const SocketProvider: React.FC<{ children: ReactNode; guestId?: string | 
     sendVideoRequest,
     acceptVideoRequest,
     declineVideoRequest,
-    sendVideoUpgradeSignaling
+    sendVideoUpgradeSignaling,
+    resetVideoUpgradeState
   };
 
   return (

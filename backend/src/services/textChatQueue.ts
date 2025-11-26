@@ -111,24 +111,9 @@ export class TextChatQueueService {
 
       // If no suitable partner found
       if (user2Index === -1) {
-        // If queue has only 1-2 people, allow re-match after small delay
-        if (this.waitingQueue.length <= 1) {
-          console.log(`[TextChatQueue] Only ${this.waitingQueue.length + 1} users, allowing re-match`);
-          const user2 = this.waitingQueue.shift();
-          if (user2) {
-            // Put both back in queue and match them (no other option)
-            this.waitingQueue.push(user1, user2);
-            const matchUser1 = this.waitingQueue.shift()!;
-            const matchUser2 = this.waitingQueue.shift()!;
-            await this.createMatch(matchUser1, matchUser2);
-          } else {
-            this.waitingQueue.unshift(user1);
-          }
-        } else {
-          // Put user1 at end and try again
-          this.waitingQueue.push(user1);
-          console.log(`[TextChatQueue] No suitable partner for ${user1.userId}, requeued`);
-        }
+        // Put user1 back in queue and wait for more users
+        this.waitingQueue.unshift(user1);
+        console.log(`[TextChatQueue] No suitable partner for ${user1.userId}. Queue size: ${this.waitingQueue.length}. Waiting for more users...`);
         return;
       }
 

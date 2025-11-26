@@ -59,7 +59,8 @@ const TextChat: React.FC = () => {
     sendVideoRequest,
     acceptVideoRequest,
     declineVideoRequest,
-    sendVideoUpgradeSignaling
+    sendVideoUpgradeSignaling,
+    resetVideoUpgradeState
   } = useSocket();
   const { user } = useAuth();
   const { preferredLanguage, autoTranslateEnabled, translateMessage } = useTranslation();
@@ -1798,19 +1799,27 @@ const TextChat: React.FC = () => {
         state={videoUpgradeState}
         onAccept={async () => {
           try {
+            console.log('✅ Accepting video upgrade request');
             acceptVideoRequest();
           } catch (error) {
-            console.error('Video upgrade accept failed:', error);
+            console.error('❌ Video upgrade accept failed:', error);
+            addSystemMessage('Failed to accept video request');
+            resetVideoUpgradeState();
           }
         }}
         onDecline={() => {
+          console.log('❌ Declining video upgrade request');
           declineVideoRequest('declined');
+          resetVideoUpgradeState();
         }}
         onDeclineAndReport={() => {
+          console.log('🚨 Declining and reporting video upgrade request');
           declineVideoRequest('reported');
+          resetVideoUpgradeState();
         }}
         onClose={() => {
-          declineVideoRequest('declined');
+          console.log('🔄 Closing video upgrade modal and resetting state');
+          resetVideoUpgradeState();
         }}
       />
 
