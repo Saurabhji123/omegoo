@@ -1998,7 +1998,7 @@ const VideoChat: React.FC = () => {
                 <span className="font-medium">Upgraded from Text</span>
               </div>
             )}
-            <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-xs text-purple-100 animate-pulse">
+            <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }}>
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>

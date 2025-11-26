@@ -99,7 +99,7 @@ const ResetPassword: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
       <nav className="bg-white bg-opacity-10 backdrop-blur-md border-b border-white border-opacity-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">

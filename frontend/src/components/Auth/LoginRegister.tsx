@@ -162,7 +162,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
       {showMailGuard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div
@@ -170,7 +170,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             onClick={() => setShowMailGuard(false)}
           ></div>
           <div className="relative max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-purple-200">
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-t-2xl px-6 py-4">
+            <div className="rounded-t-2xl px-6 py-4" style={{ backgroundColor: 'var(--primary-brand)' }}>
               <h3 className="text-white text-lg font-semibold">Use a trusted email</h3>
             </div>
             <div className="px-6 py-5 space-y-3">
@@ -403,7 +403,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               <div className="w-full border-t border-white border-opacity-20"></div>
             </div>
             <div className="relative flex justify-center text-xs sm:text-sm">
-              <span className="px-3 sm:px-4 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-purple-200">Or continue with</span>
+              <span className="px-3 sm:px-4 text-gray-300" style={{ backgroundColor: 'var(--bg-body)' }}>Or continue with</span>
             </div>
           </div>
 
