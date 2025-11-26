@@ -4,17 +4,32 @@
 @tailwind utilities;
 /* stylelint-enable at-rule-no-unknown */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+/* Premium Night Design System - CSS Variables */
+:root {
+  --bg-body: #0f0f0f;
+  --bg-surface: #1a1a1a;
+  --primary-brand: #FF4757;
+  --text-head: #FFFFFF;
+  --text-body: #B0B0B0;
+  --border-subtle: #333333;
+  --input-bg: #050505;
+  --radius: 12px;
+  --shadow-glow: 0 0 20px rgba(255, 71, 87, 0.3);
+}
 
 @layer base {
   body {
     /* stylelint-disable-next-line at-rule-no-unknown */
     @apply font-sans antialiased;
+    background-color: var(--bg-body);
+    color: var(--text-body);
   }
   
-  .dark body {
-    background-color: #111827;
-    color: #f9fafb;
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-head);
+    font-weight: 600;
   }
   
   * {
@@ -25,51 +40,78 @@
 @layer components {
   .btn-primary {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply font-semibold py-2 px-4 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background-color: var(--primary-brand);
+    color: var(--text-head);
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    filter: brightness(1.1);
   }
 
   .btn-secondary {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+    @apply font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background-color: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-head);
+  }
+  
+  .btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.05);
   }
 
   .btn-danger {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply bg-danger-600 hover:bg-danger-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2;
-  }  .input-field {
-    /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background-color: #dc2626;
+    color: var(--text-head);
   }
   
-  .dark .input-field {
+  .input-field {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply bg-gray-800 border-gray-600 text-white;
+    @apply w-full px-3 py-2 rounded-lg focus:outline-none transition-all duration-200;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-head);
+  }
+  
+  .input-field:focus {
+    border-color: var(--primary-brand);
+    box-shadow: 0 0 0 2px rgba(255, 71, 87, 0.2);
   }
   
   .modal-overlay {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+    @apply fixed inset-0 flex items-center justify-center z-50;
+    background-color: rgba(0, 0, 0, 0.8);
   }
   
   .modal-content {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6;
+    @apply rounded-lg shadow-xl max-w-md w-full mx-4 p-6;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
   }
   
   .safety-badge {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-100 text-success-800;
+    @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #86efac;
   }
   
   .loading-spinner {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600;
+    @apply animate-spin rounded-full h-8 w-8 border-b-2;
+    border-color: var(--primary-brand);
   }
 }
 
 @layer utilities {
   .text-gradient {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--primary-brand) 0%, #ff6b7a 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -77,7 +119,8 @@
   
   .glass-effect {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply backdrop-blur-sm bg-white/90 dark:bg-gray-900/90;
+    @apply backdrop-blur-sm;
+    background-color: rgba(26, 26, 26, 0.8);
   }
   
   .safe-area-top {
@@ -112,12 +155,14 @@
 
 .chat-bubble.own {
   /* stylelint-disable-next-line at-rule-no-unknown */
-  @apply bg-primary-600 text-white ml-auto;
+  @apply text-white ml-auto;
+  background-color: var(--primary-brand);
 }
 
 .chat-bubble.other {
   /* stylelint-disable-next-line at-rule-no-unknown */
-  @apply bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white mr-auto;
+  @apply text-white mr-auto;
+  background-color: var(--bg-surface);
 }
 
 @keyframes fadeInUp {
@@ -134,7 +179,8 @@
 /* Video call styles */
 .video-container {
   /* stylelint-disable-next-line at-rule-no-unknown */
-  @apply relative rounded-lg overflow-hidden bg-black;
+  @apply relative rounded-lg overflow-hidden;
+  background-color: #000000;
 }
 
 .video-element {
@@ -145,6 +191,9 @@
 .video-controls {
   /* stylelint-disable-next-line at-rule-no-unknown */
   @apply absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4;
+  background-color: var(--bg-surface);
+  padding: 12px;
+  border-radius: var(--radius);
 }
 
 .video-control-btn {
@@ -153,19 +202,19 @@
 }
 
 .video-control-btn.active {
-  /* stylelint-disable-next-line at-rule-no-unknown */
-  @apply bg-success-600;
+  background-color: var(--primary-brand);
 }
 
 .video-control-btn.inactive {
-  /* stylelint-disable-next-line at-rule-no-unknown */
-  @apply bg-danger-600;
+  background-color: #4b5563;
 }
 
 /* Moderation warning styles */
 .moderation-warning {
   /* stylelint-disable-next-line at-rule-no-unknown */
-  @apply fixed top-4 left-1/2 transform -translate-x-1/2 bg-danger-600 text-white px-4 py-2 rounded-lg shadow-lg z-50;
+  @apply fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg z-50;
+  background-color: #dc2626;
+  color: var(--text-head);
   animation: slideDown 0.3s ease-out;
 }
 
@@ -180,23 +229,10 @@
   }
 }
 
-/* Custom favicon styling for better appearance */
-link[rel="icon"],
-link[rel="shortcut icon"],
-link[rel="apple-touch-icon"] {
-  border-radius: 20%;
-}
-
-/* PWA icon styling when displayed in mobile browsers */
-.favicon-rounded {
-  border-radius: 20% !important;
-  overflow: hidden;
-}
-
-/* Custom Scrollbar for Chat (WhatsApp/ChatGPT style) */
+/* Custom Scrollbar (Premium Night Style) */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(147, 51, 234, 0.6) transparent;
+  scrollbar-color: var(--primary-brand) transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -208,10 +244,10 @@ link[rel="apple-touch-icon"] {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(147, 51, 234, 0.6);
+  background-color: var(--primary-brand);
   border-radius: 10px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(147, 51, 234, 0.8);
+  filter: brightness(1.2);
 }

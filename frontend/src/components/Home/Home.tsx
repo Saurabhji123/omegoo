@@ -141,7 +141,7 @@ const Home: React.FC = () => {
   // Show loading while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-body)' }}>
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
@@ -149,10 +149,10 @@ const Home: React.FC = () => {
 
   if (isMatching) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-body)' }}>
         <div className="text-center">
           <div className="relative">
-            <div className="animate-spin rounded-full h-32 w-32 border-4 border-purple-200 border-t-purple-600 mx-auto mb-8"></div>
+            <div className="animate-spin rounded-full h-32 w-32 border-4 border-t-transparent mx-auto mb-8" style={{ borderColor: 'var(--primary-brand)', borderTopColor: 'transparent' }}></div>
             <div className="absolute inset-0 flex items-center justify-center">
               <LazyImage 
                 src="/logo512.png" 
