@@ -1894,9 +1894,52 @@ export class SocketService {
     
     console.log(`📹 Video upgrade request: ${socket.userId} → ${to} (session: ${sessionId})`);
 
-    // Validate session exists
+    // Check if this is a text chat session
+    const textRoom = TextChatQueueService.getRoomForUser(socket.userId);
+    if (textRoom && textRoom.roomId === sessionId) {
+      console.log(`📹 Video upgrade from text chat: ${textRoom.roomId}`);
+      
+      // Get partner from text chat
+      const textPartner = TextChatQueueService.getPartner(textRoom.roomId, socket.userId);
+      
+      if (!textPartner) {
+        socket.emit('video_upgrade_error', { message: 'Partner not found' });
+        return;
+      }
+      
+      if (to !== textPartner.userId) {
+        socket.emit('video_upgrade_error', { message: 'Invalid target user' });
+        return;
+      }
+      
+      // Create video upgrade request message
+      const requestMessage = {
+        type: 'request_video',
+        from: socket.userId,
+        to: textPartner.userId,
+        chatId,
+        sessionId,
+        timestamp: Date.now()
+      };
+
+      // Forward to partner (all devices)
+      this.emitToAllUserDevices(textPartner.userId, 'request_video', requestMessage);
+
+      // Confirm to requester
+      socket.emit('video_request_sent', {
+        to: textPartner.userId,
+        sessionId,
+        timestamp: requestMessage.timestamp
+      });
+      
+      console.log(`✅ Video upgrade request sent from text chat: ${socket.userId} → ${textPartner.userId}`);
+      return;
+    }
+
+    // Otherwise, validate audio/video session
     const session = this.activeSessions.get(sessionId);
     if (!session) {
+      console.error(`❌ Session not found: ${sessionId}`);
       socket.emit('video_upgrade_error', { message: 'Session not found or expired' });
       return;
     }

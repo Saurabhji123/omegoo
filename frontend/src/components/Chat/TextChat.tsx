@@ -941,10 +941,14 @@ const TextChat: React.FC = () => {
     setShowTopicDiceModal(false);
     
     try {
+      console.log('🎲 Fetching topic dice prompt...', { category, language: preferredLanguage });
       const response = await guestAPI.getTopicDice(category, preferredLanguage);
-      if (response.success && response.data) {
+      console.log('🎲 Topic dice response:', response);
+      
+      if (response && response.success && response.data && response.data.prompt) {
         // Insert prompt into message input with typing animation effect
         const prompt = response.data.prompt;
+        console.log('✅ Topic dice prompt received:', prompt);
         setMessageInput(prompt);
         
         // Focus input and adjust height
@@ -953,10 +957,16 @@ const TextChat: React.FC = () => {
           requestAnimationFrame(() => adjustInputHeight());
         }
       } else {
+        console.error('❌ Invalid topic dice response:', response);
         addSystemMessage('Failed to get conversation starter. Please try again.');
       }
-    } catch (error) {
-      console.error('Error getting topic prompt:', error);
+    } catch (error: any) {
+      console.error('❌ Error getting topic prompt:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack
+      });
       addSystemMessage('Failed to get conversation starter. Please try again.');
     } finally {
       setLoadingPrompt(false);
@@ -1593,20 +1603,32 @@ const TextChat: React.FC = () => {
                 {/* Camera Button - Video Upgrade */}
                 <button
                   onClick={async () => {
-                    if (sessionId && partnerId) {
-                      try {
-                        // Initialize WebRTC service if not already initialized
-                        if (!webrtcServiceRef.current) {
-                          console.log('📹 Initializing WebRTC for video upgrade...');
-                          webrtcServiceRef.current = new WebRTCService();
-                          console.log('✅ WebRTC service initialized for video upgrade');
-                        }
-                        
-                        sendVideoRequest(partnerId, sessionId);
-                      } catch (error) {
-                        console.error('❌ Failed to initialize WebRTC:', error);
-                        addSystemMessage('Failed to start video upgrade. Please try again.');
+                    if (!isMatchConnected || !sessionId || !partnerId) {
+                      console.warn('⚠️ Cannot send video request:', {
+                        isConnected: isMatchConnected,
+                        hasSession: !!sessionId,
+                        hasPartner: !!partnerId
+                      });
+                      addSystemMessage('Not connected to a chat partner');
+                      return;
+                    }
+                    
+                    try {
+                      console.log('📹 Initiating video upgrade...', { sessionId, partnerId });
+                      
+                      // Initialize WebRTC service if not already initialized
+                      if (!webrtcServiceRef.current) {
+                        console.log('📹 Initializing WebRTC for video upgrade...');
+                        webrtcServiceRef.current = new WebRTCService();
+                        console.log('✅ WebRTC service initialized for video upgrade');
                       }
+                      
+                      sendVideoRequest(partnerId, sessionId);
+                      addSystemMessage('Video upgrade request sent...');
+                    } catch (error: any) {
+                      console.error('❌ Failed to initialize WebRTC:', error);
+                      console.error('Error details:', error?.message, error?.stack);
+                      addSystemMessage('Failed to start video upgrade. Please try again.');
                     }
                   }}
                   disabled={!isMatchConnected}
