@@ -1312,7 +1312,8 @@ const TextChat: React.FC = () => {
                   <button
                     onClick={handleReport}
                     disabled={!isMatchConnected}
-                    className="flex-1 bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 disabled:from-gray-500 disabled:to-gray-600 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2 font-medium disabled:cursor-not-allowed text-xs sm:text-sm shadow-lg hover:shadow-yellow-500/25"
+                    className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2 font-medium disabled:cursor-not-allowed text-xs sm:text-sm shadow-lg"
+                    style={{ backgroundColor: '#ca8a04', color: 'white' }}
                     title="Report User"
                   >
                     <ExclamationTriangleIcon className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1386,14 +1387,15 @@ const TextChat: React.FC = () => {
                       <div
                         className={`${!isSystemMessage ? (message.isOwnMessage ? 'ml-5 sm:ml-12' : 'mr-5 sm:mr-12') : ''} px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-sm ${!isSystemMessage ? 'cursor-pointer hover:shadow-lg' : ''} ${
                           message.isOwnMessage
-                            ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-md'
+                            ? 'text-white rounded-br-md'
                             : isSystemMessage
                             ? 'bg-yellow-600 bg-opacity-20 text-yellow-200 border border-yellow-600 border-opacity-30 text-center w-full rounded-xl cursor-default'
                             : 'bg-white bg-opacity-10 text-white rounded-bl-md backdrop-blur-sm'
-                        } ${isHovered && !isSystemMessage ? 'ring-2 ring-purple-400 ring-opacity-50 scale-[1.02] transition-all duration-200' : 'transition-all duration-200'}`}
+                        } ${isHovered && !isSystemMessage ? 'ring-2 ring-opacity-50 scale-[1.02] transition-all duration-200' : 'transition-all duration-200'}`}
                         style={{
                           transform,
                           transition,
+                          backgroundColor: message.isOwnMessage && !isSystemMessage ? 'var(--primary-brand)' : undefined,
                           ...(isSystemMessage
                             ? {}
                             : {
@@ -1657,9 +1659,10 @@ const TextChat: React.FC = () => {
                   title="Get conversation starter (right-click for categories)"
                   className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg flex-shrink-0 flex items-center justify-center ${
                     isMatchConnected && !loadingPrompt
-                      ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white hover:shadow-yellow-500/25 transform hover:scale-105'
+                      ? 'text-white transform hover:scale-105'
                       : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                   }`}
+                  style={{ backgroundColor: isMatchConnected && !loadingPrompt ? '#ca8a04' : undefined }}
                 >
                   {loadingPrompt ? (
                     <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
@@ -1706,9 +1709,10 @@ const TextChat: React.FC = () => {
                   title="Request video chat"
                   className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg flex-shrink-0 flex items-center justify-center ${
                     isMatchConnected
-                      ? 'bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white hover:shadow-green-500/25 transform hover:scale-105'
+                      ? 'text-white transform hover:scale-105'
                       : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                   }`}
+                  style={{ backgroundColor: isMatchConnected ? '#16a34a' : undefined }}
                 >
                   <VideoCameraIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
@@ -1718,9 +1722,10 @@ const TextChat: React.FC = () => {
                   disabled={!messageInput.trim() || !isMatchConnected}
                   className={`p-2.5 sm:p-3 rounded-full transition-all duration-200 shadow-lg flex-shrink-0 flex items-center justify-center ${
                     messageInput.trim() && isMatchConnected
-                      ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white hover:shadow-purple-500/25 transform hover:scale-105'
+                      ? 'text-white transform hover:scale-105'
                       : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                   }`}
+                  style={{ backgroundColor: messageInput.trim() && isMatchConnected ? 'var(--primary-brand)' : undefined }}
                 >
                   <PaperAirplaneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
@@ -1739,7 +1744,7 @@ const TextChat: React.FC = () => {
                   <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
                 </div>
               </div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-gradient">
                 Text Chat
               </h2>
               <p className="text-gray-300 text-base sm:text-lg mb-6 sm:mb-8 leading-relaxed px-2 sm:px-0">
@@ -1750,7 +1755,7 @@ const TextChat: React.FC = () => {
             <button
               onClick={() => startNewChat(false)}
               disabled={socketConnecting || !socketConnected}
-              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg font-semibold transition-all transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-purple-500/25 disabled:shadow-none"
+              className="w-full sm:w-auto btn-primary px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg font-semibold transition-all transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none shadow-lg disabled:shadow-none"
             >
               {socketConnecting ? (
                 <div className="flex items-center justify-center gap-2">
@@ -1790,7 +1795,7 @@ const TextChat: React.FC = () => {
       {/* Topic Dice Category Modal */}
       {showTopicDiceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-purple-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-purple-500/30">
+          <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl p-6 max-w-md w-full shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <span className="text-2xl">🎲</span>
@@ -1811,7 +1816,8 @@ const TextChat: React.FC = () => {
             <div className="space-y-3">
               <button
                 onClick={() => getTopicPrompt('fun')}
-                className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+                className="w-full text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+                style={{ backgroundColor: '#ca8a04' }}
               >
                 <span className="flex items-center gap-3">
                   <span className="text-2xl">🎉</span>
@@ -1822,7 +1828,8 @@ const TextChat: React.FC = () => {
               
               <button
                 onClick={() => getTopicPrompt('safe')}
-                className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+                className="w-full text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+                style={{ backgroundColor: '#16a34a' }}
               >
                 <span className="flex items-center gap-3">
                   <span className="text-2xl">😊</span>
@@ -1833,7 +1840,8 @@ const TextChat: React.FC = () => {
               
               <button
                 onClick={() => getTopicPrompt('deep')}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+                className="w-full text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+                style={{ backgroundColor: '#2563eb' }}
               >
                 <span className="flex items-center gap-3">
                   <span className="text-2xl">🤔</span>
@@ -1844,7 +1852,8 @@ const TextChat: React.FC = () => {
               
               <button
                 onClick={() => getTopicPrompt('flirty')}
-                className="w-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+                className="w-full text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg flex items-center justify-between"
+                style={{ backgroundColor: '#db2777' }}
               >
                 <span className="flex items-center gap-3">
                   <span className="text-2xl">😉</span>
@@ -1855,7 +1864,7 @@ const TextChat: React.FC = () => {
               
               <button
                 onClick={() => getTopicPrompt()}
-                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg mt-4"
+                className="w-full btn-primary px-6 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg mt-4"
               >
                 ✨ Surprise Me (Random)
               </button>
@@ -1897,7 +1906,7 @@ const TextChat: React.FC = () => {
       {isVideoMode && (localStream || remoteStream) && (
         <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col">
           {/* Video Header */}
-          <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-900 p-4 shadow-lg backdrop-blur-sm">
+          <div className="p-4 shadow-lg backdrop-blur-sm" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <div className="flex items-center justify-between max-w-7xl mx-auto">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
@@ -1969,7 +1978,7 @@ const TextChat: React.FC = () => {
           </div>
 
           {/* Text Chat Section - Minimized at bottom */}
-          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 p-4 max-h-64 overflow-y-auto">
+          <div className="p-4 max-h-64 overflow-y-auto" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <div className="max-w-7xl mx-auto">
               <h4 className="text-white text-sm font-semibold mb-2 opacity-70">Text Messages</h4>
               <div className="space-y-2">

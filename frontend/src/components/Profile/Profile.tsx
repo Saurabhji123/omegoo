@@ -315,7 +315,7 @@ const Profile: React.FC = () => {
         
         {/* Anonymous Profile Card */}
         <div className="relative overflow-hidden rounded-3xl border border-white border-opacity-20 bg-white/10 backdrop-blur-xl p-6 sm:p-8 text-center shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-blue-500/15 to-transparent" aria-hidden="true" />
+          <div className="absolute inset-0" aria-hidden="true" />
           <div className="relative z-10">
             <UserCircleIcon className="w-24 h-24 text-gray-300 mx-auto mb-4" />
 
@@ -327,7 +327,7 @@ const Profile: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={() => navigate('/login')}
-                className="w-full sm:w-auto rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 bg-gradient-to-r from-purple-500 via-purple-600 to-blue-600 hover:from-purple-500 hover:via-blue-600 hover:to-indigo-600"
+                className="w-full sm:w-auto rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 btn-primary"
               >
                 Login / Register
               </button>
@@ -343,7 +343,7 @@ const Profile: React.FC = () => {
 
         {/* Features Preview */}
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/15 via-blue-500/10 to-transparent" aria-hidden="true" />
+          <div className="absolute inset-0" aria-hidden="true" />
           <div className="relative z-10 space-y-4">
             <h3 className="text-lg font-semibold text-white">What you'll get with an account:</h3>
 
@@ -407,7 +407,7 @@ const Profile: React.FC = () => {
         >
           Profile
           {activeTab === 'profile' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-500"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: 'var(--primary-brand)' }}></div>
           )}
         </button>
         <button
@@ -426,7 +426,7 @@ const Profile: React.FC = () => {
             </span>
           )}
           {activeTab === 'favourites' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-500"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: 'var(--primary-brand)' }}></div>
           )}
         </button>
       </div>
@@ -436,7 +436,7 @@ const Profile: React.FC = () => {
         <>
       {/* Profile Card */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-purple-500/5 to-blue-500/10" aria-hidden="true" />
+        <div className="absolute inset-0" aria-hidden="true" />
         <div className="relative flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
           <div className="relative flex items-center justify-center">
             <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/20 bg-white/10 backdrop-blur">
@@ -510,7 +510,7 @@ const Profile: React.FC = () => {
               <button
                 onClick={handleGenderConfirm}
                 disabled={genderSaving}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 rounded-lg transition"
+                className="w-full btn-primary font-medium py-2 rounded-lg transition"
               >
                 {genderSaving ? 'Saving...' : 'Confirm Gender'}
               </button>
@@ -522,7 +522,7 @@ const Profile: React.FC = () => {
       {/* Statistics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6 text-center shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/15 via-blue-500/5 to-transparent" aria-hidden="true" />
+          <div className="absolute inset-0" aria-hidden="true" />
           <div className="relative z-10">
             <VideoCameraIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-300 mx-auto mb-3" />
             <div className="text-xl sm:text-2xl font-bold text-white">{user?.totalChats || 0}</div>
@@ -531,7 +531,7 @@ const Profile: React.FC = () => {
         </div>
 
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6 text-center shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-400/15 via-green-400/5 to-transparent" aria-hidden="true" />
+          <div className="absolute inset-0" aria-hidden="true" />
           <div className="relative z-10">
             <ShieldCheckIcon className="w-6 h-6 sm:w-8 sm:h-8 text-green-300 mx-auto mb-3" />
             <div className="text-xl sm:text-2xl font-bold text-white">{user?.dailyChats || 0}</div>
@@ -540,7 +540,7 @@ const Profile: React.FC = () => {
         </div>
 
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6 text-center shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/15 via-yellow-400/5 to-transparent" aria-hidden="true" />
+          <div className="absolute inset-0" aria-hidden="true" />
           <div className="relative z-10">
             <CurrencyDollarIcon className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-300 mx-auto mb-3" />
             <div className="text-xl sm:text-2xl font-bold text-white">{user?.coins || 0}</div>
@@ -549,7 +549,7 @@ const Profile: React.FC = () => {
         </div>
 
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6 text-center shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/5 to-transparent" aria-hidden="true" />
+          <div className="absolute inset-0" aria-hidden="true" />
           <div className="relative z-10">
             <span className={`inline-flex h-8 w-8 sm:h-10 sm:w-10 ${tierBadge.color} rounded-full mx-auto mb-3 items-center justify-center text-lg font-semibold text-white shadow-md`}>
               {tierBadge.icon}
@@ -572,7 +572,7 @@ const Profile: React.FC = () => {
 
       {/* Safety & Privacy */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-transparent" aria-hidden="true" />
+        <div className="absolute inset-0" aria-hidden="true" />
         <div className="relative">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="text-lg font-semibold text-white">Safety & Privacy</h3>
@@ -670,7 +670,7 @@ const Profile: React.FC = () => {
       {/* Password Change Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-white border-opacity-20">
+          <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl shadow-2xl max-w-md w-full p-6">
             <h3 className="text-xl font-bold text-white mb-4">Change Password</h3>
             
             {passwordError && (
@@ -730,7 +730,7 @@ const Profile: React.FC = () => {
               <div className="flex space-x-3 pt-4">
                 <button
                   onClick={handlePasswordChange}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                  className="flex-1 btn-primary font-medium py-2 px-4 rounded-lg transition"
                 >
                   Update Password
                 </button>
@@ -770,7 +770,7 @@ const Profile: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate('/')}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+                className="btn-primary px-6 py-3 rounded-xl font-semibold transition-all"
               >
                 Start Chatting
               </button>
@@ -857,7 +857,7 @@ const Profile: React.FC = () => {
       {/* Connect Modal */}
       {showConnectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border border-purple-500/30 shadow-2xl">
+          <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl p-6 max-w-md w-full shadow-2xl">
             <div className="text-center">
               {connectStatus === 'connecting' && (
                 <>
@@ -910,7 +910,7 @@ const Profile: React.FC = () => {
       {/* Remove Confirmation Modal */}
       {showRemoveConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border border-red-500/30 shadow-2xl">
+          <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid #dc2626' }} className="rounded-2xl p-6 max-w-md w-full shadow-2xl">
             <div className="text-center">
               <TrashIcon className="w-16 h-16 text-red-400 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Remove from Favourites?</h3>
