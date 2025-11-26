@@ -181,7 +181,7 @@ const VerifyOTP: React.FC = () => {
             Verify Your Email
           </h1>
           <p className="text-gray-600">
-            We sent a verification code to <span className="font-semibold text-purple-600">{email}</span>
+            We sent a verification code to <span className="font-semibold text-red-600">{email}</span>
           </p>
           <p className="text-sm text-orange-600 mt-2 font-medium">
             💡 Check your spam folder if you don't see the email
@@ -205,9 +205,9 @@ const VerifyOTP: React.FC = () => {
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 className={`w-12 h-14 text-center text-2xl font-bold text-black rounded-xl border-2 transition-all duration-200 ${
                   digit
-                    ? 'border-purple-500 bg-purple-50'
+                    ? 'border-red-500 bg-red-50'
                     : 'border-gray-300 bg-white'
-                } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                } focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent`}
                 disabled={loading}
               />
             ))}
@@ -259,7 +259,7 @@ const VerifyOTP: React.FC = () => {
             className={`font-semibold transition-all duration-200 ${
               resendLoading || resendCooldown > 0
                 ? 'text-gray-400 cursor-not-allowed'
-                : 'text-purple-600 hover:text-purple-700 hover:underline'
+                : 'text-red-600 hover:text-red-700 hover:underline'
             }`}
           >
             {resendLoading ? (
