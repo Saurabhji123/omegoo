@@ -196,12 +196,6 @@ export class TextChatQueueService {
     console.log(`[TextChatQueue] Wait times: ${user1WaitTime}ms, ${user2WaitTime}ms`);
     console.log(`[TextChatQueue] Queue size after match: ${this.waitingQueue.length}`);
   }
-      }
-
-    } finally {
-      this.matchingInProgress = false;
-    }
-  }
 
   /**
    * Get room by ID
