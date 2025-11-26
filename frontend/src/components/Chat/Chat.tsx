@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import WebRTCService from '../../services/webrtc';
+import ReportModal from './ReportModal';
 import { 
   // PhoneIcon, // Not used currently
   PhoneXMarkIcon, 
@@ -24,6 +26,9 @@ const Chat: React.FC = () => {
   const [isMicOn, setIsMicOn] = useState(true);
   const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [showReportModal, setShowReportModal] = useState(false);
+  const [sessionId, setSessionId] = useState<string>('');
+  const [partnerId, setPartnerId] = useState<string>('');
+  const { user } = useAuth();
   // const [queueInfo, setQueueInfo] = useState<{ position: number, totalWaiting: number } | null>(null); // Reserved for future use
 
   useEffect(() => {
@@ -104,14 +109,12 @@ const Chat: React.FC = () => {
   };
 
   const reportUser = () => {
+    if (!partnerId || !sessionId) {
+      console.warn('Cannot report: missing partner or session');
+      alert('No active session to report');
+      return;
+    }
     setShowReportModal(true);
-  };
-
-  const handleReport = (reason: string) => {
-    // TODO: Implement reporting
-    console.log('Reporting user for:', reason);
-    setShowReportModal(false);
-    nextMatch();
   };
 
   return (
@@ -252,39 +255,15 @@ const Chat: React.FC = () => {
       </div>
 
       {/* Report Modal */}
-      {showReportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Report User</h3>
-            <p className="text-gray-600 mb-6">Why are you reporting this user?</p>
-            
-            <div className="space-y-2">
-              {[
-                'Inappropriate content',
-                'Harassment or bullying',
-                'Spam or scam',
-                'Nudity or sexual content',
-                'Violence or threats',
-                'Other'
-              ].map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => handleReport(reason)}
-                  className="w-full text-left p-3 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-            
-            <button
-              onClick={() => setShowReportModal(false)}
-              className="w-full mt-4 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+      {showReportModal && user && (
+        <ReportModal
+          isOpen={showReportModal}
+          sessionId={sessionId}
+          reportedUserId={partnerId}
+          reporterUserId={user.id}
+          chatMode="video"
+          onClose={() => setShowReportModal(false)}
+        />
       )}
     </div>
   );
