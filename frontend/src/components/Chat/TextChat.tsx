@@ -70,6 +70,17 @@ const TextChat: React.FC = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
+  // State refs to avoid stale closures in event handlers
+  const isMatchConnectedRef = useRef(false);
+  const sessionIdRef = useRef<string | null>(null);
+  const partnerIdRef = useRef<string>('');
+  
+  // Finding timeout mechanism to prevent stuck state
+  const findingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const findingRetryCountRef = useRef<number>(0);
+  const MAX_FINDING_RETRIES = 3;
+  const FINDING_TIMEOUT_MS = 30000; // 30 seconds
+  
   // Core states - following AudioChat pattern
   const [isSearching, setIsSearching] = useState(false);
   const [isMatchConnected, setIsMatchConnected] = useState(false);
@@ -118,6 +129,13 @@ const TextChat: React.FC = () => {
       setActiveMode(null);
     };
   }, [setActiveMode]);
+
+  // Sync refs with state values to avoid stale closures
+  useEffect(() => {
+    isMatchConnectedRef.current = isMatchConnected;
+    sessionIdRef.current = sessionId;
+    partnerIdRef.current = partnerId;
+  }, [isMatchConnected, sessionId, partnerId]);
 
   // 🎯 Auto-Typing Indicator System (Retention Boost)
   const startInactivityTimer = useCallback(() => {
@@ -269,6 +287,50 @@ const TextChat: React.FC = () => {
     setMessages(prev => [...prev, systemMessage]);
   }, []);
 
+  // Finding timeout helpers to prevent stuck state (defined after addSystemMessage)
+  const startFindingTimeout = useCallback(() => {
+    console.log('⏰ [TextChat] Starting finding timeout (30s)');
+    
+    // Clear any existing timeout
+    if (findingTimeoutRef.current) {
+      clearTimeout(findingTimeoutRef.current);
+    }
+    
+    findingTimeoutRef.current = setTimeout(() => {
+      console.warn('⏰ [TextChat] Finding timeout reached! Attempting retry...');
+      findingRetryCountRef.current += 1;
+      
+      if (findingRetryCountRef.current >= MAX_FINDING_RETRIES) {
+        console.error('❌ [TextChat] Max finding retries reached. Resetting.');
+        setIsSearching(false);
+        findingRetryCountRef.current = 0;
+        addSystemMessage('Unable to find a match. Please try again.');
+        return;
+      }
+      
+      // Retry finding match
+      if (socket && socketConnected) {
+        console.log(`🔄 [TextChat] Retry ${findingRetryCountRef.current}/${MAX_FINDING_RETRIES}: Re-emitting join_text_queue`);
+        addSystemMessage(`Retrying... (${findingRetryCountRef.current}/${MAX_FINDING_RETRIES})`);
+        socket.emit('join_text_queue');
+        startFindingTimeout(); // Restart timeout for retry
+      } else {
+        console.error('❌ [TextChat] Socket not connected for retry');
+        setIsSearching(false);
+        findingRetryCountRef.current = 0;
+      }
+    }, FINDING_TIMEOUT_MS);
+  }, [socket, socketConnected, addSystemMessage]);
+
+  const clearFindingTimeout = useCallback(() => {
+    if (findingTimeoutRef.current) {
+      console.log('✅ [TextChat] Clearing finding timeout');
+      clearTimeout(findingTimeoutRef.current);
+      findingTimeoutRef.current = null;
+    }
+    findingRetryCountRef.current = 0; // Reset retry count on successful match
+  }, []);
+
   // Main socket event listeners - ultra-fast text chat events
   useEffect(() => {
     if (!socket) return;
@@ -277,6 +339,9 @@ const TextChat: React.FC = () => {
     socket.on('text_queue_joined', (data: { position: number; estimatedWaitTime: number }) => {
       debugLog('💬 Joined text queue:', data);
       setIsSearching(true);
+      
+      // Start finding timeout to prevent stuck state
+      startFindingTimeout();
     });
 
     // Text match found - ultra-fast pairing
@@ -292,6 +357,9 @@ const TextChat: React.FC = () => {
         setIsSearching(false);
         setMessages([]);
         setIsMatchConnected(true);
+        
+        // Clear finding timeout since match was found
+        clearFindingTimeout();
         
         addSystemMessage('Connected! Say hello to your new friend.');
       } catch (error) {
@@ -386,12 +454,36 @@ const TextChat: React.FC = () => {
       addSystemMessage(`Error: ${data.message}`);
     });
 
+    // Handle match retry (if partner has insufficient coins or other issues)
+    socket.on('match-retry', (data: { message: string }) => {
+      console.log('🔄 [TextChat] Match retry:', data.message);
+      addSystemMessage(data.message || 'Searching for another partner...');
+      setIsSearching(true);
+      
+      // Restart finding timeout for retry
+      startFindingTimeout();
+    });
+
+    // Handle insufficient coins error
+    socket.on('insufficient-coins', (data: { required: number; current: number; message: string }) => {
+      console.warn('💰 [TextChat] Insufficient coins:', data);
+      setIsSearching(false);
+      clearFindingTimeout();
+      
+      const errorMsg = `Not enough coins to start chat. Need ${data.required} but have ${data.current}. Daily refill at 12 AM.`;
+      addSystemMessage(errorMsg);
+      alert(errorMsg);
+    });
+
     // Cleanup on unmount
     return () => {
       // Clear typing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+      
+      // Clear finding timeout
+      clearFindingTimeout();
       
       socket?.off('text_queue_joined');
       socket?.off('text_match_found');
@@ -401,6 +493,8 @@ const TextChat: React.FC = () => {
       socket?.off('text_room_ended');
       socket?.off('rate_limit_exceeded');
       socket?.off('text_chat_error');
+      socket?.off('match-retry');
+      socket?.off('insufficient-coins');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, sessionId, addMessage, addSystemMessage]);
@@ -756,6 +850,9 @@ const TextChat: React.FC = () => {
           debugLog('Socket ID:', socket.id, 'User ID:', user?.id);
           socket.emit('join_text_queue');
           debugLog('✅ join_text_queue event emitted successfully');
+          
+          // Start finding timeout to prevent stuck state
+          startFindingTimeout();
         } else {
           console.error('❌ Cannot start search - socket not available or not connected');
           addSystemMessage('Connection error. Please refresh the page.');
