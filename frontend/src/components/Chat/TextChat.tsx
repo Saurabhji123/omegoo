@@ -470,6 +470,34 @@ const TextChat: React.FC = () => {
       addSystemMessage(`Error: ${data.message}`);
     });
 
+    // Video upgrade response handler - Redirect to VideoChat on accept
+    socket.on('video_response', (data: { accept: boolean; sessionId: string; from: string; reason?: string }) => {
+      console.log('📹 Video upgrade response received:', data);
+      
+      if (data.accept) {
+        console.log('✅ Video upgrade accepted! Redirecting to VideoChat...');
+        addSystemMessage('Video upgrade accepted! Connecting...');
+        
+        // Navigate to VideoChat with upgrade session
+        setTimeout(() => {
+          navigate('/chat/video', { 
+            state: { 
+              upgradeSessionId: data.sessionId,
+              fromTextChat: true,
+              partnerId: data.from
+            } 
+          });
+        }, 500); // Small delay for user to see message
+      } else {
+        console.log('❌ Video upgrade declined:', data.reason);
+        const declineMessage = data.reason === 'reported' 
+          ? 'Partner declined and reported the video request'
+          : 'Partner declined the video request';
+        addSystemMessage(declineMessage);
+        resetVideoUpgradeState();
+      }
+    });
+
     // Handle match retry (if partner has insufficient coins or other issues)
     socket.on('match-retry', (data: { message: string }) => {
       console.log('🔄 [TextChat] Match retry:', data.message);
@@ -509,6 +537,7 @@ const TextChat: React.FC = () => {
       socket?.off('text_room_ended');
       socket?.off('rate_limit_exceeded');
       socket?.off('text_chat_error');
+      socket?.off('video_response');
       socket?.off('match-retry');
       socket?.off('insufficient-coins');
     };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
 import WebRTCService from '../../services/webrtc';
@@ -31,9 +31,17 @@ interface Message {
 
 const VideoChat: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
   const { selectedMask, blurState, revealCountdown, revealVideo, setMask, startBlurCountdown, enableManualBlur } = useARFilter();
+  
+  // Check if this is an upgraded session from TextChat
+  const upgradeSessionId = (location.state as any)?.upgradeSessionId;
+  const fromTextChat = (location.state as any)?.fromTextChat;
+  const upgradedPartnerId = (location.state as any)?.partnerId;
+  
+  console.log('📹 VideoChat loaded:', { upgradeSessionId, fromTextChat, upgradedPartnerId });
   const webRTCRef = useRef<WebRTCService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -156,6 +164,34 @@ const VideoChat: React.FC = () => {
       setActiveMode(null);
     };
   }, [setActiveMode]);
+
+  // Handle upgraded session from TextChat
+  useEffect(() => {
+    if (upgradeSessionId && fromTextChat && upgradedPartnerId && socket && socketConnected) {
+      console.log('✅ Upgraded session detected! Connecting with text chat partner...', {
+        sessionId: upgradeSessionId,
+        partnerId: upgradedPartnerId
+      });
+      
+      // Set states for upgraded session
+      setSessionId(upgradeSessionId);
+      setPartnerId(upgradedPartnerId);
+      setIsMatchConnected(true);
+      setCurrentState('connected');
+      setIsSearching(false);
+      
+      // Update refs
+      sessionIdRef.current = upgradeSessionId;
+      partnerIdRef.current = upgradedPartnerId;
+      isMatchConnectedRef.current = true;
+      currentStateRef.current = 'connected';
+      
+      addMessage('Connected! Continue your conversation in video mode.', false);
+      
+      // Clear location state to prevent re-triggering
+      navigate('/chat/video', { replace: true, state: {} });
+    }
+  }, [upgradeSessionId, fromTextChat, upgradedPartnerId, socket, socketConnected, navigate]);
 
   // Sync refs with state values to avoid stale closures
   useEffect(() => {
