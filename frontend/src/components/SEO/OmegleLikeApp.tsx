@@ -70,13 +70,13 @@ const OmegleLikeApp: React.FC = () => {
                 Omegle was plagued with bots. We use AI detection to block fake users before they ever reach you. Real humans only.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-pink-400/50 transition-all duration-300">
-              <div className="flex-shrink-0 w-14 h-14 bg-pink-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-red-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-pink-300">Safer Than Omegle</h3>
+              <h3 className="text-2xl font-bold mb-4 text-red-300">Safer Than Omegle</h3>
               <p className="text-gray-200 leading-relaxed">
                 Omegle shut down due to safety issues. We learned from that. AI moderation, instant reporting, and proactive monitoring keep you safe.
               </p>
@@ -157,7 +157,7 @@ const OmegleLikeApp: React.FC = () => {
               <div className="flex items-start">
                 <div className="text-4xl mr-4">🌍</div>
                 <div>
-                  <h3 className="text-xl font-bold mb-2 text-pink-400">Global Random Matching</h3>
+                  <h3 className="text-xl font-bold mb-2 text-red-400">Global Random Matching</h3>
                   <p className="text-gray-300">
                     Connect with strangers from 150+ countries, exactly like Omegle did. Truly global community.
                   </p>
@@ -249,8 +249,8 @@ const OmegleLikeApp: React.FC = () => {
               <p className="text-gray-300 text-sm">Text, audio, or video chat. Same options Omegle had.</p>
             </div>
             <div className="text-center">
-              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-pink-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
-                <span className="text-4xl font-bold text-pink-400">3</span>
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-red-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                <span className="text-4xl font-bold text-red-400">3</span>
               </div>
               <h3 className="text-xl font-bold mb-3">Start Chatting</h3>
               <p className="text-gray-300 text-sm">Hit "Next" to skip. Exactly like Omegle's interface you loved.</p>
@@ -277,7 +277,7 @@ const OmegleLikeApp: React.FC = () => {
               </p>
             </div>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-              <h3 className="text-xl font-bold mb-3 text-pink-400">Are there other Omegle-like apps?</h3>
+              <h3 className="text-xl font-bold mb-3 text-red-400">Are there other Omegle-like apps?</h3>
               <p className="text-gray-300">
                 Yes—CooMeet, Chatroulette, OmeTV. But most have paywalls, slow matching, or bot issues. Omegoo is free forever, fast, and bot-free.
               </p>
@@ -313,9 +313,9 @@ const OmegleLikeApp: React.FC = () => {
             </Link>
             <Link
               to="/stranger-cam-chat"
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-pink-500/50 transition-all duration-300 text-center group"
+              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300 text-center group"
             >
-              <h3 className="text-xl font-bold mb-2 text-pink-400 group-hover:text-pink-300">Stranger Cam Chat</h3>
+              <h3 className="text-xl font-bold mb-2 text-red-400 group-hover:text-red-300">Stranger Cam Chat</h3>
               <p className="text-gray-400 text-sm">Classic random cam experience</p>
             </Link>
           </div>

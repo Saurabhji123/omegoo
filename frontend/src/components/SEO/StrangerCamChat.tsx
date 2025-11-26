@@ -59,24 +59,24 @@ const StrangerCamChat: React.FC = () => {
                 Crystal-clear cam chat with strangers in HD quality. Our advanced WebRTC technology ensures smooth, lag-free webcam stranger chat experience.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-blue-400/50 transition-all duration-300">
-              <div className="flex-shrink-0 w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-red-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-blue-300">Instant Matching</h3>
+              <h3 className="text-2xl font-bold mb-4 text-red-300">Instant Matching</h3>
               <p className="text-gray-200 leading-relaxed">
                 Get connected to random cam chat partners in under 2 seconds. Thousands of strangers online 24/7 for instant webcam chat connections.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-purple-400/50 transition-all duration-300">
-              <div className="flex-shrink-0 w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-red-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-purple-300">Global Community</h3>
+              <h3 className="text-2xl font-bold mb-4 text-red-300">Global Community</h3>
               <p className="text-gray-200 leading-relaxed">
                 Connect with strangers from 150+ countries. Experience diverse cultures through cam to cam chat with people worldwide.
               </p>
@@ -98,15 +98,15 @@ const StrangerCamChat: React.FC = () => {
               <p className="text-gray-300">Click "Allow" when your browser asks for camera access. No account or app download needed.</p>
             </div>
             <div className="text-center">
-              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-blue-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
-                <span className="text-4xl font-bold text-blue-400">2</span>
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-red-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                <span className="text-4xl font-bold text-red-400">2</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Start Cam Chat</h3>
               <p className="text-gray-300">Hit the "Start" button and get instantly matched with a random stranger for webcam chat.</p>
             </div>
             <div className="text-center">
-              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-purple-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
-                <span className="text-4xl font-bold text-purple-400">3</span>
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-red-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                <span className="text-4xl font-bold text-red-400">3</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Chat & Skip</h3>
               <p className="text-gray-300">Enjoy cam to cam chat. Not interested? Hit "Next" for a new random stranger instantly.</p>
@@ -132,23 +132,23 @@ const StrangerCamChat: React.FC = () => {
               </p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-              <div className="flex-shrink-0 w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-blue-300">Mobile Cam Chat</h3>
+              <h3 className="text-xl font-bold mb-3 text-red-300">Mobile Cam Chat</h3>
               <p className="text-gray-200 text-sm">
                 Works perfectly on phones and tablets. Enjoy stranger cam chat anywhere with mobile-optimized webcam support.
               </p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-              <div className="flex-shrink-0 w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-purple-300">AI Safety Moderation</h3>
+              <h3 className="text-xl font-bold mb-3 text-red-300">AI Safety Moderation</h3>
               <p className="text-gray-200 text-sm">
                 Advanced AI monitors all cam chat sessions. Report button blocks inappropriate users instantly for safer webcam stranger chat.
               </p>
@@ -191,7 +191,7 @@ const StrangerCamChat: React.FC = () => {
               <div className="flex items-start space-x-4">
                 <div className="text-3xl">✅</div>
                 <div>
-                  <h3 className="text-lg font-bold mb-2 text-blue-400">Skip Freely</h3>
+                  <h3 className="text-lg font-bold mb-2 text-red-400">Skip Freely</h3>
                   <p className="text-gray-300 text-sm">Uncomfortable? Hit "Next" instantly. No explanations needed in random cam chat—your safety comes first.</p>
                 </div>
               </div>
@@ -200,7 +200,7 @@ const StrangerCamChat: React.FC = () => {
               <div className="flex items-start space-x-4">
                 <div className="text-3xl">✅</div>
                 <div>
-                  <h3 className="text-lg font-bold mb-2 text-blue-400">Trust Your Instincts</h3>
+                  <h3 className="text-lg font-bold mb-2 text-red-400">Trust Your Instincts</h3>
                   <p className="text-gray-300 text-sm">If something feels wrong in stranger cam chat, leave immediately. Plenty of genuine people online.</p>
                 </div>
               </div>
@@ -221,13 +221,13 @@ const StrangerCamChat: React.FC = () => {
               </p>
             </div>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-              <h3 className="text-xl font-bold mb-3 text-blue-400">Do I need to register for cam chat?</h3>
+              <h3 className="text-xl font-bold mb-3 text-red-400">Do I need to register for cam chat?</h3>
               <p className="text-gray-300">
                 No registration required! Just visit Omegoo, enable your webcam, and start stranger cam chat instantly. Zero signup, zero hassle.
               </p>
             </div>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-              <h3 className="text-xl font-bold mb-3 text-purple-400">Can I use stranger cam chat on mobile?</h3>
+              <h3 className="text-xl font-bold mb-3 text-red-400">Can I use stranger cam chat on mobile?</h3>
               <p className="text-gray-300">
                 Absolutely! Works on iPhone, Android, tablets. Enjoy webcam stranger chat anywhere with mobile-optimized cam to cam technology.
               </p>
@@ -256,16 +256,16 @@ const StrangerCamChat: React.FC = () => {
             </Link>
             <Link
               to="/anonymous-video-chat"
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 text-center group"
+              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300 text-center group"
             >
-              <h3 className="text-xl font-bold mb-2 text-blue-400 group-hover:text-blue-300">Anonymous Video Chat</h3>
+              <h3 className="text-xl font-bold mb-2 text-red-400 group-hover:text-red-300">Anonymous Video Chat</h3>
               <p className="text-gray-400 text-sm">100% private connections</p>
             </Link>
             <Link
               to="/country/usa"
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 text-center group"
+              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300 text-center group"
             >
-              <h3 className="text-xl font-bold mb-2 text-purple-400 group-hover:text-purple-300">Chat with USA</h3>
+              <h3 className="text-xl font-bold mb-2 text-red-400 group-hover:text-red-300">Chat with USA</h3>
               <p className="text-gray-400 text-sm">Connect with Americans</p>
             </Link>
           </div>

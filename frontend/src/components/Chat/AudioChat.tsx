@@ -1196,8 +1196,8 @@ const AudioChat: React.FC = () => {
               <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative">
                 {/* Animated rings */}
                 <div className="absolute inset-0 border-4 border-purple-300 border-opacity-20 rounded-full animate-ping"></div>
-                <div className="absolute inset-2 border-4 border-purple-400 border-opacity-40 rounded-full animate-ping [animation-delay:200ms]"></div>
-                <div className="absolute inset-4 border-4 border-purple-500 border-opacity-60 rounded-full animate-ping [animation-delay:400ms]"></div>
+                <div className="absolute inset-2 border-4 border-red-400 border-opacity-40 rounded-full animate-ping [animation-delay:200ms]"></div>
+                <div className="absolute inset-4 border-4 border-red-500 border-opacity-60 rounded-full animate-ping [animation-delay:400ms]"></div>
                 <MicrophoneIcon className="w-8 h-8 sm:w-12 sm:h-12 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
               </div>
             </div>
@@ -1414,7 +1414,7 @@ const AudioChat: React.FC = () => {
               <button
                 onClick={nextMatch}
                 disabled={isProcessingAudio}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 px-6 py-3 rounded-xl transition-colors font-medium disabled:cursor-not-allowed"
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 px-6 py-3 rounded-xl transition-colors font-medium disabled:cursor-not-allowed"
               >
                 Next Person
               </button>

@@ -2012,7 +2012,7 @@ const VideoChat: React.FC = () => {
               socketConnected && isMatchConnected ? 'bg-green-400' : 
               socketConnected && isSearching ? 'bg-yellow-400' : 
               socketConnecting ? 'bg-orange-400' :
-              socketConnected ? 'bg-purple-400 animate-pulse' : 'bg-red-400'
+              socketConnected ? 'bg-red-400 animate-pulse' : 'bg-red-400'
             }`}></div>
             <span className="text-white text-xs lg:text-sm font-medium">
               {socketConnected && isMatchConnected ? 'Connected' : 
@@ -2089,7 +2089,7 @@ const VideoChat: React.FC = () => {
               <div className="w-full h-full flex items-center justify-center text-gray-500 p-4">
                 {isSearching ? (
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 lg:h-12 lg:w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 lg:h-12 lg:w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
                     <p className="text-sm lg:text-base">Looking for someone you can chat with...</p>
                   </div>
                 ) : (
@@ -2307,7 +2307,7 @@ const VideoChat: React.FC = () => {
             <button
               onClick={blurEnabled ? handleRevealVideo : enableManualBlur}
               className={`p-3 lg:p-3.5 rounded-full border border-white/10 shadow-lg transition-colors ${
-                blurEnabled ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'
+                blurEnabled ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'
               }`}
               aria-pressed={blurEnabled}
               aria-label={blurButtonAriaLabel}
@@ -2408,7 +2408,7 @@ const VideoChat: React.FC = () => {
                 onBlur={() => setIsInputFocused(false)}
                 placeholder={socketConnected ? (isMatchConnected ? "Type a message..." : "Find someone to chat") : "Connecting to server..."}
                 disabled={!socketConnected || !isMatchConnected}
-                className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 focus:outline-none text-sm touch-manipulation disabled:bg-gray-800 disabled:text-gray-500 transition-all duration-300"
+                className="flex-1 bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 focus:border-red-500 focus:ring-2 focus:ring-red-500/50 focus:outline-none text-sm touch-manipulation disabled:bg-gray-800 disabled:text-gray-500 transition-all duration-300"
               />
               <button
                 onClick={sendMessage}

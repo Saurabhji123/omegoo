@@ -22,7 +22,7 @@ const CountryPage: React.FC = () => {
     return (
       <div className="min-h-screen text-white flex items-center justify-center" style={{ backgroundColor: 'var(--bg-body)' }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-500 mx-auto mb-4"></div>
           <p className="text-gray-400">Loading...</p>
         </div>
       </div>
@@ -192,49 +192,49 @@ const CountryPage: React.FC = () => {
               People love meeting new friends online, and Omegoo allows you to:
             </p>
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
-                  <div className="flex-shrink-0 w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mr-4">
-                    <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mr-4">
+                    <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-blue-300">Meet Locals from {country.name}</h3>
+                    <h3 className="text-xl font-bold mb-2 text-red-300">Meet Locals from {country.name}</h3>
                     <p className="text-gray-200">Connect with real people from cities across {country.name} and discover local culture.</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
-                  <div className="flex-shrink-0 w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mr-4">
-                    <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mr-4">
+                    <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-purple-300">Have Fun & Casual Conversations</h3>
+                    <h3 className="text-xl font-bold mb-2 text-red-300">Have Fun & Casual Conversations</h3>
                     <p className="text-gray-200">Break the ice with random strangers. No pressure, just genuine human connections.</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
-                  <div className="flex-shrink-0 w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center mr-4">
-                    <svg className="w-7 h-7 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mr-4">
+                    <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path d="M12 14l9-5-9-5-9 5 9 5z" />
                       <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2 text-pink-300">Improve Language Skills</h3>
+                    <h3 className="text-xl font-bold mb-2 text-red-300">Improve Language Skills</h3>
                     <p className="text-gray-200">Practice {country.languages[0]} or English with native speakers in real conversations.</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
                   <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mr-4">
                     <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,7 +247,7 @@ const CountryPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
                 <div className="flex items-start">
                   <div className="flex-shrink-0 w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mr-4">
                     <svg className="w-7 h-7 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -270,24 +270,24 @@ const CountryPage: React.FC = () => {
             Features of Omegoo for {country.name} Users
           </h2>
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-blue-400/50 transition-all duration-300 shadow-lg">
-              <div className="flex-shrink-0 w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-blue-300">No Login Required</h3>
+              <h3 className="text-2xl font-bold mb-4 text-red-300">No Login Required</h3>
               <p className="text-gray-200 leading-relaxed">
                 Just open and start chatting instantly. 0% friction. No email, no phone number, no social media connection. Pure anonymous access.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
-              <div className="flex-shrink-0 w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-purple-300">Completely Anonymous</h3>
+              <h3 className="text-2xl font-bold mb-4 text-red-300">Completely Anonymous</h3>
               <p className="text-gray-200 leading-relaxed">
                 We never store personal data. Your identity stays private. No chat logs, no browsing history, zero tracking.
               </p>
@@ -303,13 +303,13 @@ const CountryPage: React.FC = () => {
                 Our smart routing connects you only to active users in under 2 seconds. No waiting, just instant connections.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-pink-400/50 transition-all duration-300 shadow-lg">
-              <div className="flex-shrink-0 w-14 h-14 bg-pink-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-pink-300">Anti-Bot Protection</h3>
+              <h3 className="text-2xl font-bold mb-4 text-red-300">Anti-Bot Protection</h3>
               <p className="text-gray-200 leading-relaxed">
                 Better than Omegle. Better than OmeTV. Real humans — not bots. Advanced AI filters out fake users instantly.
               </p>
@@ -331,17 +331,17 @@ const CountryPage: React.FC = () => {
           </h2>
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <div className="rounded-xl p-6 border border-blue-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                <div className="rounded-xl p-6 border border-red-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">⚡</div>
                 <h3 className="text-lg font-bold mb-2">Faster Connections</h3>
                 <p className="text-sm text-gray-300">&lt;2s matching vs Omegle's 5-10s</p>
               </div>
-              <div className="rounded-xl p-6 border border-purple-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
+              <div className="rounded-xl p-6 border border-red-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">✨</div>
                 <h3 className="text-lg font-bold mb-2">Cleaner UI</h3>
                 <p className="text-sm text-gray-300">Modern design, no clutter</p>
               </div>
-              <div className="rounded-xl p-6 border border-pink-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
+              <div className="rounded-xl p-6 border border-red-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">🚫</div>
                 <h3 className="text-lg font-bold mb-2">No Creepy Bots</h3>
                 <p className="text-sm text-gray-300">Real humans only</p>
@@ -356,7 +356,7 @@ const CountryPage: React.FC = () => {
                 <h3 className="text-lg font-bold mb-2">100% Free</h3>
                 <p className="text-sm text-gray-300">Forever, no hidden costs</p>
               </div>
-              <div className="rounded-xl p-6 border border-indigo-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
+              <div className="rounded-xl p-6 border border-red-500/30 text-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="text-4xl mb-3">🌍</div>
                 <h3 className="text-lg font-bold mb-2">Global Filters</h3>
                 <p className="text-sm text-gray-300">Country-specific matching</p>
@@ -375,35 +375,35 @@ const CountryPage: React.FC = () => {
           </h2>
           <div className="max-w-6xl mx-auto">
             <div className="space-y-6">
-              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
-                <div className="bg-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mr-6 flex-shrink-0">1</div>
+              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
+                <div className="bg-red-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mr-6 flex-shrink-0">1</div>
                 <div>
-                  <h3 className="text-xl font-bold mb-2 text-blue-400">Open the Website</h3>
+                  <h3 className="text-xl font-bold mb-2 text-red-400">Open the Website</h3>
                   <p className="text-gray-300">Visit Omegoo.chat on any device. No app download, no installation required.</p>
                 </div>
               </div>
-              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
-                <div className="bg-purple-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mr-6 flex-shrink-0">2</div>
+              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
+                <div className="bg-red-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mr-6 flex-shrink-0">2</div>
                 <div>
-                  <h3 className="text-xl font-bold mb-2 text-purple-400">Allow Camera (Optional Mic)</h3>
+                  <h3 className="text-xl font-bold mb-2 text-red-400">Allow Camera (Optional Mic)</h3>
                   <p className="text-gray-300">Click "Allow" when your browser asks for camera/mic permission. Required for video chat mode.</p>
                 </div>
               </div>
-              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
-                <div className="bg-pink-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mr-6 flex-shrink-0">3</div>
+              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
+                <div className="bg-red-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mr-6 flex-shrink-0">3</div>
                 <div>
-                  <h3 className="text-xl font-bold mb-2 text-pink-400">Connect Instantly</h3>
+                  <h3 className="text-xl font-bold mb-2 text-red-400">Connect Instantly</h3>
                   <p className="text-gray-300">Hit "Start" and get matched with a random stranger in under 2 seconds. Magic happens!</p>
                 </div>
               </div>
-              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
+              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
                 <div className="bg-green-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mr-6 flex-shrink-0">4</div>
                 <div>
                   <h3 className="text-xl font-bold mb-2 text-green-400">Swipe Next Anytime</h3>
                   <p className="text-gray-300">Not feeling the vibe? Click "Next" to skip to another stranger instantly. No awkward goodbyes.</p>
                 </div>
               </div>
-              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
+              <div className="flex items-start bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
                 <div className="bg-yellow-500 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl mr-6 flex-shrink-0">5</div>
                 <div>
                   <h3 className="text-xl font-bold mb-2 text-yellow-400">Meet Someone New Every 2–3 Seconds</h3>
@@ -423,31 +423,31 @@ const CountryPage: React.FC = () => {
             Frequently Asked Questions (FAQs)
           </h2>
           <div className="max-w-5xl mx-auto space-y-6">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
-              <h3 className="text-xl font-bold mb-3 text-blue-400">Is Omegoo safe in {country.name}?</h3>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
+              <h3 className="text-xl font-bold mb-3 text-red-400">Is Omegoo safe in {country.name}?</h3>
               <p className="text-gray-300">
                 Yes. We offer anonymous chatting with no data storage. Our AI moderation monitors all video streams for inappropriate content, and you can report users instantly with one click.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
-              <h3 className="text-xl font-bold mb-3 text-purple-400">Do I need to create an account?</h3>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
+              <h3 className="text-xl font-bold mb-3 text-red-400">Do I need to create an account?</h3>
               <p className="text-gray-300">
                 No login, no registration. Fully free. Just open Omegoo.chat and start chatting. We don't ask for email, phone number, or any personal details.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
-              <h3 className="text-xl font-bold mb-3 text-pink-400">Can I chat with only {country.name} users?</h3>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
+              <h3 className="text-xl font-bold mb-3 text-red-400">Can I chat with only {country.name} users?</h3>
               <p className="text-gray-300">
                 Yes. Our algorithm prioritizes local matching for {country.name} users when available. You can also chat with people worldwide if you prefer global connections.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
               <h3 className="text-xl font-bold mb-3 text-green-400">Is it better than Omegle?</h3>
               <p className="text-gray-300">
                 Yes — faster connections (&lt;2s vs 5-10s), cleaner UI, bot-free experience, better safety features with AI moderation, and no annoying popups. Plus, Omegle shut down in 2023, so Omegoo is the modern alternative.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg">
               <h3 className="text-xl font-bold mb-3 text-yellow-400">Can I use it on mobile?</h3>
               <p className="text-gray-300">
                 Yes, fully optimized for Android, iPhone, tablets, and all devices. Works in mobile browsers (Chrome, Safari, Firefox) without app downloads.
@@ -466,9 +466,9 @@ const CountryPage: React.FC = () => {
               <Link
                 key={relatedCountry.slug}
                 to={`/country/${relatedCountry.slug}`}
-                className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 shadow-lg hover:border-blue-500/50 transition-all duration-300 group"
+                className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:border-red-400/50 transition-all duration-300 shadow-lg hover:border-red-500/50 transition-all duration-300 group"
               >
-                <h3 className="text-xl font-bold mb-2 text-blue-400 group-hover:text-blue-300">
+                <h3 className="text-xl font-bold mb-2 text-red-400 group-hover:text-red-300">
                   Random Chat in {relatedCountry.name}
                 </h3>
                 <p className="text-gray-400 text-sm mb-3">{relatedCountry.description.substring(0, 80)}...</p>
@@ -490,18 +490,18 @@ const CountryPage: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <Link
               to="/no-login-video-chat"
-              className="rounded-xl p-6 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 group"
+              className="rounded-xl p-6 border border-red-500/30 hover:border-red-400/50 transition-all duration-300 group"
               style={{ backgroundColor: 'var(--bg-surface)' }}
             >
-              <h3 className="text-xl font-bold mb-2 text-blue-400 group-hover:text-blue-300">No Login Video Chat</h3>
+              <h3 className="text-xl font-bold mb-2 text-red-400 group-hover:text-red-300">No Login Video Chat</h3>
               <p className="text-gray-400 text-sm">Skip registration entirely. Instant anonymous access.</p>
             </Link>
             <Link
               to="/anonymous-video-chat"
-              className="rounded-xl p-6 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 group"
+              className="rounded-xl p-6 border border-red-500/30 hover:border-red-400/50 transition-all duration-300 group"
               style={{ backgroundColor: 'var(--bg-surface)' }}
             >
-              <h3 className="text-xl font-bold mb-2 text-purple-400 group-hover:text-purple-300">Anonymous Video Chat</h3>
+              <h3 className="text-xl font-bold mb-2 text-red-400 group-hover:text-red-300">Anonymous Video Chat</h3>
               <p className="text-gray-400 text-sm">100% private connections. Zero tracking.</p>
             </Link>
           </div>

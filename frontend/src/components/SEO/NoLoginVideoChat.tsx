@@ -50,8 +50,8 @@ const NoLoginVideoChat: React.FC = () => {
             <h2 className="text-3xl font-bold mb-8 text-center">Why Choose No Login Video Chat?</h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center">
-                <div className="flex-shrink-0 w-16 h-16 bg-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex-shrink-0 w-16 h-16 bg-red-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
@@ -61,8 +61,8 @@ const NoLoginVideoChat: React.FC = () => {
                 </p>
               </div>
               <div className="text-center">
-                <div className="flex-shrink-0 w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex-shrink-0 w-16 h-16 bg-red-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
@@ -72,8 +72,8 @@ const NoLoginVideoChat: React.FC = () => {
                 </p>
               </div>
               <div className="text-center">
-                <div className="flex-shrink-0 w-16 h-16 bg-pink-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-10 h-10 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex-shrink-0 w-16 h-16 bg-red-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                   </svg>
                 </div>
@@ -90,21 +90,21 @@ const NoLoginVideoChat: React.FC = () => {
             <h2 className="text-3xl font-bold mb-8">How No Login Video Chat Works</h2>
             <div className="space-y-6">
               <div className="flex gap-6 items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center font-bold text-2xl">1</div>
+                <div className="flex-shrink-0 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center font-bold text-2xl">1</div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Visit Homepage</h3>
                   <p className="text-gray-200">Open Omegoo.chat in your browser. No downloads or installations needed.</p>
                 </div>
               </div>
               <div className="flex gap-6 items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center font-bold text-2xl">2</div>
+                <div className="flex-shrink-0 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center font-bold text-2xl">2</div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Click Start</h3>
                   <p className="text-gray-200">Choose video chat mode and grant camera/mic permissions when prompted.</p>
                 </div>
               </div>
               <div className="flex gap-6 items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center font-bold text-2xl">3</div>
+                <div className="flex-shrink-0 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center font-bold text-2xl">3</div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Chat Instantly</h3>
                   <p className="text-gray-200">Get matched with strangers worldwide. No signup required - just instant <strong>video chat no login</strong>!</p>
@@ -132,8 +132,8 @@ const NoLoginVideoChat: React.FC = () => {
               </div>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="flex-shrink-0 w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
@@ -145,8 +145,8 @@ const NoLoginVideoChat: React.FC = () => {
               </div>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="flex-shrink-0 w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -158,8 +158,8 @@ const NoLoginVideoChat: React.FC = () => {
               </div>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="flex-shrink-0 w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                   </div>

@@ -59,24 +59,24 @@ const RandomChatNoRegistration: React.FC = () => {
                 No registration means you can start chatting in 2 seconds. No waiting for verification emails or approval. Just click and chat.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-blue-400/50 transition-all duration-300">
-              <div className="flex-shrink-0 w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-red-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-blue-300">Maximum Privacy</h3>
+              <h3 className="text-2xl font-bold mb-4 text-red-300">Maximum Privacy</h3>
               <p className="text-gray-200 leading-relaxed">
                 No signup means no data collection. Your email, phone, and personal details stay yours. Pure anonymous random chat experience.
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-purple-400/50 transition-all duration-300">
-              <div className="flex-shrink-0 w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 hover:border-red-400/50 transition-all duration-300">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-purple-300">No Spam Ever</h3>
+              <h3 className="text-2xl font-bold mb-4 text-red-300">No Spam Ever</h3>
               <p className="text-gray-200 leading-relaxed">
                 Since we don't ask for email or phone, you'll never receive promotional messages or spam. Clean, ad-free experience.
               </p>
@@ -98,15 +98,15 @@ const RandomChatNoRegistration: React.FC = () => {
               <p className="text-gray-300">Visit omegoo.chat on any device. No signup form, no account creation page. Direct access.</p>
             </div>
             <div className="text-center">
-              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-blue-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
-                <span className="text-4xl font-bold text-blue-400">2</span>
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-red-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                <span className="text-4xl font-bold text-red-400">2</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Allow Camera</h3>
               <p className="text-gray-300">Click "Allow" when browser asks for webcam permission. Required for video chat (skip for text-only mode).</p>
             </div>
             <div className="text-center">
-              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-purple-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
-                <span className="text-4xl font-bold text-purple-400">3</span>
+              <div className="rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border-2 border-red-500/50" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                <span className="text-4xl font-bold text-red-400">3</span>
               </div>
               <h3 className="text-2xl font-bold mb-4">Start Chatting</h3>
               <p className="text-gray-300">Hit "Start" and instantly connect with random strangers worldwide. No registration barrier.</p>
@@ -129,14 +129,14 @@ const RandomChatNoRegistration: React.FC = () => {
             </div>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
               <div className="text-4xl mb-4">🌍</div>
-              <h3 className="text-xl font-bold mb-3 text-blue-400">Global Network</h3>
+              <h3 className="text-xl font-bold mb-3 text-red-400">Global Network</h3>
               <p className="text-gray-300 text-sm">
                 Connect with strangers from 150+ countries. All without creating an account or signing up.
               </p>
             </div>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
               <div className="text-4xl mb-4">📱</div>
-              <h3 className="text-xl font-bold mb-3 text-purple-400">Mobile Optimized</h3>
+              <h3 className="text-xl font-bold mb-3 text-red-400">Mobile Optimized</h3>
               <p className="text-gray-300 text-sm">
                 Works perfectly on iPhone, Android, tablets. No app download, no registration—just browser-based chat.
               </p>
@@ -211,13 +211,13 @@ const RandomChatNoRegistration: React.FC = () => {
               </p>
             </div>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-              <h3 className="text-xl font-bold mb-3 text-blue-400">Is random chat without registration safe?</h3>
+              <h3 className="text-xl font-bold mb-3 text-red-400">Is random chat without registration safe?</h3>
               <p className="text-gray-300">
                 Yes. We use AI moderation, instant reporting, and encryption—all without requiring user accounts. Safety doesn't need registration to work.
               </p>
             </div>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-              <h3 className="text-xl font-bold mb-3 text-purple-400">Will I receive spam or promotional emails?</h3>
+              <h3 className="text-xl font-bold mb-3 text-red-400">Will I receive spam or promotional emails?</h3>
               <p className="text-gray-300">
                 No. Since we don't collect your email (no signup), you can't receive spam from us. Ever. Your inbox stays clean.
               </p>
@@ -246,16 +246,16 @@ const RandomChatNoRegistration: React.FC = () => {
             </Link>
             <Link
               to="/anonymous-video-chat"
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 text-center group"
+              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300 text-center group"
             >
-              <h3 className="text-xl font-bold mb-2 text-blue-400 group-hover:text-blue-300">Anonymous Video Chat</h3>
+              <h3 className="text-xl font-bold mb-2 text-red-400 group-hover:text-red-300">Anonymous Video Chat</h3>
               <p className="text-gray-400 text-sm">100% private connections</p>
             </Link>
             <Link
               to="/stranger-cam-chat"
-              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 text-center group"
+              className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 hover:border-red-500/50 transition-all duration-300 text-center group"
             >
-              <h3 className="text-xl font-bold mb-2 text-purple-400 group-hover:text-purple-300">Stranger Cam Chat</h3>
+              <h3 className="text-xl font-bold mb-2 text-red-400 group-hover:text-red-300">Stranger Cam Chat</h3>
               <p className="text-gray-400 text-sm">Webcam chat with strangers</p>
             </Link>
           </div>
