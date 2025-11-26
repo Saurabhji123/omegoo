@@ -11,7 +11,7 @@ const router: Router = express.Router();
  * POST /api/translate
  * Translate text to target language
  */
-router.post('/translate', authenticateToken, async (req: Request, res: Response) => {
+router.post('/translate', async (req: Request, res: Response) => {
   try {
     const { text, targetLang, sourceLang } = req.body as TranslationRequest;
 
@@ -48,13 +48,13 @@ router.post('/translate', authenticateToken, async (req: Request, res: Response)
       });
     }
 
-    // Get user ID from authenticated request
-    const userId = (req as any).userId || (req as any).user?.id;
+    // Get user ID from authenticated request or guest header
+    const userId = (req as any).userId || (req as any).user?.id || (req.headers['x-guest-id'] as string || null);
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        error: 'User not authenticated',
+        error: 'Access token or X-Guest-Id header required',
         code: 'UNAUTHORIZED'
       });
     }
@@ -118,7 +118,7 @@ router.post('/translate', authenticateToken, async (req: Request, res: Response)
  * POST /api/translate/detect
  * Detect language of text
  */
-router.post('/translate/detect', authenticateToken, async (req: Request, res: Response) => {
+router.post('/translate/detect', async (req: Request, res: Response) => {
   try {
     const { text } = req.body;
 
@@ -162,7 +162,7 @@ router.post('/translate/detect', authenticateToken, async (req: Request, res: Re
  * GET /api/translate/languages
  * Get supported languages
  */
-router.get('/translate/languages', authenticateToken, async (req: Request, res: Response) => {
+router.get('/translate/languages', async (req: Request, res: Response) => {
   try {
     const languages = await TranslationService.getSupportedLanguages();
 
@@ -187,14 +187,14 @@ router.get('/translate/languages', authenticateToken, async (req: Request, res: 
  * DELETE /api/translate/cache
  * Clear user's translation cache
  */
-router.delete('/translate/cache', authenticateToken, async (req: Request, res: Response) => {
+router.delete('/translate/cache', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId || (req as any).user?.id;
+    const userId = (req as any).userId || (req as any).user?.id || (req.headers['x-guest-id'] as string || null);
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        error: 'User not authenticated',
+        error: 'Access token or X-Guest-Id header required',
         code: 'UNAUTHORIZED'
       });
     }
@@ -223,14 +223,14 @@ router.delete('/translate/cache', authenticateToken, async (req: Request, res: R
  * GET /api/translate/quota
  * Get user's remaining translation quota
  */
-router.get('/translate/quota', authenticateToken, async (req: Request, res: Response) => {
+router.get('/translate/quota', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId || (req as any).user?.id;
+    const userId = (req as any).userId || (req as any).user?.id || (req.headers['x-guest-id'] as string || null);
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        error: 'User not authenticated',
+        error: 'Access token or X-Guest-Id header required',
         code: 'UNAUTHORIZED'
       });
     }
