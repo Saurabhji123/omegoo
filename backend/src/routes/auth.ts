@@ -1139,26 +1139,7 @@ router.post('/request-otp', async (req, res) => {
       console.log(`🔐 OTP for ${phone}: ${otp}`);
     }
 
-    // Send SMS via Twilio (if configured)
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-      try {
-        const twilio = require('twilio');
-        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-        
-        await client.messages.create({
-          body: `Your Omegoo verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`,
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: `+91${phone}`
-        });
-        
-        console.log(`📱 SMS sent to ${phone}`);
-      } catch (smsError) {
-        console.error('⚠️ SMS sending failed:', smsError);
-        // Continue without SMS - OTP still stored in Redis for dev testing
-      }
-    } else {
-      console.log('⚠️ SMS service not configured - OTP will only be logged in development');
-    }
+    // SMS integration will be added when phone verification is implemented
     
     res.json({
       success: true,
