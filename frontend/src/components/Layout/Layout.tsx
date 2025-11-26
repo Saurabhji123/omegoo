@@ -41,9 +41,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [isMenuOpen]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-body)' }}>
       {/* Header */}
-      <header className="backdrop-blur-md sticky top-0 z-50 bg-black bg-opacity-20 border-b border-white border-opacity-20">
+      <header className="backdrop-blur-md sticky top-0 z-50 border-b" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', borderColor: 'var(--border-subtle)' }}>
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16 relative">
             {/* Logo - Clickable */}
@@ -86,7 +86,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               ) : (
                 <button
                   onClick={() => navigate('/login')}
-                  className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all shadow-lg"
+                  className="btn-primary text-sm"
                 >
                   Login / Register
                 </button>
@@ -96,7 +96,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="relative" ref={menuRef}>
                 <button 
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="p-2 rounded-lg bg-white bg-opacity-10 backdrop-blur-sm hover:bg-opacity-20 transition-all border border-white border-opacity-30"
+                  className="p-2 rounded-lg backdrop-blur-sm transition-all"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--border-subtle)' }}
                   aria-label="Toggle menu"
                 >
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,14 +115,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {/* Mobile backdrop overlay */}
                     <div className="fixed inset-0 bg-black bg-opacity-30 z-40 sm:hidden" onClick={() => setIsMenuOpen(false)} />
                     
-                    <div className="absolute right-0 top-full mt-2 w-56 sm:w-64 bg-gray-900 bg-opacity-80 backdrop-blur-xl rounded-lg shadow-xl border border-white border-opacity-40 z-[100] max-w-[calc(100vw-1rem)] mr-2 sm:mr-0">
+                    <div className="absolute right-0 top-full mt-2 w-56 sm:w-64 backdrop-blur-xl rounded-lg shadow-xl z-[100] max-w-[calc(100vw-1rem)] mr-2 sm:mr-0" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                     <div className="py-2">
                       <button
                         onClick={() => {
                           navigate('/');
                           setIsMenuOpen(false);
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center"
+                        className="w-full text-left px-4 py-2 text-sm text-white transition-all flex items-center"
+                        style={{ backgroundColor: 'transparent' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 71, 87, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -129,102 +133,59 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         Home
                       </button>
                       
-                      <button
-                        onClick={() => {
-                          navigate('/about');
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center"
-                      >
-                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        About
-                      </button>
+                      {[
+                        { path: '/about', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', label: 'About' },
+                        { path: '/contact', icon: 'M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', label: 'Contact' }
+                      ].map(({ path, icon, label }) => (
+                        <button
+                          key={path}
+                          onClick={() => { navigate(path); setIsMenuOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-sm text-white transition-all flex items-center menu-item"
+                        >
+                          <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icon} />
+                          </svg>
+                          {label}
+                        </button>
+                      ))}
 
-                      <button
-                        onClick={() => {
-                          navigate('/contact');
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center"
-                      >
-                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        Contact
-                      </button>
+                      <hr style={{ borderColor: 'var(--border-subtle)', margin: '0.5rem 0' }} />
 
-                      <hr className="border-white border-opacity-30 my-2" />
-
-                      <button
-                        onClick={() => {
-                          navigate('/privacy');
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center"
-                      >
-                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                        Privacy Policy
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          navigate('/terms');
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center"
-                      >
-                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Terms of Service
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          navigate('/safety');
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center"
-                      >
-                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                        Safety Guidelines
-                      </button>
+                      {[
+                        { path: '/privacy', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', label: 'Privacy Policy' },
+                        { path: '/terms', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', label: 'Terms of Service' },
+                        { path: '/safety', icon: 'M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', label: 'Safety Guidelines' }
+                      ].map(({ path, icon, label }) => (
+                        <button
+                          key={path}
+                          onClick={() => { navigate(path); setIsMenuOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-sm text-white transition-all flex items-center menu-item"
+                        >
+                          <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icon} />
+                          </svg>
+                          {label}
+                        </button>
+                      ))}
 
                       {user && (
                         <>
-                          <hr className="border-white border-opacity-30 my-2" />
-                          <button
-                            onClick={() => {
-                              navigate('/profile');
-                              setIsMenuOpen(false);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center"
-                          >
-                            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            Profile
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              navigate('/settings');
-                              setIsMenuOpen(false);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center"
-                          >
-                            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Settings
-                          </button>
+                          <hr style={{ borderColor: 'var(--border-subtle)', margin: '0.5rem 0' }} />
+                          {[
+                            { path: '/profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', label: 'Profile' },
+                            { path: '/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z\nM15 12a3 3 0 11-6 0 3 3 0 016 0z', label: 'Settings' }
+                          ].map(({ path, icon, label }) => (
+                            <button
+                              key={path}
+                              onClick={() => { navigate(path); setIsMenuOpen(false); }}
+                              className="w-full text-left px-4 py-2 text-sm text-white transition-all flex items-center menu-item"
+                            >
+                              <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icon} />
+                              </svg>
+                              {label}
+                            </button>
+                          ))}
                         </>
                       )}
                     </div>
@@ -243,7 +204,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="backdrop-blur-md border-t mt-auto bg-black bg-opacity-20 border-white border-opacity-20">
+      <footer className="backdrop-blur-md border-t mt-auto" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', borderColor: 'var(--border-subtle)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Main Footer Content */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">

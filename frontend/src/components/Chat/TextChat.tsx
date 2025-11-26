@@ -1182,7 +1182,7 @@ const TextChat: React.FC = () => {
           }
         `}
       </style>
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex flex-col">
+      <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: 'var(--bg-body)' }}>
       {/* Enhanced Header with AudioChat styling */}
       <div className="bg-black bg-opacity-20 p-4 flex justify-between items-center border-b border-white border-opacity-20">
         <div className="flex items-center gap-4 flex-wrap">
@@ -1204,7 +1204,7 @@ const TextChat: React.FC = () => {
             </span>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-xs text-blue-100 animate-pulse">
+          <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }}>
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -1234,8 +1234,8 @@ const TextChat: React.FC = () => {
               <div className="text-center max-w-xs sm:max-w-md">
                 <div className="mb-6 sm:mb-8">
                   <div className="relative mx-auto mb-4 sm:mb-6 w-16 h-16 sm:w-20 sm:h-20">
-                    <div className="animate-spin rounded-full h-full w-full border-3 sm:border-4 border-purple-400 border-t-transparent"></div>
-                    <div className="absolute inset-0 animate-ping rounded-full h-full w-full border-2 border-purple-400 opacity-20"></div>
+                    <div className="animate-spin rounded-full h-full w-full border-3 sm:border-4 border-t-transparent" style={{ borderColor: 'var(--primary-brand)' }}></div>
+                    <div className="absolute inset-0 animate-ping rounded-full h-full w-full border-2 opacity-20" style={{ borderColor: 'var(--primary-brand)' }}></div>
                   </div>
                   <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4">Finding someone for you...</h3>
                   <p className="text-gray-300 text-sm sm:text-base mb-4 sm:mb-6 px-2">
@@ -1304,7 +1304,7 @@ const TextChat: React.FC = () => {
                   <button
                     onClick={nextMatch}
                     disabled={!isMatchConnected}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-500 disabled:to-gray-600 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 font-medium disabled:cursor-not-allowed text-xs sm:text-sm shadow-lg hover:shadow-blue-500/25"
+                    className="flex-1 btn-primary text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="hidden sm:inline">🔄 Next Person</span>
                     <span className="sm:hidden">🔄 Next</span>
@@ -1321,7 +1321,8 @@ const TextChat: React.FC = () => {
                   </button>
                   <button
                     onClick={exitChat}
-                    className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2 font-medium text-xs sm:text-sm shadow-lg hover:shadow-red-500/25"
+                    className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all font-medium text-xs sm:text-sm shadow-lg flex items-center justify-center gap-1 sm:gap-2"
+                    style={{ backgroundColor: '#dc2626', color: 'white' }}
                   >
                     <PhoneXMarkIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">End Chat</span>

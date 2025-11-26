@@ -187,7 +187,7 @@ const Home: React.FC = () => {
         {/* Hero Headline */}
         <div className="mb-6">
           <p className="text-sm sm:text-base text-white/70 tracking-widest mb-3">100% FREE Random Chat</p>
-          <h1 id="home-hero-heading" className="text-3xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 text-transparent bg-clip-text drop-shadow-2xl tracking-wider">
+          <h1 id="home-hero-heading" className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-gradient tracking-wider">
             Random · Video · Voice · Text
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 mt-3 uppercase tracking-[0.35rem]">
@@ -257,17 +257,17 @@ const Home: React.FC = () => {
 
       {/* Total Online Users Counter - Above Cards */}
       <div className="flex justify-center mb-6 px-4">
-        <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-md border border-purple-400/30 shadow-xl">
+        <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
           <div className="relative flex items-center justify-center">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75 animate-ping" style={{ animationDuration: '2s' }}></span>
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/30 border border-purple-400/50">
-              <svg className="w-6 h-6 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
+            <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ backgroundColor: 'var(--primary-brand)', animationDuration: '2s' }}></span>
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(255, 71, 87, 0.2)', border: '1px solid rgba(255, 71, 87, 0.4)' }}>
+              <svg className="w-6 h-6" style={{ color: 'rgba(255, 71, 87, 0.9)' }} fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
               </svg>
             </div>
           </div>
           <div>
-            <p className="text-xs text-purple-200 font-medium uppercase tracking-wide">Live Users</p>
+            <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-body)' }}>Live Users</p>
             <p className="text-2xl font-bold text-white animate-pulse" style={{ animationDuration: '3s' }}>
               {(() => {
                 const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
@@ -276,7 +276,7 @@ const Home: React.FC = () => {
               })()}
             </p>
           </div>
-          <div className="text-xs text-purple-200/70">online now</div>
+          <div className="text-xs" style={{ color: 'var(--text-body)' }}>online now</div>
         </div>
       </div>
 
@@ -294,30 +294,31 @@ const Home: React.FC = () => {
               onMouseEnter={() => setShowTooltip('text')}
               onMouseLeave={() => setShowTooltip(null)}
               onClick={() => setShowTooltip(showTooltip === 'text' ? null : 'text')}
-              className="w-6 h-6 rounded-full bg-blue-500/30 hover:bg-blue-500/50 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-6 h-6 rounded-full flex items-center justify-center transition-colors focus:outline-none"
+              style={{ backgroundColor: 'rgba(255, 71, 87, 0.2)', border: '1px solid rgba(255, 71, 87, 0.3)' }}
               aria-label="Information about text chat"
             >
-              <svg className="w-4 h-4 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4" style={{ color: 'var(--primary-brand)' }} fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
             </button>
             {showTooltip === 'text' && (
-              <div className="absolute top-8 right-0 w-52 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-10 border border-blue-400/30">
+              <div className="absolute top-8 right-0 w-52 text-white text-xs rounded-lg p-3 shadow-xl z-10" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                 <p className="font-semibold mb-1">✨ Text Chat</p>
                 <p className="text-gray-300">Connect instantly. No signup needed.</p>
               </div>
             )}
           </div>
           
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 bg-opacity-20 rounded-full mb-4 sm:mb-6 backdrop-blur-sm border border-blue-400 border-opacity-30">
-            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6 backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)' }}>
+            <svg className="w-6 h-6 sm:w-8 sm:h-8" style={{ color: 'var(--primary-brand)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
           <h3 id="text-chat-title" className="text-lg sm:text-xl font-bold mb-2 text-white">
             Text Chat
           </h3>
-          <p className="text-base sm:text-lg font-semibold text-blue-300 mb-2">
+          <p className="text-base sm:text-lg font-semibold mb-2" style={{ color: 'var(--text-body)' }}>
             Fast & Anonymous
           </p>
           <p className="text-sm text-gray-300 mb-4">
@@ -329,13 +330,13 @@ const Home: React.FC = () => {
           <button
             onClick={() => handleStartChat('text')}
             onKeyDown={(e) => handleKeyPress(e, 'text')}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px] focus:outline-none focus:ring-4 focus:ring-blue-400/50"
+            className="btn-primary w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px]"
             aria-label="Start free text chat"
           >
             Start Free Text Chat
           </button>
           <div className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-100 text-xs sm:text-sm font-semibold animate-pulse" aria-live="polite">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
               <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -357,30 +358,31 @@ const Home: React.FC = () => {
               onMouseEnter={() => setShowTooltip('audio')}
               onMouseLeave={() => setShowTooltip(null)}
               onClick={() => setShowTooltip(showTooltip === 'audio' ? null : 'audio')}
-              className="w-6 h-6 rounded-full bg-green-500/30 hover:bg-green-500/50 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-6 h-6 rounded-full flex items-center justify-center transition-colors focus:outline-none"
+              style={{ backgroundColor: 'rgba(255, 71, 87, 0.2)', border: '1px solid rgba(255, 71, 87, 0.3)' }}
               aria-label="Information about voice chat"
             >
-              <svg className="w-4 h-4 text-green-200" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4" style={{ color: 'var(--primary-brand)' }} fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
             </button>
             {showTooltip === 'audio' && (
-              <div className="absolute top-8 right-0 w-52 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-10 border border-green-400/30">
+              <div className="absolute top-8 right-0 w-52 text-white text-xs rounded-lg p-3 shadow-xl z-10" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                 <p className="font-semibold mb-1">🎤 Voice Chat</p>
                 <p className="text-gray-300">Free voice chat. Mic access needed.</p>
               </div>
             )}
           </div>
           
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-green-500 bg-opacity-20 rounded-full mb-4 sm:mb-6 backdrop-blur-sm border border-green-400 border-opacity-30">
-            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6 backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)' }}>
+            <svg className="w-6 h-6 sm:w-8 sm:h-8" style={{ color: 'var(--primary-brand)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
           </div>
           <h3 id="voice-chat-title" className="text-lg sm:text-xl font-bold mb-2 text-white">
             Voice Chat
           </h3>
-          <p className="text-base sm:text-lg font-semibold text-green-300 mb-2">
+          <p className="text-base sm:text-lg font-semibold mb-2" style={{ color: 'var(--text-body)' }}>
             Talk to Strangers
           </p>
           <p className="text-sm text-gray-300 mb-4">
@@ -392,13 +394,13 @@ const Home: React.FC = () => {
           <button
             onClick={() => handleStartChat('audio')}
             onKeyDown={(e) => handleKeyPress(e, 'audio')}
-            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px] focus:outline-none focus:ring-4 focus:ring-green-400/50"
+            className="btn-primary w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px]"
             aria-label="Start free voice chat"
           >
             Start Free Voice Chat
           </button>
           <div className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/40 text-green-100 text-xs sm:text-sm font-semibold animate-pulse" aria-live="polite">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
               <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -420,30 +422,31 @@ const Home: React.FC = () => {
               onMouseEnter={() => setShowTooltip('video')}
               onMouseLeave={() => setShowTooltip(null)}
               onClick={() => setShowTooltip(showTooltip === 'video' ? null : 'video')}
-              className="w-6 h-6 rounded-full bg-purple-500/30 hover:bg-purple-500/50 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400"
+              className="w-6 h-6 rounded-full flex items-center justify-center transition-colors focus:outline-none"
+              style={{ backgroundColor: 'rgba(255, 71, 87, 0.2)', border: '1px solid rgba(255, 71, 87, 0.3)' }}
               aria-label="Information about video chat"
             >
-              <svg className="w-4 h-4 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4" style={{ color: 'var(--primary-brand)' }} fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
             </button>
             {showTooltip === 'video' && (
-              <div className="absolute top-8 right-0 w-52 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-10 border border-purple-400/30">
+              <div className="absolute top-8 right-0 w-52 text-white text-xs rounded-lg p-3 shadow-xl z-10" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                 <p className="font-semibold mb-1">🎥 Video Chat</p>
                 <p className="text-gray-300">Random video chat. Camera preview.</p>
               </div>
             )}
           </div>
           
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-purple-500 bg-opacity-20 rounded-full mb-4 sm:mb-6 backdrop-blur-sm border border-purple-400 border-opacity-30">
-            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6 backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)' }}>
+            <svg className="w-6 h-6 sm:w-8 sm:h-8" style={{ color: 'var(--primary-brand)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </div>
           <h3 id="video-chat-title" className="text-lg sm:text-xl font-bold mb-2 text-white">
             Video Chat
           </h3>
-          <p className="text-base sm:text-lg font-semibold text-purple-300 mb-2">
+          <p className="text-base sm:text-lg font-semibold mb-2" style={{ color: 'var(--text-body)' }}>
             Face to Face
           </p>
           <p className="text-sm text-gray-300 mb-4">
@@ -455,13 +458,13 @@ const Home: React.FC = () => {
           <button
             onClick={() => handleStartChat('video')}
             onKeyDown={(e) => handleKeyPress(e, 'video')}
-            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px] focus:outline-none focus:ring-4 focus:ring-purple-400/50"
+            className="btn-primary w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px]"
             aria-label="Start free video chat"
           >
             Start Free Video Chat
           </button>
           <div className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-100 text-xs sm:text-sm font-semibold animate-pulse" aria-live="polite">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
               <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -475,20 +478,20 @@ const Home: React.FC = () => {
       {statusSummary && (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm text-white">
-            <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
-              <div className="text-white/70">Online Now</div>
+            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ color: 'var(--text-body)' }}>Online Now</div>
               <div className="text-lg sm:text-xl font-bold">{totalOnlineUsers || (statusSummary.connectedUsers * 3)}</div>
             </div>
-            <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
-              <div className="text-white/70">In Queue</div>
+            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ color: 'var(--text-body)' }}>In Queue</div>
               <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.total * 3}</div>
             </div>
-            <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
-              <div className="text-white/70">Voice Queue</div>
+            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ color: 'var(--text-body)' }}>Voice Queue</div>
               <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.audio * 3}</div>
             </div>
-            <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2">
-              <div className="text-white/70">Video Queue</div>
+            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ color: 'var(--text-body)' }}>Video Queue</div>
               <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.video * 3}</div>
             </div>
           </div>
@@ -512,7 +515,7 @@ const Home: React.FC = () => {
                   <li>Optional login unlocks premium features like saved preferences and chat history, but guest access is always FREE.</li>
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/20 rounded-2xl p-6 flex flex-col gap-4">
+              <div className="rounded-2xl p-6 flex flex-col gap-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                 <h3 className="text-xl font-semibold">Why users choose Omegoo as their go-to Omegle alternative</h3>
                 <div className="space-y-3 text-sm sm:text-base text-gray-100">
                   <p>• Match with peers from IITs, NITs, DU, SRM, MIT, and global universities on a moderated free chat platform.</p>
@@ -568,19 +571,19 @@ const Home: React.FC = () => {
               Omegoo is a fresh alternative to classic stranger chat platforms like Omegle. You can start a <strong className="text-white">random chat with strangers</strong>, match for <strong className="text-white">video chat in India</strong>, or discover <strong className="text-white">voice chat rooms for college students</strong> without worrying about safety. AI moderation, anonymous guest tracking, and instant reporting keep every connection respectful, making Omegoo the go-to free Omegle-like site for students and young professionals.
             </p>
             <div className="grid md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
+              <div className="rounded-2xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                 <h3 className="text-lg font-semibold mb-2">Pick your vibe fast</h3>
                 <p className="text-sm text-gray-100">
                   Select text, voice, or video chat and start an instant Omegle-style conversation with strangers who are online now—no signup, no payment required.
                 </p>
               </div>
-              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
+              <div className="rounded-2xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                 <h3 className="text-lg font-semibold mb-2">Stay safe and anonymous</h3>
                 <p className="text-sm text-gray-100">
                   Anonymous guest IDs track behavior for moderation without exposing your identity—something traditional Omegle alternatives often miss.
                 </p>
               </div>
-              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-5">
+              <div className="rounded-2xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                 <h3 className="text-lg font-semibold mb-2">Works on any device</h3>
                 <p className="text-sm text-gray-100">
                   No downloads. Join from mobile, desktop, or tablet with a single tap—no VPN hacks or third-party plugins like older Omegle clones.
@@ -592,7 +595,7 @@ const Home: React.FC = () => {
 
         {/* SEO Rich Content */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-          <div className="bg-gradient-to-br from-indigo-900/60 to-purple-900/60 border border-white/10 rounded-3xl p-6 sm:p-10 text-white shadow-xl">
+          <div className="rounded-3xl p-6 sm:p-10 text-white shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
             <h2 className="text-2xl sm:text-3xl font-bold mb-4">
               Why Omegoo ranks as a leading Omegle alternative in India and worldwide
             </h2>
@@ -716,7 +719,7 @@ const Home: React.FC = () => {
               Users still search for Omegle when they want fast random chat rooms, but Omegoo delivers the same excitement with modern safety layers. Think of it as an Omegle alternative built for today’s internet norms—verified identities, community moderation, and privacy-first design.
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-purple-600/40 to-blue-600/40 border border-white/10 rounded-2xl p-6">
+              <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                 <h3 className="text-xl font-semibold mb-3">Where Omegle fell short</h3>
                 <ul className="space-y-2 text-sm sm:text-base text-gray-100 list-disc list-inside">
                   <li>Unverified strangers could appear in any chat room, making experiences unpredictable.</li>
@@ -724,7 +727,7 @@ const Home: React.FC = () => {
                   <li>No built-in contextual onboarding or community rules beyond a generic terms page.</li>
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-green-500/40 to-blue-500/40 border border-white/10 rounded-2xl p-6">
+              <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
                 <h3 className="text-xl font-semibold mb-3">What Omegoo improves</h3>
                 <ul className="space-y-2 text-sm sm:text-base text-gray-100 list-disc list-inside">
                   <li>Coin system curbs spam and rewards good behavior, keeping matches respectful.</li>
@@ -741,7 +744,7 @@ const Home: React.FC = () => {
 
         {/* Omegle Safety Tips */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-          <div className="bg-gradient-to-br from-indigo-900/60 to-blue-900/60 border border-white/10 rounded-3xl p-6 sm:p-10 text-white shadow-xl">
+          <div className="rounded-3xl p-6 sm:p-10 text-white shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
             <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Ethical tips for anyone seeking Omegle-style chats</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white/10 rounded-2xl border border-white/10 p-5">

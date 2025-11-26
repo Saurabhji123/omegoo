@@ -188,6 +188,15 @@
   @apply w-full h-full object-cover;
 }
 
+/* Menu item hover effect */
+.menu-item {
+  background-color: transparent;
+}
+
+.menu-item:hover {
+  background-color: rgba(255, 71, 87, 0.1);
+}
+
 .video-controls {
   /* stylelint-disable-next-line at-rule-no-unknown */
   @apply absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4;
