@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
@@ -33,9 +33,18 @@ const ALLOWED_EMAIL_DOMAINS = new Set([
 ]);
 
 const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
-  const { loginWithEmail, register, loginWithGoogle } = useAuth();
+  const { loginWithEmail, register, loginWithGoogle, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
+  
+  // CRITICAL: Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      console.log('🔄 User already logged in, redirecting to home...');
+      window.location.href = '/';
+    }
+  }, [user, authLoading]);
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');

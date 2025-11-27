@@ -350,7 +350,7 @@ const App: React.FC = () => {
 
   // Force cache refresh on app load
   useEffect(() => {
-    const APP_VERSION = '2.0.1'; // Update this on each deploy
+    const APP_VERSION = '2.0.2-' + Date.now(); // Timestamp-based version for aggressive cache busting
     const storedVersion = localStorage.getItem('app_version');
 
     if (storedVersion !== APP_VERSION) {
@@ -377,10 +377,11 @@ const App: React.FC = () => {
       localStorage.setItem('app_version', APP_VERSION);
       console.log('✅ Cache cleared, version updated to', APP_VERSION);
       
-      // Force reload once to get fresh content
-      if (storedVersion) {
+      // ALWAYS force hard reload to ensure fresh content (no condition)
+      console.log('🔄 Forcing hard reload in 100ms...');
+      setTimeout(() => {
         window.location.reload();
-      }
+      }, 100);
     }
   }, []);
 
