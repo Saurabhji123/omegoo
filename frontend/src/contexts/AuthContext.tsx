@@ -194,9 +194,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       
       const token = storageService.getToken();
+      const storedUser = storageService.getUser();
       const hasAcceptedTerms = storageService.getHasAcceptedTerms();
       
-      console.log('🔐 Auth initialization:', { token: !!token, hasAcceptedTerms });
+      console.log('🔐 Auth initialization:', { 
+        token: !!token, 
+        hasStoredUser: !!storedUser,
+        storedUserId: storedUser?.id,
+        hasAcceptedTerms 
+      });
       
       if (hasAcceptedTerms) {
         dispatch({ type: 'ACCEPT_TERMS' });
@@ -207,8 +213,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         apiService.setToken(token);
         dispatch({ type: 'SET_TOKEN', payload: token });
         
+        // CRITICAL: If we have stored user data, set it immediately
+        // This prevents race condition where app shows login page during API call
+        if (storedUser) {
+          console.log('✅ Setting stored user data immediately:', { userId: storedUser.id });
+          dispatch({ type: 'SET_USER', payload: storedUser });
+          userRef.current = storedUser;
+        }
+        
         try {
-          // Fetch current user data from backend with timeout
+          // Fetch current user data from backend with timeout (to update if changed)
           const timeoutPromise = new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Auth timeout')), 10000)
           );
@@ -218,19 +232,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             timeoutPromise
           ]) as { user: User };
           
+          // Update with fresh data from server
           dispatch({ type: 'SET_USER', payload: response.user });
           storageService.setUser(response.user);
           userRef.current = response.user;
-          console.log('✅ User data loaded:', { userId: response.user.id, coins: response.user.coins });
+          console.log('✅ User data refreshed from server:', { userId: response.user.id, coins: response.user.coins });
         } catch (error: any) {
           console.error('❌ Failed to fetch user data:', error.message);
-          // Token is invalid or request timed out, clear it
-          storageService.removeToken();
-          storageService.removeUser();
-          apiService.setToken(null);
-          dispatch({ type: 'SET_TOKEN', payload: null });
-          dispatch({ type: 'SET_USER', payload: null });
-          userRef.current = null;
+          
+          // If we had stored user data, keep using it (offline mode)
+          if (storedUser) {
+            console.log('⚠️  Using stored user data (offline mode)');
+            // User already set from storage above, don't clear it
+          } else {
+            // Token is invalid and no stored user, clear everything
+            console.log('❌ No stored user and fetch failed, clearing token');
+            storageService.removeToken();
+            storageService.removeUser();
+            apiService.setToken(null);
+            dispatch({ type: 'SET_TOKEN', payload: null });
+            dispatch({ type: 'SET_USER', payload: null });
+            userRef.current = null;
+          }
         }
       }
     } catch (error: any) {
@@ -278,15 +301,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // 3. Update ref THIRD for immediate access
       userRef.current = response.user;
       
-      // 4. Update state LAST to trigger re-renders
+      // 4. Update state BEFORE stopping loading to trigger re-renders
       dispatch({ type: 'SET_TOKEN', payload: response.token });
       dispatch({ type: 'SET_USER', payload: response.user });
+      
+      // 5. Set loading false LAST after all state is updated
+      dispatch({ type: 'SET_LOADING', payload: false });
       
       console.log('💾 Login data saved successfully:', {
         tokenLength: response.token.length,
         userId: response.user.id,
         storageToken: !!storageService.getToken(),
-        storageUser: !!storageService.getUser()
+        storageUser: !!storageService.getUser(),
+        stateUser: !!userRef.current
       });
     } catch (error: any) {
       console.error('❌ Email login failed:', error);
@@ -296,9 +323,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       storageService.removeToken();
       storageService.removeUser();
       userRef.current = null;
-      throw error;
-    } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
+      throw error;
     }
   };
 
@@ -402,8 +428,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       userRef.current = response.user;
       dispatch({ type: 'SET_TOKEN', payload: response.token });
       dispatch({ type: 'SET_USER', payload: response.user });
+      dispatch({ type: 'SET_LOADING', payload: false });
       
-      console.log('💾 Google login data saved successfully');
+      console.log('💾 Google login data saved successfully:', {
+        tokenLength: response.token.length,
+        userId: response.user.id,
+        stateUser: !!userRef.current
+      });
     } catch (error: any) {
       console.error('❌ Google login failed:', error);
       console.error('Error details:', error.message);
@@ -412,9 +443,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       storageService.removeToken();
       storageService.removeUser();
       userRef.current = null;
-      throw error;
-    } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
+      throw error;
     }
   };
 

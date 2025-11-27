@@ -54,14 +54,20 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
       if (isLogin) {
         console.log('🔐 Logging in...');
         await loginWithEmail(email, password);
-        console.log('✅ Login successful');
+        console.log('✅ Login successful - state updated');
+        
+        // CRITICAL: Wait a tiny bit for React state to update
+        // This prevents race condition where navigation happens before user state is set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        console.log('✅ Navigating to home page...');
         
         // Call onSuccess callback if provided (for inline usage)
         if (onSuccess) {
           onSuccess();
         } else {
           // Navigate to home page only if no callback provided
-          navigate('/');
+          navigate('/', { replace: true });
         }
       } else {
         if (!gender) {
@@ -138,14 +144,19 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
       // Send to backend
       await loginWithGoogle(credentialResponse.credential!);
       
-      console.log('✅ Google authentication successful');
+      console.log('✅ Google authentication successful - state updated');
+      
+      // CRITICAL: Wait for React state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('✅ Navigating to home page...');
       
       // Call onSuccess callback if provided (for inline usage)
       if (onSuccess) {
         onSuccess();
       } else {
         // Navigate to home page only if no callback provided
-        navigate('/');
+        navigate('/', { replace: true });
       }
     } catch (err: any) {
       console.error('❌ Google login error:', err);

@@ -54,21 +54,33 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiresVerification
   children, 
   requiresVerification = false 
 }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, token } = useAuth();
+
+  console.log('🛡️ ProtectedRoute check:', { 
+    hasUser: !!user, 
+    hasToken: !!token,
+    loading, 
+    userId: user?.id,
+    requiresVerification 
+  });
 
   if (loading) {
+    console.log('⏳ ProtectedRoute: Still loading...');
     return <LoadingSpinner />;
   }
 
   if (!user) {
+    console.log('❌ ProtectedRoute: No user, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
   if (requiresVerification && user.tier === 'guest') {
+    console.log('⚠️ ProtectedRoute: Guest user, redirecting to home');
     // Redirect unverified users to Home; Home component will show verification popup
     return <Navigate to="/" replace />;
   }
 
+  console.log('✅ ProtectedRoute: Access granted');
   return <>{children}</>;
 };
 
