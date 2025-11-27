@@ -565,7 +565,7 @@ const AudioChat: React.FC = () => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket, handleRemoteStream, startAudioLevelMonitoring, stopAudioLevelMonitoring]);
+  }, [socket]); // Remove handleRemoteStream, startAudioLevelMonitoring, stopAudioLevelMonitoring - stable callbacks don't need deps
 
   // Enhanced cleanup for multiple device reliability
   const performCompleteAudioCleanup = () => {
@@ -1137,6 +1137,12 @@ const AudioChat: React.FC = () => {
       }
     } else {
       console.error('❌ No local stream available for mic toggle');
+      console.log('🔍 DEBUG: Checking refs...', {
+        localStreamExists: !!localStreamRef.current,
+        rawStreamExists: !!rawStreamRef.current,
+        isMatchConnected,
+        sessionId
+      });
     }
   };
 
