@@ -176,7 +176,7 @@ const Home: React.FC = () => {
   return (
     <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8" role="main">
       {/* Welcome Section */}
-      <section className="text-center mb-8 sm:mb-12 px-4 py-8 sm:py-16 text-white" aria-labelledby="home-hero-heading">
+      <section className="text-center mb-4 px-4 py-6 text-white" aria-labelledby="home-hero-heading">
         {/* Hero Headline */}
         <div className="mb-6">
           <p className="text-sm sm:text-base text-white/70 tracking-widest mb-3">100% FREE Random Chat</p>
@@ -249,7 +249,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* Total Online Users Counter - Above Cards */}
-      <div className="flex justify-center mb-6 px-4 mt-1">
+      <div className="flex justify-center mb-3 px-4">
         <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
           {(() => {
             const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
@@ -297,7 +297,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* Chat Options */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 px-4 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 px-4 max-w-6xl mx-auto">
         {/* Text Chat */}
         <div 
           className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-300 relative"
@@ -328,7 +328,12 @@ const Home: React.FC = () => {
             </button>
             {showTooltip === 'text' && (
               <div className="absolute top-8 right-0 w-52 text-white text-xs rounded-lg p-3 shadow-xl z-10" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                <p className="font-semibold mb-1">✨ Text Chat</p>
+                <p className="font-semibold mb-1 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                  </svg>
+                  Text Chat
+                </p>
                 <p className="text-gray-300">Connect instantly. No signup needed.</p>
               </div>
             )}
@@ -391,7 +396,12 @@ const Home: React.FC = () => {
             </button>
             {showTooltip === 'audio' && (
               <div className="absolute top-8 right-0 w-52 text-white text-xs rounded-lg p-3 shadow-xl z-10" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                <p className="font-semibold mb-1">🎤 Voice Chat</p>
+                <p className="font-semibold mb-1 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                  </svg>
+                  Voice Chat
+                </p>
                 <p className="text-gray-300">Free voice chat. Mic access needed.</p>
               </div>
             )}
@@ -454,7 +464,12 @@ const Home: React.FC = () => {
             </button>
             {showTooltip === 'video' && (
               <div className="absolute top-8 right-0 w-52 text-white text-xs rounded-lg p-3 shadow-xl z-10" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                <p className="font-semibold mb-1">🎥 Video Chat</p>
+                <p className="font-semibold mb-1 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                  </svg>
+                  Video Chat
+                </p>
                 <p className="text-gray-300">Random video chat. Camera preview.</p>
               </div>
             )}
@@ -508,21 +523,33 @@ const Home: React.FC = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                  <div className="text-4xl mb-4">⚡</div>
+                  <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(255, 215, 0, 0.15)' }}>
+                    <svg className="w-7 h-7 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
                   <h4 className="text-xl font-bold mb-3 text-white">No Login Required</h4>
                   <p className="text-sm sm:text-base text-gray-200">
                     Start chatting in 1 click. We respect your anonymity. No email, no phone number — instant <strong className="text-white">anonymous chat</strong> to <strong className="text-white">talk to strangers</strong>.
                   </p>
                 </div>
                 <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                  <div className="text-4xl mb-4">🚀</div>
+                  <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)' }}>
+                    <svg className="w-7 h-7 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
                   <h4 className="text-xl font-bold mb-3 text-white">Zero Friction</h4>
                   <p className="text-sm sm:text-base text-gray-200">
                     Fast connections, no waiting queues. Lightning-fast matching with strangers for <strong className="text-white">video chat with girls</strong> and guys worldwide. Better than old Omegle.
                   </p>
                 </div>
                 <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                  <div className="text-4xl mb-4">🛡️</div>
+                  <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
+                    <svg className="w-7 h-7 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
                   <h4 className="text-xl font-bold mb-3 text-white">Safe Community</h4>
                   <p className="text-sm sm:text-base text-gray-200">
                     AI-moderated environment to keep chats clean and safe. Unlike Omegle, we have instant reporting and real-time moderation for your protection.
@@ -538,21 +565,33 @@ const Home: React.FC = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                  <div className="text-5xl mb-4">💬</div>
+                  <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}>
+                    <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                  </div>
                   <h4 className="text-xl font-bold mb-3 text-white">Random Text Chat</h4>
                   <p className="text-sm sm:text-base text-gray-200">
                     Prefer typing? Connect instantly in our text mode. Perfect for <strong className="text-white">anonymous chat</strong> when you want to <strong className="text-white">talk to strangers</strong> without showing your face.
                   </p>
                 </div>
                 <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                  <div className="text-5xl mb-4">🎤</div>
+                  <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)' }}>
+                    <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                    </svg>
+                  </div>
                   <h4 className="text-xl font-bold mb-3 text-white">Voice Chat</h4>
                   <p className="text-sm sm:text-base text-gray-200">
                     Shy to show your face? Try our high-quality audio chat. Have real conversations through voice-only mode — a unique feature missing from other <strong className="text-white">Omegle alternatives</strong>.
                   </p>
                 </div>
                 <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                  <div className="text-5xl mb-4">🌍</div>
+                  <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
+                    <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </div>
                   <h4 className="text-xl font-bold mb-3 text-white">Global Connect</h4>
                   <p className="text-sm sm:text-base text-gray-200">
                     Meet strangers from USA, India, UK, and worldwide. Experience true <strong className="text-white">cam to cam chat</strong> with international friends. No borders, just connections.
@@ -879,25 +918,45 @@ const Home: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl font-bold mb-6">Why Omegoo is Better Than OmeTV and Other Omegle Alternatives</h2>
             <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-xl font-semibold text-red-300 mb-3">🎯 No Login Video Chat</h3>
+                <h3 className="text-xl font-semibold text-red-300 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd"/>
+                  </svg>
+                  No Login Video Chat
+                </h3>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
                   Unlike OmeTV that requires account creation, Omegoo lets you start <strong>no login video chat</strong> instantly. Click, connect, and start talking to strangers within seconds—no email, no verification, no barriers.
                 </p>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-red-300 mb-3">🔒 100% Anonymous Video Chat</h3>
+                <h3 className="text-xl font-semibold text-red-300 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/>
+                  </svg>
+                  100% Anonymous Video Chat
+                </h3>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
                   Your privacy matters. Omegoo provides truly <strong>anonymous video chat</strong> with stranger cam chat features that don't track or store your personal data. We use anonymous guest IDs only for safety moderation.
                 </p>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-green-300 mb-3">⚡ Faster Than Omegle</h3>
+                <h3 className="text-xl font-semibold text-green-300 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"/>
+                  </svg>
+                  Faster Than Omegle
+                </h3>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
                   Traditional Omegle often had slow loading times and frequent disconnections. Our optimized infrastructure ensures lightning-fast matching for <strong>random chat without registration</strong>—typically under 2 seconds.
                 </p>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-red-300 mb-3">🛡️ AI-Powered Safety</h3>
+                <h3 className="text-xl font-semibold text-red-300 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                  AI-Powered Safety
+                </h3>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
                   Unlike legacy Omegle clones, Omegoo features real-time AI moderation, instant reporting, and community safety prompts. This <strong>Omegle-like app</strong> actually cares about user safety.
                 </p>
@@ -910,21 +969,33 @@ const Home: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center">Benefits of Random Video Chat on Omegoo</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl p-6">
-                <div className="text-4xl mb-3">🌍</div>
+                <div className="w-12 h-12 mb-3 flex items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
+                  <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
                 <h3 className="text-lg font-semibold mb-2">Global Connections</h3>
                 <p className="text-sm text-gray-200">
                   <strong>Talk to strangers</strong> from 150+ countries. Meet people from USA, India, Philippines, UK, Indonesia, and beyond in this truly global <strong>free video chat with strangers</strong> platform.
                 </p>
               </div>
               <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl p-6">
-                <div className="text-4xl mb-3">💬</div>
+                <div className="w-12 h-12 mb-3 flex items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}>
+                  <svg className="w-7 h-7 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/><path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
+                  </svg>
+                </div>
                 <h3 className="text-lg font-semibold mb-2">Multi-Mode Chat</h3>
                 <p className="text-sm text-gray-200">
                   Not ready for video? Choose text or voice chat first. Switch between modes seamlessly—this <strong>stranger cam chat</strong> platform adapts to your comfort level.
                 </p>
               </div>
               <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl p-6">
-                <div className="text-4xl mb-3">📱</div>
+                <div className="w-12 h-12 mb-3 flex items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)' }}>
+                  <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                  </svg>
+                </div>
                 <h3 className="text-lg font-semibold mb-2">Works Everywhere</h3>
                 <p className="text-sm text-gray-200">
                   Mobile, tablet, or desktop—no app download needed. This <strong>random chat without registration</strong> works directly in your browser on any device.
@@ -938,8 +1009,10 @@ const Home: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl font-bold mb-6">Core Features of Omegoo: The Ultimate Omegle Alternative</h2>
             <div className="space-y-6">
               <div className="flex gap-4 items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-2xl">
-                  🚀
+                <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd"/>
+                  </svg>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-red-300 mb-2">Instant Matching System</h3>
@@ -960,8 +1033,10 @@ const Home: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-4 items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center text-2xl">
-                  ⚡
+                <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"/>
+                  </svg>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-green-300 mb-2">Lightning Fast Performance</h3>
@@ -971,8 +1046,10 @@ const Home: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-4 items-start">
-                <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-2xl">
-                  🛡️
+                <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-red-300 mb-2">Advanced Safety Measures</h3>
@@ -993,19 +1070,27 @@ const Home: React.FC = () => {
               </p>
               <ul className="space-y-4 text-sm sm:text-base text-gray-200">
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 text-green-400 font-bold">✓</span>
+                  <svg className="flex-shrink-0 w-5 h-5 text-green-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
                   <span><strong>Zero Personal Data Storage:</strong> We don't store chat logs, video recordings, or personal information beyond anonymous guest IDs used solely for moderation.</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 text-green-400 font-bold">✓</span>
+                  <svg className="flex-shrink-0 w-5 h-5 text-green-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
                   <span><strong>End-to-End Encryption:</strong> All <strong>stranger cam chat</strong> sessions use WebRTC encryption, ensuring your conversations remain private between you and your chat partner.</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 text-green-400 font-bold">✓</span>
+                  <svg className="flex-shrink-0 w-5 h-5 text-green-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
                   <span><strong>No Third-Party Tracking:</strong> Unlike many <strong>Omegle alternatives</strong>, we minimize tracking scripts and don't sell your data to advertisers.</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 text-green-400 font-bold">✓</span>
+                  <svg className="flex-shrink-0 w-5 h-5 text-green-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
                   <span><strong>GDPR Compliant:</strong> Full compliance with international privacy regulations including GDPR, ensuring your rights are protected globally.</span>
                 </li>
               </ul>
@@ -1107,9 +1192,20 @@ const Home: React.FC = () => {
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
           </svg>
-          <span className="text-sm sm:text-base font-semibold">⭐ Star us on GitHub</span>
+          <span className="text-sm sm:text-base font-semibold inline-flex items-center gap-1">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+            </svg>
+            Star us on GitHub
+          </span>
         </a>
-        <p className="text-xs sm:text-sm text-gray-300 mt-2">Made with ❤️ by Saurabh Shukla</p>
+        <p className="text-xs sm:text-sm text-gray-300 mt-2 flex items-center justify-center gap-1">
+          Made with 
+          <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"/>
+          </svg>
+          by Saurabh Shukla
+        </p>
       </div>
 
       {/* 📧 Email Verification Popup */}
@@ -1152,9 +1248,12 @@ const Home: React.FC = () => {
                     });
                   }
                 }}
-                className="w-full btn-primary font-semibold py-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                className="w-full btn-primary font-semibold py-3 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
               >
-                ✅ Verify Now
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                </svg>
+                Verify Now
               </button>
 
               <button
@@ -1188,7 +1287,12 @@ const Home: React.FC = () => {
                     Sending...
                   </span>
                 ) : (
-                  '🔄 Resend OTP'
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Resend OTP
+                  </span>
                 )}
               </button>
 
@@ -1201,8 +1305,11 @@ const Home: React.FC = () => {
             </div>
 
             {/* Info */}
-            <p className="text-xs text-gray-400 text-center mt-4">
-              💡 Verification required to use Text, Audio, and Video chat
+            <p className="text-xs text-gray-400 text-center mt-4 flex items-center justify-center gap-1">
+              <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z"/>
+              </svg>
+              Verification required to use Text, Audio, and Video chat
             </p>
           </div>
         </div>
