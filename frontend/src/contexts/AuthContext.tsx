@@ -128,12 +128,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [state.user]);
 
   useEffect(() => {
-    if (!isInitializing) {
-      initializeAuth();
-    }
+    let mounted = true;
+    
+    const init = async () => {
+      if (!mounted || isInitializing) return;
+      await initializeAuth();
+    };
+    
+    init();
     
     // Listen for stats updates from socket
     const handleStatsUpdate = (event: any) => {
+      if (!mounted) return;
       const stats = event.detail;
       console.log('🔔 AuthContext received stats update:', stats);
       const payload = {
@@ -159,20 +165,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     window.addEventListener('user-stats-update', handleStatsUpdate);
     
     return () => {
+      mounted = false;
       window.removeEventListener('user-stats-update', handleStatsUpdate);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initializeAuth = async () => {
-    if (isInitializing) return; // Prevent multiple calls
+    if (isInitializing) {
+      console.log('⏭️  Auth already initializing, skipping...');
+      return;
+    }
     
     try {
       setIsInitializing(true);
+      console.log('🔐 Starting auth initialization...');
       
       // For development: Clear localStorage if needed
       if (window.location.search.includes('reset=true')) {
+        console.log('🔄 Reset flag detected, clearing storage');
         storageService.clearAll();
+        dispatch({ type: 'SET_LOADING', payload: false });
+        return;
       }
       
       const token = storageService.getToken();
@@ -190,25 +204,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dispatch({ type: 'SET_TOKEN', payload: token });
         
         try {
-          // Fetch current user data from backend
-          const response = await authAPI.getCurrentUser();
+          // Fetch current user data from backend with timeout
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Auth timeout')), 10000)
+          );
+          
+          const response = await Promise.race([
+            authAPI.getCurrentUser(),
+            timeoutPromise
+          ]) as { user: User };
+          
           dispatch({ type: 'SET_USER', payload: response.user });
           storageService.setUser(response.user);
           userRef.current = response.user;
           console.log('✅ User data loaded:', { userId: response.user.id, coins: response.user.coins });
-        } catch (error) {
-          console.error('❌ Failed to fetch user data, clearing auth:', error);
-          // Token is invalid, clear it
+        } catch (error: any) {
+          console.error('❌ Failed to fetch user data:', error.message);
+          // Token is invalid or request timed out, clear it
           storageService.removeToken();
+          storageService.removeUser();
           apiService.setToken(null);
           dispatch({ type: 'SET_TOKEN', payload: null });
+          dispatch({ type: 'SET_USER', payload: null });
+          userRef.current = null;
         }
       }
-    } catch (error) {
-      console.error('Auth initialization failed:', error);
+    } catch (error: any) {
+      console.error('❌ Auth initialization failed:', error.message);
+      // Clear everything on critical error
       storageService.removeToken();
+      storageService.removeUser();
       apiService.setToken(null);
+      dispatch({ type: 'SET_TOKEN', payload: null });
+      dispatch({ type: 'SET_USER', payload: null });
+      userRef.current = null;
     } finally {
+      console.log('✅ Auth initialization complete');
       dispatch({ type: 'SET_LOADING', payload: false });
       setIsInitializing(false);
     }

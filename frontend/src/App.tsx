@@ -76,6 +76,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiresVerification
 const AppRoutes: React.FC = () => {
   const { hasAcceptedTerms, loading } = useAuth();
   const { guestId, isInitialized } = useGuest();
+  const [hasError, setHasError] = React.useState(false);
 
   // Sync guest ID with API service whenever it changes
   useEffect(() => {
@@ -84,6 +85,55 @@ const AppRoutes: React.FC = () => {
       console.log('[App] Guest ID synced with API service:', guestId.substring(0, 12) + '...');
     }
   }, [guestId, isInitialized]);
+
+  // Error boundary effect
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('🚨 Caught error:', event.error);
+      setHasError(true);
+      event.preventDefault();
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('🚨 Unhandled promise rejection:', event.reason);
+      // Don't set error for network issues
+      if (event.reason?.message?.includes('network') || 
+          event.reason?.message?.includes('fetch') ||
+          event.reason?.message?.includes('timeout')) {
+        console.log('⚠️ Network error ignored for white screen prevention');
+        event.preventDefault();
+        return;
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
+  // Show error screen if critical error occurred
+  if (hasError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Please refresh the page to continue
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading spinner while initializing auth or guest
   if (loading || !isInitialized) {
