@@ -75,8 +75,10 @@ class VoiceFilterService {
       });
       
       // Resume context if suspended (browser policy)
+      // Only try to resume if we have user interaction
       if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
+        // Don't await here - will be resumed on user interaction
+        console.log('⚠️ AudioContext suspended - will resume on user interaction');
       }
       
       // Try to load AudioWorklet for pitch shifting (if supported)

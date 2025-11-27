@@ -56,43 +56,43 @@ export const VoiceFilterProvider: React.FC<VoiceFilterProviderProps> = ({ childr
   // Original stream reference
   const [originalStream, setOriginalStream] = useState<MediaStream | null>(null);
 
-  // Initialize service on mount
-  useEffect(() => {
-    const initializeService = async () => {
-      try {
-        const caps = await VoiceFilterService.initialize();
-        setCapabilities(caps);
+  // Initialize service ONLY when filters are actually needed (lazy init)
+  const initializeService = useCallback(async () => {
+    if (capabilities) return; // Already initialized
+    
+    try {
+      const caps = await VoiceFilterService.initialize();
+      setCapabilities(caps);
+      
+      // Set up performance monitoring callback
+      VoiceFilterService.setPerformanceCallback((metrics) => {
+        setPerformanceMetrics(metrics);
         
-        // Set up performance monitoring callback
-        VoiceFilterService.setPerformanceCallback((metrics) => {
-          setPerformanceMetrics(metrics);
-          
-          // Auto-disable on high CPU
-          if (metrics.cpuUsage > AUDIO_CONSTANTS.PERFORMANCE.CPU_DISABLE_THRESHOLD) {
-            console.warn('High CPU usage detected, disabling filter');
-            setIsEnabled(false);
-            setSelectedFilterState('none');
-          }
-        });
-        
-        // Set up error callback
-        VoiceFilterService.setErrorCallback((error) => {
-          console.error('VoiceFilter error:', error);
-          // Reset to safe state on error
+        // Auto-disable on high CPU
+        if (metrics.cpuUsage > AUDIO_CONSTANTS.PERFORMANCE.CPU_DISABLE_THRESHOLD) {
+          console.warn('High CPU usage detected, disabling filter');
           setIsEnabled(false);
           setSelectedFilterState('none');
-          setIsProcessing(false);
-        });
-        
-        console.log('VoiceFilterContext initialized', caps);
-      } catch (error) {
-        console.error('Failed to initialize voice filters:', error);
-      }
-    };
-    
-    initializeService();
-    
-    // Cleanup on unmount
+        }
+      });
+      
+      // Set up error callback
+      VoiceFilterService.setErrorCallback((error) => {
+        console.error('VoiceFilter error:', error);
+        // Reset to safe state on error
+        setIsEnabled(false);
+        setSelectedFilterState('none');
+        setIsProcessing(false);
+      });
+      
+      console.log('VoiceFilterContext initialized', caps);
+    } catch (error) {
+      console.error('Failed to initialize voice filters:', error);
+    }
+  }, [capabilities]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (previewAudio) {
         previewAudio.pause();
@@ -135,6 +135,10 @@ export const VoiceFilterProvider: React.FC<VoiceFilterProviderProps> = ({ childr
   const setFilter = useCallback(async (filter: VoiceFilterType) => {
     try {
       console.log(`Setting voice filter: ${filter}`);
+      
+      // Initialize service on first use (lazy)
+      await initializeService();
+      
       setSelectedFilterState(filter);
       
       // If no stream yet, just update state
@@ -157,7 +161,7 @@ export const VoiceFilterProvider: React.FC<VoiceFilterProviderProps> = ({ childr
       console.error('Failed to set filter:', error);
       setIsProcessing(false);
     }
-  }, [originalStream, intensity]);
+  }, [originalStream, intensity, initializeService]);
 
   /**
    * Adjust filter intensity

@@ -108,11 +108,23 @@ const AppRoutes: React.FC = () => {
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('🚨 Unhandled promise rejection:', event.reason);
-      // Don't set error for network issues
-      if (event.reason?.message?.includes('network') || 
-          event.reason?.message?.includes('fetch') ||
-          event.reason?.message?.includes('timeout')) {
-        console.log('⚠️ Network error ignored for white screen prevention');
+      
+      // Silently ignore these common errors that don't affect functionality
+      const ignoredErrors = [
+        'Failed to fetch',
+        'ERR_BLOCKED_BY_CLIENT',
+        'NetworkError',
+        'Load failed',
+        'network'
+      ];
+      
+      const errorMessage = event.reason?.message || String(event.reason);
+      const shouldIgnore = ignoredErrors.some(err => 
+        errorMessage.toLowerCase().includes(err.toLowerCase())
+      );
+      
+      if (shouldIgnore) {
+        console.log('⚠️ Network/blocked request ignored (ad-blocker or connectivity)');
         event.preventDefault();
         return;
       }

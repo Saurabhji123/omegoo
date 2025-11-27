@@ -1,8 +1,9 @@
 // Translation Context - State Management for Translation Feature
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { guestAPI } from '../services/api';
 import { TranslationCache, SupportedLanguageCode } from '../types/translation';
+import { useGuest } from './GuestContext';
 
 interface TranslationContextType {
   preferredLanguage: SupportedLanguageCode;
@@ -24,6 +25,8 @@ interface TranslationProviderProps {
 }
 
 export const TranslationProvider: React.FC<TranslationProviderProps> = ({ children }) => {
+  const { guestId, isInitialized } = useGuest();
+  
   const [preferredLanguage, setPreferredLanguageState] = useState<SupportedLanguageCode>(() => {
     const saved = localStorage.getItem('omegoo_preferred_language');
     return (saved as SupportedLanguageCode) || 'en';
@@ -70,10 +73,13 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
     localStorage.setItem('omegoo_translation_cache', JSON.stringify(translationCache));
   }, [translationCache]);
 
-  // Load quota on mount
+  // Load quota on mount - wait for guest ID to be initialized
   useEffect(() => {
-    refreshQuota();
-  }, []);
+    if (isInitialized && guestId) {
+      refreshQuota();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInitialized, guestId]); // Don't include refreshQuota to avoid dependency cycle
 
   const toggleAutoTranslate = () => {
     setAutoTranslateEnabled(prev => !prev);
@@ -83,7 +89,13 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
     setPreferredLanguageState(lang);
   };
 
-  const refreshQuota = async () => {
+  const refreshQuota = useCallback(async () => {
+    // Don't make API call if guest ID not ready
+    if (!isInitialized || !guestId) {
+      console.log('⏳ Guest ID not ready, skipping translation quota fetch');
+      return;
+    }
+
     try {
       const response = await guestAPI.getTranslationQuota();
       if (response.success && response.data) {
@@ -92,7 +104,7 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
     } catch (error) {
       console.error('Failed to fetch translation quota:', error);
     }
-  };
+  }, [isInitialized, guestId]);
 
   const translateMessage = async (
     messageId: string,
