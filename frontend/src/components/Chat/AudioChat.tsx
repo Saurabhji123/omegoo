@@ -30,6 +30,7 @@ const AudioChat: React.FC = () => {
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const rawStreamRef = useRef<MediaStream | null>(null); // Store raw unfiltered stream
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationRef = useRef<number | null>(null);
   
@@ -104,6 +105,56 @@ const AudioChat: React.FC = () => {
   useEffect(() => {
     console.log('🎤 MIC STATE CHANGED: UI isMicOn =', isMicOn);
   }, [isMicOn]);
+
+  // Handle mid-call filter changes - Replace audio tracks in active peer connection
+  useEffect(() => {
+    const applyFilterToActiveCall = async () => {
+      // Only apply if we're in an active call with connection established
+      if (!isMatchConnected || !rawStreamRef.current || !webRTCRef.current) {
+        console.log('🎭 Filter changed but no active call, skipping replacement');
+        return;
+      }
+
+      try {
+        console.log(`🎭 Mid-call filter change detected: ${selectedFilter}`);
+        
+        // CRITICAL: Use raw unfiltered stream, not current processed stream
+        const rawStream = rawStreamRef.current;
+        
+        // Apply new filter to raw stream
+        let processedStream = rawStream;
+        if (selectedFilter !== 'none') {
+          console.log(`🎤 Applying ${selectedFilter} filter to raw stream...`);
+          processedStream = await getProcessedStream(rawStream);
+          console.log('✅ Filter processing complete');
+        } else {
+          console.log('🎤 No filter - using raw stream');
+        }
+        
+        // Replace tracks in peer connection so remote user hears the filtered voice
+        console.log('🔄 Replacing audio tracks in peer connection...');
+        await webRTCRef.current.replaceLocalStream(processedStream);
+        
+        // Update local refs
+        localStreamRef.current = processedStream;
+        if (localAudioRef.current) {
+          localAudioRef.current.srcObject = processedStream;
+        }
+        
+        // Restart audio monitoring with new stream
+        stopAudioLevelMonitoring();
+        startAudioLevelMonitoring(processedStream);
+        
+        console.log(`✅ Filter applied successfully: Remote user will now hear ${selectedFilter} voice`);
+        
+      } catch (error) {
+        console.error('❌ Failed to apply filter to active call:', error);
+      }
+    };
+
+    applyFilterToActiveCall();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFilter, isMatchConnected, getProcessedStream]);
 
   // Multi-device protection on component mount
   useEffect(() => {
@@ -323,6 +374,22 @@ const AudioChat: React.FC = () => {
             await startLocalAudio();
             console.log('🎤 Local audio ready for connection');
             
+            // DIAGNOSTIC: Check if stream is properly set in WebRTC service
+            if (webRTCRef.current) {
+              const localStream = webRTCRef.current.localMediaStream;
+              console.log('🔍 DIAGNOSTIC: WebRTC localStream check:', {
+                exists: !!localStream,
+                audioTracks: localStream?.getAudioTracks().length || 0,
+                videoTracks: localStream?.getVideoTracks().length || 0,
+                tracks: localStream?.getTracks().map(t => ({
+                  kind: t.kind,
+                  id: t.id,
+                  enabled: t.enabled,
+                  readyState: t.readyState
+                }))
+              });
+            }
+            
             // Emit call connected event
             socket.emit('audio-metrics', {
               sessionId: data.sessionId,
@@ -356,7 +423,19 @@ const AudioChat: React.FC = () => {
             try {
               // Small delay to ensure local stream is properly added
               setTimeout(async () => {
+                // DIAGNOSTIC: Final check before creating offer
+                const localStream = webRTCRef.current!.localMediaStream;
+                console.log('🔍 PRE-OFFER DIAGNOSTIC:', {
+                  hasStream: !!localStream,
+                  audioTracks: localStream?.getAudioTracks().length || 0,
+                  audioEnabled: localStream?.getAudioTracks()[0]?.enabled,
+                  audioReadyState: localStream?.getAudioTracks()[0]?.readyState
+                });
+                
                 const offer = await webRTCRef.current!.createWebRTCOffer();
+                console.log('📞 WebRTC offer created, checking SDP for audio...');
+                console.log('🔍 SDP includes audio:', offer.sdp?.includes('m=audio'));
+                
                 socket.emit('webrtc-offer', { 
                   offer, 
                   targetUserId: data.matchUserId,
@@ -396,10 +475,22 @@ const AudioChat: React.FC = () => {
 
       // WebRTC signaling
       socket.on('webrtc-offer', async (data: any) => {
-        console.log(' Received WebRTC offer from:', data.fromUserId);
+        console.log('📞 Received WebRTC offer from:', data.fromUserId);
         if (webRTCRef.current) {
           try {
+            // DIAGNOSTIC: Check local stream before handling offer
+            const localStream = webRTCRef.current.localMediaStream;
+            console.log('🔍 PRE-ANSWER DIAGNOSTIC:', {
+              hasStream: !!localStream,
+              audioTracks: localStream?.getAudioTracks().length || 0,
+              audioEnabled: localStream?.getAudioTracks()[0]?.enabled,
+              audioReadyState: localStream?.getAudioTracks()[0]?.readyState
+            });
+            
             const answer = await webRTCRef.current.handleOffer(data.offer);
+            console.log('📞 WebRTC answer created, checking SDP for audio...');
+            console.log('🔍 Answer SDP includes audio:', answer.sdp?.includes('m=audio'));
+            
             socket.emit('webrtc-answer', { 
               answer, 
               targetUserId: data.fromUserId,  // ✅ Fixed: Using VideoChat pattern
@@ -451,6 +542,11 @@ const AudioChat: React.FC = () => {
         localStreamRef.current = null;
       }
       
+      if (rawStreamRef.current) {
+        rawStreamRef.current.getTracks().forEach(track => track.stop());
+        rawStreamRef.current = null;
+      }
+      
       // Use copied refs for cleanup
       if (remoteAudio?.srcObject) {
         const remoteStream = remoteAudio.srcObject as MediaStream;
@@ -490,6 +586,15 @@ const AudioChat: React.FC = () => {
         console.log('🛑 Stopped local track:', track.id);
       });
       localStreamRef.current = null;
+    }
+    
+    // Clean up raw stream
+    if (rawStreamRef.current) {
+      rawStreamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log('🛑 Stopped raw stream track:', track.id);
+      });
+      rawStreamRef.current = null;
     }
     
     // Clean up remote audio
@@ -533,6 +638,16 @@ const AudioChat: React.FC = () => {
         localStreamRef.current = null;
       }
       
+      // Stop raw stream as well
+      if (rawStreamRef.current) {
+        console.log('🛑 Stopping existing raw audio stream');
+        rawStreamRef.current.getTracks().forEach(track => {
+          track.stop();
+          console.log('🛑 Stopped existing raw track:', track.id);
+        });
+        rawStreamRef.current = null;
+      }
+      
       // Enhanced audio constraints for voice optimization
       const constraints = {
         video: false,
@@ -560,6 +675,9 @@ const AudioChat: React.FC = () => {
       
       console.log('✅ Raw audio stream created with tracks:', rawStream.getAudioTracks().length);
       
+      // CRITICAL: Store raw unfiltered stream for mid-call filter changes
+      rawStreamRef.current = rawStream;
+      
       // Apply voice filter if selected
       let processedStream = rawStream;
       if (selectedFilter !== 'none') {
@@ -577,6 +695,12 @@ const AudioChat: React.FC = () => {
       if (processedStream && localAudioRef.current) {
         localAudioRef.current.srcObject = processedStream;
         localStreamRef.current = processedStream;
+        
+        // CRITICAL FIX: Update WebRTC service with processed stream
+        if (webRTCRef.current && processedStream !== rawStream) {
+          console.log('🔄 Updating WebRTC service with processed (filtered) stream');
+          webRTCRef.current.updateLocalStream(processedStream);
+        }
         
         // Start audio level monitoring
         startAudioLevelMonitoring(processedStream);
@@ -797,6 +921,10 @@ const AudioChat: React.FC = () => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
       localStreamRef.current = null;
+    }
+    if (rawStreamRef.current) {
+      rawStreamRef.current.getTracks().forEach(track => track.stop());
+      rawStreamRef.current = null;
     }
     if (localAudioRef.current?.srcObject) {
       localAudioRef.current.srcObject = null;
