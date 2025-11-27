@@ -40,10 +40,12 @@
 @layer components {
   .btn-primary {
     /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply font-semibold py-2 px-4 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply py-2 px-4 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
     background-color: var(--primary-brand);
     color: var(--text-head);
     border: none;
+    font-weight: 700;
+    font-size: 16px;
   }
   
   .btn-primary:hover {

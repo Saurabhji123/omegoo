@@ -86,7 +86,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               ) : (
                 <button
                   onClick={() => navigate('/login')}
-                  className="btn-primary text-sm"
+                  className="text-sm px-4 py-2 rounded-lg font-medium transition-all"
+                  style={{ 
+                    backgroundColor: 'transparent', 
+                    border: '1px solid var(--primary-brand)', 
+                    color: 'var(--primary-brand)' 
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 71, 87, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
                   Login / Register
                 </button>

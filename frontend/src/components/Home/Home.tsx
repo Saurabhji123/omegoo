@@ -187,7 +187,7 @@ const Home: React.FC = () => {
         {/* Hero Headline */}
         <div className="mb-6">
           <p className="text-sm sm:text-base text-white/70 tracking-widest mb-3">100% FREE Random Chat</p>
-          <h1 id="home-hero-heading" className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-gradient tracking-wider">
+          <h1 id="home-hero-heading" className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-wider" style={{ color: '#FFFFFF' }}>
             Random · Video · Voice · Text
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 mt-3 uppercase tracking-[0.35rem]">
@@ -197,12 +197,12 @@ const Home: React.FC = () => {
 
         {/* Privacy Notice - Prominent */}
         <div className="max-w-2xl mx-auto mb-6">
-          <div className="inline-flex items-center bg-green-500/20 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-green-400/50 shadow-lg">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="inline-flex items-center bg-white/10 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-white/30 shadow-lg">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
             <span className="text-xs sm:text-sm text-white font-medium">
-              100% Anonymous — No signup required. <button onClick={() => navigate('/privacy')} className="underline hover:text-green-300 transition-colors">Privacy</button>
+              100% Anonymous — No signup required. <button onClick={() => navigate('/privacy')} className="underline hover:text-gray-300 transition-colors">Privacy</button>
             </span>
           </div>
         </div>
@@ -258,25 +258,48 @@ const Home: React.FC = () => {
       {/* Total Online Users Counter - Above Cards */}
       <div className="flex justify-center mb-6 px-4">
         <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-          <div className="relative flex items-center justify-center">
-            <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ backgroundColor: 'var(--primary-brand)', animationDuration: '2s' }}></span>
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(255, 71, 87, 0.2)', border: '1px solid rgba(255, 71, 87, 0.4)' }}>
-              <svg className="w-6 h-6" style={{ color: 'rgba(255, 71, 87, 0.9)' }} fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-              </svg>
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-body)' }}>Live Users</p>
-            <p className="text-2xl font-bold text-white animate-pulse" style={{ animationDuration: '3s' }}>
-              {(() => {
-                const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
-                const multiplied = total * 3;
-                return multiplied > 0 ? `${multiplied.toLocaleString()}+` : '0';
-              })()}
-            </p>
-          </div>
-          <div className="text-xs" style={{ color: 'var(--text-body)' }}>online now</div>
+          {(() => {
+            const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
+            const multiplied = total * 3;
+            const hasUsers = multiplied >= 50;
+
+            if (!hasUsers) {
+              // Show "Finding Matches..." status when count is 0 or below 50
+              return (
+                <>
+                  <div className="relative flex items-center justify-center">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" style={{ animationDuration: '2s' }}></span>
+                    <div className="relative flex h-3 w-3 rounded-full bg-green-500"></div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">Finding Matches...</p>
+                    <p className="text-xs" style={{ color: 'var(--text-body)' }}>connecting users now</p>
+                  </div>
+                </>
+              );
+            }
+
+            // Show normal counter when count >= 50
+            return (
+              <>
+                <div className="relative flex items-center justify-center">
+                  <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ backgroundColor: 'var(--primary-brand)', animationDuration: '2s' }}></span>
+                  <div className="relative flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(255, 71, 87, 0.2)', border: '1px solid rgba(255, 71, 87, 0.4)' }}>
+                    <svg className="w-6 h-6" style={{ color: 'rgba(255, 71, 87, 0.9)' }} fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-body)' }}>Live Users</p>
+                  <p className="text-2xl font-bold text-white animate-pulse" style={{ animationDuration: '3s' }}>
+                    {multiplied.toLocaleString()}+
+                  </p>
+                </div>
+                <div className="text-xs" style={{ color: 'var(--text-body)' }}>online now</div>
+              </>
+            );
+          })()}
         </div>
       </div>
 
@@ -294,11 +317,19 @@ const Home: React.FC = () => {
               onMouseEnter={() => setShowTooltip('text')}
               onMouseLeave={() => setShowTooltip(null)}
               onClick={() => setShowTooltip(showTooltip === 'text' ? null : 'text')}
-              className="w-6 h-6 rounded-full flex items-center justify-center transition-colors focus:outline-none"
-              style={{ backgroundColor: 'rgba(255, 71, 87, 0.2)', border: '1px solid rgba(255, 71, 87, 0.3)' }}
+              className="w-6 h-6 rounded-full flex items-center justify-center transition-all focus:outline-none"
+              style={{ backgroundColor: '#444', border: '1px solid #555' }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 71, 87, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(255, 71, 87, 0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = '#444';
+                e.currentTarget.style.borderColor = '#555';
+              }}
               aria-label="Information about text chat"
             >
-              <svg className="w-4 h-4" style={{ color: 'var(--primary-brand)' }} fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
             </button>
@@ -324,8 +355,8 @@ const Home: React.FC = () => {
           <p className="text-sm text-gray-300 mb-4">
             Quick text chats with strangers
           </p>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/50 text-green-100 text-sm font-bold mb-4">
-            Random Match • <span className="text-green-300">100% FREE</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold mb-4" style={{ backgroundColor: 'rgba(255, 215, 0, 0.15)', border: '1px solid rgba(255, 215, 0, 0.4)', color: '#FFD700' }}>
+            Random Match • <span style={{ color: '#FFD700' }}>100% FREE</span>
           </div>
           <button
             onClick={() => handleStartChat('text')}
@@ -336,13 +367,19 @@ const Home: React.FC = () => {
             Start Free Text Chat
           </button>
           <div className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
-              <span className="relative flex h-2 w-2" aria-hidden="true">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              {modeUserCounts.text * 3} online now
-            </span>
+            {(() => {
+              const count = modeUserCounts.text * 3;
+              const hasUsers = count >= 50;
+              return (
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
+                  <span className="relative flex h-2 w-2" aria-hidden="true">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  {hasUsers ? `${count} online now` : 'Finding matches...'}
+                </span>
+              );
+            })()}
           </div>
         </div>
 
@@ -358,11 +395,19 @@ const Home: React.FC = () => {
               onMouseEnter={() => setShowTooltip('audio')}
               onMouseLeave={() => setShowTooltip(null)}
               onClick={() => setShowTooltip(showTooltip === 'audio' ? null : 'audio')}
-              className="w-6 h-6 rounded-full flex items-center justify-center transition-colors focus:outline-none"
-              style={{ backgroundColor: 'rgba(255, 71, 87, 0.2)', border: '1px solid rgba(255, 71, 87, 0.3)' }}
+              className="w-6 h-6 rounded-full flex items-center justify-center transition-all focus:outline-none"
+              style={{ backgroundColor: '#444', border: '1px solid #555' }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 71, 87, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(255, 71, 87, 0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = '#444';
+                e.currentTarget.style.borderColor = '#555';
+              }}
               aria-label="Information about voice chat"
             >
-              <svg className="w-4 h-4" style={{ color: 'var(--primary-brand)' }} fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
             </button>
@@ -388,8 +433,8 @@ const Home: React.FC = () => {
           <p className="text-sm text-gray-300 mb-4">
             Talk with strangers live
           </p>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/50 text-green-100 text-sm font-bold mb-4">
-            Random Match • <span className="text-green-300">100% FREE</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold mb-4" style={{ backgroundColor: 'rgba(255, 215, 0, 0.15)', border: '1px solid rgba(255, 215, 0, 0.4)', color: '#FFD700' }}>
+            Random Match • <span style={{ color: '#FFD700' }}>100% FREE</span>
           </div>
           <button
             onClick={() => handleStartChat('audio')}
@@ -400,13 +445,19 @@ const Home: React.FC = () => {
             Start Free Voice Chat
           </button>
           <div className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
-              <span className="relative flex h-2 w-2" aria-hidden="true">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              {modeUserCounts.audio * 3} online now
-            </span>
+            {(() => {
+              const count = modeUserCounts.audio * 3;
+              const hasUsers = count >= 50;
+              return (
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
+                  <span className="relative flex h-2 w-2" aria-hidden="true">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  {hasUsers ? `${count} online now` : 'Finding matches...'}
+                </span>
+              );
+            })()}
           </div>
         </div>
 
@@ -422,11 +473,19 @@ const Home: React.FC = () => {
               onMouseEnter={() => setShowTooltip('video')}
               onMouseLeave={() => setShowTooltip(null)}
               onClick={() => setShowTooltip(showTooltip === 'video' ? null : 'video')}
-              className="w-6 h-6 rounded-full flex items-center justify-center transition-colors focus:outline-none"
-              style={{ backgroundColor: 'rgba(255, 71, 87, 0.2)', border: '1px solid rgba(255, 71, 87, 0.3)' }}
+              className="w-6 h-6 rounded-full flex items-center justify-center transition-all focus:outline-none"
+              style={{ backgroundColor: '#444', border: '1px solid #555' }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 71, 87, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(255, 71, 87, 0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = '#444';
+                e.currentTarget.style.borderColor = '#555';
+              }}
               aria-label="Information about video chat"
             >
-              <svg className="w-4 h-4" style={{ color: 'var(--primary-brand)' }} fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
             </button>
@@ -452,8 +511,8 @@ const Home: React.FC = () => {
           <p className="text-sm text-gray-300 mb-4">
             Face-to-face video chats
           </p>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/50 text-green-100 text-sm font-bold mb-4">
-            Random Match • <span className="text-green-300">100% FREE</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold mb-4" style={{ backgroundColor: 'rgba(255, 215, 0, 0.15)', border: '1px solid rgba(255, 215, 0, 0.4)', color: '#FFD700' }}>
+            Random Match • <span style={{ color: '#FFD700' }}>100% FREE</span>
           </div>
           <button
             onClick={() => handleStartChat('video')}
@@ -464,13 +523,19 @@ const Home: React.FC = () => {
             Start Free Video Chat
           </button>
           <div className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
-              <span className="relative flex h-2 w-2" aria-hidden="true">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              {modeUserCounts.video * 3} online now
-            </span>
+            {(() => {
+              const count = modeUserCounts.video * 3;
+              const hasUsers = count >= 50;
+              return (
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
+                  <span className="relative flex h-2 w-2" aria-hidden="true">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  {hasUsers ? `${count} online now` : 'Finding matches...'}
+                </span>
+              );
+            })()}
           </div>
         </div>
       </div>
