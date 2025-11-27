@@ -27,6 +27,12 @@ export function registerServiceWorker() {
                 if (navigator.serviceWorker.controller) {
                   console.log('ℹ️ New content is available; reloading to activate.');
                   navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
+                  
+                  // Force immediate reload to show new version
+                  console.log('🔄 Forcing reload for new service worker...');
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
                 } else {
                   console.log('🎉 Content cached for offline use.');
                 }

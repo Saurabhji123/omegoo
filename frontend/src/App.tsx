@@ -350,13 +350,12 @@ const App: React.FC = () => {
 
   // Force cache refresh on app load
   useEffect(() => {
-    const APP_VERSION = '2.0.0'; // Update this on each deploy
+    const APP_VERSION = '2.0.1'; // Update this on each deploy
     const storedVersion = localStorage.getItem('app_version');
-    
+
     if (storedVersion !== APP_VERSION) {
       console.log('🔄 New version detected, clearing cache...');
-      
-      // Clear service worker cache
+      console.log('Old version:', storedVersion, '→ New version:', APP_VERSION);      // Clear service worker cache
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(registrations => {
           registrations.forEach(registration => {

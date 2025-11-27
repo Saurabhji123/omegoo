@@ -68,6 +68,14 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
         } else {
           // Navigate to home page only if no callback provided
           navigate('/', { replace: true });
+          
+          // Fallback: Force reload to home if navigation doesn't work
+          setTimeout(() => {
+            if (window.location.pathname === '/login') {
+              console.log('🔄 Navigation stuck, forcing redirect...');
+              window.location.href = '/';
+            }
+          }, 200);
         }
       } else {
         if (!gender) {
@@ -157,6 +165,14 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
       } else {
         // Navigate to home page only if no callback provided
         navigate('/', { replace: true });
+        
+        // Fallback: Force reload to home if navigation doesn't work
+        setTimeout(() => {
+          if (window.location.pathname === '/login') {
+            console.log('🔄 Navigation stuck, forcing redirect...');
+            window.location.href = '/';
+          }
+        }, 200);
       }
     } catch (err: any) {
       console.error('❌ Google login error:', err);
