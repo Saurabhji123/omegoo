@@ -342,7 +342,7 @@ const Home: React.FC = () => {
           </div>
           
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6 backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)' }}>
-            <svg className="w-6 h-6 sm:w-8 sm:h-8" style={{ color: 'var(--primary-brand)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
@@ -366,21 +366,6 @@ const Home: React.FC = () => {
           >
             Start Free Text Chat
           </button>
-          <div className="mt-4 flex justify-center">
-            {(() => {
-              const count = modeUserCounts.text * 3;
-              const hasUsers = count >= 50;
-              return (
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
-                  <span className="relative flex h-2 w-2" aria-hidden="true">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                  </span>
-                  {hasUsers ? `${count} online now` : 'Finding matches...'}
-                </span>
-              );
-            })()}
-          </div>
         </div>
 
         {/* Audio Chat */}
@@ -420,7 +405,7 @@ const Home: React.FC = () => {
           </div>
           
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6 backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)' }}>
-            <svg className="w-6 h-6 sm:w-8 sm:h-8" style={{ color: 'var(--primary-brand)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
           </div>
@@ -444,21 +429,6 @@ const Home: React.FC = () => {
           >
             Start Free Voice Chat
           </button>
-          <div className="mt-4 flex justify-center">
-            {(() => {
-              const count = modeUserCounts.audio * 3;
-              const hasUsers = count >= 50;
-              return (
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
-                  <span className="relative flex h-2 w-2" aria-hidden="true">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                  </span>
-                  {hasUsers ? `${count} online now` : 'Finding matches...'}
-                </span>
-              );
-            })()}
-          </div>
         </div>
 
         {/* Video Chat */}
@@ -498,7 +468,7 @@ const Home: React.FC = () => {
           </div>
           
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6 backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)' }}>
-            <svg className="w-6 h-6 sm:w-8 sm:h-8" style={{ color: 'var(--primary-brand)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </div>
@@ -522,46 +492,39 @@ const Home: React.FC = () => {
           >
             Start Free Video Chat
           </button>
-          <div className="mt-4 flex justify-center">
-            {(() => {
-              const count = modeUserCounts.video * 3;
-              const hasUsers = count >= 50;
-              return (
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold animate-pulse" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)', color: 'white' }} aria-live="polite">
-                  <span className="relative flex h-2 w-2" aria-hidden="true">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                  </span>
-                  {hasUsers ? `${count} online now` : 'Finding matches...'}
-                </span>
-              );
-            })()}
-          </div>
         </div>
       </div>
 
-      {statusSummary && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm text-white">
-            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ color: 'var(--text-body)' }}>Online Now</div>
-              <div className="text-lg sm:text-xl font-bold">{totalOnlineUsers || (statusSummary.connectedUsers * 3)}</div>
-            </div>
-            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ color: 'var(--text-body)' }}>In Queue</div>
-              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.total * 3}</div>
-            </div>
-            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ color: 'var(--text-body)' }}>Voice Queue</div>
-              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.audio * 3}</div>
-            </div>
-            <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ color: 'var(--text-body)' }}>Video Queue</div>
-              <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.video * 3}</div>
+      {statusSummary && (() => {
+        const total = totalOnlineUsers || (statusSummary.connectedUsers * 3);
+        // Hide stats when total users < 100 to avoid showing "0 Queue" negative marketing
+        if (total < 100) {
+          return null;
+        }
+        
+        return (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm text-white">
+              <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ color: 'var(--text-body)' }}>Online Now</div>
+                <div className="text-lg sm:text-xl font-bold">{total}</div>
+              </div>
+              <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ color: 'var(--text-body)' }}>In Queue</div>
+                <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.total * 3}</div>
+              </div>
+              <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ color: 'var(--text-body)' }}>Voice Queue</div>
+                <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.audio * 3}</div>
+              </div>
+              <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ color: 'var(--text-body)' }}>Video Queue</div>
+                <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.video * 3}</div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
     {/* Free Instant Access & SEO Content */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
