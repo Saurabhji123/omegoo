@@ -20,7 +20,15 @@ export const authenticateToken = async (
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
+    console.log('🔑 Auth middleware - token check:', {
+      hasAuthHeader: !!authHeader,
+      hasToken: !!token,
+      tokenLength: token?.length,
+      endpoint: req.path
+    });
+
     if (!token) {
+      console.log('❌ No token provided');
       return res.status(401).json({
         success: false,
         error: 'Access token required'
@@ -28,18 +36,23 @@ export const authenticateToken = async (
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    console.log('✅ Token decoded:', { userId: decoded.userId, email: decoded.email });
     
     // Get user from database
   const user = await SelectedDatabaseService.getUserById(decoded.userId);
     
     if (!user) {
+      console.log('❌ User not found:', decoded.userId);
       return res.status(401).json({
         success: false,
         error: 'Invalid token'
       });
     }
 
+    console.log('✅ User found:', { userId: user.id, status: user.status, hasActiveToken: !!user.activeDeviceToken });
+
     if (user.status === 'banned') {
+      console.log('⛔ User is banned:', user.id);
       return res.status(403).json({
         success: false,
         error: 'Account is banned',
@@ -50,6 +63,9 @@ export const authenticateToken = async (
     // 🔒 SINGLE-DEVICE SESSION CHECK
     // If user has activeDeviceToken and it doesn't match current token, they're logged in elsewhere
     if (user.activeDeviceToken && user.activeDeviceToken !== token) {
+      console.log('⚠️  Session mismatch!');
+      console.log('Expected:', user.activeDeviceToken?.substring(0, 20));
+      console.log('Received:', token?.substring(0, 20));
       return res.status(401).json({
         success: false,
         error: 'You have been logged in from another device',
@@ -64,8 +80,10 @@ export const authenticateToken = async (
       status: user.status
     };
 
+    console.log('✅ Auth middleware passed for user:', user.id);
     next();
-  } catch (error) {
+  } catch (error: any) {
+    console.error('❌ Auth middleware error:', error.message);
     return res.status(403).json({
       success: false,
       error: 'Invalid token'

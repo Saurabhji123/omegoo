@@ -131,7 +131,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let mounted = true;
     
     const init = async () => {
-      if (!mounted || isInitializing) return;
+      if (!mounted) return;
+      if (isInitializing) {
+        console.log('⏭️  Auth init already in progress, skipping duplicate call');
+        return;
+      }
       await initializeAuth();
     };
     
@@ -254,23 +258,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('✅ Login response received:', { 
         hasToken: !!response.token, 
         hasUser: !!response.user,
-        userId: response.user?.id 
+        userId: response.user?.id,
+        userEmail: response.user?.email,
+        userName: response.user?.username
       });
       
-      // Set token in API service
+      if (!response.token || !response.user) {
+        throw new Error('Invalid login response - missing token or user data');
+      }
+      
+      // CRITICAL: Set everything in correct order
+      // 1. Set token in API service FIRST so subsequent requests work
       apiService.setToken(response.token);
       
+      // 2. Save to storage SECOND for persistence
+      storageService.setToken(response.token);
+      storageService.setUser(response.user);
+      
+      // 3. Update ref THIRD for immediate access
+      userRef.current = response.user;
+      
+      // 4. Update state LAST to trigger re-renders
       dispatch({ type: 'SET_TOKEN', payload: response.token });
       dispatch({ type: 'SET_USER', payload: response.user });
       
-      storageService.setToken(response.token);
-      storageService.setUser(response.user);
-      userRef.current = response.user;
-      
-      console.log('💾 Login data saved to storage');
+      console.log('💾 Login data saved successfully:', {
+        tokenLength: response.token.length,
+        userId: response.user.id,
+        storageToken: !!storageService.getToken(),
+        storageUser: !!storageService.getUser()
+      });
     } catch (error: any) {
       console.error('❌ Email login failed:', error);
       console.error('Error details:', error.message);
+      // Clean up any partial state on error
+      apiService.setToken(null);
+      storageService.removeToken();
+      storageService.removeUser();
+      userRef.current = null;
       throw error;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -356,18 +381,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginWithGoogle = async (idToken: string) => {
     try {
+      console.log('🔐 Attempting Google login...');
       dispatch({ type: 'SET_LOADING', payload: true });
       const response = await authAPI.loginWithGoogle(idToken);
       
-      dispatch({ type: 'SET_TOKEN', payload: response.token });
-      dispatch({ type: 'SET_USER', payload: response.user });
+      console.log('✅ Google login response received:', { 
+        hasToken: !!response.token, 
+        hasUser: !!response.user,
+        userId: response.user?.id
+      });
       
+      if (!response.token || !response.user) {
+        throw new Error('Invalid Google login response - missing token or user data');
+      }
+      
+      // CRITICAL: Set everything in correct order (same as email login)
       apiService.setToken(response.token);
       storageService.setToken(response.token);
       storageService.setUser(response.user);
       userRef.current = response.user;
-    } catch (error) {
-      console.error('Google login failed:', error);
+      dispatch({ type: 'SET_TOKEN', payload: response.token });
+      dispatch({ type: 'SET_USER', payload: response.user });
+      
+      console.log('💾 Google login data saved successfully');
+    } catch (error: any) {
+      console.error('❌ Google login failed:', error);
+      console.error('Error details:', error.message);
+      // Clean up on error
+      apiService.setToken(null);
+      storageService.removeToken();
+      storageService.removeUser();
+      userRef.current = null;
       throw error;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });

@@ -43,14 +43,19 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
       }
 
       // Check if this token is still the active one
+      // ONLY enforce if activeDeviceToken is set (allows backward compatibility)
       if (user.activeDeviceToken && user.activeDeviceToken !== token) {
-        console.log('ΓÜá∩╕Å Session replaced for user:', decoded.userId);
+        console.log('⚠️  Session replaced for user:', decoded.userId);
+        console.log('Expected token:', user.activeDeviceToken?.substring(0, 20));
+        console.log('Received token:', token?.substring(0, 20));
         return res.status(401).json({
           success: false,
           error: 'Your session has been replaced by a login from another device',
           code: 'SESSION_REPLACED'
         });
       }
+      
+      console.log('✅ Token validated successfully for user:', decoded.userId);
 
       next();
     } catch (jwtError) {
