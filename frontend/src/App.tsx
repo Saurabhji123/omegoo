@@ -350,16 +350,17 @@ const App: React.FC = () => {
 
   // Force cache refresh on app load
   useEffect(() => {
-    const APP_VERSION = '2.0.3'; // Fixed version to prevent infinite reload loop
+    const APP_VERSION = '2.0.4'; // Increment version for new deployment
     const storedVersion = localStorage.getItem('app_version');
-    const hasReloaded = sessionStorage.getItem('has_reloaded'); // Prevent infinite loop
+    const hasReloadedKey = `has_reloaded_${APP_VERSION}`; // Version-specific reload flag
+    const hasReloaded = sessionStorage.getItem(hasReloadedKey);
 
     if (storedVersion !== APP_VERSION && !hasReloaded) {
       console.log('🔄 New version detected, clearing cache...');
       console.log('Old version:', storedVersion, '→ New version:', APP_VERSION);
       
-      // Mark that we're about to reload to prevent infinite loop
-      sessionStorage.setItem('has_reloaded', 'true');
+      // Mark that we're about to reload to prevent infinite loop (version-specific)
+      sessionStorage.setItem(hasReloadedKey, 'true');
       
       // Clear service worker cache
       if ('serviceWorker' in navigator) {
@@ -383,14 +384,21 @@ const App: React.FC = () => {
       localStorage.setItem('app_version', APP_VERSION);
       console.log('✅ Cache cleared, version updated to', APP_VERSION);
       
-      // Reload ONCE
-      console.log('🔄 Forcing hard reload in 500ms...');
+      // Reload ONCE after a short delay
+      console.log('🔄 Forcing hard reload in 300ms...');
       setTimeout(() => {
         window.location.reload();
-      }, 500);
-    } else if (hasReloaded) {
-      // Clear the reload flag after successful load
-      sessionStorage.removeItem('has_reloaded');
+      }, 300);
+    } else if (hasReloaded && storedVersion === APP_VERSION) {
+      // Clear old reload flags for previous versions
+      console.log('✅ App loaded successfully on version', APP_VERSION);
+      // Clean up old version flags
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith('has_reloaded_') && key !== hasReloadedKey) {
+          sessionStorage.removeItem(key);
+        }
+      }
     }
   }, []);
 
