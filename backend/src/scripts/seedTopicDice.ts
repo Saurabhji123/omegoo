@@ -896,8 +896,10 @@ async function seedTopicDicePrompts() {
 
     console.log('\n✅ Topic Dice seed completed!');
     
-    // Close database connection
-    await (DatabaseService as any).disconnect();
+    // Close database connection if using MongoDB
+    if (typeof (DatabaseService as any).disconnect === 'function') {
+      await (DatabaseService as any).disconnect();
+    }
     process.exit(0);
 
   } catch (error) {

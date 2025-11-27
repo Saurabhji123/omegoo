@@ -13,6 +13,7 @@
     "lint": "eslint src/**/*.ts",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
+    "seed:topic-dice": "ts-node src/scripts/seedTopicDice.ts",
     "admin:create": "ts-node src/scripts/createOwnerAdmin.ts",
     "admin:setup": "ts-node src/scripts/createFirstAdmin.ts",
     "admin:check": "ts-node src/scripts/checkAdmin.ts",

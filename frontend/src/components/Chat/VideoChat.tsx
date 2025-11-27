@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useGuest } from '../../contexts/GuestContext';
 import WebRTCService from '../../services/webrtc';
 import {
   VideoCameraIcon,
@@ -34,6 +35,7 @@ const VideoChat: React.FC = () => {
   const location = useLocation();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
+  const { guestId } = useGuest();
   const { selectedMask, blurState, revealCountdown, revealVideo, setMask, startBlurCountdown, enableManualBlur } = useARFilter();
   
   // Check if this is an upgraded session from TextChat
@@ -2429,13 +2431,13 @@ const VideoChat: React.FC = () => {
       )}
 
       {/* Report Modal */}
-      {partnerId && sessionId && user?.id && (
+      {partnerId && sessionId && (
         <ReportModal
           isOpen={showReportModal}
           onClose={() => setShowReportModal(false)}
           sessionId={sessionId}
           reportedUserId={partnerId}
-          reporterUserId={user.id}
+          reporterUserId={user?.id || guestId || 'anonymous'}
           chatMode="video"
         />
       )}

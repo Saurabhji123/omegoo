@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useGuest } from '../../contexts/GuestContext';
 import { useTranslation } from '../../contexts/TranslationContext';
 import { 
   PaperAirplaneIcon,
@@ -63,6 +64,7 @@ const TextChat: React.FC = () => {
     resetVideoUpgradeState
   } = useSocket();
   const { user } = useAuth();
+  const { guestId } = useGuest();
   const { preferredLanguage, autoTranslateEnabled, translateMessage } = useTranslation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const webrtcServiceRef = useRef<WebRTCService | null>(null);
@@ -1781,12 +1783,12 @@ const TextChat: React.FC = () => {
       </div>
 
       {/* Report Modal */}
-      {showReportModal && user && (
+      {showReportModal && (
         <ReportModal
           isOpen={showReportModal}
           sessionId={sessionId || ''}
           reportedUserId={partnerId}
-          reporterUserId={user.id}
+          reporterUserId={user?.id || guestId || 'anonymous'}
           chatMode="text"
           onClose={() => setShowReportModal(false)}
         />

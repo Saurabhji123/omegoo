@@ -252,6 +252,40 @@ async function runMigrations() {
   }
 }
 
+// Load topic dice prompts into database
+async function loadTopicDicePrompts() {
+  try {
+    console.log('🎲 Loading topic dice prompts...');
+    
+    const DatabaseServiceClass = ServiceFactory.DatabaseService;
+    
+    // Check if prompts already exist
+    const existingPrompts = await (DatabaseServiceClass as any).getTopicDicePrompts({ active: true });
+    
+    if (existingPrompts && existingPrompts.length > 0) {
+      console.log(`✅ Topic dice prompts already loaded (${existingPrompts.length} prompts)`);
+      return;
+    }
+    
+    // Load prompts from seed file
+    const { topicDicePrompts } = await import('./scripts/seedTopicDice');
+    
+    console.log(`🎲 Loading ${topicDicePrompts.length} topic dice prompts...`);
+    
+    for (const prompt of topicDicePrompts) {
+      await (DatabaseServiceClass as any).createTopicDicePrompt({
+        ...prompt,
+        createdAt: new Date()
+      });
+    }
+    
+    console.log(`✅ Successfully loaded ${topicDicePrompts.length} topic dice prompts`);
+  } catch (error) {
+    console.error('❌ Error loading topic dice prompts:', error);
+    // Don't exit - continue server startup
+  }
+}
+
 // Initialize services
 async function initializeServices() {
   try {
@@ -265,6 +299,9 @@ async function initializeServices() {
 
     // Run migrations after database initialization
     await runMigrations();
+    
+    // Load topic dice prompts if database is empty
+    await loadTopicDicePrompts();
 
     // Initialize socket service
     SocketService.initialize(io);

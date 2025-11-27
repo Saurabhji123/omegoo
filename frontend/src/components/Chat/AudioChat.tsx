@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useGuest } from '../../contexts/GuestContext';
 import WebRTCService from '../../services/webrtc';
 import { 
   MicrophoneIcon,
@@ -23,6 +24,7 @@ const AudioChat: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected: socketConnected, connecting: socketConnecting, modeUserCounts, setActiveMode } = useSocket();
   const { updateUser, user } = useAuth();
+  const { guestId } = useGuest();
   const { selectedFilter, getProcessedStream, setFilter, adjustIntensity, intensity, performanceMetrics } = useVoiceFilter();
   const webRTCRef = useRef<WebRTCService | null>(null);
   const localAudioRef = useRef<HTMLAudioElement>(null);
@@ -1525,12 +1527,12 @@ const AudioChat: React.FC = () => {
       )}
 
       {/* Report Modal */}
-      {showReportModal && user && (
+      {showReportModal && (
         <ReportModal
           isOpen={showReportModal}
           sessionId={sessionId || ''}
           reportedUserId={partnerId}
-          reporterUserId={user.id}
+          reporterUserId={user?.id || guestId || 'anonymous'}
           chatMode="audio"
           onClose={() => setShowReportModal(false)}
         />
