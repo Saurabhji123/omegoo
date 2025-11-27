@@ -47,15 +47,6 @@ const TermsOfService: React.FC = () => {
     'Circumventing moderation or safety systems'
   ];
 
-  const coinRules = [
-    'Coins reset automatically to 50 every day at midnight UTC.',
-    'No manual claiming is required—balances refresh on their own.',
-    'Unused coins do not roll over into the next day.',
-    'Omegoo remains free; coins simply pace engagement.',
-    'You must be logged in to spend coins and access chat modes.',
-    'Respectful use keeps the economy fair for everyone.'
-  ];
-
   const reportingTriggers = [
     'Nudity, sexually explicit, or exploitative content',
     'Harassment, bullying, hate speech, or intimidation',
@@ -193,32 +184,6 @@ const TermsOfService: React.FC = () => {
     },
     {
       badge: '5',
-      title: 'Coin Economy System',
-      content: (
-        <div className="space-y-3 text-sm text-white/70">
-          <p>
-            <span className="font-medium text-white">Daily coin allocation:</span> Every registered user receives <span className="text-yellow-300">50 coins</span> daily. Balances renew automatically at
-            midnight UTC.
-          </p>
-          <p>
-            <span className="font-medium text-white">Chat session cost:</span> Initiating any chat mode deducts <span className="text-yellow-300">1 coin</span>. Deductions occur when you start a conversation.
-          </p>
-          <div className="rounded-xl border border-yellow-400/20 bg-yellow-500/10 p-5">
-            <h5 className="text-sm font-semibold text-yellow-100">Coin system rules</h5>
-            <ul className="mt-3 space-y-2 text-xs">
-              {coinRules.map((rule) => (
-                <li key={rule}>• {rule}</li>
-              ))}
-            </ul>
-          </div>
-          <p>
-            <span className="font-medium text-white">Anonymous browsing:</span> Guests can explore Omegoo without coins. A login is required only when you are ready to start chatting.
-          </p>
-        </div>
-      )
-    },
-    {
-      badge: '6',
       title: 'Privacy & Data Protection',
       content: (
         <div className="space-y-3 text-sm text-white/70">
@@ -261,7 +226,7 @@ const TermsOfService: React.FC = () => {
       )
     },
     {
-      badge: '7.5',
+      badge: '7',
       title: 'Reporting System & Automatic Ban Policy',
       content: (
         <div className="space-y-4 text-sm text-white/70">

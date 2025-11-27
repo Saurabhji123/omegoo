@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   ShieldCheckIcon,
   HeartIcon,
@@ -207,27 +207,6 @@ const safetySections = [
             report so we can support the investigation.
           </>
         )
-      }
-    ]
-  },
-  {
-    title: 'Coin Economy & Session Health',
-    description: 'Coins are Omegoo’s pacing mechanism to keep the network respectful and spam-free.',
-    items: [
-      {
-        title: 'Earn & reset cycle',
-        content:
-          'Daily resets encourage fresh conversations. Breaking rules locks your wallet until moderators confirm it is safe to re-enable.'
-      },
-      {
-        title: 'Session quality meter',
-        content:
-          'If two users downvote a chat, Omegoo refunds the coins automatically and offers safety tips before you requeue.'
-      },
-      {
-        title: 'Community boosts',
-        content:
-          'Participate in verified events or language clubs to unlock bonus coins and priority matching with equally vetted partners.'
       }
     ]
   },

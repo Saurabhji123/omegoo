@@ -61,13 +61,13 @@ const About: React.FC = () => {
       <SectionCard title="Our mission">
         <div className="space-y-4 text-sm text-white/75 sm:text-base">
           <p>
-            Omegoo bridges cultures and connects hearts across the globe. We believe meaningful conversations can happen between strangers when the space feels safe and judgment free. From Indian universities and LPU hostels to remote coworking hubs overseas, Omegoo empowers people to share stories, discover opportunities, and build supportive communities.
+            Omegoo bridges cultures and connects hearts across the globe. We believe meaningful conversations can happen between strangers when the space feels safe and judgment free. From university campuses to remote coworking hubs worldwide, Omegoo empowers people to share stories, discover opportunities, and build supportive communities.
           </p>
           <p>
             Everything we design—from the matching logic to the moderation stack—prioritises empathy, transparency, and user control. That philosophy keeps Omegoo welcoming for first-time visitors and power users alike.
           </p>
           <p>
-            The founding team spent months interviewing campus ambassadors, teachers, hostel wardens, and mental-health counsellors to understand what makes random chat spaces fail. Omegoo folds those lessons into weekly updates, prioritising user wellbeing over vanity metrics.
+            The founding team spent months interviewing campus ambassadors, teachers, student leaders, and mental-health counsellors to understand what makes random chat spaces fail. Omegoo folds those lessons into weekly updates, prioritising user wellbeing over vanity metrics.
           </p>
           <p>
             Instead of chasing virality, we measure success by the number of positive interactions, repeat study sessions, and cross-border friendships formed on the platform. Every improvement aims to earn user trust first.
@@ -158,7 +158,7 @@ const About: React.FC = () => {
           <div className="space-y-3">
             <InfoPill tone="positive">100% FREE Access</InfoPill>
             <p className="text-sm text-white/70">
-              Omegoo is completely free to use—no coins, no subscriptions, no hidden charges. We believe meaningful conversations should be accessible to everyone. Login is optional and only needed for premium features in the future. Start chatting instantly as a guest!
+              Omegoo is completely free to use—no subscriptions, no hidden charges. We believe meaningful conversations should be accessible to everyone. Login is optional and only needed for premium features in the future. Start chatting instantly as a guest!
             </p>
           </div>
 

@@ -336,6 +336,43 @@ const App: React.FC = () => {
   // Note: React Scripts uses process.env, not import.meta.env
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '493047971159-6089h729jnghpfo7scujvjjhcb0lmg8d.apps.googleusercontent.com';
 
+  // Force cache refresh on app load
+  useEffect(() => {
+    const APP_VERSION = '2.0.0'; // Update this on each deploy
+    const storedVersion = localStorage.getItem('app_version');
+    
+    if (storedVersion !== APP_VERSION) {
+      console.log('🔄 New version detected, clearing cache...');
+      
+      // Clear service worker cache
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            registration.unregister();
+          });
+        });
+        
+        // Clear cache storage
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => {
+              caches.delete(name);
+            });
+          });
+        }
+      }
+      
+      // Update version
+      localStorage.setItem('app_version', APP_VERSION);
+      console.log('✅ Cache cleared, version updated to', APP_VERSION);
+      
+      // Force reload once to get fresh content
+      if (storedVersion) {
+        window.location.reload();
+      }
+    }
+  }, []);
+
   return (
     <HelmetProvider>
       <GoogleOAuthProvider clientId={googleClientId}>
