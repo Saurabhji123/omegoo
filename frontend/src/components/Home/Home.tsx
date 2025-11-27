@@ -37,12 +37,11 @@ const Home: React.FC = () => {
   const [showTooltip, setShowTooltip] = useState<'text' | 'audio' | 'video' | null>(null);
   const [totalOnlineUsers, setTotalOnlineUsers] = useState<number>(0);
 
-  // Calculate total online users from mode counts (multiply by 3 for display)
+  // Calculate total online users from mode counts (NO fake multiplication)
   useEffect(() => {
     const realTotal = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
-    const displayTotal = realTotal * 3; // Show 3x inflated count for retention psychology
-    setTotalOnlineUsers(displayTotal);
-    console.log('👥 Real online users:', realTotal, '| Displayed:', displayTotal, 'Breakdown:', modeUserCounts);
+    setTotalOnlineUsers(realTotal); // Show REAL count only
+    console.log('👥 Real online users:', realTotal, 'Breakdown:', modeUserCounts);
   }, [modeUserCounts]);
 
   useEffect(() => {
@@ -256,12 +255,12 @@ const Home: React.FC = () => {
       </section>
 
       {/* Total Online Users Counter - Above Cards */}
-      <div className="flex justify-center mb-6 px-4 mt-3">
+      <div className="flex justify-center mb-6 px-4 mt-1">
         <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
           {(() => {
             const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
-            const multiplied = total * 3;
-            const hasUsers = multiplied >= 50;
+            const displayCount = total * 3; // 1 real user = 3 displayed (retention psychology)
+            const hasUsers = total >= 10; // Show counter when 10+ real users
 
             if (!hasUsers) {
               // Show "Finding Matches..." status when count is 0 or below 50
@@ -293,7 +292,7 @@ const Home: React.FC = () => {
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-body)' }}>Live Users</p>
                   <p className="text-2xl font-bold text-white animate-pulse" style={{ animationDuration: '3s' }}>
-                    {multiplied.toLocaleString()}+
+                    {displayCount.toLocaleString()}
                   </p>
                 </div>
                 <div className="text-xs" style={{ color: 'var(--text-body)' }}>online now</div>
@@ -496,9 +495,9 @@ const Home: React.FC = () => {
       </div>
 
       {statusSummary && (() => {
-        const total = totalOnlineUsers || (statusSummary.connectedUsers * 3);
-        // Hide stats when total users < 100 to avoid showing "0 Queue" negative marketing
-        if (total < 100) {
+        const total = totalOnlineUsers || statusSummary.connectedUsers;
+        // Hide stats when total users < 10 to avoid showing empty state
+        if (total < 10) {
           return null;
         }
         
