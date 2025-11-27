@@ -90,7 +90,7 @@ const dedupeOrigins = (origins: string[]) => Array.from(new Set(origins));
 const sharedCorsOptions: Pick<CorsOptions, 'credentials' | 'methods' | 'allowedHeaders'> = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Session', 'X-Admin-Csrf', 'X-CSRF-Token']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Session', 'X-Admin-Csrf', 'X-CSRF-Token', 'X-Guest-Id']
 };
 
 const defaultCors = cors({
