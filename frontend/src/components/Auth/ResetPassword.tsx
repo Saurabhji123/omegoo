@@ -109,7 +109,7 @@ const ResetPassword: React.FC = () => {
             </Link>
             <Link
               to="/login"
-              className="text-white hover:text-purple-300 transition-colors font-medium text-sm sm:text-base flex items-center space-x-1"
+              className="text-white hover:text-gray-300 transition-colors font-medium text-sm sm:text-base flex items-center space-x-1"
             >
               <ArrowLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>Back to login</span>
@@ -122,16 +122,16 @@ const ResetPassword: React.FC = () => {
         <div className="max-w-md w-full bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl shadow-2xl p-6 sm:p-8">
           <div className="text-center mb-6 sm:mb-8">
             <h1 className="text-3xl sm:text-4xl font-semibold text-white">Set a new password</h1>
-            <p className="mt-2 text-sm sm:text-base text-purple-200">
+            <p className="mt-2 text-sm sm:text-base text-gray-200">
               Choose a strong password to keep your Omegoo account secure.
             </p>
           </div>
 
           {status === 'checking' && (
-            <div className="bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl px-4 py-6 text-center text-purple-100">
-              <div className="mx-auto mb-3 h-10 w-10 border-4 border-purple-200 border-t-transparent rounded-full animate-spin" />
+            <div className="bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl px-4 py-6 text-center text-gray-100">
+              <div className="mx-auto mb-3 h-10 w-10 border-4 border-gray-200 border-t-transparent rounded-full animate-spin" />
               <p className="font-medium">Validating link...</p>
-              <p className="text-sm mt-2 text-purple-200">Hang tight while we confirm your reset request.</p>
+              <p className="text-sm mt-2 text-gray-200">Hang tight while we confirm your reset request.</p>
             </div>
           )}
 
@@ -141,10 +141,10 @@ const ResetPassword: React.FC = () => {
               <div>
                 <p className="font-semibold">Reset link unavailable</p>
                 <p className="mt-1 leading-relaxed">{error || 'This link no longer works. Request a fresh password reset to continue.'}</p>
-                <p className="mt-2 text-xs text-purple-200">
+                <p className="mt-2 text-xs text-gray-200">
                   Still stuck? Contact <a className="text-white font-medium" href="mailto:omegoochat@gmail.com">omegoochat@gmail.com</a> and we&apos;ll help you out.
                 </p>
-                <p className="mt-2 text-xs text-purple-200">
+                <p className="mt-2 text-xs text-gray-200">
                   Need a new link?{' '}
                   <Link to="/forgot-password" className="text-white font-medium hover:underline">
                     Request password reset
@@ -163,7 +163,7 @@ const ResetPassword: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2" htmlFor="password">
+                <label className="block text-xs sm:text-sm font-medium text-gray-200 mb-2" htmlFor="password">
                   New password
                 </label>
                 <div className="relative">
@@ -229,8 +229,8 @@ const ResetPassword: React.FC = () => {
               <div>
                 <p className="font-semibold">Password updated</p>
                 <p className="mt-1 leading-relaxed">{successMessage}</p>
-                <p className="mt-2 text-xs text-purple-200">Redirecting you to login…</p>
-                <p className="mt-2 text-xs text-purple-200">
+                <p className="mt-2 text-xs text-gray-200">Redirecting you to login…</p>
+                <p className="mt-2 text-xs text-gray-200">
                   Prefer to jump now?{' '}
                   <Link to="/login" className="text-white font-medium hover:underline">
                     Go to login

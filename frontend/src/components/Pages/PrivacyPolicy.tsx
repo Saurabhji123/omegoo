@@ -26,7 +26,7 @@ const PrivacyPolicy: React.FC = () => {
       description: 'Conversations never touch permanent storage and expire within seconds.'
     },
     {
-      icon: <GlobeAltIcon className="h-6 w-6 text-violet-300" />,
+      icon: <GlobeAltIcon className="h-6 w-6 text-gray-300" />,
       title: 'Global compliance',
       description: 'Built to exceed GDPR, CCPA, and international privacy expectations.'
     }
@@ -99,8 +99,8 @@ const PrivacyPolicy: React.FC = () => {
                 <li>• Human moderators review flagged sessions within 24 hours</li>
               </ul>
             </div>
-            <div className="rounded-xl border border-violet-400/30 bg-violet-500/10 p-4">
-              <h5 className="text-sm font-semibold text-violet-100">Service improvement</h5>
+            <div className="rounded-xl border border-gray-400/30 bg-gray-500/10 p-4">
+              <h5 className="text-sm font-semibold text-gray-100">Service improvement</h5>
               <ul className="mt-2 space-y-2 text-xs">
                 <li>• Measure anonymous connection success rates</li>
                 <li>• Track device and bandwidth trends to improve performance</li>
@@ -266,12 +266,12 @@ const PrivacyPolicy: React.FC = () => {
             <li>• Under-13 access is blocked automatically through safety filters and manual audits.</li>
             <li>• Reports concerning minors are prioritised and handled immediately.</li>
           </ul>
-          <div className="rounded-xl border border-purple-400/30 bg-purple-500/10 p-4">
-            <h5 className="text-sm font-semibold text-purple-100">Guidance for parents & guardians</h5>
+          <div className="rounded-xl border border-gray-400/30 bg-gray-500/10 p-4">
+            <h5 className="text-sm font-semibold text-gray-100">Guidance for parents & guardians</h5>
             <ul className="mt-2 space-y-2 text-xs">
               <li>• Monitor online activity and use parental control software</li>
               <li>• Educate teens about respectful behaviour and privacy risks</li>
-              <li>• Contact <a href="mailto:omegoochat@gmail.com" className="text-purple-200 underline">omegoochat@gmail.com</a> to report underage use</li>
+              <li>• Contact <a href="mailto:omegoochat@gmail.com" className="text-red-400 underline">omegoochat@gmail.com</a> to report underage use</li>
             </ul>
           </div>
         </div>
@@ -292,8 +292,8 @@ const PrivacyPolicy: React.FC = () => {
                 <li>• General support: <a href="mailto:omegoochat@gmail.com" className="text-blue-200 underline">omegoochat@gmail.com</a></li>
               </ul>
             </div>
-            <div className="rounded-xl border border-violet-400/30 bg-violet-500/10 p-4">
-              <h5 className="text-sm font-semibold text-violet-100">Response times</h5>
+            <div className="rounded-xl border border-gray-400/30 bg-gray-500/10 p-4">
+              <h5 className="text-sm font-semibold text-gray-100">Response times</h5>
               <ul className="mt-2 space-y-2 text-xs">
                 <li>• Safety escalations: within 24 hours</li>
                 <li>• Privacy requests: within 48 hours</li>
@@ -384,8 +384,8 @@ const PrivacyPolicy: React.FC = () => {
               <p className="font-semibold text-sky-100">Secondary (Frankfurt, EU)</p>
               <p className="mt-2 text-white/70">Failover infrastructure satisfies GDPR residency for European users when required.</p>
             </div>
-            <div className="rounded-xl border border-violet-400/30 bg-violet-500/10 p-4">
-              <p className="font-semibold text-violet-100">Edge nodes (Global)</p>
+            <div className="rounded-xl border border-gray-400/30 bg-gray-500/10 p-4">
+              <p className="font-semibold text-gray-100">Edge nodes (Global)</p>
               <p className="mt-2 text-white/70">Transient WebRTC relays located worldwide flush buffers immediately after each session.</p>
             </div>
           </div>

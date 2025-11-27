@@ -51,7 +51,7 @@ const ForgotPassword: React.FC = () => {
             </Link>
             <Link
               to="/login"
-              className="text-white hover:text-purple-300 transition-colors font-medium text-sm sm:text-base flex items-center space-x-1"
+              className="text-white hover:text-gray-300 transition-colors font-medium text-sm sm:text-base flex items-center space-x-1"
             >
               <ArrowLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>Back to login</span>
@@ -64,7 +64,7 @@ const ForgotPassword: React.FC = () => {
         <div className="max-w-md w-full bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20 rounded-2xl shadow-2xl p-6 sm:p-8">
           <div className="text-center mb-6 sm:mb-8">
             <h1 className="text-3xl sm:text-4xl font-semibold text-white">Forgot your password?</h1>
-            <p className="mt-2 text-sm sm:text-base text-purple-200">
+            <p className="mt-2 text-sm sm:text-base text-gray-200">
               Enter the email you use for Omegoo and we&apos;ll send a secure reset link.
             </p>
           </div>
@@ -75,7 +75,7 @@ const ForgotPassword: React.FC = () => {
               <div>
                 <p className="font-semibold">Check your inbox</p>
                 <p className="mt-1 leading-relaxed">{message}</p>
-                <p className="mt-2 text-xs text-purple-200">Didn&apos;t get it? Remember to check your spam folder.</p>
+                <p className="mt-2 text-xs text-gray-200">Didn&apos;t get it? Remember to check your spam folder.</p>
               </div>
             </div>
           ) : (
@@ -87,11 +87,11 @@ const ForgotPassword: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2" htmlFor="email">
+                <label className="block text-xs sm:text-sm font-medium text-gray-200 mb-2" htmlFor="email">
                   Email address
                 </label>
                 <div className="relative">
-                  <EnvelopeIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-purple-300" />
+                  <EnvelopeIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
                   <input
                     id="email"
                     type="email"
@@ -126,7 +126,7 @@ const ForgotPassword: React.FC = () => {
             </form>
           )}
 
-          <p className="mt-6 text-center text-xs sm:text-sm text-purple-200">
+          <p className="mt-6 text-center text-xs sm:text-sm text-gray-200">
             Remember your password?{' '}
             <Link to="/login" className="text-white font-medium hover:underline">
               Return to login

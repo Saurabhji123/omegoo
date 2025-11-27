@@ -1539,7 +1539,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
   }, [realtimeUserSeries]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-900 py-8 px-4">
+    <div className="min-h-screen bg-gray-900 py-8 px-4">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <header className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-xl shadow-indigo-950/40 backdrop-blur">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -1573,7 +1573,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                   onClick={() => setActiveTab(tab)}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                     isActive
-                      ? 'bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 text-white shadow-md shadow-indigo-900/40'
+                      ? 'btn-primary'
                       : 'border border-white/10 bg-white/5 text-white/70 hover:text-white'
                   }`}
                 >
@@ -1715,7 +1715,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                   </select>
                   <button
                     type="submit"
-                    className="rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-900/40 transition hover:from-blue-400 hover:to-indigo-400"
+                    className="btn-primary rounded-full px-4 py-2 text-sm font-medium shadow-lg transition"
                   >
                     Search
                   </button>
@@ -1864,7 +1864,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                             type="button"
                             onClick={() => handleRoleUpdate(roleDraft)}
                             disabled={roleUpdating || roleDraft === (selectedUser.tier as 'guest' | 'user' | 'admin' | 'super_admin')}
-                            className="rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-purple-900/40 transition hover:from-purple-400 hover:to-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="btn-primary rounded-full px-4 py-2 text-xs font-semibold shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {roleUpdating ? 'Updating…' : 'Update role'}
                           </button>
@@ -1906,7 +1906,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                             <button
                               type="submit"
                               disabled={actionLoading}
-                              className="rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:from-emerald-400 hover:to-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="bg-green-600 hover:bg-green-700 rounded-full px-4 py-2 text-xs font-semibold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               Apply adjustment
                             </button>
@@ -2073,7 +2073,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                 )}
                 {!reportsLoading &&
                   reports.map((report) => (
-                    <div key={report.id} className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/15 via-white/5 to-transparent p-5 shadow-lg shadow-purple-950/30 transition-transform duration-300 ease-out hover:-translate-y-1 hover:border-white/20 hover:shadow-2xl">
+                    <div key={report.id} className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/15 via-white/5 to-transparent p-5 shadow-lg shadow-gray-950/30 transition-transform duration-300 ease-out hover:-translate-y-1 hover:border-white/20 hover:shadow-2xl">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="text-xs uppercase tracking-wide text-white/50">Report ID</p>
@@ -2308,7 +2308,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                     </span>
                   ))}
                   {analyticsFilters.signupSources.map((value) => (
-                    <span key={`filter-source-${value}`} className="rounded-full border border-purple-400/40 bg-purple-500/15 px-3 py-1 text-purple-100/80">
+                    <span key={`filter-source-${value}`} className="rounded-full border border-red-400/40 bg-red-500/15 px-3 py-1 text-red-100/80">
                       Signup · {formatSegmentLabel(value)}
                     </span>
                   ))}
@@ -2363,8 +2363,8 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                         <p className="text-xs uppercase tracking-wide text-orange-200/80">Returning users</p>
                         <p className="mt-2 text-lg font-semibold text-white">{userGrowthTotals.returningUsers.toLocaleString()}</p>
                       </div>
-                      <div className="rounded-2xl border border-purple-400/40 bg-purple-500/10 p-4">
-                        <p className="text-xs uppercase tracking-wide text-purple-200/80">Window total</p>
+                      <div className="rounded-2xl border border-gray-400/40 bg-gray-500/10 p-4">
+                        <p className="text-xs uppercase tracking-wide text-gray-200/80">Window total</p>
                         <p className="mt-2 text-lg font-semibold text-white">{userGrowthTotals.totalUsers.toLocaleString()}</p>
                       </div>
                     </div>
@@ -2779,7 +2779,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ admin, onLogout }) => {
                     <button
                       onClick={publishIncident}
                       disabled={actionLoading}
-                      className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-amber-900/40 transition hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="bg-yellow-600 hover:bg-yellow-700 rounded-full px-5 py-2 text-sm font-semibold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Publish alert
                     </button>

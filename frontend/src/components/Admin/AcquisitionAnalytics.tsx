@@ -381,7 +381,7 @@ const AcquisitionAnalytics: React.FC<AcquisitionAnalyticsProps> = ({
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-2xl border border-white/10 bg-black/30 p-5 shadow-lg shadow-purple-950/30 transition hover:border-white/20">
+        <div className="rounded-2xl border border-white/10 bg-black/30 p-5 shadow-lg shadow-gray-950/30 transition hover:border-white/20">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-white">Top acquisition sources</h3>
@@ -427,7 +427,7 @@ const AcquisitionAnalytics: React.FC<AcquisitionAnalyticsProps> = ({
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <span className="mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/20 text-sm font-semibold text-purple-100/90">
+                        <span className="mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full bg-red-500/20 text-sm font-semibold text-red-100/90">
                           {index + 1}
                         </span>
                         <span className="text-sm font-semibold text-white">{formatSourceLabel(entry)}</span>
@@ -438,7 +438,7 @@ const AcquisitionAnalytics: React.FC<AcquisitionAnalyticsProps> = ({
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-wide text-white/50">
-                      <span className="rounded-full border border-purple-400/30 bg-purple-500/15 px-2 py-0.5 text-purple-100/80">{trendLabel} vs prior window</span>
+                      <span className="rounded-full border border-red-400/30 bg-red-500/15 px-2 py-0.5 text-red-100/80">{trendLabel} vs prior window</span>
                       <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-white/70">{previousLabel}</span>
                     </div>
                   </div>

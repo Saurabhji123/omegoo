@@ -824,7 +824,7 @@ const Home: React.FC = () => {
               <article key={location.city} className="bg-white/10 border border-white/15 rounded-2xl p-6 text-gray-100 backdrop-blur-md shadow-lg">
                 <h3 className="text-lg font-semibold text-white mb-2">{location.city}</h3>
                 <p className="text-sm sm:text-base leading-relaxed">{location.blurb}</p>
-                <p className="mt-3 text-xs uppercase tracking-wider text-indigo-200">
+                <p className="mt-3 text-xs uppercase tracking-wider text-red-200">
                   Keywords: {location.city.toLowerCase()}, Omegle alternative {location.city.split(' ')[0]}, campus chat {location.city.split(' ')[0]}
                 </p>
               </article>
@@ -855,7 +855,7 @@ const Home: React.FC = () => {
                 </p>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-purple-300 mb-3">🔒 100% Anonymous Video Chat</h3>
+                <h3 className="text-xl font-semibold text-red-300 mb-3">🔒 100% Anonymous Video Chat</h3>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
                   Your privacy matters. Omegoo provides truly <strong>anonymous video chat</strong> with stranger cam chat features that don't track or store your personal data. We use anonymous guest IDs only for safety moderation.
                 </p>
@@ -867,7 +867,7 @@ const Home: React.FC = () => {
                 </p>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-pink-300 mb-3">🛡️ AI-Powered Safety</h3>
+                <h3 className="text-xl font-semibold text-red-300 mb-3">🛡️ AI-Powered Safety</h3>
                 <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
                   Unlike legacy Omegle clones, Omegoo features real-time AI moderation, instant reporting, and community safety prompts. This <strong>Omegle-like app</strong> actually cares about user safety.
                 </p>

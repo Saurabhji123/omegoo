@@ -134,7 +134,7 @@ const VoiceAvatarPicker: React.FC<VoiceAvatarPickerProps> = ({ isOpen, onClose, 
                   disabled={isProcessing}
                   className={`relative p-6 rounded-xl border-2 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
                     isSelected
-                      ? 'border-purple-500 bg-gradient-to-br ' + preset.color + ' shadow-lg'
+                      ? 'border-red-500 bg-gradient-to-br ' + preset.color + ' shadow-lg'
                       : 'border-white/20 bg-white/5 hover:border-white/40'
                   }`}
                 >
@@ -178,7 +178,7 @@ const VoiceAvatarPicker: React.FC<VoiceAvatarPickerProps> = ({ isOpen, onClose, 
               <div className="flex items-center justify-between mb-4">
                 <label className="text-white font-semibold">Filter Intensity:</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-purple-400 font-bold text-lg">
+                  <span className="text-red-400 font-bold text-lg">
                     {formatIntensity(intensityLocal)}
                   </span>
                   <span className="text-gray-400 text-sm">
@@ -196,7 +196,7 @@ const VoiceAvatarPicker: React.FC<VoiceAvatarPickerProps> = ({ isOpen, onClose, 
                 value={intensityLocal}
                 onChange={(e) => handleIntensityChange(parseFloat(e.target.value))}
                 disabled={isProcessing}
-                className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider-purple"
+                className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider-red"
                 style={{
                   background: `linear-gradient(to right, rgb(168, 85, 247) 0%, rgb(168, 85, 247) ${intensityLocal * 100}%, rgba(255,255,255,0.2) ${intensityLocal * 100}%, rgba(255,255,255,0.2) 100%)`
                 }}
@@ -311,23 +311,23 @@ const VoiceAvatarPicker: React.FC<VoiceAvatarPickerProps> = ({ isOpen, onClose, 
       </div>
 
       <style>{`
-        .slider-purple::-webkit-slider-thumb {
+        .slider-red::-webkit-slider-thumb {
           appearance: none;
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: rgb(168, 85, 247);
+          background: rgb(255, 71, 87);
           cursor: pointer;
-          box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+          box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
         }
-        .slider-purple::-moz-range-thumb {
+        .slider-red::-moz-range-thumb {
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: rgb(168, 85, 247);
+          background: rgb(255, 71, 87);
           cursor: pointer;
           border: none;
-          box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+          box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
         }
       `}</style>
     </div>

@@ -166,17 +166,17 @@ const Chat: React.FC = () => {
         {isSearching && !isConnected && (
           <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center">
             <div className="text-center text-white">
-              <ArrowPathIcon className="w-12 h-12 mx-auto mb-4 animate-spin text-blue-500" />
+              <ArrowPathIcon className="w-12 h-12 mx-auto mb-4 animate-spin text-red-500" />
               <h2 className="text-2xl font-bold mb-2">Finding someone for you...</h2>
               <p className="text-gray-400 mb-4">Please wait while we connect you to a stranger</p>
               {/* Queue info display - reserved for future implementation */}
               {/* {queueInfo && (
                 <div className="bg-gray-900 bg-opacity-50 rounded-lg p-4 max-w-sm mx-auto">
                   <p className="text-sm text-gray-300">
-                    <span className="text-blue-400 font-semibold">{queueInfo.totalWaiting}</span> people waiting
+                    <span className="text-red-400 font-semibold">{queueInfo.totalWaiting}</span> people waiting
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    You're in position <span className="text-blue-400">{queueInfo.position}</span>
+                    You're in position <span className="text-red-400">{queueInfo.position}</span>
                   </p>
                 </div>
               )} */}
@@ -188,11 +188,11 @@ const Chat: React.FC = () => {
         {!isSearching && !isConnected && (
           <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center">
             <div className="text-center text-white">
-              <VideoCameraIcon className="w-16 h-16 mx-auto mb-4 text-blue-500" />
+              <VideoCameraIcon className="w-16 h-16 mx-auto mb-4 text-red-500" />
               <h2 className="text-2xl font-bold mb-4">Ready to meet someone new?</h2>
               <button
                 onClick={findMatch}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+                className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
               >
                 Start Chatting
               </button>

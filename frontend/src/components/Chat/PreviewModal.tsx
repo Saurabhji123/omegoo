@@ -224,7 +224,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({ onStart, onCancel })
                     disabled={loading || !!error}
                     className={`flex-1 py-2 px-4 rounded transition ${
                       resolution === res
-                        ? 'bg-purple-600 text-white'
+                        ? 'btn-primary'
                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >

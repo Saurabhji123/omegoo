@@ -169,7 +169,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             className="absolute inset-0 bg-black bg-opacity-60"
             onClick={() => setShowMailGuard(false)}
           ></div>
-          <div className="relative max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-purple-200">
+          <div className="relative max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-red-200">
             <div className="rounded-t-2xl px-6 py-4" style={{ backgroundColor: 'var(--primary-brand)' }}>
               <h3 className="text-white text-lg font-semibold">Use a trusted email</h3>
             </div>
@@ -185,7 +185,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               <button
                 type="button"
                 onClick={() => setShowMailGuard(false)}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm rounded-lg py-2.5 transition"
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-lg py-2.5 transition"
               >
                 Got it, I&apos;ll use a real email
               </button>
@@ -212,7 +212,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             {/* Right side - Home link */}
             <Link 
               to="/"
-              className="text-white hover:text-purple-300 transition-colors font-medium text-sm sm:text-base"
+              className="text-white hover:text-red-300 transition-colors font-medium text-sm sm:text-base"
             >
               Back to Home
             </Link>
@@ -228,7 +228,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2">
             Omegoo
           </h1>
-          <p className="text-purple-200 text-base sm:text-lg">
+          <p className="text-gray-300 text-base sm:text-lg">
             Connect with strangers worldwide
           </p>
         </div>
@@ -299,14 +299,14 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                     className="w-full appearance-none pl-3 sm:pl-4 pr-8 sm:pr-10 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-red-500"
                     required={!isLogin}
                   >
-                    <option value="" disabled className="bg-gray-900 text-purple-300">
+                    <option value="" disabled className="bg-gray-900 text-red-300">
                       Select your gender
                     </option>
                     <option value="male" className="bg-gray-900 text-white">Male</option>
                     <option value="female" className="bg-gray-900 text-white">Female</option>
                     <option value="others" className="bg-gray-900 text-white">Others</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-purple-200">
+                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-300">
                     <ChevronDownIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                 </div>
@@ -315,16 +315,16 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
 
             {/* Email */}
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
               <div className="relative">
-                <EnvelopeIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-purple-300" />
+                <EnvelopeIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-red-300" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Enter your email"
                   required
                 />
@@ -333,11 +333,11 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
 
             {/* Password */}
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
               <div className="relative">
-                <LockClosedIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-purple-300" />
+                <LockClosedIcon className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-red-300" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -350,7 +350,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 sm:top-3 text-purple-300 hover:text-white"
+                  className="absolute right-3 top-2.5 sm:top-3 text-red-300 hover:text-white"
                 >
                   {showPassword ? (
                     <EyeSlashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -360,7 +360,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                 </button>
               </div>
               {!isLogin && (
-                <p className="text-xs text-purple-300 mt-1">
+                <p className="text-xs text-red-300 mt-1">
                   Password must be at least 6 characters
                 </p>
               )}
@@ -370,7 +370,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               <div className="flex justify-end">
                 <Link
                   to="/forgot-password"
-                  className="text-xs sm:text-sm text-purple-200 hover:text-white transition-colors"
+                  className="text-xs sm:text-sm text-gray-300 hover:text-white transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -423,20 +423,20 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
           </div>
 
           {/* Terms */}
-          <p className="mt-5 sm:mt-6 text-center text-xs text-purple-300">
+          <p className="mt-5 sm:mt-6 text-center text-xs text-red-300">
             By continuing, you agree to our{' '}
-            <a href="/terms" className="text-purple-100 hover:underline">
+            <a href="/terms" className="text-white hover:underline">
               Terms of Service
             </a>{' '}
             and{' '}
-            <a href="/privacy" className="text-purple-100 hover:underline">
+            <a href="/privacy" className="text-white hover:underline">
               Privacy Policy
             </a>
           </p>
         </div>
 
         {/* Footer */}
-        <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-purple-300">
+        <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-red-300">
           <p>Omegoo - Connect Safely</p>
         </div>
       </div>
@@ -446,3 +446,4 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
 };
 
 export default LoginRegister;
+

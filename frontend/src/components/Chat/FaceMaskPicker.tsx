@@ -116,7 +116,7 @@ const FaceMaskPicker: React.FC<FaceMaskPickerProps> = ({ isOpen, onClose, onConf
         <div className="sticky top-0 bg-gray-900/95 backdrop-blur-sm px-6 py-4 border-b border-white/10 rounded-t-3xl z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <SparklesIcon className="w-6 h-6 text-purple-400" />
+              <SparklesIcon className="w-6 h-6 text-red-400" />
               <h2 className="text-2xl font-bold text-white">AR Face Masks & Blur</h2>
             </div>
             <button
@@ -167,7 +167,7 @@ const FaceMaskPicker: React.FC<FaceMaskPickerProps> = ({ isOpen, onClose, onConf
                     onClick={() => setMask(maskType)}
                     className={`relative p-4 rounded-2xl border-2 transition-all ${
                       isSelected
-                        ? `border-purple-500 bg-gradient-to-br ${preset.color} shadow-lg shadow-purple-500/50`
+                        ? `border-red-500 bg-gradient-to-br ${preset.color} shadow-lg shadow-red-500/50`
                         : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
                     }`}
                   >
@@ -192,7 +192,7 @@ const FaceMaskPicker: React.FC<FaceMaskPickerProps> = ({ isOpen, onClose, onConf
                       </div>
                     )}
                     {isSelected && (
-                      <div className="absolute top-2 right-2 bg-purple-500 text-white rounded-full p-1">
+                      <div className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1">
                         <span className="text-xs">✓</span>
                       </div>
                     )}
@@ -312,7 +312,7 @@ const FaceMaskPicker: React.FC<FaceMaskPickerProps> = ({ isOpen, onClose, onConf
           )}
 
           {/* Info Banner */}
-          <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-100 text-sm">
+          <div className="p-4 bg-gray-500/10 border border-gray-500/30 rounded-xl text-gray-100 text-sm">
             <div className="flex items-start gap-2">
               <SparklesIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <div>

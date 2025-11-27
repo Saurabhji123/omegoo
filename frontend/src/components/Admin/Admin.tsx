@@ -261,7 +261,7 @@ const Admin: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-gray-900">
       {/* Navbar */}
       <nav className="bg-white bg-opacity-10 backdrop-blur-md border-b border-white border-opacity-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -281,7 +281,7 @@ const Admin: React.FC = () => {
             {/* Right side - Home link */}
             <Link 
               to="/"
-              className="text-white hover:text-purple-300 transition-colors font-medium text-sm sm:text-base"
+              className="text-white hover:text-gray-300 transition-colors font-medium text-sm sm:text-base"
             >
               Back to Home
             </Link>
@@ -295,11 +295,11 @@ const Admin: React.FC = () => {
         {/* Login Card */}
         <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white border-opacity-20">
           <div className="text-center mb-8">
-            <div className="inline-block p-4 bg-purple-600 rounded-full mb-4">
+            <div className="inline-block p-4 bg-red-600 rounded-full mb-4">
               <LockClosedIcon className="h-12 w-12 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-white mb-2">Admin Panel</h2>
-            <p className="text-purple-200">Sign in to access the dashboard</p>
+            <p className="text-gray-200">Sign in to access the dashboard</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -310,28 +310,28 @@ const Admin: React.FC = () => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Username
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Enter your username"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-purple-200 mb-2">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Password
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Enter your password"
                 required
               />
@@ -340,7 +340,7 @@ const Admin: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 btn-primary flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -356,7 +356,7 @@ const Admin: React.FC = () => {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-purple-300">
+          <div className="mt-6 text-center text-sm text-gray-300">
             <p>Omegoo Admin Panel v1.0</p>
           </div>
         </div>

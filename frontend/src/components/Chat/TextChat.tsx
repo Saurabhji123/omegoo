@@ -1494,7 +1494,7 @@ const TextChat: React.FC = () => {
                                 e.stopPropagation();
                                 toggleTranslation(message.id);
                               }}
-                              className="text-xs text-purple-300 hover:text-purple-100 underline"
+                              className="text-xs text-gray-300 hover:text-gray-100 underline"
                             >
                               View Original
                             </button>
@@ -1512,7 +1512,7 @@ const TextChat: React.FC = () => {
                                 e.stopPropagation();
                                 toggleTranslation(message.id);
                               }}
-                              className="text-xs text-purple-300 hover:text-purple-100 underline"
+                              className="text-xs text-gray-300 hover:text-gray-100 underline"
                             >
                               View Translation
                             </button>
@@ -1522,7 +1522,7 @@ const TextChat: React.FC = () => {
                         {/* Message content - shows translated or original based on state */}
                         <p className="text-xs sm:text-sm leading-5 whitespace-pre-wrap">
                           {translatingMessages.has(message.id) ? (
-                            <span className="inline-flex items-center gap-2 text-purple-300">
+                            <span className="inline-flex items-center gap-2 text-gray-300">
                               <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -1536,7 +1536,7 @@ const TextChat: React.FC = () => {
                           )}
                         </p>
                         <div className={`text-xs mt-1 sm:mt-2 flex items-center gap-1 ${
-                          message.isOwnMessage ? 'text-purple-200' : 'text-gray-300'
+                          message.isOwnMessage ? 'text-white' : 'text-gray-300'
                         }`}>
                           <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
@@ -1560,9 +1560,9 @@ const TextChat: React.FC = () => {
                         .typing-dot-2 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0.2s; }
                         .typing-dot-3 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0.4s; }
                       `}</style>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-1"></div>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-2"></div>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-3"></div>
+                      <div className="w-2 h-2 bg-red-400 rounded-full typing-dot-1"></div>
+                      <div className="w-2 h-2 bg-red-400 rounded-full typing-dot-2"></div>
+                      <div className="w-2 h-2 bg-red-400 rounded-full typing-dot-3"></div>
                     </div>
                   </div>
                 </div>
@@ -1582,9 +1582,9 @@ const TextChat: React.FC = () => {
                         .typing-dot-2 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0.2s; }
                         .typing-dot-3 { animation: typing-dot 1.4s infinite ease-in-out; animation-delay: 0.4s; }
                       `}</style>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-1"></div>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-2"></div>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full typing-dot-3"></div>
+                      <div className="w-2 h-2 bg-red-400 rounded-full typing-dot-1"></div>
+                      <div className="w-2 h-2 bg-red-400 rounded-full typing-dot-2"></div>
+                      <div className="w-2 h-2 bg-red-400 rounded-full typing-dot-3"></div>
                     </div>
                   </div>
                 </div>
@@ -1597,9 +1597,9 @@ const TextChat: React.FC = () => {
             <div className="p-2 sm:p-3 lg:p-4 border-t border-white border-opacity-20 bg-black bg-opacity-30 flex-shrink-0">
               {/* Reply Preview */}
               {replyingTo && (
-                <div className="mb-3 p-3 bg-purple-600 bg-opacity-20 border-l-4 border-purple-500 rounded-lg flex items-start justify-between animate-fade-in">
+                <div className="mb-3 p-3 bg-red-600 bg-opacity-20 border-l-4 border-red-500 rounded-lg flex items-start justify-between animate-fade-in">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-purple-300 mb-1">
+                    <p className="text-xs font-medium text-red-300 mb-1">
                       Replying to {replyingTo.isOwnMessage ? 'yourself' : 'stranger'}
                     </p>
                     <p className="text-sm text-gray-200 truncate">

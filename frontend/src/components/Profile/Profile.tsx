@@ -421,7 +421,7 @@ const Profile: React.FC = () => {
           <StarIcon className="w-5 h-5" />
           Favourites
           {favourites.length > 0 && (
-            <span className="bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
               {favourites.length}
             </span>
           )}
@@ -500,12 +500,12 @@ const Profile: React.FC = () => {
                   setGenderError('');
                   setGenderSelection(event.target.value as 'male' | 'female' | 'others');
                 }}
-                className="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                <option value="" disabled className="bg-purple-900">Select your gender</option>
-                <option value="male" className="bg-purple-900">Male</option>
-                <option value="female" className="bg-purple-900">Female</option>
-                <option value="others" className="bg-purple-900">Other</option>
+                <option value="" disabled className="bg-gray-900">Select your gender</option>
+                <option value="male" className="bg-gray-900">Male</option>
+                <option value="female" className="bg-gray-900">Female</option>
+                <option value="others" className="bg-gray-900">Other</option>
               </select>
               <button
                 onClick={handleGenderConfirm}
@@ -722,7 +722,7 @@ const Profile: React.FC = () => {
                   type="password"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                  className="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Confirm new password"
                 />
               </div>
@@ -811,7 +811,7 @@ const Profile: React.FC = () => {
                         {fav.interests.slice(0, 3).map((interest: string, idx: number) => (
                           <span
                             key={idx}
-                            className="bg-purple-500/20 text-purple-200 text-xs px-2 py-1 rounded-full"
+                            className="bg-red-500/20 text-red-200 text-xs px-2 py-1 rounded-full"
                           >
                             {interest}
                           </span>

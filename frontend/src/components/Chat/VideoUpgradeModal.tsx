@@ -62,8 +62,8 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
 
           {/* Icon */}
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             </div>
@@ -121,8 +121,8 @@ const VideoUpgradeModal: React.FC<VideoUpgradeModalProps> = ({
         <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} className="rounded-2xl shadow-2xl max-w-md w-full p-6">
           {/* Animated Icon */}
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center animate-pulse">
-              <svg className="w-8 h-8 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center animate-pulse">
+              <svg className="w-8 h-8 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             </div>

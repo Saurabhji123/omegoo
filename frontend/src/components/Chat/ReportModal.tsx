@@ -138,7 +138,7 @@ const ReportModal: React.FC<ReportModalProps> = ({
                   onChange={(e) => setViolationType(e.target.value)}
                   required
                   disabled={loading}
-                  className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
                 >
                   <option value="" className="bg-gray-800">Select a reason...</option>
                   {violationTypes.map((type) => (
@@ -161,7 +161,7 @@ const ReportModal: React.FC<ReportModalProps> = ({
                   disabled={loading}
                   rows={4}
                   placeholder="Please provide specific details about what happened..."
-                  className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 resize-none"
+                  className="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 resize-none"
                   maxLength={500}
                 />
                 <div className="text-xs text-gray-400 mt-1 text-right">

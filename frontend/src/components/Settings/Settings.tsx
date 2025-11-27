@@ -299,8 +299,8 @@ const Settings: React.FC = () => {
               <div className="flex items-start gap-3">
                 <SparklesIcon className="mt-1 h-5 w-5" />
                 <div>
-                  <div className="font-semibold uppercase tracking-wide text-xs text-purple-100">Real-Time Voice Transformation</div>
-                  <p className="mt-1 text-purple-100/80">Voice filters are applied in real-time during audio calls. You can always change filters mid-call. Battery usage may increase with active filters.</p>
+                  <div className="font-semibold uppercase tracking-wide text-xs text-gray-100">Real-Time Voice Transformation</div>
+                  <p className="mt-1 text-gray-100/80">Voice filters are applied in real-time during audio calls. You can always change filters mid-call. Battery usage may increase with active filters.</p>
                 </div>
               </div>
             </div>

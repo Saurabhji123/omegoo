@@ -1195,7 +1195,7 @@ const AudioChat: React.FC = () => {
             <div className="relative mb-6 sm:mb-8">
               <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative">
                 {/* Animated rings */}
-                <div className="absolute inset-0 border-4 border-purple-300 border-opacity-20 rounded-full animate-ping"></div>
+                <div className="absolute inset-0 border-4 border-red-300 border-opacity-20 rounded-full animate-ping"></div>
                 <div className="absolute inset-2 border-4 border-red-400 border-opacity-40 rounded-full animate-ping [animation-delay:200ms]"></div>
                 <div className="absolute inset-4 border-4 border-red-500 border-opacity-60 rounded-full animate-ping [animation-delay:400ms]"></div>
                 <MicrophoneIcon className="w-8 h-8 sm:w-12 sm:h-12 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
@@ -1345,8 +1345,8 @@ const AudioChat: React.FC = () => {
                             }}
                             className={`w-full p-3 rounded-lg flex items-center gap-3 transition-all ${
                               selectedFilter === filterType
-                                ? `bg-gradient-to-r ${preset.color} text-white`
-                                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                ? `btn-primary text-white`
+                                : 'btn-secondary'
                             }`}
                           >
                             <span className="text-2xl">{preset.emoji}</span>
@@ -1402,7 +1402,7 @@ const AudioChat: React.FC = () => {
             {/* Voice Filter Active Badge */}
             {selectedFilter !== 'none' && (
               <div className="mb-4 flex justify-center">
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${VOICE_FILTER_PRESETS[selectedFilter].color} text-white text-sm font-medium shadow-lg`}>
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full btn-primary text-sm font-medium shadow-lg`}>
                   <span className="text-lg">{VOICE_FILTER_PRESETS[selectedFilter].emoji}</span>
                   <span>{VOICE_FILTER_PRESETS[selectedFilter].name} Active</span>
                 </div>
@@ -1472,7 +1472,7 @@ const AudioChat: React.FC = () => {
                       console.error('Retry failed:', error);
                     }
                   }}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors"
+                  className="flex-1 btn-primary"
                 >
                   Try Again
                 </button>
@@ -1508,7 +1508,7 @@ const AudioChat: React.FC = () => {
                     setMicBlocked(false);
                     startNewChat();
                   }}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors"
+                  className="flex-1 btn-primary"
                 >
                   Try Again
                 </button>

@@ -2232,7 +2232,7 @@ const VideoChat: React.FC = () => {
                           }}
                           className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                             selectedMask === maskType
-                              ? 'bg-purple-600 text-white'
+                              ? 'btn-primary'
                               : 'hover:bg-gray-700 text-white'
                           }`}
                         >
@@ -2307,7 +2307,7 @@ const VideoChat: React.FC = () => {
             <button
               onClick={blurEnabled ? handleRevealVideo : enableManualBlur}
               className={`p-3 lg:p-3.5 rounded-full border border-white/10 shadow-lg transition-colors ${
-                blurEnabled ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'
+                blurEnabled ? 'btn-primary' : 'btn-secondary'
               }`}
               aria-pressed={blurEnabled}
               aria-label={blurButtonAriaLabel}
@@ -2320,18 +2320,18 @@ const VideoChat: React.FC = () => {
             </button>
           </div>
 
-          {/* Quick Options - Enhanced with Purple Gradient Theme */}
+          {/* Quick Options - Professional Theme */}
           <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-3 space-y-2 sm:space-y-0 text-xs lg:text-sm">
             <button 
               onClick={() => setShowTextChat(!showTextChat)}
-              className="group relative btn-primary px-4 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg touch-manipulation flex items-center justify-center space-x-2"
+              className="btn-secondary px-4 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg touch-manipulation flex items-center justify-center space-x-2"
             >
               <ChatBubbleLeftRightIcon className="w-4 h-4" />
               <span>{showTextChat ? 'Hide Chat' : 'Show Chat'}</span>
             </button>
             <button 
               onClick={() => navigate('/chat/text')}
-              className="group relative btn-primary px-4 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg touch-manipulation"
+              className="btn-secondary px-4 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg touch-manipulation"
             >
               Text Only Mode
             </button>
@@ -2382,7 +2382,7 @@ const VideoChat: React.FC = () => {
                       <p>{message.content}</p>
                       {!message.content.includes('Connected!') && !message.content.includes('ended') && !message.content.includes('Error:') && (
                         <p className={`text-xs mt-1 ${
-                          message.isOwnMessage ? 'text-purple-100' : 'text-gray-400'
+                          message.isOwnMessage ? 'text-white' : 'text-gray-400'
                         }`}>
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
