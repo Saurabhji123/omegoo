@@ -188,10 +188,10 @@ const Home: React.FC = () => {
         <div className="mb-6">
           <p className="text-sm sm:text-base text-white/70 tracking-widest mb-3">100% FREE Random Chat</p>
           <h1 id="home-hero-heading" className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-wider" style={{ color: '#FFFFFF' }}>
-            Random · Video · Voice · Text
+            Free Random Video Chat App - Omegoo
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 mt-3 uppercase tracking-[0.35rem]">
-            Talk to strangers
+            The Best Omegle Alternative to Talk to Strangers
           </p>
         </div>
 
