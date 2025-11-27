@@ -35,14 +35,8 @@ const Home: React.FC = () => {
 
   const [statusSummary, setStatusSummary] = useState<StatusSummaryRecord | null>(null);
   const [showTooltip, setShowTooltip] = useState<'text' | 'audio' | 'video' | null>(null);
-  const [totalOnlineUsers, setTotalOnlineUsers] = useState<number>(0);
 
-  // Calculate total online users from mode counts (NO fake multiplication)
-  useEffect(() => {
-    const realTotal = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
-    setTotalOnlineUsers(realTotal); // Show REAL count only
-    console.log('👥 Real online users:', realTotal, 'Breakdown:', modeUserCounts);
-  }, [modeUserCounts]);
+  // No need for totalOnlineUsers state - calculate directly from modeUserCounts when needed
 
   useEffect(() => {
     trackEvent('home_view');
@@ -259,11 +253,10 @@ const Home: React.FC = () => {
         <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
           {(() => {
             const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
-            const displayCount = total * 3; // 1 real user = 3 displayed (retention psychology)
-            const hasUsers = total >= 10; // Show counter when 10+ real users
-
-            if (!hasUsers) {
-              // Show "Finding Matches..." status when count is 0 or below 50
+            
+            // Only show counter when total >= 100 real users
+            if (total < 100) {
+              // Show "Finding Matches..." status when below 100
               return (
                 <>
                   <div className="relative flex items-center justify-center">
@@ -278,7 +271,8 @@ const Home: React.FC = () => {
               );
             }
 
-            // Show normal counter when count >= 50
+            // Show counter with 3x multiplier when >= 100 real users
+            const displayCount = total * 3;
             return (
               <>
                 <div className="relative flex items-center justify-center">
@@ -493,37 +487,6 @@ const Home: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {statusSummary && (() => {
-        const total = totalOnlineUsers || statusSummary.connectedUsers;
-        // Hide stats when total users < 10 to avoid showing empty state
-        if (total < 10) {
-          return null;
-        }
-        
-        return (
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm text-white">
-              <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ color: 'var(--text-body)' }}>Online Now</div>
-                <div className="text-lg sm:text-xl font-bold">{total}</div>
-              </div>
-              <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ color: 'var(--text-body)' }}>In Queue</div>
-                <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.total * 3}</div>
-              </div>
-              <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ color: 'var(--text-body)' }}>Voice Queue</div>
-                <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.audio * 3}</div>
-              </div>
-              <div className="rounded-xl px-3 py-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ color: 'var(--text-body)' }}>Video Queue</div>
-                <div className="text-lg sm:text-xl font-bold">{statusSummary.queue.video * 3}</div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
     {/* Free Instant Access & SEO Content */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
