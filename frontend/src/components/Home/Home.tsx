@@ -256,7 +256,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* Total Online Users Counter - Above Cards */}
-      <div className="flex justify-center mb-6 px-4">
+      <div className="flex justify-center mb-6 px-4 mt-4">
         <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
           {(() => {
             const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
