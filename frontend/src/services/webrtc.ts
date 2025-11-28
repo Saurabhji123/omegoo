@@ -22,6 +22,9 @@ class WebRTCService {
 
   private statsIntervalId: number | null = null;
   private onStatsUpdate: ((stats: any) => void) | null = null;
+  private previousBytesReceived: number = 0;
+  private previousBytesSent: number = 0;
+  private previousStatsTimestamp: number = 0;
 
   constructor() {
     this.initializePeerConnection();
@@ -1000,10 +1003,21 @@ class WebRTCService {
           }
         });
         
-        // Calculate bitrate (bytes per second to kbps)
-        if (metrics.bytesReceived) {
-          metrics.bitrate = Math.round((metrics.bytesReceived * 8) / 1000); // kbps
+        // Calculate bitrate as DELTA (current - previous) to prevent unlimited increment
+        const currentTime = Date.now();
+        const timeDelta = this.previousStatsTimestamp ? (currentTime - this.previousStatsTimestamp) / 1000 : 2; // seconds
+        
+        if (metrics.bytesReceived && this.previousBytesReceived) {
+          const bytesDelta = metrics.bytesReceived - this.previousBytesReceived;
+          metrics.bitrate = Math.round((bytesDelta * 8) / (timeDelta * 1000)); // kbps
+        } else {
+          metrics.bitrate = 0;
         }
+        
+        // Store current values for next calculation
+        this.previousBytesReceived = metrics.bytesReceived || 0;
+        this.previousBytesSent = metrics.bytesSent || 0;
+        this.previousStatsTimestamp = currentTime;
         
         // Emit stats to callback
         if (this.onStatsUpdate) {
@@ -1020,6 +1034,10 @@ class WebRTCService {
     if (this.statsIntervalId) {
       clearInterval(this.statsIntervalId);
       this.statsIntervalId = null;
+      // Reset bitrate calculation state
+      this.previousBytesReceived = 0;
+      this.previousBytesSent = 0;
+      this.previousStatsTimestamp = 0;
       console.log('🛑 Stopped WebRTC stats monitoring');
     }
   }

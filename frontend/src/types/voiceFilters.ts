@@ -1,7 +1,7 @@
 // Voice Filter Types - Real-time Voice Processing
 
 // Filter type enumeration
-export type VoiceFilterType = 'none' | 'chipmunk' | 'deep' | 'robot';
+export type VoiceFilterType = 'none' | 'chipmunk' | 'deep' | 'robot' | 'female';
 
 // Filter configuration interface
 export interface VoiceFilterConfig {
@@ -56,7 +56,7 @@ export interface VoiceFilterAnalytics {
 // Audio processing constants
 export const AUDIO_CONSTANTS = {
   SAMPLE_RATE: 48000, // Hz - WebRTC standard
-  BUFFER_SIZE: 4096, // samples - balance latency vs processing
+  BUFFER_SIZE: 2048, // samples - reduced for lower latency
   MIN_BUFFER_SIZE: 256, // for low-latency mode
   MAX_BUFFER_SIZE: 16384, // for high-quality mode
   FREQUENCY_BINS: 2048, // for FFT analysis
@@ -69,6 +69,9 @@ export const AUDIO_CONSTANTS = {
     DEEP_MIN: 0.5,
     DEEP_MAX: 0.85,
     DEEP_DEFAULT: 0.65,
+    FEMALE_MIN: 1.3,
+    FEMALE_MAX: 1.8,
+    FEMALE_DEFAULT: 1.5,
   },
   
   // Filter frequencies
@@ -148,6 +151,18 @@ export const VOICE_FILTER_PRESETS: Record<VoiceFilterType, VoiceFilterPreset> = 
     defaultIntensity: 0.7,
     cpuImpact: 'high',
   },
+  female: {
+    id: 'female',
+    name: 'Girl Voice',
+    description: 'Feminine, softer voice transformation',
+    icon: '👧',
+    emoji: '👧',
+    color: 'from-pink-600 to-purple-600',
+    minIntensity: 0.3,
+    maxIntensity: 1.0,
+    defaultIntensity: 0.6,
+    cpuImpact: 'medium',
+  },
 } as const;
 
 // Helper function to get filter preset
@@ -168,6 +183,11 @@ export function calculatePitchShift(type: VoiceFilterType, intensity: number): n
     case 'deep': {
       const min = AUDIO_CONSTANTS.PITCH_SHIFT.DEEP_MIN;
       const max = AUDIO_CONSTANTS.PITCH_SHIFT.DEEP_MAX;
+      return min + (max - min) * clampedIntensity;
+    }
+    case 'female': {
+      const min = AUDIO_CONSTANTS.PITCH_SHIFT.FEMALE_MIN;
+      const max = AUDIO_CONSTANTS.PITCH_SHIFT.FEMALE_MAX;
       return min + (max - min) * clampedIntensity;
     }
     case 'robot': {

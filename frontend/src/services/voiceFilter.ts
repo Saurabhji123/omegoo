@@ -233,6 +233,9 @@ class VoiceFilterService {
       case 'deep':
         chain.push(...this.createDeepBassFilter(intensity));
         break;
+      case 'female':
+        chain.push(...this.createFemaleFilter(intensity));
+        break;
       case 'robot':
         chain.push(...this.createRobotFilter(intensity));
         break;
@@ -351,6 +354,76 @@ class VoiceFilterService {
     };
     
     return [this.gainNode, this.scriptProcessor, this.biquadFilter];
+  }
+
+  /**
+   * Create Female/Girl filter (feminine voice transformation)
+   * Implementation: Pitch shift up + formant adjustment + brightness
+   */
+  private createFemaleFilter(intensity: number): AudioNode[] {
+    const pitchShiftRatio = calculatePitchShift('female', intensity);
+    this.pitchShiftRatio = pitchShiftRatio;
+    
+    // Create gain node for volume control
+    this.gainNode = this.audioContext!.createGain();
+    this.gainNode.gain.value = 0.9; // Slightly reduce to prevent clipping
+    
+    // Create high-pass filter to add brightness (female voices have more high frequencies)
+    this.biquadFilter = this.audioContext!.createBiquadFilter();
+    this.biquadFilter.type = 'highpass';
+    this.biquadFilter.frequency.value = 200 + (intensity * 100); // 200Hz - 300Hz
+    this.biquadFilter.Q.value = 0.7;
+    
+    // Create script processor for pitch shifting
+    const bufferSize = AUDIO_CONSTANTS.BUFFER_SIZE;
+    this.scriptProcessor = this.audioContext!.createScriptProcessor(
+      bufferSize,
+      1, // mono input
+      1  // mono output
+    );
+    
+    // Pitch shift processing (similar to chipmunk but more natural)
+    let phase = 0;
+    let crossfadeBuffer: Float32Array = new Float32Array(bufferSize);
+    
+    this.scriptProcessor.onaudioprocess = (event) => {
+      const inputBuffer = event.inputBuffer;
+      const outputBuffer = event.outputBuffer;
+      const inputData = inputBuffer.getChannelData(0);
+      const outputData = outputBuffer.getChannelData(0);
+      
+      // Windowed pitch shift for smoother sound
+      const windowSize = Math.floor(bufferSize / 4);
+      
+      for (let i = 0; i < outputBuffer.length; i++) {
+        const readIndex = phase;
+        const readIndexFloor = Math.floor(readIndex);
+        const readIndexCeil = Math.min(readIndexFloor + 1, inputData.length - 1);
+        const fraction = readIndex - readIndexFloor;
+        
+        // Linear interpolation with windowing
+        if (readIndexFloor < inputData.length) {
+          const sample = inputData[readIndexFloor] * (1 - fraction) +
+                        inputData[readIndexCeil] * fraction;
+          
+          // Apply Hann window for crossfading to reduce artifacts
+          const windowPos = i % windowSize;
+          const window = 0.5 * (1 - Math.cos(2 * Math.PI * windowPos / windowSize));
+          
+          outputData[i] = sample * window + crossfadeBuffer[i] * (1 - window);
+          crossfadeBuffer[i] = sample;
+        } else {
+          outputData[i] = 0;
+        }
+        
+        phase += pitchShiftRatio;
+        if (phase >= inputData.length) {
+          phase -= inputData.length;
+        }
+      }
+    };
+    
+    return [this.biquadFilter, this.scriptProcessor, this.gainNode];
   }
 
   /**
