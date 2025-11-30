@@ -16,6 +16,7 @@ import { defaultSEO } from './config/seo.config';
 // Components
 import Layout from './components/Layout/Layout';
 import AgeGate from './components/Auth/AgeGate';
+import ScrollToTop from './components/ScrollToTop';
 import LoginRegister from './components/Auth/LoginRegister';
 import VerifyOTP from './components/Auth/VerifyOTP';
 import PhoneVerification from './components/Auth/PhoneVerification';
@@ -184,6 +185,9 @@ const AppRoutes: React.FC = () => {
       <SEOHead {...defaultSEO} />
       
       <Router>
+        {/* Scroll to top on route change + restore position on back/forward */}
+        <ScrollToTop />
+        
         <Routes>
           {/* Login/Register route */}
           <Route path="/login" element={<LoginRegister />} />

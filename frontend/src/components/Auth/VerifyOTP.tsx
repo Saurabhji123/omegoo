@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
+import './Auth.css';
 
 interface LocationState {
   email: string;
@@ -170,14 +171,14 @@ const VerifyOTP: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--bg-body)' }}>
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+    <div className="auth-page-container min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--bg-body)' }}>
+      <div className="auth-glass-container bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl" style={{ backgroundColor: 'var(--primary-brand)' }}>
+          <div className="auth-logo-breathe w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl" style={{ backgroundColor: 'var(--primary-brand)' }}>
             📧
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="auth-heading-gradient text-3xl font-bold text-gray-800 mb-2">
             Verify Your Email
           </h1>
           <p className="text-gray-600">
@@ -222,7 +223,7 @@ const VerifyOTP: React.FC = () => {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+            <div className="auth-message auth-message-error bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
               <p className="text-red-600 text-sm text-center font-medium">
                 {error}
               </p>
@@ -234,7 +235,7 @@ const VerifyOTP: React.FC = () => {
         <button
           onClick={() => handleVerify()}
           disabled={loading || otp.some((digit) => !digit)}
-          className={`w-full py-4 rounded-xl font-bold text-white text-lg transition-all duration-200 ${
+          className={`neon-button w-full py-4 rounded-xl font-bold text-white text-lg transition-all duration-200 ${
             loading || otp.some((digit) => !digit)
               ? 'bg-gray-400 cursor-not-allowed'
               : 'btn-primary shadow-lg hover:shadow-xl'
@@ -242,7 +243,7 @@ const VerifyOTP: React.FC = () => {
         >
           {loading ? (
             <div className="flex items-center justify-center gap-2">
-              <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="auth-spinner w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
               Verifying...
             </div>
           ) : (
@@ -256,7 +257,7 @@ const VerifyOTP: React.FC = () => {
           <button
             onClick={handleResend}
             disabled={resendLoading || resendCooldown > 0}
-            className={`font-semibold transition-all duration-200 ${
+            className={`auth-link font-semibold transition-all duration-200 ${
               resendLoading || resendCooldown > 0
                 ? 'text-gray-400 cursor-not-allowed'
                 : 'text-red-600 hover:text-red-700 hover:underline'
@@ -276,7 +277,7 @@ const VerifyOTP: React.FC = () => {
         <div className="mt-6 text-center border-t pt-4">
           <button
             onClick={() => navigate('/')}
-            className="text-gray-600 hover:text-gray-800 font-medium transition-colors"
+            className="auth-link text-gray-600 hover:text-gray-800 font-medium transition-colors"
           >
             ← Back to Login
           </button>

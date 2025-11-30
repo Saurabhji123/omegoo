@@ -6,6 +6,7 @@ import { useSocket } from '../../contexts/SocketContext';
 import { API_BASE_URL } from '../../services/api';
 import { trackEvent } from '../../services/analyticsClient';
 import LazyImage from '../UI/LazyImage';
+import './Home.css'; // Import premium styles
 
 type IncidentRecord = {
   message: string;
@@ -175,22 +176,22 @@ const Home: React.FC = () => {
 
   return (
     <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8" role="main">
-      {/* Welcome Section */}
-      <section className="text-center mb-4 px-4 py-6 text-white" aria-labelledby="home-hero-heading">
-        {/* Hero Headline */}
+      {/* Welcome Section with Spotlight Background */}
+      <section className="home-hero-section text-center mb-4 px-4 py-6 text-white" aria-labelledby="home-hero-heading">
+        {/* Hero Headline with Gradient Text */}
         <div className="mb-6">
           <p className="text-sm sm:text-base text-white/70 tracking-widest mb-3">100% FREE Random Chat</p>
-          <h1 id="home-hero-heading" className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-wider" style={{ color: '#FFFFFF' }}>
-            Free Random Video Chat App
+          <h1 id="home-hero-heading" className="hero-gradient-text text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-wider">
+            Free Random <span className="hero-accent-text">Video Chat</span> App
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 mt-3 uppercase tracking-[0.35rem]">
-            The Best Omegle Alternative to Talk to Strangers - Omegoo
+            The Best <span className="hero-accent-text">Omegle Alternative</span> to Talk to Strangers
           </p>
         </div>
 
-        {/* Privacy Notice - Prominent */}
+        {/* Privacy Notice - Glass Badge */}
         <div className="max-w-2xl mx-auto mb-0">
-          <div className="inline-flex items-center bg-white/10 backdrop-blur-md rounded-full px-4 sm:px-6 py-2 sm:py-3 border border-white/30 shadow-lg">
+          <div className="glass-badge inline-flex items-center rounded-full px-4 sm:px-6 py-2 sm:py-3 shadow-lg">
             <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
@@ -248,9 +249,9 @@ const Home: React.FC = () => {
 
       </section>
 
-      {/* Total Online Users Counter - Above Cards */}
+      {/* Total Online Users Counter - Glass Style */}
       <div className="flex justify-center mb-3 px-4">
-        <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+        <div className="glass-counter inline-flex items-center gap-3 px-6 py-3 rounded-2xl shadow-xl">
           {(() => {
             const total = modeUserCounts.text + modeUserCounts.audio + modeUserCounts.video;
             
@@ -296,11 +297,11 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      {/* Chat Options */}
+      {/* Chat Options - Glassmorphism Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 px-4 max-w-6xl mx-auto">
         {/* Text Chat */}
         <div 
-          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-300 relative"
+          className="glass-card rounded-2xl shadow-xl p-6 sm:p-8 text-center relative"
           role="article"
           aria-labelledby="text-chat-title"
         >
@@ -339,7 +340,7 @@ const Home: React.FC = () => {
             )}
           </div>
           
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6 backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)' }}>
+          <div className="glass-card-icon inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6">
             <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
@@ -359,7 +360,7 @@ const Home: React.FC = () => {
           <button
             onClick={() => handleStartChat('text')}
             onKeyDown={(e) => handleKeyPress(e, 'text')}
-            className="btn-primary w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px]"
+            className="neon-button neon-button-pulse w-full text-sm sm:text-base font-bold rounded-xl py-3 sm:py-4 text-white touch-manipulation min-h-[48px]"
             aria-label="Start free text chat"
           >
             Start Free Text Chat
@@ -368,7 +369,7 @@ const Home: React.FC = () => {
 
         {/* Audio Chat */}
         <div 
-          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-300 relative"
+          className="glass-card rounded-2xl shadow-xl p-6 sm:p-8 text-center relative"
           role="article"
           aria-labelledby="voice-chat-title"
         >
@@ -407,7 +408,7 @@ const Home: React.FC = () => {
             )}
           </div>
           
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6 backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)' }}>
+          <div className="glass-card-icon inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6">
             <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
@@ -427,7 +428,7 @@ const Home: React.FC = () => {
           <button
             onClick={() => handleStartChat('audio')}
             onKeyDown={(e) => handleKeyPress(e, 'audio')}
-            className="btn-primary w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px]"
+            className="neon-button neon-button-pulse w-full text-sm sm:text-base font-bold rounded-xl py-3 sm:py-4 text-white touch-manipulation min-h-[48px]"
             aria-label="Start free voice chat"
           >
             Start Free Voice Chat
@@ -436,7 +437,7 @@ const Home: React.FC = () => {
 
         {/* Video Chat */}
         <div 
-          className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl border border-white border-opacity-20 shadow-xl p-6 sm:p-8 text-center hover:bg-opacity-15 transition-all hover:scale-105 transform duration-300 relative"
+          className="glass-card rounded-2xl shadow-xl p-6 sm:p-8 text-center relative"
           role="article"
           aria-labelledby="video-chat-title"
         >
@@ -475,7 +476,7 @@ const Home: React.FC = () => {
             )}
           </div>
           
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6 backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 71, 87, 0.15)', border: '1px solid rgba(255, 71, 87, 0.3)' }}>
+          <div className="glass-card-icon inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4 sm:mb-6">
             <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
@@ -495,7 +496,7 @@ const Home: React.FC = () => {
           <button
             onClick={() => handleStartChat('video')}
             onKeyDown={(e) => handleKeyPress(e, 'video')}
-            className="btn-primary w-full text-sm sm:text-base shadow-lg touch-manipulation min-h-[48px]"
+            className="neon-button neon-button-pulse w-full text-sm sm:text-base font-bold rounded-xl py-3 sm:py-4 text-white touch-manipulation min-h-[48px]"
             aria-label="Start free video chat"
           >
             Start Free Video Chat

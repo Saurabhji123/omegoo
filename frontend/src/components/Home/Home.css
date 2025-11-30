@@ -1,0 +1,237 @@
+/* ✨ MAGIC TOUCHES - Premium Home Page Design */
+
+/* 🎨 Magic Touch 1: Spotlight Background with Radial Glow */
+.home-hero-section {
+  position: relative;
+  background: radial-gradient(
+    circle at 50% 20%,
+    rgba(255, 71, 87, 0.15) 0%,
+    rgba(138, 87, 255, 0.08) 30%,
+    #0f0f0f 70%
+  );
+  padding: 3rem 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Additional ambient glow for depth */
+.home-hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at center top,
+    rgba(255, 71, 87, 0.1) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.home-hero-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 🌟 Magic Touch 4: Gradient Text on Headline */
+.hero-gradient-text {
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #e8e8e8 30%,
+    #ffffff 50%,
+    #f0f0f0 70%,
+    #ffffff 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 8s ease-in-out infinite;
+  background-size: 200% 200%;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Accent words with red gradient */
+.hero-accent-text {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 71, 87, 1) 0%,
+    rgba(255, 107, 107, 1) 50%,
+    rgba(255, 71, 87, 1) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+/* 🪟 Magic Touch 2: Glassmorphism Cards */
+.glass-card {
+  background: rgba(26, 26, 26, 0.6) !important;
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.37),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(26, 26, 26, 0.75) !important;
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 
+    0 12px 40px 0 rgba(255, 71, 87, 0.15),
+    0 0 0 1px rgba(255, 71, 87, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Card icon glow effect */
+.glass-card-icon {
+  background: rgba(255, 71, 87, 0.15);
+  border: 2px solid rgba(255, 71, 87, 0.3);
+  box-shadow: 
+    0 0 20px rgba(255, 71, 87, 0.3),
+    inset 0 0 15px rgba(255, 71, 87, 0.1);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover .glass-card-icon {
+  background: rgba(255, 71, 87, 0.25);
+  border-color: rgba(255, 71, 87, 0.5);
+  box-shadow: 
+    0 0 30px rgba(255, 71, 87, 0.5),
+    0 0 40px rgba(255, 71, 87, 0.3),
+    inset 0 0 20px rgba(255, 71, 87, 0.2);
+  transform: scale(1.05) rotate(5deg);
+}
+
+/* 🔥 Magic Touch 3: Neon Glowing Buttons */
+.neon-button {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 71, 87, 1) 0%,
+    rgba(255, 87, 107, 1) 100%
+  ) !important;
+  box-shadow: 
+    0 4px 15px rgba(255, 71, 87, 0.4),
+    0 0 20px rgba(255, 71, 87, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 107, 107, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.neon-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.neon-button:hover::before {
+  left: 100%;
+}
+
+.neon-button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 6px 25px rgba(255, 71, 87, 0.6),
+    0 0 30px rgba(255, 71, 87, 0.4),
+    0 0 40px rgba(255, 71, 87, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 107, 107, 0.8);
+}
+
+.neon-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 
+    0 2px 10px rgba(255, 71, 87, 0.5),
+    inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Pulse animation for "Start" buttons */
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 4px 15px rgba(255, 71, 87, 0.4),
+      0 0 20px rgba(255, 71, 87, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 4px 20px rgba(255, 71, 87, 0.6),
+      0 0 30px rgba(255, 71, 87, 0.4),
+      0 0 40px rgba(255, 71, 87, 0.2);
+  }
+}
+
+.neon-button-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* 💎 Online Users Counter - Premium Glass Style */
+.glass-counter {
+  background: rgba(26, 26, 26, 0.7) !important;
+  backdrop-filter: blur(16px) saturate(200%);
+  -webkit-backdrop-filter: blur(16px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(255, 71, 87, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Privacy badge glass effect */
+.glass-badge {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .home-hero-section {
+    padding: 2rem 0.5rem;
+  }
+  
+  .hero-gradient-text {
+    font-size: 1.875rem; /* text-3xl */
+  }
+}
+
+/* Performance optimization */
+@media (prefers-reduced-motion: reduce) {
+  .glass-card,
+  .neon-button,
+  .hero-gradient-text {
+    animation: none !important;
+    transition: none !important;
+  }
+}

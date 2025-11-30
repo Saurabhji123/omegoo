@@ -1,0 +1,358 @@
+/* 🎨 AUTH PAGES PREMIUM ANIMATIONS */
+
+/* ✨ Page Entry Animation - Fade + Slide */
+@keyframes authPageEntry {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-page-container {
+  animation: authPageEntry 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 🪟 Glassmorphism Container for Auth Forms */
+.auth-glass-container {
+  background: rgba(26, 26, 26, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 2px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(255, 71, 87, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 🔥 Animated Rotating Glow Effect on Corners */
+.auth-glass-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    transparent,
+    transparent,
+    rgba(255, 71, 87, 0.35),
+    rgba(255, 71, 87, 0.4),
+    rgba(255, 71, 87, 0.35),
+    transparent,
+    transparent
+  );
+  animation: rotateGlow 5s linear infinite;
+  z-index: -1;
+  filter: blur(6px);
+}
+
+.auth-glass-container::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: rgba(26, 26, 26, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: inherit;
+  z-index: -1;
+}
+
+@keyframes rotateGlow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-glass-container:hover {
+  box-shadow: 
+    0 25px 70px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(255, 71, 87, 0.15),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15);
+  border-top-color: rgba(255, 71, 87, 0.3);
+}
+
+/* 📝 Input Field Animations */
+.auth-input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.auth-input:focus {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 71, 87, 0.5) !important;
+  box-shadow: 
+    0 0 0 3px rgba(255, 71, 87, 0.1),
+    0 0 20px rgba(255, 71, 87, 0.2),
+    inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  transform: scale(1.01);
+}
+
+.auth-input:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* ⚡ Input Label Float Animation */
+@keyframes labelFloat {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.auth-input:focus + label {
+  animation: labelFloat 0.6s ease-in-out;
+  color: rgba(255, 71, 87, 0.9);
+}
+
+/* 🎭 Logo/Icon Breathing Animation */
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.auth-logo-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+/* 💫 Card Flip Animation (for switching Login/Register) */
+@keyframes cardFlip {
+  0% {
+    opacity: 0;
+    transform: rotateY(90deg) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateY(0) scale(1);
+  }
+}
+
+.auth-card-flip {
+  animation: cardFlip 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+/* 🌟 Heading Gradient Shine */
+.auth-heading-gradient {
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #ff4757 50%,
+    #ffffff 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* 🔐 Password Strength Indicator Animation */
+@keyframes strengthPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.password-strength-bar {
+  height: 3px;
+  border-radius: 2px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: strengthPulse 2s ease-in-out infinite;
+}
+
+/* ✅ Success/Error Message Slide In */
+@keyframes messageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.auth-message {
+  animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 🔄 Loading Spinner Glow */
+@keyframes spinnerGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 71, 87, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.8);
+  }
+}
+
+.auth-spinner {
+  animation: spinnerGlow 1.5s ease-in-out infinite;
+}
+
+/* 🎨 Social Login Buttons with Hover Glow */
+.social-login-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.social-login-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.5s, height 0.5s;
+}
+
+.social-login-btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.social-login-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 4px 20px rgba(255, 255, 255, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* 🔗 Link Hover Effect */
+.auth-link {
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.auth-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 71, 87, 0.8), rgba(255, 107, 107, 0.8));
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-link:hover::after {
+  width: 100%;
+}
+
+.auth-link:hover {
+  color: rgba(255, 71, 87, 1);
+}
+
+/* 🎯 Checkbox/Radio Custom Style with Animation */
+.auth-checkbox {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.auth-checkbox:checked {
+  background: linear-gradient(135deg, rgba(255, 71, 87, 1), rgba(255, 107, 107, 1));
+  border-color: rgba(255, 71, 87, 1);
+  box-shadow: 
+    0 0 10px rgba(255, 71, 87, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.auth-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  color: white;
+  font-weight: bold;
+  animation: checkmarkPop 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(-45deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+}
+
+/* 📱 Mobile Responsive Adjustments */
+@media (max-width: 640px) {
+  .auth-glass-container {
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+  }
+  
+  .auth-page-container {
+    animation-duration: 0.4s;
+  }
+}
+
+/* ♿ Accessibility - Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .auth-page-container,
+  .auth-card-flip,
+  .auth-message,
+  .auth-logo-breathe,
+  .auth-heading-gradient {
+    animation: none !important;
+  }
+  
+  .auth-input:focus,
+  .social-login-btn:hover,
+  .auth-checkbox {
+    transition: none !important;
+  }
+}

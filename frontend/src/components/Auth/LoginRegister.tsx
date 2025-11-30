@@ -4,6 +4,7 @@ import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '../../contexts/AuthContext';
 import { LockClosedIcon, EnvelopeIcon, UserIcon, EyeIcon, EyeSlashIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import './Auth.css';
 
 interface LoginRegisterProps {
   onSuccess?: () => void;
@@ -198,7 +199,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
+    <div className="auth-page-container min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
       {showMailGuard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div
@@ -238,7 +239,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               <img 
                 src="/logo512.png" 
                 alt="Omegoo" 
-                className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg"
+                className="auth-logo-breathe h-8 w-8 sm:h-10 sm:w-10 rounded-lg"
               />
               <div className="text-xl sm:text-2xl font-bold text-white">
                 Omegoo
@@ -261,7 +262,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2">
+          <h1 className="auth-heading-gradient text-4xl sm:text-5xl font-bold text-white mb-2">
             Omegoo
           </h1>
           <p className="text-gray-300 text-base sm:text-lg">
@@ -270,7 +271,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
         </div>
 
         {/* Login/Register Card */}
-        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-2xl p-6 sm:p-8 border border-white border-opacity-20">
+        <div className="auth-glass-container bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-2xl p-6 sm:p-8 border border-white border-opacity-20">
           {/* Toggle Tabs */}
           <div className="flex mb-6 sm:mb-8 bg-white bg-opacity-10 rounded-lg p-1">
             <button
@@ -297,7 +298,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {error && (
-              <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-100 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm">
+              <div className="auth-message auth-message-error bg-red-500 bg-opacity-20 border border-red-500 text-red-100 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm">
                 {error}
               </div>
             )}
@@ -314,7 +315,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="auth-input w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
                     placeholder="Choose a username"
                     required={!isLogin}
                   />
@@ -360,7 +361,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="auth-input w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Enter your email"
                   required
                 />
@@ -378,7 +379,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="auth-input w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white text-sm sm:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Enter your password"
                   required
                   minLength={6}
@@ -406,7 +407,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
               <div className="flex justify-end">
                 <Link
                   to="/forgot-password"
-                  className="text-xs sm:text-sm text-gray-300 hover:text-white transition-colors"
+                  className="auth-link text-xs sm:text-sm text-gray-300 hover:text-white transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -417,11 +418,11 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ onSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-2.5 sm:py-3 px-4 font-medium text-sm sm:text-base rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="neon-button btn-primary w-full py-2.5 sm:py-3 px-4 font-medium text-sm sm:text-base rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
+                  <div className="auth-spinner animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
                   <span>{isLogin ? 'Signing in...' : 'Creating account...'}</span>
                 </>
               ) : (
