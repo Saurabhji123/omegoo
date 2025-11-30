@@ -141,6 +141,34 @@ const CountryPage: React.FC = () => {
             ]
           })}
         </script>
+        
+        {/* Breadcrumb Schema */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://www.omegoo.chat/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Countries",
+                "item": "https://www.omegoo.chat/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": country.name,
+                "item": `https://www.omegoo.chat/country/${country.slug}`
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       <div className="text-white min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>

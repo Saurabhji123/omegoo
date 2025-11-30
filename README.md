@@ -42,6 +42,7 @@
 - 🌍 **Global Reach** - Connect with users worldwide
 - 📱 **PWA Support** - Install as mobile app
 - 🎨 **Modern UI** - Beautiful purple gradient theme
+- 💰 **Coin Economy** - Earn and spend coins for chat modes
 
 </td>
 <td width="50%">
@@ -53,6 +54,7 @@
 - 👁️ **Privacy First** - Anonymous chat experience
 - ⚖️ **Legal Compliance** - GDPR & IT Rules 2021
 - 🔑 **Authenticated Users** - Email/Google sign-in required
+- 🔍 **SEO Optimized** - Schema.org structured data & sitemap
 
 </td>
 </tr>
@@ -108,12 +110,13 @@ graph LR
 
 ---
 
-## � Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 ```bash
 Node.js >= 18.0.0
 npm >= 10.0.0
+MongoDB (for production)
 Git
 ```
 
@@ -124,25 +127,25 @@ Git
 git clone https://github.com/Saurabhji123/omegoo.git
 cd omegoo
 
-# 2. Install frontend dependencies
-cd frontend
+# 2. Install dependencies (monorepo)
 npm install
 
-# 3. Install backend dependencies
-cd ../backend
-npm install
+# 3. Setup environment variables
+# Create backend/.env file with:
+NODE_ENV=development
+PORT=3001
+JWT_SECRET=your-secret-key
+USE_MONGODB=false  # Use in-memory dev mode
+FRONTEND_URL=http://localhost:3000
 
-# 4. Setup environment variables
-cp .env.example .env
-# Edit .env with your configuration
+# Create frontend/.env file with:
+REACT_APP_BACKEND_URL=http://localhost:3001
+REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id
 
-# 5. Start development servers
-# Terminal 1 - Frontend
-cd frontend
-npm start
+# 4. Generate sitemap (optional)
+npm run generate-sitemap
 
-# Terminal 2 - Backend
-cd backend
+# 5. Start development servers (both frontend & backend)
 npm run dev
 ```
 
@@ -152,39 +155,86 @@ npm run dev
 - **Production**: https://www.omegoo.chat
 
 ---
-
 ## 📁 Project Structure
 
 ```
 omegoo/
 ├── 📂 frontend/              # React TypeScript PWA
 │   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── contexts/        # React Context providers
+│   │   ├── components/      # UI components (Auth, Chat, Home, Layout)
+│   │   ├── contexts/        # AuthContext, SocketContext
 │   │   ├── services/        # API & Socket services
-│   │   └── App.tsx          # Main application
-│   ├── public/              # Static assets
-│   └── package.json
+│   │   └── App.tsx          # Main app with routing
+│   └── public/              # Static assets & sitemap
 │
 ├── 📂 backend/               # Node.js Express API
 │   ├── src/
 │   │   ├── routes/          # API endpoints
-│   │   ├── services/        # Business logic
+│   │   ├── services/        # Business logic & Socket.IO
 │   │   ├── middleware/      # Auth & validation
-│   │   └── index.ts         # Server entry point
+│   │   └── scripts/         # Admin setup utilities
 │   └── package.json
 │
-├── 📂 shared/               # Common types & utilities
-├── 📄 README.md             # This file
-└── 📄 package.json          # Root package config
+├── 📂 scripts/              # generate-sitemap.js
+├── 📂 docs/                 # Documentation
+└── 📄 package.json          # Root monorepo config
 ```
 
 ---
-
 ## 🌐 Environment Variables
 
-### Frontend (`.env`)
+### Frontend (`frontend/.env`)
 ```bash
+REACT_APP_BACKEND_URL=https://your-backend-url.onrender.com
+REACT_APP_GOOGLE_CLIENT_ID=your-google-oauth-client-id
+REACT_APP_ENVIRONMENT=production
+```
+
+### Backend (`backend/.env`)
+```bash
+# Server Configuration
+NODE_ENV=production
+PORT=3001
+JWT_SECRET=your-super-secure-secret-key
+
+# Database (MongoDB or Dev Mode)
+USE_MONGODB=true  # Set to false for dev in-memory mode
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/omegoo
+
+# CORS & Frontend
+FRONTEND_URL=https://www.omegoo.chat
+ALLOWED_ORIGINS=https://www.omegoo.chat
+
+# Admin Setup (for first-time setup)
+OWNER_ADMIN_EMAIL=admin@omegoo.chat
+OWNER_ADMIN_PASSWORD=your-secure-password
+
+# Email Service (Optional)
+### 🎨 Modern UI/UX
+- **Purple Gradient Theme**: Eye-catching modern design
+- **Dark Mode**: Comfortable viewing experience
+- **Responsive Design**: Seamless on mobile, tablet, desktop
+- **Smooth Animations**: Polished interactions
+- **Glass Morphism**: Modern frosted glass effects
+- **PWA Ready**: Install as native app
+- **Internal Linking**: Footer with popular countries & quick links
+
+### 🛡️ Privacy & Safety
+- **Anonymous Chat**: No personal info shared during chat
+- **Skip Feature**: Move to next person instantly
+- **Report System**: Flag inappropriate behavior
+- **Secure Sessions**: End-to-end encrypted connections
+- **Data Protection**: GDPR & IT Rules 2021 compliant
+- **Single Device Policy**: One active session per user
+
+## 📊 Performance & Analytics
+
+- ⚡ **Fast Load Times**: < 2s initial load
+- 📱 **PWA Score**: 95+ on Lighthouse
+- 🎯 **SEO Optimized**: Clean sitemap, Schema.org, meta tags
+- 📈 **Real-time Monitoring**: Socket.IO metrics & error tracking
+- 🔄 **Auto-scaling**: Redis queue for matching, handles traffic spikes
+- 🌍 **Global CDN**: Vercel frontend, Render backend deploymentall devices
 REACT_APP_BACKEND_URL=https://your-backend-url.onrender.com
 REACT_APP_GOOGLE_CLIENT_ID=your-google-oauth-client-id
 REACT_APP_ENVIRONMENT=production
@@ -207,36 +257,41 @@ ALLOWED_ORIGINS=https://www.omegoo.chat
 ### 🔐 Smart Authentication
 - **Email/Password**: Secure account creation
 - **Google OAuth**: Quick sign-in with Google
-- **JWT Tokens**: Session management & security
-- **Age Verification**: 18+ mandatory compliance
+### ✅ Completed Features
+- [x] Text/Voice/Video chat with WebRTC
+- [x] Email + Google OAuth authentication
+- [x] MongoDB + Redis integration (with dev fallback)
+- [x] Coin economy system (1 coin = text, 2 = audio, 3 = video)
+- [x] Single device session enforcement
+- [x] Admin panel with moderation tools
+- [x] Report system with screenshot capture
+- [x] Responsive PWA with purple gradient theme
+- [x] SEO optimization (sitemap, Schema.org, Footer)
+- [x] Country-specific landing pages (top 12)
+- [x] Money keyword pages (no-login, anonymous, etc.)
+- [x] Age verification (18+)
+- [x] Skip & next user functionality
 
-### 🎨 Modern UI/UX
-- **Purple Gradient Theme**: Eye-catching modern design
-- **Dark Mode**: Comfortable viewing experience
-- **Responsive Design**: Seamless on mobile, tablet, desktop
-- **Smooth Animations**: Polished interactions
-- **Glass Morphism**: Modern frosted glass effects
-- **PWA Ready**: Install as native app
-
-### 🛡️ Privacy & Safety
-- **Anonymous Chat**: No personal info shared during chat
-- **Skip Feature**: Move to next person instantly
-- **Report System**: Flag inappropriate behavior
-- **Secure Sessions**: End-to-end encrypted connections
-- **Data Protection**: GDPR & IT Rules 2021 compliant
-
----
-
-## 📊 Performance & Analytics
-
-- ⚡ **Fast Load Times**: < 2s initial load
+### 🔜 Upcoming Features
+- [ ] Phone number verification (OTP)
+- [ ] Premium subscriptions (ad-free, priority matching)
+- [ ] Group chat rooms (3+ participants)
+- [ ] AI-powered moderation (content filtering)
+- [ ] Real-time language translation
+- [ ] Virtual gifts & rewards
+- [ ] Advanced matching filters (gender, interests)
+- [ ] Topic Dice (random conversation starters)
+- [ ] Video chat recording (with consent)
+- [ ] Payment gateway integration (Stripe/Razorpay)d
 - 📱 **PWA Score**: 95+ on Lighthouse
 - 🎯 **SEO Optimized**: Meta tags & sitemap
 - 📈 **Real-time Monitoring**: Error tracking
 - 🔄 **Auto-scaling**: Handles traffic spikes
-
----
-
+- 🐛 [Report a Bug](https://github.com/Saurabhji123/omegoo/issues/new?labels=bug)
+- 💡 [Request a Feature](https://github.com/Saurabhji123/omegoo/issues/new?labels=enhancement)
+- 📧 Email: [omegoochat@gmail.com](mailto:omegoochat@gmail.com)
+- 🐦 Twitter: [@omegoochat](https://x.com/omegoochat)
+- 📸 Instagram: [@omegoo.chat](https://www.instagram.com/omegoo.chat)
 ## 🤝 Contributing
 
 We welcome contributions! Here's how you can help:

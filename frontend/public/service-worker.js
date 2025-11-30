@@ -1,10 +1,12 @@
 /* eslint-env serviceworker */
 /* eslint-disable no-restricted-globals */
 
-const SHELL_CACHE = 'omegoo-shell-v2';
-const API_CACHE = 'omegoo-api-v2';
-const IMAGE_CACHE = 'omegoo-images-v1';
-const SEO_CACHE = 'omegoo-seo-v1';
+// VERSION: Update this on every deployment to force cache refresh
+const CACHE_VERSION = 'v2.1.0';
+const SHELL_CACHE = `omegoo-shell-${CACHE_VERSION}`;
+const API_CACHE = `omegoo-api-${CACHE_VERSION}`;
+const IMAGE_CACHE = `omegoo-images-${CACHE_VERSION}`;
+const SEO_CACHE = `omegoo-seo-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
   '/',
@@ -37,10 +39,14 @@ const SEO_URLS = [
 ];
 
 self.addEventListener('install', (event) => {
+  console.log('🔄 Installing new service worker, cache version:', CACHE_VERSION);
   event.waitUntil(
     caches.open(SHELL_CACHE)
       .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('✅ Precache complete, skipping waiting');
+        return self.skipWaiting();
+      })
   );
 });
 
@@ -48,13 +54,24 @@ self.addEventListener('activate', (event) => {
   const keepCaches = [SHELL_CACHE, API_CACHE, IMAGE_CACHE, SEO_CACHE];
 
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
+    caches.keys().then((keys) => {
+      console.log('🗑️ Clearing old caches:', keys.filter((key) => !keepCaches.includes(key)));
+      return Promise.all(
         keys
           .filter((key) => !keepCaches.includes(key))
           .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+      );
+    }).then(() => {
+      console.log('✅ All old caches deleted, claiming clients');
+      return self.clients.claim();
+    }).then(() => {
+      // Force reload all clients to get fresh content
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'CACHE_UPDATED', version: CACHE_VERSION });
+        });
+      });
+    })
   );
 });
 
@@ -69,7 +86,13 @@ self.addEventListener('fetch', (event) => {
   const isSameOrigin = requestUrl.origin === self.location.origin;
 
   if (isSameOrigin) {
-    // Cache static assets (JS, CSS)
+    // DON'T cache index.html - always fetch fresh version
+    if (requestUrl.pathname === '/' || requestUrl.pathname === '/index.html') {
+      event.respondWith(networkFirst(request));
+      return;
+    }
+
+    // Cache static assets with hash (JS, CSS) - these never change
     if (requestUrl.pathname.startsWith('/static/')) {
       event.respondWith(cacheFirst(request, SHELL_CACHE));
       return;
@@ -81,13 +104,13 @@ self.addEventListener('fetch', (event) => {
       return;
     }
 
-    // Cache precached URLs
-    if (PRECACHE_URLS.includes(requestUrl.pathname)) {
+    // Cache precached URLs (manifest, robots, etc)
+    if (PRECACHE_URLS.includes(requestUrl.pathname) && requestUrl.pathname !== '/index.html') {
       event.respondWith(cacheFirst(request, SHELL_CACHE));
       return;
     }
 
-    // Cache SEO pages for better performance
+    // Cache SEO pages for better performance (but allow updates)
     if (SEO_URLS.includes(requestUrl.pathname) || requestUrl.pathname.startsWith('/country/')) {
       event.respondWith(staleWhileRevalidate(request, SEO_CACHE));
       return;
@@ -103,6 +126,22 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(networkOnlyWithFallback(request));
   }
 });
+
+// Network-first strategy for HTML pages
+function networkFirst(request) {
+  return fetch(request)
+    .then((response) => {
+      // Don't cache if it's an error response
+      if (response.ok) {
+        return response;
+      }
+      return response;
+    })
+    .catch(() => {
+      // Fallback to cache if network fails
+      return caches.match(request);
+    });
+}
 
 function cacheFirst(request, cacheName) {
   return caches.open(cacheName).then(async (cache) => {

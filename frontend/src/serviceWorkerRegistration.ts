@@ -1,8 +1,22 @@
 const SERVICE_WORKER_PATH = '/service-worker.js';
+const CHECK_UPDATE_INTERVAL = 60000; // Check for updates every 60 seconds
 
 export function registerServiceWorker() {
   if (process.env.NODE_ENV === 'development') {
     return;
+  }
+
+  // Listen for cache update messages from service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'CACHE_UPDATED') {
+        console.log('🔄 Cache updated to version:', event.data.version);
+        console.log('🔄 Reloading page to get fresh content...');
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+    });
   }
 
   if ('serviceWorker' in navigator) {
@@ -25,14 +39,16 @@ export function registerServiceWorker() {
             installingWorker.onstatechange = () => {
               if (installingWorker.state === 'installed') {
                 if (navigator.serviceWorker.controller) {
-                  console.log('ℹ️ New content is available; reloading to activate.');
-                  navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
+                  console.log('ℹ️ New content detected! Updating now...');
                   
-                  // Force immediate reload to show new version
-                  console.log('🔄 Forcing reload for new service worker...');
+                  // Skip waiting and activate immediately
+                  installingWorker.postMessage({ type: 'SKIP_WAITING' });
+                  
+                  // Force reload after brief delay
                   setTimeout(() => {
+                    console.log('🔄 Reloading to show updated content...');
                     window.location.reload();
-                  }, 1000);
+                  }, 500);
                 } else {
                   console.log('🎉 Content cached for offline use.');
                 }
@@ -43,6 +59,16 @@ export function registerServiceWorker() {
         .catch((registrationError) => {
           console.error('❌ Service worker registration failed:', registrationError);
         });
+
+      // Periodically check for updates
+      setInterval(() => {
+        navigator.serviceWorker.getRegistration().then((reg) => {
+          if (reg) {
+            console.log('🔍 Checking for service worker updates...');
+            reg.update();
+          }
+        });
+      }, CHECK_UPDATE_INTERVAL);
     });
   }
 }

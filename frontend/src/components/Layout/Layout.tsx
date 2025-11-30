@@ -2,6 +2,7 @@ import React, { ReactNode, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import LazyImage from '../UI/LazyImage';
+import Footer from './Footer';
 // Theme context available but not currently used
 // import { useTheme } from '../../contexts/ThemeContext';
 
@@ -214,135 +215,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="backdrop-blur-md border-t mt-auto" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', borderColor: 'var(--border-subtle)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Main Footer Content */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            {/* Brand Section */}
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center mb-4">
-                <img 
-                  src="/logo512.png" 
-                  alt="Omegoo" 
-                  className="w-8 h-8 rounded-lg shadow-sm mr-3 object-cover"
-                />
-                <h3 className="text-lg font-bold text-white">Omegoo</h3>
-              </div>
-              <p className="text-sm text-gray-300 mb-4">
-                Connect with interesting people worldwide through safe, anonymous video and text conversations. 
-                Meet new friends, practice languages, or just have fun chatting!
-              </p>
-              <div className="flex space-x-4">
-                <div className="flex items-center text-sm text-gray-400">
-                  <svg className="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  AI-Moderated
-                </div>
-                <div className="flex items-center text-sm text-gray-400">
-                  <svg className="w-4 h-4 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                  </svg>
-                  Secure & Anonymous
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                <li>
-                  <button
-                    onClick={() => navigate('/')}
-                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    Home
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => navigate('/about')}
-                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    About Us
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => navigate('/contact')}
-                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    Contact
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => navigate('/chat/video')}
-                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    Start Chatting
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Legal & Support */}
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-4">Legal & Support</h4>
-              <ul className="space-y-2">
-                <li>
-                  <button
-                    onClick={() => navigate('/privacy')}
-                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    Privacy Policy
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => navigate('/terms')}
-                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    Terms of Service
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => navigate('/safety')}
-                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    Safety Guidelines
-                  </button>
-                </li>
-                <li>
-                  <a 
-                    href="mailto:omegoochat@gmail.com" 
-                    className="text-sm text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    Report Issue
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="border-t border-white border-opacity-20 pt-6 flex flex-col sm:flex-row items-center justify-between">
-            <p className="text-sm text-gray-300 mb-4 sm:mb-0">
-              © 2025 Omegoo. All rights reserved. Safe anonymous connections worldwide.
-            </p>
-            <div className="flex items-center space-x-4 text-sm text-gray-400">
-              <span>Made with ❤️ for connecting people</span>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                <span>Online & Secure</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* SEO-Optimized Footer */}
+      <Footer />
     </div>
   );
 };

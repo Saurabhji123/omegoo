@@ -1,0 +1,52 @@
+# Vercel Headers Configuration
+# This file controls caching behavior for static assets
+
+# HTML files - Always check for updates (no caching)
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+# Service Worker - Always get fresh version
+/service-worker.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+# JavaScript and CSS with hash - Long cache (1 year)
+/static/js/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/static/css/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images - Cache for 1 week
+/static/media/*
+  Cache-Control: public, max-age=604800
+
+/*.png
+  Cache-Control: public, max-age=604800
+
+/*.jpg
+  Cache-Control: public, max-age=604800
+
+/*.svg
+  Cache-Control: public, max-age=604800
+
+/*.ico
+  Cache-Control: public, max-age=604800
+
+# Manifest and other config files - Short cache (1 hour)
+/manifest.json
+  Cache-Control: public, max-age=3600
+
+/robots.txt
+  Cache-Control: public, max-age=3600
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600
