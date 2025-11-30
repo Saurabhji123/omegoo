@@ -9,8 +9,6 @@
     rgba(138, 87, 255, 0.08) 30%,
     #0f0f0f 70%
   );
-  padding: 3rem 1rem;
-  margin-bottom: 2rem;
 }
 
 /* Additional ambient glow for depth */
@@ -217,10 +215,6 @@
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  .home-hero-section {
-    padding: 2rem 0.5rem;
-  }
-  
   .hero-gradient-text {
     font-size: 1.875rem; /* text-3xl */
   }
