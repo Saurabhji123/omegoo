@@ -2,7 +2,7 @@
 /* eslint-disable no-restricted-globals */
 
 // VERSION: Update this on every deployment to force cache refresh
-const CACHE_VERSION = 'v2.1.0';
+const CACHE_VERSION = 'v2.2.0';
 const SHELL_CACHE = `omegoo-shell-${CACHE_VERSION}`;
 const API_CACHE = `omegoo-api-${CACHE_VERSION}`;
 const IMAGE_CACHE = `omegoo-images-${CACHE_VERSION}`;
